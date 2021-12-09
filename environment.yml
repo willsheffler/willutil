@@ -1,0 +1,13 @@
+name: willutil
+channels:
+ - conda-forge
+dependencies:
+ - python
+ - numpy
+ - tqdm
+ - yapf
+ - pytest
+ - pip
+ - pip:
+   - pytest-sugar
+

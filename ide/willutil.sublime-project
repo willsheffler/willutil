@@ -1,0 +1,32 @@
+{
+	"build_systems":
+	[
+		{
+			"name": "runtests.py",
+			"shell_cmd": "cd $folder; python willutil/runtests.py --projname willutil $file &> log/sublime_build.log"
+		}
+
+	],
+	"folders":
+	[
+		{
+			"file_exclude_patterns":
+			[
+				"*~",
+				".*"
+			],
+			"folder_exclude_patterns":
+			[
+				".cache",
+				".tox",
+				"build",
+				"dist",
+				"*.egg-info",
+				"__pycache__",
+				"_build",
+				".*"
+			],
+			"path": ".."
+		}
+	]
+}
