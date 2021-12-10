@@ -1,4 +1,5 @@
 import _pickle
+import pytest
 from argparse import Namespace
 from willutil import Bunch
 
@@ -89,6 +90,13 @@ def test_bunch_visit():
 def test_bunch_strict():
    b = Bunch(one=1, two=2, _strict=True)
    assert len(b) == 2
+   with pytest.raises(KeyError):
+      assert b.foo is None
+   b.foo = 7
+   assert b.foo == 7
+
+   b2 = Bunch(one=1, two=2, _strict=False)
+   assert b2.foo is None
 
 if __name__ == "__main__":
    from tempfile import mkdtemp
@@ -99,3 +107,4 @@ if __name__ == "__main__":
    test_bunch_items()
    test_bunch_add()
    test_bunch_visit()
+   test_bunch_strict()
