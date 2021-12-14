@@ -10,76 +10,80 @@ from collections import defaultdict
 
 _post = defaultdict(lambda: "")
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--projname", help='name of project')
-parser.add_argument("testfile", type=str, default='')
-args = parser.parse_args(sys.argv[1:])
+def get_args(sysargv):
+   parser = argparse.ArgumentParser()
+   parser.add_argument("--projname", help='name of project')
+   parser.add_argument("testfile", type=str, default='')
+   args = parser.parse_args(sysargv[1:])
+   return args.__dict__
 
-def file_has_main(file):
-   with open(file) as inp:
+def file_has_main(fname):
+   with open(fname) as inp:
       for l in inp:
          if l.startswith("if __name__ == "):
             return True
    return False
 
-def testfile_of(path, bname):
+def testfile_of(path, bname, **kw):
 
-   t = re.sub(f"^{args.projname}", f"{args.projname}/tests", path) + "/test_" + bname
+   t = re.sub(f"^{kw['projname']}", f"{kw['projname']}/tests", path) + "/test_" + bname
    print("testfile_of", path, bname, 'is', t)
    if os.path.exists(t):
       return t
 
 def dispatch(
-      file,
+      fname,
       pytest_args='',
       file_mappings=dict(),
       overrides=dict(),
+      strict=True,
+      **kw,
 ):
-   """for the love of god... clean me up"""
-   file = os.path.relpath(file)
-   path, bname = os.path.split(file)
+   '''for the love of god... clean me up. eh, could be worse'''
+   fname = os.path.relpath(fname)
+   path, bname = os.path.split(fname)
 
    if bname in overrides:
       oride = overrides[bname]
       return oride, _post[bname]
 
-   print("runtests.py dispatch", path, bname)
-   if bname in file_mappings:
-      if len(file_mappings[bname]) == 1:
-         file = file_mappings[bname][0]
-         path, bname = os.path.split(file)
-      else:
-         assert 0
+   if fname in file_mappings:
+      assert len(file_mappings[fname]) == 1
+      fname = file_mappings[fname][0]
+      path, bname = os.path.split(fname)
+   if not strict and bname in file_mappings:
+      assert len(file_mappings[bname]) == 1
+      bname = file_mappings[bname][0]
+      path, bname = os.path.split(bname)
 
-   if not file_has_main(file) and not bname.startswith("test_"):
-      testfile = testfile_of(path, bname)
+   if not file_has_main(fname) and not bname.startswith("test_"):
+      testfile = testfile_of(path, bname, **kw)
       if testfile:
-         file = testfile
-         path, bname = os.path.split(file)
+         fname = testfile
+         path, bname = os.path.split(fname)
 
-   if not file_has_main(file) and bname.startswith("test_"):
-      cmd = "pytest {pytest_args} {file}".format(**vars())
-   elif file.endswith(".py"):
-      cmd = "PYTHONPATH=. python " + file
+   if not file_has_main(fname) and bname.startswith("test_"):
+      cmd = "pytest {pytest_args} {fname}".format(**vars())
+   elif fname.endswith(".py"):
+      cmd = "PYTHONPATH=. python " + fname
    else:
       cmd = "pytest {pytest_args}".format(**vars())
 
    return cmd, _post[bname]
 
-def main(file_mappings, overrides):
+def main(**kw):
    t = perf_counter()
 
    post = ""
-   if not args.testfile:
+   if not kw['testfile']:
       cmd = "pytest"
    else:
-      if args.testfile.endswith(__file__):
+      if kw['testfile'].endswith(__file__):
          cmd = ""
       else:
          cmd, post = dispatch(
-            args.testfile,
-            file_mappings=_file_mappings,
-            overrides=_overrides,
+            kw['testfile'],
+            **kw,
          )
 
    print("call:", sys.argv)
@@ -150,4 +154,5 @@ _file_mappings = {
 }
 
 if __name__ == '__main__':
-   main(_file_mappings, _overrides)
+   args = get_args(sys.argv)
+   main(_file_mappings, _overrides, **args)
