@@ -148,8 +148,8 @@ def test_intersect_planes():
          np.array([[0, 0, 0, 1], [0, 0, 0, 1]]).T)
    with pytest.raises(ValueError):
       intersect_planes(
-         np.array([[0, 0, 1], [0, 0, 0, 0]]).T,
-         np.array([[0, 0, 1], [0, 0, 0, 1]]).T)
+         np.array([[0, 0, 1, 8], [0, 0, 0, 0]]).T,
+         np.array([[0, 0, 1, 9], [0, 0, 0, 1]]).T)
    with pytest.raises(ValueError):
       intersect_planes(np.array(9 * [[[0, 0], [0, 0], [0, 0], [1, 0]]]),
                        np.array(2 * [[[0, 0], [0, 0], [0, 0], [1, 0]]]))

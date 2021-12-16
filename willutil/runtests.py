@@ -64,7 +64,7 @@ def dispatch(
 
    if not file_has_main(fname) and bname.startswith("test_"):
       cmd = "pytest {pytest_args} {fname}".format(**vars())
-   elif fname.endswith(".py"):
+   elif fname.endswith(".py") and bname != 'conftest.py':
       cmd = "PYTHONPATH=. python " + fname
    else:
       cmd = "pytest {pytest_args}".format(**vars())
@@ -155,4 +155,4 @@ _file_mappings = {
 
 if __name__ == '__main__':
    args = get_args(sys.argv)
-   main(_file_mappings, _overrides, **args)
+   main(file_mappings=_file_mappings, overrides=_overrides, **args)

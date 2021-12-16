@@ -29,7 +29,7 @@ class Timer:
    def __init__(
       self,
       name='Timer',
-      verbose=False,
+      verbose=True,
       start=True,
    ):
       self.name = name
@@ -53,7 +53,8 @@ class Timer:
       if self._start:
          if time.perf_counter() - self._start > 0.001:
             raise ValueError('Timer already started')
-      if self.verbose: log.debug(f'{self.name} intialized')
+      if self.verbose:
+         log.debug(f'Timer {self.name} intialized')
       self._start = time.perf_counter()
       self.last = self._start
       self.checkpoints = collections.defaultdict(list)
@@ -79,9 +80,8 @@ class Timer:
       traceback=None,
    ):
       self.checkpoints['total'].append(time.perf_counter() - self._start)
-      if self.verbose: log.debug(f'{self.name} finished')
+      if self.verbose: log.debug(f'Timer {self.name} finished')
       if self.verbose: self.report()
-      return self
 
    def __getattr__(self, name):
       if name == "checkpoints":
@@ -121,13 +121,13 @@ class Timer:
    ):
       if namelen is None:
          namelen = max(len(n) for n in self.checkpoints)
-      lines = [f"Times(order={order}, summary={summary}):"]
+      lines = [f"Times(name={self.name}, order={order}, summary={summary}):"]
       times = self.report_dict(order=order, summary=summary)
       for cpoint, t in times.items():
          lines.append(f'    {cpoint:>{namelen}} {t*scale:{precision}}')
          if scale == 1000: lines[-1] += 'ms'
       r = os.linesep.join(lines)
-      if printme: log.info(r)
+      if printme: print(r)
       return r
 
    @property
