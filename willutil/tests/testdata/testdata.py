@@ -12,3 +12,15 @@ def respairdat10_plus_xmap_rots():
 def respairdat10():
    dset = load(os.path.join(test_pdb_dir, 'respairdat10.nc'))
    return PdbData(dset)
+
+def pdbcontents():
+   return load(os.path.join(test_pdb_dir, '1pgx.pdb1.gz'))
+
+def pdbfile():
+   return os.path.join(test_pdb_dir, '1pgx.pdb1.gz')
+
+def pdbfiles():
+   return [
+      os.path.join(test_pdb_dir, '1pgx.pdb1.gz'),
+      os.path.join(test_pdb_dir, '1qys.pdb1.gz'),
+   ]

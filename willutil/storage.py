@@ -1,11 +1,18 @@
-import json, lzma, pickle, os
-import xarray
+import json, gzip, lzma, pickle, os
+
+data_dir = os.path.join(os.path.dirname(__file__), 'data')
+
+def load_package_data(fname):
+   return load(os.path.join(data_dir, fname))
+
+def save_package_data(stuff, fname):
+   return save(stuff, os.path.join(data_dir, fname))
 
 def load_json(f):
    with open(f, 'r') as inp:
       return json.load(inp)
 
-def dump_json(j, f, indent=True):
+def load_json(j, f, indent=True):
    with open(f, 'w') as out:
       return json.dump(j, out, indent=indent)
 
@@ -16,11 +23,16 @@ def load(fname, **kw):
    if fname.count('.') == 0 or is_pickle_fname(fname):
       return load_pickle(fname, **kw)
    elif fname.endswith('.nc'):
+      import xarray
       return xarray.load_dataset(fname, **kw)
+   elif fname.endswith('.gz') and fname[-8:-4] == '.pdb' and fname[-4].isnumeric():
+      with gzip.open(fname, 'rb') as inp:
+         # kinda confused why this \n replacement is needed....
+         return str(inp.read()).replace(r'\n', '\n')
    else:
       raise ValueError('dont know how to handle file ' + fname)
 
-def load_pickle(fname, add_dotpickle=True, assume_lzma=True, **kw):
+def load_pickle(fname, add_dotpickle=True, assume_lzma=False, **kw):
    opener = open
    if fname.endswith('.xz'):
       opener = open_lzma_cached
@@ -30,20 +42,21 @@ def load_pickle(fname, add_dotpickle=True, assume_lzma=True, **kw):
          fname += '.pickle.xz'
       else:
          fname += 'pickle'
-   with opener(fname) as inp:
+   with opener(fname, 'rb') as inp:
       return pickle.load(inp)
 
-def dump(stuff, fname, **kw):
+def save(stuff, fname, **kw):
    if fname.endswith('.nc'):
+      import xarray
       if not isinstance(stuff, xarray.Dataset):
          raise ValueError('can only save xarray.Dataset as .nc file')
       stuff.to_netcdf(fname)
    elif fname.count('.') == 0 or is_pickle_fname(fname):
-      dump_pickle(stuff, fname, **kw)
+      save_pickle(stuff, fname, **kw)
    else:
       raise ValueError('dont know now to handle file ' + fname)
 
-def dump_pickle(stuff, fname, add_dotpickle=True, uselzma=True, **kw):
+def save_pickle(stuff, fname, add_dotpickle=True, uselzma=False, **kw):
    opener = open
    if fname.endswith('.xz'):
       assert fname.endswith('.pickle.xz')
@@ -60,9 +73,9 @@ class open_lzma_cached:
    def __init__(self, fname):
       fname = os.path.abspath(fname)
       if not os.path.exists(fname + '.decompressed'):
-         xzfile = lzma.open(fname, 'rb')
+         self.file_obj = lzma.open(fname, 'rb')
          with open(fname + '.decompressed', 'wb') as out:
-            out.write(xzfile.read())
+            out.write(self.file_obj.read())
       else:
          self.file_obj = open(fname + '.decompressed', 'rb')
 
@@ -71,3 +84,17 @@ class open_lzma_cached:
 
    def __exit__(self, __type__, __value__, __traceback__):
       self.file_obj.close()
+
+def is_pdb_fname(fn, maxlen=1000):
+   if len(fn) > maxlen:
+      return False
+   elif not os.path.exists(fn):
+      return False
+   elif fn.endswith(('.pdb.gz', '.pdb')):
+      return True
+   elif fn[-4:-1] == 'pdb' and fn[-1].isnumeric():
+      return True
+   elif fn.endswith('.gz') and fn[-8:-4] == '.pdb' and fn[-4].isnumeric():
+      return True
+   else:
+      raise ValueError(f'cant tell if is pdb fname: {fn}')

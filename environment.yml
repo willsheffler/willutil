@@ -6,9 +6,12 @@ dependencies:
  - xarray
  - netcdf4
  - numpy
+ - numba
  - tqdm
  - yapf
  - pytest
+ - ipython
+ - pandas
  - pip
  - pip:
    - pytest-sugar

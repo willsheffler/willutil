@@ -1,5 +1,6 @@
 import os, time, logging
-import xarray as xr, numpy as np
+import xarray as xr
+import numpy as np
 
 log = logging.getLogger(__name__)
 
@@ -11,7 +12,7 @@ class PdbData:
          if sanity_check is True: self.sanity_check()
          return
       else:
-         _rp_from_raw_dicts(self, data, sanity_check)
+         pdbdata_from_dicts(self, data, sanity_check)
 
    def __getattr__(self, k):
       if k == "data":
@@ -300,7 +301,7 @@ def _change_seq_ss_to_ids(rp):
    dat["ss2id"] = xr.DataArray(ss2id, [id2ss], ["ss"])
    rp.data = dat
 
-def _rp_from_raw_dicts(self, data, sanity_check):
+def pdbdata_from_dicts(self, data, sanity_check):
    # loading from raw dicts
    assert isinstance(data, dict)
 
