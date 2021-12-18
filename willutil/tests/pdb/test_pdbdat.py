@@ -112,9 +112,9 @@ def test_tiny_subset_by_aa_pdb_removal_3pdb():
    assert np.all(rpC.pdb_pair_offsets == [0, 0, 3])
 
 def main():
-   import willutil.tests.testdata as tdat
-   rp = tdat.respairdat10()
-   rpextra = tdat.respairdat10_plus_xmap_rots()
+   from willutil.tests.testdata import fixtures
+   rp = fixtures.respairdat10()
+   rpextra = fixtures.respairdat10_plus_xmap_rots()
 
    with Timer() as t:
       test_pairdat_subset_by_aa(rp)

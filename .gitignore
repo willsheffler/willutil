@@ -78,3 +78,12 @@ dask-worker-space
 
 .idea
 
+*.decompressed
+
+/willutil/data/pdb/meta/*.pickle
+/willutil/tests/testdata/pdb/*.pdb*.gz.pickle
+/*.pdb
+/*.pdb1
+
+tmp
+/*.xz

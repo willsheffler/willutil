@@ -1,14 +1,29 @@
-import os, gzip, io, glob
-
+import os, gzip, io, glob, collections, logging, tqdm, time
 import willutil as wu
+
+log = logging.getLogger(__name__)
 
 class PDBFile:
    def __init__(self, df, meta):
+      df.reset_index(inplace=True, drop=True)
       self.df = df
       self.code = meta.code
       self.resl = meta.resl
-      self.sequence = atomrecords_to_sequence(df)
-      self.meta = meta
+      self.cryst1 = meta.cryst1
+      self.chainseq = atomrecords_to_chainseq(df)
+      self.seq = str.join('', self.chainseq.values())
+
+   @property
+   def nres(self):
+      return len(self.seq)
+
+   @property
+   def nchain(self):
+      return len(self.chainseq)
+
+   def subfile(self, chain):
+      df = self.df[self.df.ch == wu.misc.tobytes(chain)]
+      return PDBFile(df, meta=self)
 
 def pdb_code(fname):
    if len(fname) > 100:
@@ -36,29 +51,41 @@ def read_pdb_atoms(fname_or_buf):
          assert not cryst
          cryst = line.strip()
 
-   return '\n'.join(atomlines), wu.Bunch(cryst=cryst)
+   return '\n'.join(atomlines), wu.Bunch(cryst1=cryst)
 
 def parse_pdb_atoms(atomstr):
-   from pandas import read_fwf
+   import pandas as pd
+   import numpy as np
 
-   n = 'het ai an rn ch ri x y z occ bfac elem'.split()
-   w = (6, 5, 5, 4, 2, 4, 12, 8, 8, 6, 6, 99)
+   n = 'het ai an rn ch ri rixpad x y z occ bfac elem'.split()
+   w = (6, 5, 5, 4, 2, 4, 4, 8, 8, 8, 6, 6, 99)
    assert len(n) is len(w)
 
-   df = read_fwf(io.StringIO(atomstr), widths=w, names=n)
-   # df = df[np.logical_or(df.het == 'ATOM', df.het == 'HETATM')]
+   df = pd.read_fwf(io.StringIO(atomstr), widths=w, names=n)
+   df = df[np.logical_or(df.het == 'ATOM', df.het == 'HETATM')]
    df.het = df.het == 'HETATM'
    df.ai = df.ai.astype('i4')
-   # df.an = df.an.astype('S4')  # f*ck you, pandas!
-   # df.rn = df.rn.astype('S3')  # f*ck you, pandas!
-   # df.ch = df.ch.astype('S1')  # f*ck you, pandas!
+   df.an = df.an.astype('S4')
+   df.rn = df.rn.astype('S3')
+   df.ch = df.ch.astype('S1')
    df.ri = df.ri.astype('i4')
+   df.rixpad = df.rixpad.astype('S4')
    df.x = df.x.astype('f4')
    df.y = df.y.astype('f4')
    df.z = df.z.astype('f4')
    df.occ = df.occ.astype('f4')
    df.bfac = df.bfac.astype('f4')
-   # df.elem = df.elem.astype('S4')  # f*ck you, pandas!
+   df.elem = df.elem.astype('S4')
+
+   # # df = pd.DataFrame(dict(an=df.an))
+   # # print(df.head(60))
+   # df.reset_index()
+   # print('-----------------')
+   # print(df.dtypes)
+   # print('-----------------')
+   # print(df.memory_usage())
+   # print('-----------------')
+   # # print(df.loc[62])
    return df
 
 def readpdb(fname_or_buf):
@@ -67,18 +94,16 @@ def readpdb(fname_or_buf):
    code = pdb_code(fname_or_buf)
    resl = -1.0
    if code != 'none':
-      metadb = wu.pdb.pdb_metadata()
-      resl = metadb.resl[code]
+      resl = metadb = wu.pdb.pdbmeta.resl[code]
    meta.update(code=code, resl=resl)
-
    return PDBFile(df, meta)
 
 def format_atom(atomi=0, atomn='ATOM', idx=' ', resn='RES', chain='A', resi=0, insert=' ', x=0,
                 y=0, z=0, occ=1, b=0):
    return _atom_record_format.format(**locals())
 
-def atomrecords_to_sequence(df):
-   seq = list()
+def atomrecords_to_chainseq(df):
+   seq = collections.defaultdict(list)
 
    prevri = 123456789
    prevhet = False
@@ -86,36 +111,71 @@ def atomrecords_to_sequence(df):
       ri = df.ri[i]
       if ri == prevri: continue
       rn = df.rn[i]
+      ch = df.ch[i]
+      rn = rn.decode() if isinstance(rn, bytes) else rn
+      ch = ch.decode() if isinstance(ch, bytes) else ch
       het = df.het[i]
       if not het and not prevhet:
          # mark missing sequence residues if not HET
          for _ in range(prevri + 1, ri):
-            seq.append('-')
+            seq[ch].append('-')
       prevri = ri
       prevhet = het
       if het:
          if not rn == 'HOH':
-            seq.append('Z')
+            seq[ch].append('Z')
          continue
       try:
-         seq.append(wu.chemical.aa321[rn])
-      except KeyError:
-         seq.append('X')
-   return str.join('', seq)
 
-def find_pdb_files(files_or_pattern):
+         seq[ch].append(wu.chemical.aa321[rn])
+      except KeyError:
+         seq[ch].append('X')
+   return {c: str.join('', s) for c, s in seq.items()}
+
+def find_pdb_files(files_or_pattern, maxsize=99e99):
    if isinstance(files_or_pattern, str):
-      files = glob.glob(files_or_pattern)
-   else:
-      files = files_or_pattern
-   for f in files:
+      files_or_pattern = [files_or_pattern]
+   candidates = list()
+   for f in files_or_pattern:
+      if not os.path.exists(f):
+         candidates.extend(glob.glob(f))
+      else:
+         candidates.append(f)
+   files = list()
+   for f in candidates:
+      if os.path.getsize(f) > maxsize:
+         continue
       if not os.path.exists(f):
          raise ValueError(f'pdb file {f} does not exist')
+      files.append(f)
    return files
 
-def load_pdbs(files_or_pattern, max_seq_identity=0.3):
-   files = find_pdb_files(files_or_pattern)
-   pdbs = list()
-   for f in files:
-      pdbs.append(readpdb(f))
+def load_pdbs(files_or_pattern, cache=True, skip_errors=False, pbar=True, **kw):
+   files = find_pdb_files(files_or_pattern, **kw)
+   pdbs = dict()
+   for fname in (tqdm.tqdm(files) if pbar else files):
+      t = time.perf_counter()
+      try:
+         fname = fname.replace('.pickle', '')
+         if cache:
+            try:
+               pdbfile = wu.load(fname + '.pickle')
+               log.info(f'loaded {fname + ".pickle"}')
+            except (FileNotFoundError, EOFError, AttributeError) as e:
+               if not isinstance(e, FileNotFoundError):
+                  log.warning(f'cache failure, loading {fname}')
+               else:
+                  log.info(f'cache failure, loading {fname}')
+               pdbfile = readpdb(fname)
+               wu.save(pdbfile, fname + '.pickle')
+         else:
+            log.info(f'loading {fname}')
+            pdbfile = readpdb(fname)
+         pdbs[fname] = pdbfile
+         if time.perf_counter() - t > 0.1:
+            print(fname)
+      except (FileNotFoundError, ValueError) as e:
+         if not skip_errors:
+            raise e
+
    return pdbs

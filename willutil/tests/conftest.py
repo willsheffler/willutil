@@ -1,22 +1,34 @@
 import pytest
-import willutil.tests.testdata as tdat
+from willutil.tests.testdata import fixtures
 
 @pytest.fixture(scope='session')
 def respairdat10():
-   return tdat.respairdat10()
+   return fixtures.respairdat10()
 
 @pytest.fixture(scope='session')
 def respairdat10_plus_xmap_rots():
-   return tdat.respairdat10_plus_xmap_rots()
+   return fixtures.respairdat10_plus_xmap_rots()
 
 @pytest.fixture
-def pdbfile():
-   return tdat.pdbfile()
+def pdbfname():
+   return fixtures.pdbfname()
 
 @pytest.fixture
-def pdbfiles():
-   return tdat.pdbfiles()
+def pdbfnames():
+   return fixtures.pdbfnames()
 
 @pytest.fixture
 def pdbcontents():
-   return tdat.pdbcontents()
+   return fixtures.pdbcontents()
+
+@pytest.fixture
+def pdbcontents():
+   return fixtures.pdbcontents()
+
+@pytest.fixture
+def three_PDBFiles():
+   return fixtures.three_PDBFiles()
+
+@pytest.fixture
+def pdbfile():
+   return fixtures.pdbfile()

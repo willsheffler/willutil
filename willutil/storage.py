@@ -2,11 +2,20 @@ import json, gzip, lzma, pickle, os
 
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
 
+def package_data_path(fname):
+   return os.path.join(data_dir, fname)
+
 def load_package_data(fname):
-   return load(os.path.join(data_dir, fname))
+   return load(package_data_path(fname))
+
+def open_package_data(fname):
+   if fname.endswith('.xz'):
+      return open_lzma_cached(package_data_path(fname))
+   else:
+      raise ValueError('open_package_data cant open fname')
 
 def save_package_data(stuff, fname):
-   return save(stuff, os.path.join(data_dir, fname))
+   return save(stuff, package_data_path(fname))
 
 def load_json(f):
    with open(f, 'r') as inp:
@@ -29,6 +38,9 @@ def load(fname, **kw):
       with gzip.open(fname, 'rb') as inp:
          # kinda confused why this \n replacement is needed....
          return str(inp.read()).replace(r'\n', '\n')
+   elif name.endswith('.xz'):
+      with open_lzma_cached(fname, **kw) as inp:
+         return inp.read()
    else:
       raise ValueError('dont know how to handle file ' + fname)
 
@@ -36,6 +48,8 @@ def load_pickle(fname, add_dotpickle=True, assume_lzma=False, **kw):
    opener = open
    if fname.endswith('.xz'):
       opener = open_lzma_cached
+   elif fname.endswith('.gz'):
+      opener = gzip.open
    elif not fname.endswith('.pickle'):
       if assume_lzma:
          opener = open_lzma_cached
@@ -61,6 +75,9 @@ def save_pickle(stuff, fname, add_dotpickle=True, uselzma=False, **kw):
    if fname.endswith('.xz'):
       assert fname.endswith('.pickle.xz')
       opener = lzma.open
+   elif fname.endswith('.gz'):
+      assert fname.endswith('.pickle.gz')
+      opener = gzip.open
    elif uselzma:
       opener = lzma.open
       if not fname.endswith('.pickle'):
@@ -76,8 +93,7 @@ class open_lzma_cached:
          self.file_obj = lzma.open(fname, 'rb')
          with open(fname + '.decompressed', 'wb') as out:
             out.write(self.file_obj.read())
-      else:
-         self.file_obj = open(fname + '.decompressed', 'rb')
+      self.file_obj = open(fname + '.decompressed', 'rb')
 
    def __enter__(self):
       return self.file_obj
