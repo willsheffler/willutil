@@ -10,6 +10,7 @@ class PDBSearchResult:
       self.pdbs = pdbs
 
 class PDBMetadata:
+   # __all__ attribute required for class to belave as module
    __all__ = list(set(vars().keys()) - {'__module__', '__qualname__'})
 
    @property
@@ -32,6 +33,54 @@ class PDBMetadata:
    def nres(self):
       return self._load_cached('nres', self.get_nres)
 
+   @property
+   def compound(self):
+      return self._load_cached('compound', self.get_compound)
+
+   @property
+   def biotype(self):
+      return self._load_cached('biotype', self.get_biotype)
+
+   @property
+   def entrytype(self):
+      return self._load_cached('entrytype', self.get_entrytype)
+
+   @property
+   def byentrytype(self):
+      return self._load_cached('byentrytype', self.get_byentrytype)
+
+   @property
+   def source(self):
+      return self._load_cached('source', self.get_source)
+
+   @property
+   def clust30(self):
+      return self._load_cached('clust30', lambda: self.get_clust('30'))
+
+   @property
+   def clust40(self):
+      return self._load_cached('clust40', lambda: self.get_clust('40'))
+
+   @property
+   def clust50(self):
+      return self._load_cached('clust50', lambda: self.get_clust('50'))
+
+   @property
+   def clust70(self):
+      return self._load_cached('clust70', lambda: self.get_clust('70'))
+
+   @property
+   def clust90(self):
+      return self._load_cached('clust90', lambda: self.get_clust('90'))
+
+   @property
+   def clust95(self):
+      return self._load_cached('clust95', lambda: self.get_clust('95'))
+
+   @property
+   def clust100(self):
+      return self._load_cached('clust100', lambda: self.get_clust('100'))
+
    def make_pdb_set(
       self,
       maxresl=2.0,
@@ -39,6 +88,7 @@ class PDBMetadata:
       maxres=500,
       max_seq_ident=0.5,
       pisces_chains=True,
+      entrytype='prot',
    ):
       # print(minres, maxres, maxres, max_seq_ident)
       piscesdf = wu.pdb.get_pisces_set(maxresl, max_seq_ident)
@@ -50,6 +100,9 @@ class PDBMetadata:
       minresok = set(self.nres.index[(self.nres >= minres)])
       reslok = set(self.resl.index[self.resl <= maxresl])
       allok = minresok.intersection(maxresok.intersection(reslok))
+      if entrytype.upper() not in 'ANY ALL'.split():
+         entrytypeok = self.byentrytype[entrytype]
+         allok = allok.intersection(entrytypeok)
       hits = allok.intersection(pisces)
 
       print('==== make_pdb_set stats ====')
@@ -59,7 +112,6 @@ class PDBMetadata:
       print('allok', len(allok))
       print('pisces', len(pisces))
       print('hits', len(hits))
-      print('============================')
 
       if pisces_chains:
          # return all pisces chains rather than pdb codes
@@ -72,7 +124,9 @@ class PDBMetadata:
             chits &= pdbchains
             chainhits.update(chits)
          hits = {h.decode() for h in chainhits}
+         print('chainhits', len(hits))
 
+      print('============================')
       return hits
 
    def __init__(self):
@@ -86,6 +140,13 @@ class PDBMetadata:
          entrytypes='https://ftp.wwpdb.org/pub/pdb/derived_data/pdb_entry_type.txt',
          seqres='https://ftp.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt.gz',
          source='https://ftp.wwpdb.org/pub/pdb/derived_data/index/source.idx',
+         clust30='https://cdn.rcsb.org/resources/sequence/clusters/bc-30.out',
+         clust40='https://cdn.rcsb.org/resources/sequence/clusters/bc-40.out',
+         clust50='https://cdn.rcsb.org/resources/sequence/clusters/bc-50.out',
+         clust70='https://cdn.rcsb.org/resources/sequence/clusters/bc-70.out',
+         clust90='https://cdn.rcsb.org/resources/sequence/clusters/bc-90.out',
+         clust95='https://cdn.rcsb.org/resources/sequence/clusters/bc-95.out',
+         clust100='https://cdn.rcsb.org/resources/sequence/clusters/bc-100.out',
       )
       self.metadata = wu.Bunch()
 
@@ -106,32 +167,47 @@ class PDBMetadata:
          self.metadata[name] = val
       return self.metadata[name]
 
-   def update_source_files(self):
+   def update_source_files(self, replace=True):
       for name, url in self.urls.items():
          fname = wu.storage.package_data_path(f'pdb/meta/{name}.txt')
+         if not replace and os.path.exists(fname + '.xz'):
+            continue
          if name == 'seqres':
             fname += '.gz'
          urllib.request.urlretrieve(url, fname)
          log.info(f'downloading {fname}')
          assert os.path.exists(fname)
-         fn = wu.storage.package_data_path(f'pdb/meta/seqres.txt')
-      assert os.path.exists(fn + '.xz')
-      with gzip.open(fn + '.gz') as inp:
-         with lzma.open(fn + '.xz', 'wb') as out:
-            out.write(inp.read())
-      os.remove(fn + '.gz')
+
+      # recompress seqres
+      fn = wu.storage.package_data_path(f'pdb/meta/seqres.txt')
+      if not os.path.exists(fn + '.xz'):
+         with gzip.open(fn + '.gz') as inp:
+            with lzma.open(fn + '.xz', 'wb') as out:
+               out.write(inp.read())
+         os.remove(fn + '.gz')
 
       for name in ('author', 'compound', 'resl', 'xtal', 'entries', 'onhold', 'entrytypes',
-                   'source'):
+                   'source', 'clust30', 'clust40', 'clust50', 'clust70', 'clust90', 'clust95',
+                   'clust100'):
          fname = wu.storage.package_data_path(f'pdb/meta/{name}.txt')
-         lod.info(f'running xz {fname}')
-         os.system(f'xz {fname}')
+         if os.path.exists(fname):  # could skipped download
+            log.info(f'running xz {fname}')
+            os.system(f'xz {fname}')
+
+   def clear_pickle_cache(self, names):
+      if isinstance(names, str):
+         names = [names]
+      for name in names:
+         fn = wu.storage.package_data_path(f'pdb/meta/{name}.pickle')
+         if os.path.exists(fn):
+            os.remove(fn)
+         if name in self.metadata:
+            del self.metadata[name]
 
    def load_pdb_xtal_data(self):
       xtal = dict()
-      fname = wu.storage.package_data_path('pdb/meta/xtal.txt.xz')
       count = 0
-      with wu.storage.open_lzma_cached(fname) as inp:
+      with wu.open_package_data('pdb/meta/xtal.txt.xz') as inp:
          for line in inp:
             count += 1
             if count < 5:
@@ -144,9 +220,8 @@ class PDBMetadata:
 
    def load_pdb_seqres_data(self):
       pdbseq = collections.defaultdict(dict)
-      fname = wu.storage.package_data_path('pdb/meta/seqres.txt.xz')
       pdb = None
-      with wu.storage.open_lzma_cached(fname) as inp:
+      with wu.open_package_data('pdb/meta/seqres.txt.xz') as inp:
          for line in inp:
             line = line.decode()
             if line.startswith('>'):
@@ -167,8 +242,7 @@ class PDBMetadata:
 
    def load_pdb_resl_data(self):
       pdbresl = dict()
-      fname = wu.storage.package_data_path('pdb/meta/resl.txt.xz')
-      with wu.storage.open_lzma_cached(fname) as inp:
+      with wu.open_package_data('pdb/meta/resl.txt.xz') as inp:
          count = 0
          countnoresl = 0
          for line in inp:
@@ -196,4 +270,79 @@ class PDBMetadata:
       # pdbresl = pdbresl[np.argsort(pdbresl)]
       return pdbresl
 
+   def get_compound(self):
+      pdbcompound = dict()
+      with wu.open_package_data('pdb/meta/compound.txt.xz') as inp:
+         count = 0
+         countnoresl = 0
+         for line in inp:
+            line = line.decode()
+            count += 1
+            if count < 5:
+               continue
+            code = line[:4]
+            compound = line[5:].strip()
+            # print(code)
+            # print(compound)
+            # assert 0
+            pdbcompound[code] = compound
+      return pdbcompound
+
+   def get_clust(self, si):
+      clust = list()
+      with wu.open_package_data(f'pdb/meta/clust{si}.txt.xz') as inp:
+         for line in inp:
+            clust.append(line.split())
+      return clust
+
+   def get_biotype(self):
+      biotype = dict()
+      with wu.open_package_data(f'pdb/meta/entries.txt.xz') as inp:
+         count = 0
+         for line in inp:
+            count += 1
+            line = line.decode()
+            s = line.split('\t')
+            if len(s) < 5:
+               continue
+            code = s[0]
+            bt = s[1]
+            # print(code, bt)
+            biotype[code] = bt
+      return biotype
+
+   def get_source(self):
+      foo = dict()
+      with wu.open_package_data(f'pdb/meta/source.txt.xz') as inp:
+         count = 0
+         for line in inp:
+            count += 1
+            if count < 4:
+               continue
+            code = line[:4].decode()
+            source = line[5:].strip().decode()
+            foo[code] = source
+
+      return foo
+
+   def _get_entrytypes_hack(self):
+      import pandas as pd
+      entrytypes = dict()
+      byentrytype = {'prot': set(), 'nuc': set(), 'prot-nuc': set(), 'other': set()}
+      with wu.open_package_data(f'pdb/meta/entrytypes.txt.xz') as inp:
+         for line in inp:
+            code, entrytype, _ = line.split()
+            code = code.decode().upper()
+            entrytype = entrytype.decode()
+            entrytypes[code] = entrytype
+            byentrytype[entrytype].add(code)
+      return entrytypes, byentrytype
+
+   def get_entrytype(self):
+      return self._get_entrytypes_hack()[0]
+
+   def get_byentrytype(self):
+      return self._get_entrytypes_hack()[1]
+
+# nifty little, officially approved, hack to use class proterties on 'module'
 sys.modules[__name__] = PDBMetadata()

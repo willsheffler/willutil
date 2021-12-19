@@ -33,7 +33,7 @@ def testfile_of(path, bname, **kw):
 
 def dispatch(
       fname,
-      pytest_args='',
+      pytest_args='--workers 8',
       file_mappings=dict(),
       overrides=dict(),
       strict=True,
