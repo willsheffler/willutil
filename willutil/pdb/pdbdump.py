@@ -1,4 +1,6 @@
-import numpy as np
+import deferred_import
+
+np = deferred_import.deferred_import('numpy')
 from willutil.chemical import aa123, aa321, aa1
 
 all_pymol_chains = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz")

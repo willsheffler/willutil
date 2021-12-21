@@ -30,6 +30,20 @@ codelines2 = [
    "a = b",
 ]
 
+import numpy as np
+
+a = np.random.random((50_000_000, 3))
+with wu.Timer('pad'):
+   b = np.pad(a, [(0, 0), (0, 1)], constant_values=1)
+
+a = np.random.random((50_000_000, 3))
+with wu.Timer('slice'):
+   b = np.ones((len(a), 4))
+   b[:, :3] = a
+
+print(a.shape)
+print(b.shape)
+
 def linetokens(line):
    assert line.count('\n') == 0
    return tokenize(BytesIO(line.encode('utf-8')).readline)

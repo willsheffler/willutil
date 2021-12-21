@@ -101,6 +101,8 @@ class PDBMetadata:
       pisces_chains=True,
       entrytype='prot',
    ):
+      import willutil.pdb.pisces
+
       # print(minres, maxres, maxres, max_seq_ident)
       piscesdf = wu.pdb.get_pisces_set(maxresl, max_seq_ident)
       pisces = set(_.decode() for _ in piscesdf.code)

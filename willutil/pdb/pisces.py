@@ -1,5 +1,6 @@
-import os
-import pandas as pd
+import os, deferred_import
+
+pd = deferred_import.deferred_import('pandas')
 import willutil as wu
 
 def get_pisces_set(maxresl, max_seq_ident, **kw):

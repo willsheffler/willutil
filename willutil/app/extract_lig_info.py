@@ -1,5 +1,7 @@
 import sys, logging, collections
-import numpy as np, pandas as pd, tqdm
+
+np = deferred_import.deferred_import('numpy')
+xr = deferred_import.deferred_import('xarray')
 import willutil as wu
 
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))

@@ -1,6 +1,8 @@
 import os, time, logging
-import xarray as xr
-import numpy as np
+import deferred_import
+
+np = deferred_import.deferred_import('numpy')
+xr = deferred_import.deferred_import('xarray')
 
 log = logging.getLogger(__name__)
 

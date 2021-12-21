@@ -1,4 +1,7 @@
-import numpy as np
+import deferred_import
+
+np = deferred_import.deferred_import('numpy')
+
 from willutil.homog.util import jit, guvec, float32, float64
 
 def is_valid_quat_rot(quat):

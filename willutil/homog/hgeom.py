@@ -1,4 +1,7 @@
-import numpy as np, itertools as it, functools as ft
+import itertools as it, functools as ft
+import deferred_import
+
+np = deferred_import.deferred_import('numpy')
 
 def is_valid_quat_rot(quat):
    assert quat.shape[-1] == 4

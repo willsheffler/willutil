@@ -84,6 +84,13 @@ dask-worker-space
 /willutil/tests/testdata/pdb/*.pdb*.gz.pickle
 /*.pdb
 /*.pdb1
+/*.pickle
+/*.log
+/log/*.log
+/*.json
+/*.jsonl
+/*.sh
+
 
 tmp
 /*.xz
