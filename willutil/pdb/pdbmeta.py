@@ -1,5 +1,4 @@
 import sys, os, urllib.request, logging, gzip, lzma, collections, tqdm
-from Bio import pairwise2
 
 import willutil as wu
 
@@ -54,8 +53,20 @@ class PDBMetadata:
       return self._load_cached('source', self.get_source)
 
    @property
+   def rescount(self):
+      return self._load_cached('rescount', self.get_rescount)
+
+   @property
+   def ligcount(self):
+      return self._load_cached('ligcount', self.get_ligcount)
+
+   @property
+   def ligpdbs(self):
+      return self._load_cached('ligpdbs', self.get_ligpdbs)
+
+   @property
    def clust30(self):
-      return self._load_cached('clust30', lambda: self.get_clust('30'))
+      return self._load_cached('clust40', lambda: self.get_clust('30'))
 
    @property
    def clust40(self):
@@ -149,6 +160,7 @@ class PDBMetadata:
          clust100='https://cdn.rcsb.org/resources/sequence/clusters/bc-100.out',
       )
       self.metadata = wu.Bunch()
+      # self.metadata = wu.Bunch(_strict=True)
 
    def get_full_seq(self):
       chainseq = self.chainseq
@@ -343,6 +355,15 @@ class PDBMetadata:
 
    def get_byentrytype(self):
       return self._get_entrytypes_hack()[1]
+
+   def get_ligcount(self):
+      return wu.load_package_data('pdb/meta/lig/hetres_counts.pickle.xz')
+
+   def get_rescount(self):
+      return wu.load_package_data('pdb/meta/lig/pdb_rescount.pickle.xz')
+
+   def get_ligpdbs(self):
+      return wu.load_package_data('pdb/meta/lig/hetres_pdbs.pickle.xz')
 
 # nifty little, officially approved, hack to use class proterties on 'module'
 sys.modules[__name__] = PDBMetadata()

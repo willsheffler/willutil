@@ -4,6 +4,10 @@
 		{
 			"name": "runtests.py",
 			"shell_cmd": "cd $folder; python willutil/runtests.py --projname willutil $file &> log/sublime_build.log"
+		},
+		{
+			"name": "make_pdb_caches.py",
+			"shell_cmd": "cd $folder; python willutil/app/make_pdb_caches.py &> log/sublime_build.log"
 		}
 
 	],

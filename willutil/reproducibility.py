@@ -2,6 +2,8 @@
 some utils for reproducibility
 '''
 
+import willutil
+
 def try_to_be_deterministic():
    import random
    random.seed(0)

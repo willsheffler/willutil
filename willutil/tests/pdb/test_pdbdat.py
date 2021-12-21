@@ -6,7 +6,12 @@ import xarray as xr
 import pytest
 
 def test_pairdat_subset_by_aa(respairdat10):
+
    rpd = respairdat10
+   # xr.set_options(display_max_rows=999)
+   # print(rpd.data)
+   assert len(rpd.data.pdbid) + 1 == len(rpd.data.pdb_res_offsets)
+   assert len(rpd.data.pdbid) + 1 == len(rpd.data.pdb_pair_offsets)
    # print('pdb', len(rpd.pdb))
    # print('pdb_res_offsetfs', len(rpd.pdb_res_offsets))
    # print('pdb_res_offsetfs', rpd.pdb_res_offsets[-1], len(rpd.r_pdbid))
@@ -118,11 +123,12 @@ def main():
 
    with Timer() as t:
       test_pairdat_subset_by_aa(rp)
-      test_pairdat_subset_by_ss(rp)
-      test_pairdatextra_subset_by_aa(rpextra)
-      test_pairdatextra_subset_by_ss(rpextra)
-      test_tiny_subset_by_aa_pdb_removal_2pdb()
-      test_tiny_subset_by_aa_pdb_removal_3pdb()
+      # test_pairdat_subset_by_ss(rp)
+      # test_pairdatextra_subset_by_aa(rpextra)
+      # test_pairdatextra_subset_by_ss(rpextra)
+      # test_tiny_subset_by_aa_pdb_removal_2pdb()
+      # test_tiny_subset_by_aa_pdb_removal_3pdb()
 
+#
 if __name__ == '__main__':
    main()

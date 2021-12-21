@@ -87,13 +87,14 @@ def save_pickle(stuff, fname, add_dotpickle=True, uselzma=False, **kw):
       pickle.dump(stuff, out)
 
 class open_lzma_cached:
-   def __init__(self, fname):
+   def __init__(self, fname, mode='rb'):
+      assert mode == 'rb'
       fname = os.path.abspath(fname)
       if not os.path.exists(fname + '.decompressed'):
          self.file_obj = lzma.open(fname, 'rb')
          with open(fname + '.decompressed', 'wb') as out:
             out.write(self.file_obj.read())
-      self.file_obj = open(fname + '.decompressed', 'rb')
+      self.file_obj = open(fname + '.decompressed', mode)
 
    def __enter__(self):
       return self.file_obj
@@ -103,6 +104,8 @@ class open_lzma_cached:
 
 def is_pdb_fname(fn, maxlen=1000):
    if len(fn) > maxlen:
+      return False
+   elif len(fn.split()) > 1:
       return False
    elif not os.path.exists(fn):
       return False

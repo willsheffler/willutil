@@ -1,5 +1,12 @@
 aa1 = "ACDEFGHIKLMNPQRSTVWY"
 
+aa3 = [
+   "ALA", "CYS", "ASP", "GLU", "PHE", "GLY", "HIS", "ILE", "LYS", "LEU", "MET", "ASN", "PRO",
+   "GLN", "ARG", "SER", "THR", "VAL", "TRP", "TYR"
+]
+
+nucleic = ['ADE', 'CYT', 'GDP', 'GNP', 'GTP', 'GUA', 'THY', 'G', 'A', 'C', 'U', 'T']
+
 aa123 = dict(A="ALA", C="CYS", D="ASP", E="GLU", F="PHE", G="GLY", H="HIS", I="ILE", K="LYS",
              L="LEU", M="MET", N="ASN", P="PRO", Q="GLN", R="ARG", S="SER", T="THR", V="VAL",
              W="TRP", Y="TYR")

@@ -1,5 +1,5 @@
 import pytest
-from willutil.tests.testdata import fixtures
+from willutil.tests import fixtures
 
 @pytest.fixture(scope='session')
 def respairdat10():
