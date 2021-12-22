@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+
+import argparse
+
+import willutil as wu
+
+p = argparse.ArgumentParser()
+p.add_argument('files', nargs='*')
+kw = wu.Bunch(p.parse_args())
+
+def main():
+   for f in kw.files:
+      wu.format.align_code_file(f, inplace=False)
+
+if __name__ == '__main__':
+   main()
