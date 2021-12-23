@@ -6,11 +6,16 @@ import willutil as wu
 
 p = argparse.ArgumentParser()
 p.add_argument('files', nargs='*')
+p.add_argument("--only_changes", action='store_true', default=False)
+p.add_argument("--align_through_comments", action='store_false', default=True)
+p.add_argument("--check_with_yapf", action='store_false', default=True)
+
 kw = wu.Bunch(p.parse_args())
 
 def main():
+   print(kw)
    for f in kw.files:
-      wu.format.align_code_file(f, inplace=False)
+      wu.format.align_code_file(f, inplace=False, yapf=True, **kw)
 
 if __name__ == '__main__':
    main()

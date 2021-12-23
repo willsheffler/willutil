@@ -11,7 +11,7 @@
 		},
 		{
 			"name": "test_align_code",
-			"shell_cmd": "cd $folder; ./willutil/app/codealign tmp.py &> log/sublime_build.log"
+			"shell_cmd": "cd $folder; ./willutil/app/codealign  tmp.py &> log/sublime_build.log"
 		}
 
 	],
