@@ -1,3 +1,5 @@
+import datetime
+
 def tobytes(s):
    if isinstance(s, str): return s.encode()
    return s
@@ -22,7 +24,7 @@ def datetime_from_tag(tag):
    vals = list(map(int, vals))
    # if this code is actually in service after 2099...
    # this failing assertion will be the least of our troubles
-   # even worse if it's before I was born.... (WHS)
+   # even worse if it's before I was born....(WHS)
    assert 1979 < vals[0] < 2100
    assert 0 < vals[1] <= 12  # months
    assert 0 < vals[2] <= 31  # days

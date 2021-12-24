@@ -1,4 +1,4 @@
-import re, collections, os, subprocess, difflib
+import re, collections, os, subprocess, difflib, random, sys
 from contextlib import suppress
 from io import BytesIO
 
@@ -14,12 +14,20 @@ def align_code(
    yapf_preproc=False,
    check_with_yapf=True,
    make_yapf_diff=False,
+   markmodlines=False,
+   debug=False,
    **kw,
 ):
+   kw = wu.Bunch(kw)
+   if not 'prof' in kw:
+      kw.prof = wu.Timer()
+   kw.debug = debug
    code0 = code
    if yapf_preproc:
+      kw.prof.checkpoint()
       code = run_yapf(code)
       yapforig = code
+      kw.prof.checkpoint('yapf', keeppriorname=True)
    origlines = code.splitlines()
    lines = origlines.copy()
    indent = [get_lpad(l) + 1 for l in origlines]
@@ -61,6 +69,7 @@ def align_code(
          assert 1 < len(modlinestok)
          modlinesident.update(tokcontig[i] for i in modlinestok)
          for i, l in zip(tokcontig, newl):
+            if markmodlines: l += ' #!'
             indentlines[i] = l
       if align_around_comments:
          indentlines = replace_comment_lines(comm, indentlines, **kw)
@@ -79,12 +88,15 @@ def align_code(
    newcode = os.linesep.join(postlines)
 
    if check_with_yapf:
+      kw.prof.checkpoint()
       if not 'yapforig' in locals():
          yapforig = run_yapf(code)
       if not 'yapfnew' in locals():
          yapfnew = run_yapf(newcode)
+      kw.prof.checkpoint('yapf', keeppriorname=True)
       if make_yapf_diff:
          merge = git_merge(yapforig, yapfnew)
+      kw.prof.checkpoint('merge', keeppriorname=True)
 
       # for a, b in zip(code.splitlines(), yapfnew.splitlines()):
       #    a = a.rstrip()
@@ -94,6 +106,41 @@ def align_code(
       #       assert ValueError('yapf new doesnt match yapf old')
 
    return newcode
+
+def align_code_block(
+   lines,
+   min_block_size=2,
+   **kw,
+):
+   kw = wu.Bunch(kw)
+   if min_block_size < 2:
+      raise ValueError('min_block_size must be 2 or more')
+   # lines = code.splitlines()
+   _ = [split_by_chars(l, **kw) for l in lines]
+   toks = [t.mytoks for t in _]
+   toks = process_tok_types(toks)
+   contigs = get_contigs(toks, min_block_size)
+   modded_lines = list()
+   for contig in contigs:
+      if kw.debug:
+         print(contig)
+      if len(contig) < min_block_size:
+         continue
+      contiglines = list()
+      for i in contig:
+         contiglines.append(lines[i])
+         # print(contiglines[-1])
+
+      splt = [split_by_chars(l, **kw) for l in contiglines]
+      rows = [t.linesplit for t in splt]
+      linetoks = [t.mytoks for t in splt]
+      # print(linetoks)
+      assert all(t == linetoks[0] for t in linetoks[1:])
+      newlines = align_mytok_block(contiglines, rows, **kw)
+      for i, l in zip(contig, newlines):
+         modded_lines.append(i)
+         lines[i] = l
+   return lines, modded_lines
 
 _tokmap = {2: 1}
 
@@ -181,6 +228,21 @@ def git_merge(
       merge = sub_orig_into_merge(substitute, merge)
 
    return merge
+
+def run_diff(
+   orig,
+   new,
+):
+   import tempfile
+   with tempfile.TemporaryDirectory() as tmpdir:
+      forig = os.path.join(tmpdir, 'a.py')
+      fnew = os.path.join(tmpdir, 'b.py')
+      with open(forig, 'w') as out:
+         out.write(orig)
+      with open(fnew, 'w') as out:
+         out.write(new)
+      diff = subprocess.run(['diff', fnew, forig], stdout=subprocess.PIPE)
+   return diff.stdout.decode()
 
 def run_yapf(s):
    with subprocess.Popen('yapf', stdin=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
@@ -360,57 +422,38 @@ def get_contigs(vals, min_block_size=2, **kw):
    contigs = [c for c in contigs if len(c) >= min_block_size]
    return contigs
 
-def align_code_block(
-   lines,
-   min_block_size=2,
-   **kw,
-):
-   if min_block_size < 2:
-      raise ValueError('min_block_size must be 2 or more')
-   # lines = code.splitlines()
-   _ = [split_by_chars(l, **kw) for l in lines]
-   toks = [t.mytoks for t in _]
-   toks = process_tok_types(toks)
-   contigs = get_contigs(toks, min_block_size)
-   modded_lines = list()
-   for contig in contigs:
-      if len(contig) < min_block_size:
-         continue
-      contiglines = list()
-      for i in contig:
-         contiglines.append(lines[i])
-         # print(contiglines[-1])
-
-      splt = [split_by_chars(l, **kw) for l in contiglines]
-      rows = [t.linesplit for t in splt]
-      linetoks = [t.mytoks for t in splt]
-      # print(linetoks)
-      assert all(t == linetoks[0] for t in linetoks[1:])
-      newlines = align_mytok_block(contiglines, rows, **kw)
-      for i, l in zip(contig, newlines):
-         modded_lines.append(i)
-         lines[i] = l
-   return lines, modded_lines
-
 def get_lpad(l):
    return len(l) - len(l.lstrip(' '))
 
 def get_rpad(l):
    return len(l) - len(l.rstrip(' '))
 
-def postproc(lines, align_trailing_comma=False):
+def postproc(
+   lines,
+   align_trailing_comma=False,
+   preproc_comments=True,
+):
    newlines = list()
-   for l in lines:
-      line = l.replace(' .', '.')
-      line = line.replace('. ', '.')
-      line = line.replace('( ', '(')
-      line = line.replace('[ ', '[')
-      line = line.replace('{ ', '{')
-      line = line.replace('} "', '}"')
-      line = line.replace("} '", "}'")
-      # line = line.replace('} ', '}') # changes fstrings
-      if align_trailing_comma:
-         line = re.sub(r'\s+,$', r',', line)
+   for line in lines:
+      chk = line.strip()
+      mod = chk and not chk.strip()[0] == '#'
+      mod = mod and preproc_comments
+      if True:
+         line = line.replace(' .', '.')
+         line = line.replace('. ', '.')
+         line = line.replace('( ', '(')
+         line = line.replace('[ ', '[')
+         line = line.replace('{ ', '{')
+         line = line.replace('} "', '}"')
+         line = line.replace("} '", "}'")
+
+         pair = ')= ]= *( *}'.split()
+         for a, b in pair:
+            line = line.replace(a + b, a + ' ' + b)
+
+         # line = line.replace('} ', '}') # changes fstringspostpro
+         if align_trailing_comma:
+            line = re.sub(r'\s+,$', r',', line)
 
       newlines.append(line.rstrip())
    return newlines
@@ -470,19 +513,55 @@ def align_code_file(
    fname,
    inplace=False,
    check_with_yapf=True,
+   backup=None,
+   debug=False,
    **kw,
 ):
-   with open(fname) as inp:
-      orig = inp.read()
+   origstdout = sys.stdout
+   sys.stdout = sys.stderr
+
+   kw = wu.Bunch(kw)
+   kw.prof = wu.Timer()
+
+   if backup is None:
+      backup = inplace
+
+   if fname is not None:
+      with open(fname) as inp:
+         orig = inp.read()
+   else:
+      orig = sys.stdin.read()
+   kw.prof.checkpoint('read orig')
+
    aln = align_code(
       orig,
       check_with_yapf=check_with_yapf,
       yapf_preproc=True,
-      **kw,
+      markmodlines=fname is None**kw,
    )
 
-   outfn = fname
-   if not inplace:
-      outfn += '.aln.py'
-   with open(outfn, 'w') as out:
-      out.write(aln)
+   kw.prof.checkpoint('align_code')
+
+   if fname and backup:
+      bkfname = fname + '.bk'
+      # diff = run_diff(aln, orig)
+      # firstbk = not os.path.exists(bkfname)
+      with open(bkfname, 'a') as out:
+         out.write('#' * 30 + wu.misc.datetimetag() + '#' * 30 + os.linesep)
+         # if firstbk:
+         out.write(orig)
+      # else:
+      # out.write(diff)
+      kw.prof.checkpoint('backup')
+
+   if fname is not None:
+      outfn = fname
+      if not inplace:
+         outfn += '.aln.py'
+      with open(outfn, 'w') as out:
+         out.write(aln)
+   else:
+      origstdout.write(aln)
+
+   kw.prof.checkpoint('write final')
+   kw.prof.report()

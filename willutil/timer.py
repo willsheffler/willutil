@@ -57,14 +57,20 @@ class Timer:
          log.debug(f'Timer {self.name} intialized')
       self._start = time.perf_counter()
       self.last = self._start
+      self.lastname = 'start'
       self.checkpoints = collections.defaultdict(list)
       return self
 
    def checkpoint(
       self,
-      name='untracked',
+      name=None,
       verbose=False,
+      keeppriorname=False,
    ):
+      if name is None:
+         name = self.lastname
+      elif not keeppriorname:
+         self.lastname = name
       t = time.perf_counter()
       self.checkpoints[name].append(t - self.last)
       self.last = t

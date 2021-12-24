@@ -36,5 +36,13 @@
 			],
 			"path": ".."
 		}
-	]
+	],
+	"settings":
+	 {
+	 	"PyYapf":{
+	     "yapf_command": "yapf"
+	     // "yapf_command": "/home/sheffler/src/willutil/willutil/app/codealign"	
+	  }
+	}
+	
 }

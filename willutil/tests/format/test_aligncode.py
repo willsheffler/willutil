@@ -320,10 +320,29 @@ def test_git_merge():
    assert len(merge) == len(code16merge)
    assert merge == code16merge
 
+code16diff = '''
+4,5c4,5
+< a = f'aa :{a  }'
+< bb = f'a  :{bbb}'
+---
+> a = f'aa:{a}'
+> bb = f'a:{bbb}'
+'''.lstrip()
+
+def test_git_diff():
+   orig = code16
+   new = code16aln
+   diff = run_diff(
+      run_yapf(orig),
+      run_yapf(new),
+   )
+   assert len(diff) == len(code16diff)
+   assert diff == code16diff
+
 def test_git_merge_sub_orig():
    orig = code16
    new = align_code(code16)
-   assert new == code16aln.rstrip()
+   assert_line_equal(new, code16aln.rstrip())
    merge = git_merge(
       run_yapf(orig),
       run_yapf(new),
@@ -333,7 +352,7 @@ def test_git_merge_sub_orig():
    # print('----------------')
    # print(merge)
    # print('----------------')
-   # assert merge == code16mergesuborig
+   assert merge == code16mergesuborig
 
 def test_align_code16():
    _test_align_code(code16, code16aln)
@@ -439,7 +458,12 @@ def printlinenos(s):
    for i, l in enumerate(s.splitlines()):
       print(f'{i:4} {l}')
 
-def _test_align_code(code, refcode, check_with_yapf=False, **kw):
+def _test_align_code(
+   code,
+   refcode,
+   check_with_yapf=False,
+   **kw,
+):
    if check_with_yapf:
       if not code[0] == ' ':
          code = no_indent_header(code1)
@@ -568,12 +592,30 @@ def test_comments():
    # print(os.linesep.join(codeD))
    assert codeD == code3
 
+code20 = '''
+   rot3[..., 0, 0] = aa + bb - cc - dd
+   rot3[..., 0, 1] = 2 * (bc + ad)
+   rot3[..., 0, 2] = 2 * (bd - ac)
+   rot3[..., 1, 0] = 2 * (bc - ad)
+   rot3[..., 1, 1] = aa + cc - bb - dd
+   rot3[..., 1, 2] = 2 * (cd + ab)
+   rot3[..., 2, 0] = 2 * (bd + ac)
+   rot3[..., 2, 1] = 2 * (cd - ab)
+   rot3[..., 2, 2] = aa + dd - bb - cc
+'''
+
+def test_align_code20():
+   _test_align_code(code20, code20, debug=True)
+
 def test_sub_orig_into_merge():
    # merge = sub_orig_into_merge(substitute, merge)
+
    pass
 
 if __name__ == '__main__':
 
+   test_git_diff()
+   test_align_code20()
    test_sub_orig_into_merge()
    test_git_merge_sub_orig()
    test_git_merge()
