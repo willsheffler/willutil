@@ -252,6 +252,92 @@ code13aln = '''
  vv.v = d .ee .ffff
 '''
 
+code16 = '''
+foofoo = bar
+bar = baz
+bazbu = ar
+a = f'aa:{a}'
+bb = f'a:{bbb}'
+one = three
+two = one
+three = five
+post = process
+'''.lstrip()
+
+code16aln = '''
+foofoo = bar
+bar    = baz
+bazbu  = ar
+a  = f'aa :{a  }'
+bb = f'a  :{bbb}'
+one   = three
+two   = one
+three = five
+post  = process
+'''.lstrip()
+
+code16merge = '''
+foofoo = bar
+bar = baz
+bazbu = ar
+<<<<<<< ********* NEW **********
+a = f'aa :{a  }'
+bb = f'a  :{bbb}'
+=======
+a = f'aa:{a}'
+bb = f'a:{bbb}'
+>>>>>>> ********* ORIG *********
+one = three
+two = one
+three = five
+post = process
+'''.lstrip()
+
+code16mergesuborig = '''
+foofoo = bar
+bar    = baz
+bazbu  = ar
+<<<<<<< ******** NEW *********
+a  = f'aa :{a  }'
+bb = f'a  :{bbb}'
+=======
+a = f'aa:{a}'
+bb = f'a:{bbb}'
+>>>>>>> ******** ORIG ********
+one   = three
+two   = one
+three = five
+post  = process
+'''.strip()
+
+def test_git_merge():
+   orig = code16
+   new = code16aln
+   merge = git_merge(
+      run_yapf(orig),
+      run_yapf(new),
+   )
+   assert len(merge) == len(code16merge)
+   assert merge == code16merge
+
+def test_git_merge_sub_orig():
+   orig = code16
+   new = align_code(code16)
+   assert new == code16aln.rstrip()
+   merge = git_merge(
+      run_yapf(orig),
+      run_yapf(new),
+      substitute=new,
+   )
+   # print(len(merge), len(code16mergesuborig))
+   # print('----------------')
+   # print(merge)
+   # print('----------------')
+   # assert merge == code16mergesuborig
+
+def test_align_code16():
+   _test_align_code(code16, code16aln)
+
 def test_align_code14():
    _test_align_code(
       code15,
@@ -323,7 +409,7 @@ def test_align_code9():
 def test_yapf():
    code = 'foo      # ar   '
    newcode = 'foo  # ar'
-   y = yapfstr(code)
+   y = run_yapf(code)
    assert y.rstrip() == newcode
 
 def test_split_by_chars():
@@ -482,8 +568,16 @@ def test_comments():
    # print(os.linesep.join(codeD))
    assert codeD == code3
 
+def test_sub_orig_into_merge():
+   # merge = sub_orig_into_merge(substitute, merge)
+   pass
+
 if __name__ == '__main__':
 
+   test_sub_orig_into_merge()
+   test_git_merge_sub_orig()
+   test_git_merge()
+   test_align_code16()
    test_align_code14()
    test_align_code13()
    test_align_code12()

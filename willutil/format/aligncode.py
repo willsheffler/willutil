@@ -1,4 +1,4 @@
-import re, collections, os, subprocess
+import re, collections, os, subprocess, difflib
 from contextlib import suppress
 from io import BytesIO
 
@@ -6,7 +6,187 @@ from tokenize import (tokenize, COMMENT, NAME, NUMBER, tok_name, STRING, NEWLINE
                       ENDMARKER, ENCODING, OP)
 import willutil as wu
 
+def align_code(
+   code,
+   min_tok_complexity=0,
+   align_around_comments=True,
+   only_changes=False,
+   yapf_preproc=False,
+   check_with_yapf=True,
+   make_yapf_diff=False,
+   **kw,
+):
+   code0 = code
+   if yapf_preproc:
+      code = run_yapf(code)
+      yapforig = code
+   origlines = code.splitlines()
+   lines = origlines.copy()
+   indent = [get_lpad(l) + 1 for l in origlines]
+   indentcontigs = get_contigs(indent, **kw)
+   # print('ind', indentcontigs)
+   for indentcontig in indentcontigs:
+      # print('ind', indentcontig)
+      indentlines = [origlines[i] for i in indentcontig]
+      origindentlines = indentlines.copy()
+      if align_around_comments:
+         comm, indentlines = extract_comment_lines(indentlines, **kw)
+      # TODO remove the COMMENT check
+
+      toks0 = [[t for t in linetokens(l) if t.type != COMMENT] for l in indentlines]
+      toks = list()
+      for tlist in toks0:
+         toks1 = list()
+         for t in tlist:
+            if t.type != COMMENT:
+               if t.type == OP:
+                  op = t.line[t.start[1]:t.end[1]]
+                  toks1.append(op)
+               else:
+                  toks1.append(t.type)
+         toks.append(toks1)
+      toks = process_tok_types(toks)
+
+      tokcontigs = get_contigs(toks, **kw)
+      # print(tokcontigs)
+      modlinesident = set()
+      for itc, tokcontig in enumerate(tokcontigs):
+         #         for i in tokcontig:
+         #            print(itc, toks[i], indentlines[i][:20])
+         cplx = token_complexity(toks[tokcontig[0]])
+         # print(cplx, [tok_name[t] for t in toks[tokcontig[0]]])
+         if cplx < min_tok_complexity:
+            continue
+         newl, modlinestok = align_code_block([indentlines[i] for i in tokcontig], **kw)
+         assert 1 < len(modlinestok)
+         modlinesident.update(tokcontig[i] for i in modlinestok)
+         for i, l in zip(tokcontig, newl):
+            indentlines[i] = l
+      if align_around_comments:
+         indentlines = replace_comment_lines(comm, indentlines, **kw)
+
+      for i, lorig in enumerate(origindentlines):
+         if i not in modlinesident:
+            indentlines[i] = lorig
+
+      for i, l in zip(indentcontig, indentlines):
+         lines[i] = l
+
+   postlines = postproc(lines)
+   if only_changes:
+      postlines = pick_only_changes(postlines, origlines)
+
+   newcode = os.linesep.join(postlines)
+
+   if check_with_yapf:
+      if not 'yapforig' in locals():
+         yapforig = run_yapf(code)
+      if not 'yapfnew' in locals():
+         yapfnew = run_yapf(newcode)
+      if make_yapf_diff:
+         merge = git_merge(yapforig, yapfnew)
+
+      # for a, b in zip(code.splitlines(), yapfnew.splitlines()):
+      #    a = a.rstrip()
+      #    if a != b and not a.lstrip()[0] == '#' and not ('f"' in a or "f'" in a):
+      #       print('orig: "' + a + '"')
+      #       print('new:  "' + b + '"')
+      #       assert ValueError('yapf new doesnt match yapf old')
+
+   return newcode
+
 _tokmap = {2: 1}
+
+def sub_orig_into_merge(substitute, merge):
+   origmerge = merge
+
+   substitute = substitute.splitlines()
+
+   matches = re.split(
+      r"""^<<<<<<<.*?$(.*?)=======(.*?)^>>>>>>>.*?$""",
+      merge,
+      flags=re.MULTILINE | re.DOTALL,
+   )
+   assert len(matches) % 3 == 1
+
+   out = list()
+   m = matches.pop()
+   isub = 0
+   nline = m.count(os.linesep)
+
+   for i in range(nline - 2):
+      out.append(substitute[isub])
+      isub += 1
+      # print(len(matches))
+   # print('######### first ########')
+   # print(os.linesep.join(out))
+   while matches:
+      top, bot, rest = matches.pop(), matches.pop(), matches.pop()
+      out.append('<<<<<<< ******** NEW *********')
+      # out.extend(bot.splitlines()[1:])
+      for i in range(top.count(os.linesep) - 1):
+         out.append(substitute[isub])
+         isub += 1
+      out.append('=======')
+      out.extend(top.splitlines()[1:])
+      out.append('>>>>>>> ******** ORIG ********')
+
+      # print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+      # print(os.linesep.join(top.splitlines()[1:]))
+      # print('=================================================')
+      # print(os.linesep.join(bot.splitlines()[1:]))
+      # print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+
+      nline = rest.count(os.linesep)
+      for i in range(nline + 1):
+         out.append(substitute[isub])
+         # print(substitute[isub])
+         isub += 1
+   # print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
+   assert isub == len(substitute)
+   merge = os.linesep.join(out)
+   return merge
+
+def git_merge(
+   orig,
+   new,
+   substitute=None,
+):
+   import tempfile
+   with tempfile.TemporaryDirectory() as tmpdir:
+      forig = os.path.join(tmpdir, 'a.py')
+      fnew = os.path.join(tmpdir, 'b.py')
+      fempty = os.path.join(tmpdir, 'c.py')
+      with open(forig, 'w') as out:
+         out.write(orig)
+      with open(fnew, 'w') as out:
+         out.write(new)
+      with open(fempty, 'w') as out:
+         out.write('')
+      os.system(f'git merge-file {fnew} {fempty} {forig}')
+      with open(fnew) as inp:
+         merge = inp.read()
+   merge = re.sub('<<<<<<< .*b[.]py', '<<<<<<< ********* NEW **********', merge)
+   merge = re.sub('>>>>>>> .*a[.]py', '>>>>>>> ********* ORIG *********', merge)
+
+   if substitute:
+      # print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
+      # print(merge)
+      # print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
+      # print(substitute)
+      # print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
+      # print(new)
+      # print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
+      assert substitute.rstrip().count(os.linesep) == new.rstrip().count(os.linesep)
+      merge = sub_orig_into_merge(substitute, merge)
+
+   return merge
+
+def run_yapf(s):
+   with subprocess.Popen('yapf', stdin=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+      proc.stdin.write(s.encode())
+      outs, errs = proc.communicate()
+   return outs.decode()
 
 def process_token(t):
    if t in _tokmap:
@@ -254,7 +434,12 @@ def extract_comment_lines(lines, align_through_comments=False, **kw):
             code.append(l)
    return comments, code
 
-def replace_comment_lines(comments, code, align_through_comments=False, **kw):
+def replace_comment_lines(
+   comments,
+   code,
+   align_through_comments=False,
+   **kw,
+):
    lines = code.copy()
    for i, c in comments.items():
       if align_through_comments:
@@ -276,98 +461,10 @@ def pick_only_changes(lines, orig):
          changed.append(l)
    return (changed)
 
-def align_code(
-   code,
-   min_tok_complexity=0,
-   align_around_comments=True,
-   only_changes=False,
-   yapf_preproc=False,
-   check_with_yapf=True,
-   **kw,
-):
-   if yapf_preproc:
-      code = yapfstr(code)
-   origlines = code.splitlines()
-   lines = origlines.copy()
-   indent = [get_lpad(l) + 1 for l in origlines]
-   indentcontigs = get_contigs(indent, **kw)
-   # print('ind', indentcontigs)
-   for indentcontig in indentcontigs:
-      # print('ind', indentcontig)
-      indentlines = [origlines[i] for i in indentcontig]
-      origindentlines = indentlines.copy()
-      if align_around_comments:
-         comm, indentlines = extract_comment_lines(indentlines, **kw)
-      # TODO remove the COMMENT check
-
-      toks0 = [[t for t in linetokens(l) if t.type != COMMENT] for l in indentlines]
-      toks = list()
-      for tlist in toks0:
-         toks1 = list()
-         for t in tlist:
-            if t.type != COMMENT:
-               if t.type == OP:
-                  op = t.line[t.start[1]:t.end[1]]
-                  toks1.append(op)
-               else:
-                  toks1.append(t.type)
-         toks.append(toks1)
-      toks = process_tok_types(toks)
-
-      tokcontigs = get_contigs(toks, **kw)
-      # print(tokcontigs)
-      modlinesident = set()
-      for itc, tokcontig in enumerate(tokcontigs):
-         #         for i in tokcontig:
-         #            print(itc, toks[i], indentlines[i][:20])
-         cplx = token_complexity(toks[tokcontig[0]])
-         # print(cplx, [tok_name[t] for t in toks[tokcontig[0]]])
-         if cplx < min_tok_complexity:
-            continue
-         newl, modlinestok = align_code_block([indentlines[i] for i in tokcontig], **kw)
-         assert 1 < len(modlinestok)
-         modlinesident.update(tokcontig[i] for i in modlinestok)
-         for i, l in zip(tokcontig, newl):
-            indentlines[i] = l
-      if align_around_comments:
-         indentlines = replace_comment_lines(comm, indentlines, **kw)
-
-      for i, lorig in enumerate(origindentlines):
-         if i not in modlinesident:
-            indentlines[i] = lorig
-
-      for i, l in zip(indentcontig, indentlines):
-         lines[i] = l
-
-   postlines = postproc(lines)
-   if only_changes:
-      postlines = pick_only_changes(postlines, origlines)
-
-   newcode = os.linesep.join(postlines)
-
-   if check_with_yapf:
-      if not yapf_preproc:
-         code = yapfstr(code)
-      ynew = yapfstr(newcode)
-      for a, b in zip(code.splitlines(), ynew.splitlines()):
-         a = a.rstrip()
-         if a != b and not a.lstrip()[0] == '#' and not ('f"' in a or "f'" in a):
-            print('orig: "' + a + '"')
-            print('new:  "' + b + '"')
-            assert ValueError('yapf new doesnt match yapf old')
-
-   return newcode
-
 _boring_toks = {STRING, NEWLINE, ENCODING, INDENT, DEDENT, ENDMARKER}
 
 def token_complexity(toks):
    return sum([t not in _boring_toks for t in toks])
-
-def yapfstr(s):
-   with subprocess.Popen('yapf', stdin=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
-      proc.stdin.write(s.encode())
-      outs, errs = proc.communicate()
-   return outs.decode()
 
 def align_code_file(
    fname,
@@ -376,12 +473,14 @@ def align_code_file(
    **kw,
 ):
    with open(fname) as inp:
-      aln = align_code(
-         inp.read(),
-         check_with_yapf=check_with_yapf,
-         yapf_preproc=True,
-         **kw,
-      )
+      orig = inp.read()
+   aln = align_code(
+      orig,
+      check_with_yapf=check_with_yapf,
+      yapf_preproc=True,
+      **kw,
+   )
+
    outfn = fname
    if not inplace:
       outfn += '.aln.py'
