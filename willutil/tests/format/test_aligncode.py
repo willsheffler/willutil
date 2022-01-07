@@ -268,8 +268,8 @@ code16aln = '''
 foofoo = bar
 bar    = baz
 bazbu  = ar
-a  = f'aa :{a  }'
-bb = f'a  :{bbb}'
+a  = f'aa:{a  }'
+bb = f'a :{bbb}'
 one   = three
 two   = one
 three = five
@@ -281,8 +281,8 @@ foofoo = bar
 bar = baz
 bazbu = ar
 <<<<<<< ********* NEW **********
-a = f'aa :{a  }'
-bb = f'a  :{bbb}'
+a = f'aa:{a  }'
+bb = f'a :{bbb}'
 =======
 a = f'aa:{a}'
 bb = f'a:{bbb}'
@@ -298,8 +298,8 @@ foofoo = bar
 bar    = baz
 bazbu  = ar
 <<<<<<< ******** NEW *********
-a  = f'aa :{a  }'
-bb = f'a  :{bbb}'
+a  = f'aa:{a  }'
+bb = f'a :{bbb}'
 =======
 a = f'aa:{a}'
 bb = f'a:{bbb}'
@@ -322,12 +322,32 @@ def test_git_merge():
 
 code16diff = '''
 4,5c4,5
-< a = f'aa :{a  }'
-< bb = f'a  :{bbb}'
+< a = f'aa:{a  }'
+< bb = f'a :{bbb}'
 ---
 > a = f'aa:{a}'
 > bb = f'a:{bbb}'
 '''.lstrip()
+
+code21 = '''
+   for k, v in resdata.items():
+      resdata[k] = (["resid"], v)
+   # resdata["n"] = (["resid", "xyzw"], coords["ncac"][:, 0])
+   # resdata["ca"] = (["resid", "xyzw"], coords["ncac"][:, 1])
+   # resdata["c"] = (["resid", "xyzw"], coords["ncac"][:, 2])
+   resdata["n"] = (["resid", "xyzw"], coords["n"])
+   resdata["ca"] = (["resid", "xyzw"], coords["ca"])
+   resdata["c"] = (["resid", "xyzw"], coords["c"])
+   resdata["o"] = (["resid", "xyzw"], coords["o"])
+   resdata["cb"] = (["resid", "xyzw"], coords["cb"])
+   resdata["stub"] = (["resid", "hrow", "hcol"], coords["stubs"])
+   resdata["r_pdbid"] = resdata["pdbno"]
+   del resdata["pdbno"]
+
+'''
+
+def test_code21():
+   _test_align_code(code21, code21)
 
 def test_git_diff():
    orig = code16
@@ -336,6 +356,8 @@ def test_git_diff():
       run_yapf(orig),
       run_yapf(new),
    )
+   for a, b in zip(diff.splitlines(), code16diff.splitlines()):
+      assert_line_equal(a, b)
    assert len(diff) == len(code16diff)
    assert diff == code16diff
 
@@ -352,7 +374,8 @@ def test_git_merge_sub_orig():
    # print('----------------')
    # print(merge)
    # print('----------------')
-   assert merge == code16mergesuborig
+   for a, b in zip(merge.splitlines(), code16mergesuborig.splitlines()):
+      assert_line_equal(a, b)
 
 def test_align_code16():
    _test_align_code(code16, code16aln)

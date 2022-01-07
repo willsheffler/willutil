@@ -18,9 +18,9 @@ def test_bunch_pickle(tmpdir):
    assert y.c == "see"
 
 def test_bunch_init():
-   b = Bunch(dict(a=2, b="bee"))
-   b2 = Bunch(b)
-   b3 = Bunch(c=3, d="dee", **b)
+   b = Bunch(dict(a=2, b="bee"), _strict=False)
+   b2 = Bunch(b, _strict=False)
+   b3 = Bunch(c=3, d="dee", _strict=False,**b)
 
    assert b.a == 2
    assert b.b == "bee"
@@ -37,13 +37,13 @@ def test_bunch_init():
    assert b3.d == "dee"
 
    foo = Namespace(a=1, b='c')
-   b = Bunch(foo)
+   b = Bunch(foo,_strict=False)
    assert b.a == 1
    assert b.b == 'c'
    assert b.missing is None
 
 def test_bunch_sub():
-   b = Bunch(dict(a=2, b="bee"))
+   b = Bunch(dict(a=2, b="bee"),_strict=False)
    assert b.b == "bee"
    b2 = b.sub(b="bar")
    assert b2.b == "bar"

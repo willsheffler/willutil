@@ -16,16 +16,19 @@ def test_pdb_concat(three_PDBFiles):
 def inspect_mpnn_jsonl():
    for l in open('mpnn_json_lines.jsonl', 'r'):
       j = json.loads(l)
-      print(type(j))
-      return
+      for k, v in j.items():
+         print(k, type(v), len(v))
+         if isinstance(v, dict):
+            for k2, v2 in v.items():
+               print('   ', k2, type(v2), len(v2))
 
 def main():
    # pat = os.path.join(wu.tests.test_data_dir, 'pdb/*.pdb1.gz')
    # wu.tests.save_test_data(wu.pdb.load_pdbs(pat), 'pdb/three_PDBFiles.pickle')
 
    pdbfiles = wu.tests.fixtures.three_PDBFiles()
-   # test_pdb_concat(pdbfiles)
-   inspect_mpnn_jsonl()
+   test_pdb_concat(pdbfiles)
+   # inspect_mpnn_jsonl()
 
 if __name__ == '__main__':
    main()

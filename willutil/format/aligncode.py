@@ -14,7 +14,6 @@ def align_code(
    yapf_preproc=False,
    check_with_yapf=True,
    make_yapf_diff=False,
-   markmodlines=False,
    debug=False,
    **kw,
 ):
@@ -69,7 +68,6 @@ def align_code(
          assert 1 < len(modlinestok)
          modlinesident.update(tokcontig[i] for i in modlinestok)
          for i, l in zip(tokcontig, newl):
-            if markmodlines: l += ' #!'
             indentlines[i] = l
       if align_around_comments:
          indentlines = replace_comment_lines(comm, indentlines, **kw)
@@ -81,7 +79,7 @@ def align_code(
       for i, l in zip(indentcontig, indentlines):
          lines[i] = l
 
-   postlines = postproc(lines)
+   postlines = postproc(lines, origlines, **kw)
    if only_changes:
       postlines = pick_only_changes(postlines, origlines)
 
@@ -430,11 +428,16 @@ def get_rpad(l):
 
 def postproc(
    lines,
+   origlines,
    align_trailing_comma=False,
    preproc_comments=True,
+   markmodlines=False,
+   **kw,
 ):
+   assert len(lines) == len(origlines)
+
    newlines = list()
-   for line in lines:
+   for line, orig in zip(lines, origlines):
       chk = line.strip()
       mod = chk and not chk.strip()[0] == '#'
       mod = mod and preproc_comments
@@ -446,14 +449,33 @@ def postproc(
          line = line.replace('{ ', '{')
          line = line.replace('} "', '}"')
          line = line.replace("} '", "}'")
+         line = line.replace(" :", ":")
+         line = line.replace(": ", ":")
 
-         pair = ')= ]= *( *}'.split()
+         pair = [
+            ')=',
+            ']=',
+            '}=',
+            '=[',
+            '=(',
+            '={',
+            '*(',
+            '*}',
+            ',[',
+            ',{',
+            ',(',
+         ]
          for a, b in pair:
             line = line.replace(a + b, a + ' ' + b)
 
          # line = line.replace('} ', '}') # changes fstringspostpro
          if align_trailing_comma:
             line = re.sub(r'\s+,$', r',', line)
+
+      if markmodlines:
+         line = line.rstrip(' #!').rstrip()
+         if orig.rstrip(' #!').rstrip() != line:
+            line = line.ljust(97) + ' #!'
 
       newlines.append(line.rstrip())
    return newlines
@@ -518,7 +540,7 @@ def align_code_file(
    **kw,
 ):
    origstdout = sys.stdout
-   sys.stdout = sys.stderr
+   sys.stdout = open('/home/sheffler/src/willutil/log/sublime_build.log', 'w')
 
    kw = wu.Bunch(kw)
    kw.prof = wu.Timer()
@@ -537,7 +559,8 @@ def align_code_file(
       orig,
       check_with_yapf=check_with_yapf,
       yapf_preproc=True,
-      markmodlines=fname is None**kw,
+      markmodlines=(fname is None),
+      **kw,
    )
 
    kw.prof.checkpoint('align_code')

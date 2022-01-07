@@ -1,7 +1,7 @@
 __all__ = ("Bunch", "bunchify", "unbunchify")
 
 class Bunch(dict):
-   def __init__(self, __arg_or_ns=None, _strict=False, **kw):
+   def __init__(self, __arg_or_ns=None, _strict=True, **kw):
       if __arg_or_ns is not None:
          try:
             super().__init__(__arg_or_ns)
@@ -60,9 +60,6 @@ class Bunch(dict):
    def copy(self):
       return Bunch.from_dict(super().copy())
 
-   def toDict(self):
-      return unbunchify(self)
-
    def sub(self, __BUNCH_SUB_ITEMS=None, **kw):
       if len(kw) == 0:
          if isinstance(__BUNCH_SUB_ITEMS, dict):
@@ -70,6 +67,7 @@ class Bunch(dict):
          else:
             kw = vars(__BUNCH_SUB_ITEMS)
       newbunch = self.copy()
+      newbunch._special = self._special
       for k, v in kw.items():
          if v is None and k in newbunch:
             del newbunch[k]

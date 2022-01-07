@@ -103,6 +103,7 @@ class Timer:
       self,
       order='longest',
       summary='sum',
+      timecut=0,
    ):
       if not callable(summary):
          if summary not in _summary_types:
@@ -110,11 +111,12 @@ class Timer:
          summary = _summary_types[summary]
       if order == 'longest':
          reordered = sorted(self.checkpoints.items(), key=lambda kv: -summary(kv[1]))
-         return {k: summary(v) for k, v in reordered}
+         report = {k: summary(v) for k, v in reordered}
       elif order == 'callorder':
-         return self.checkpoints
+         report = {k: summary(v) for k, v in self.checkpoints.items()}
       else:
          raise ValueError('Timer, unknown order: ' + order)
+      return {k: v for k, v in report.items() if v > timecut}
 
    def report(
       self,
@@ -124,11 +126,14 @@ class Timer:
       precision='10.5f',
       printme=True,
       scale=1.0,
+      timecut=0,
    ):
       if namelen is None:
-         namelen = max(len(n) for n in self.checkpoints)
+         namelen = max(len(n) for n in self.checkpoints) if self.checkpoints else 0
       lines = [f"Times(name={self.name}, order={order}, summary={summary}):"]
-      times = self.report_dict(order=order, summary=summary)
+      times = self.report_dict(order=order, summary=summary, timecut=timecut)
+      if not times:
+         times['total'] = time.perf_counter() - self._start
       for cpoint, t in times.items():
          lines.append(f'    {cpoint:>{namelen}} {t*scale:{precision}}')
          if scale == 1000: lines[-1] += 'ms'

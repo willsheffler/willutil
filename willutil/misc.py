@@ -32,3 +32,32 @@ def datetime_from_tag(tag):
    assert 0 < vals[4] <= 60  # minute
    assert 0 < vals[5] <= 60  # second
    return datetime.datetime(*vals)
+
+def generic_equals(this, that, checktypes=False, debug=False):
+   import numpy as np
+   if debug:
+      print('generic_equals on types', type(this), type(that))
+   if checktypes and type(this) != type(that):
+      return False
+   if isinstance(this, (str, bytes)):  # don't want to iter over strs
+      return this == that
+   if isinstance(this, dict):
+      if len(this) != len(that):
+         return False
+      for k in this:
+         if k not in that:
+            return False
+         if not generic_equals(this[k], that[k], checktypes, debug):
+            return False
+   if hasattr(this, '__iter__'):
+      return all(generic_equals(x, y, checktypes, debug) for x, y in zip(this, that))
+   if isinstance(this, np.ndarray):
+      return np.allclose(this, that)
+   if hasattr(this, 'equal_to'):
+      return this.equal_to(that)
+   if debug:
+      print('!!!!!!!!!!', type(this))
+      if this != that:
+         print(this)
+         print(that)
+   return this == that

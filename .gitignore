@@ -94,3 +94,4 @@ dask-worker-space
 
 tmp
 /*.xz
+/tmp.*

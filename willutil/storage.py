@@ -1,4 +1,5 @@
 import json, gzip, lzma, pickle, os
+import willutil as wu
 
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -25,6 +26,19 @@ def load_json(j, f, indent=True):
    with open(f, 'w') as out:
       return json.dump(j, out, indent=indent)
 
+def decompress_lzma_file(fn, overwrite=True, use_existing=False, missing_ok=False):
+   assert fn.endswith('.xz') and not fn.endswith('.xz.xz')
+   if missing_ok and not os.path.exists(fn):
+      return
+   assert os.path.exists(fn)
+   exists = os.path.exists(fn[-3:])
+   if exists and not overwrite and not use_existing:
+      assert not exists, 'cant overwrite: ' + fn[:-3]
+   if not exists or (exists and overwrite):
+      with lzma.open(fn, 'rb') as inp:
+         with open(fn[:-3], 'wb') as out:
+            out.write(inp.read())
+
 def is_pickle_fname(fname):
    return os.path.basename(fname).count('.pickle') > 0
 
@@ -34,11 +48,17 @@ def load(fname, **kw):
    elif fname.endswith('.nc'):
       import xarray
       return xarray.load_dataset(fname, **kw)
+   elif fname.endswith('.json'):
+      with open(fname) as inp:
+         return json.load(inp)
+   elif fname.endswith('.json.xz'):
+      with lzma.open(fname, 'rb') as inp:
+         return json.load(inp)
    elif fname.endswith('.gz') and fname[-8:-4] == '.pdb' and fname[-4].isnumeric():
       with gzip.open(fname, 'rb') as inp:
          # kinda confused why this \n replacement is needed....
          return str(inp.read()).replace(r'\n', '\n')
-   elif name.endswith('.xz'):
+   elif fname.endswith('.xz'):
       with open_lzma_cached(fname, **kw) as inp:
          return inp.read()
    else:
@@ -55,9 +75,17 @@ def load_pickle(fname, add_dotpickle=True, assume_lzma=False, **kw):
          opener = open_lzma_cached
          fname += '.pickle.xz'
       else:
-         fname += 'pickle'
+         fname += '.pickle'
    with opener(fname, 'rb') as inp:
-      return pickle.load(inp)
+      stuff = pickle.load(inp)
+      if isinstance(stuff, dict):
+         if '__I_WAS_A_BUNCH_AND_THIS_IS_MY_SPECIAL_STUFF__' in stuff:
+            _special = stuff['__I_WAS_A_BUNCH_AND_THIS_IS_MY_SPECIAL_STUFF__']
+            del stuff['__I_WAS_A_BUNCH_AND_THIS_IS_MY_SPECIAL_STUFF__']
+            stuff = wu.Bunch(stuff)
+            stuff._special = _special
+
+   return stuff
 
 def save(stuff, fname, **kw):
    if fname.endswith('.nc'):
@@ -67,11 +95,23 @@ def save(stuff, fname, **kw):
       stuff.to_netcdf(fname)
    elif fname.count('.') == 0 or is_pickle_fname(fname):
       save_pickle(stuff, fname, **kw)
+   elif fname.endswith('.json'):
+      with open(fname, 'w') as out:
+         out.write(json.dumps(stuff, sort_keys=True, indent=4))
+   elif fname.endswith('.json.xz'):
+      jsonstr = json.dumps(stuff, sort_keys=True, indent=4)
+      with lzma.open(fname, 'wb') as out:
+         out.write(jsonstr.encode())
    else:
       raise ValueError('dont know now to handle file ' + fname)
 
 def save_pickle(stuff, fname, add_dotpickle=True, uselzma=False, **kw):
    opener = open
+   if isinstance(stuff, wu.Bunch):
+      # pickle as dict to avoid version problems or whatever
+      _special = stuff._special
+      stuff = dict(stuff)
+      stuff['__I_WAS_A_BUNCH_AND_THIS_IS_MY_SPECIAL_STUFF__'] = _special
    if fname.endswith('.xz'):
       assert fname.endswith('.pickle.xz')
       opener = lzma.open
@@ -83,6 +123,8 @@ def save_pickle(stuff, fname, add_dotpickle=True, uselzma=False, **kw):
       if not fname.endswith('.pickle'):
          fname += '.pickle'
       fname += '.xz'
+   if not os.path.basename(fname).count('.'):
+      fname += '.pickle'
    with opener(fname, 'wb') as out:
       pickle.dump(stuff, out)
 

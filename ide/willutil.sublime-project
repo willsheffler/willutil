@@ -40,8 +40,10 @@
 	"settings":
 	 {
 	 	"PyYapf":{
-	     "yapf_command": "yapf"
-	     // "yapf_command": "/home/sheffler/src/willutil/willutil/app/codealign"	
+	     "yapf_command": "yapf",
+	     "on_save": true	     
+	     // "yapf_command": "/home/sheffler/src/willutil/willutil/app/codealign",	
+	     // "on_save": false
 	  }
 	}
 	

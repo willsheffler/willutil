@@ -153,7 +153,7 @@ def atomrecords_to_chainseq(df):
          continue
       try:
 
-         seq[ch].append(wu.chemical.aa321[rn])
+         seq[ch].append(wu.chem.aa321[rn])
       except KeyError:
          seq[ch].append('X')
    return {c: str.join('', s) for c, s in seq.items()}
