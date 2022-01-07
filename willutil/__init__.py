@@ -12,3 +12,6 @@ from willutil import tests
 from willutil import reproducibility
 from willutil import format
 # anything from homog?
+import deferred_import
+
+cpp = deferred_import.deferred_import('willutil.cpp')

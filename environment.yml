@@ -14,6 +14,8 @@ dependencies:
  - ipython
  - pandas
  - pip
+ - deferred-import
+ - clang-format
  - pip:
    - pytest-sugar
-   - deferred-import
+   - cppimport

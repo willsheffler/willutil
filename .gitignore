@@ -95,3 +95,6 @@ dask-worker-space
 tmp
 /*.xz
 /tmp.*
+
+*.rendered.*
+*.cppimporthash
