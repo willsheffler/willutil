@@ -11,6 +11,7 @@ from willutil import misc
 from willutil import tests
 from willutil import reproducibility
 from willutil import format
+from willutil import homog
 # anything from homog?
 import deferred_import
 

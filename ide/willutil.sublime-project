@@ -10,6 +10,10 @@
 			"shell_cmd": "cd $folder; python willutil/app/make_pdb_caches.py &> log/sublime_build.log"
 		},
 		{
+			"name": "test_symfit.py",
+			"shell_cmd": "cd $folder; python willutil/tests/homog/test_symfit.py &> log/sublime_build.log"
+		},
+		{
 			"name": "test_align_code",
 			"shell_cmd": "cd $folder; ./willutil/app/codealign  tmp.py &> log/sublime_build.log"
 		}

@@ -1,6 +1,7 @@
 name: willutil
 channels:
  - conda-forge
+ # - schrodinger
 dependencies:
  - python
  - xarray
@@ -16,6 +17,7 @@ dependencies:
  - pip
  - deferred-import
  - clang-format
+ # - pymol-bundle
  - pip:
    - pytest-sugar
    - cppimport
