@@ -2,16 +2,18 @@ import pytest
 
 from willutil.format import *
 
+# yapf: disable
+
 codelines = [
-   "        f'epoch: {e:4}, step: {total_step:4}',",
-   "        f'train: {train_perplexity:7.3}',",
-   "        f'valid: {validation_perplexity:7.3}',# foo",
-   "        f'train_ori: {train_perplexity_ori:7.3}',",
-   "        f'valid_ori: {validation_perplexity_ori:7.3}',#   ars",
-   "        f'train_interface: {train_perplexity_interface:7.3}',",
-   "        f'valid_interface: {validation_perplexity_interface:7.3}',",
-   "        f'train_other: {train_perplexity_other:7.3}',",
-   "        f'valid_other: {validation_perplexity_other:7.3}',",
+    "        f'epoch: {e:4}, step: {total_step:4}',",
+    "        f'train: {train_perplexity:7.3}',",
+    "        f'valid: {validation_perplexity:7.3}',# foo",
+    "        f'train_ori: {train_perplexity_ori:7.3}',",
+    "        f'valid_ori: {validation_perplexity_ori:7.3}',#   ars",
+    "        f'train_interface: {train_perplexity_interface:7.3}',",
+    "        f'valid_interface: {validation_perplexity_interface:7.3}',",
+    "        f'train_other: {train_perplexity_other:7.3}',",
+    "        f'valid_other: {validation_perplexity_other:7.3}',",
 ]
 code2 = '''
 aaa = arstar
@@ -41,15 +43,15 @@ if True:
       bb  = t
 '''
 codelines2 = [
-   "a = b",
-   "a = b",
-   "a3323 = b",
-   "a = b",
-   "ars = b",
-   "a = b",
-   "a1 = b",
-   "a0840wf = b",
-   "a = b",
+    "a = b",
+    "a = b",
+    "a3323 = b",
+    "a = b",
+    "ars = b",
+    "a = b",
+    "a1 = b",
+    "a0840wf = b",
+    "a = b",
 ]
 
 code1 = '''
@@ -193,17 +195,17 @@ if 0:
    # print(df.memory_usage())
 '''
 code9aln = '''if 0:
-   # don't understand why pandas doesn't respect the str dtypes from "dt"
-   df.an     = df.an    .astype('a4')
-   df.ala    = df.ala   .astype('a1')
-   df.ch     = df.ch    .astype('a1')
-   df.rn     = df.rn    .astype('a3')
-#  df.rins   = df.rins  .astype('a1')
-#  df.seg    = df.seg   .astype('a4')
-   df.elem   = df.elem  .astype('a2')# foo
-#  df.charge = df.charge.astype('a2')
-   # print(df.dtypesb)
-   # print(df.memory_usage())
+    # don't understand why pandas doesn't respect the str dtypes from "dt"
+    df.an     = df.an    .astype('a4')
+    df.ala    = df.ala   .astype('a1')
+    df.ch     = df.ch    .astype('a1')
+    df.rn     = df.rn    .astype('a3')
+#   df.rins   = df.rins  .astype('a1')
+#   df.seg    = df.seg   .astype('a4')
+    df.elem   = df.elem  .astype('a2')# foo
+#   df.charge = df.charge.astype('a2')
+    # print(df.dtypesb)
+    # print(df.memory_usage())
 '''
 
 code10 = '''
@@ -311,14 +313,14 @@ post  = process
 '''.strip()
 
 def test_git_merge():
-   orig = code16
-   new = code16aln
-   merge = git_merge(
-      run_yapf(orig),
-      run_yapf(new),
-   )
-   assert len(merge) == len(code16merge)
-   assert merge == code16merge
+    orig = code16
+    new = code16aln
+    merge = git_merge(
+        run_yapf(orig),
+        run_yapf(new),
+    )
+    assert len(merge) == len(code16merge)
+    assert merge == code16merge
 
 code16diff = '''
 4,5c4,5
@@ -347,235 +349,235 @@ code21 = '''
 '''
 
 def test_code21():
-   _test_align_code(code21, code21)
+    _test_align_code(code21, code21)
 
 def test_git_diff():
-   orig = code16
-   new = code16aln
-   diff = run_diff(
-      run_yapf(orig),
-      run_yapf(new),
-   )
-   for a, b in zip(diff.splitlines(), code16diff.splitlines()):
-      assert_line_equal(a, b)
-   assert len(diff) == len(code16diff)
-   assert diff == code16diff
+    orig = code16
+    new = code16aln
+    diff = run_diff(
+        run_yapf(orig),
+        run_yapf(new),
+    )
+    for a, b in zip(diff.splitlines(), code16diff.splitlines()):
+        assert_line_equal(a, b)
+    assert len(diff) == len(code16diff)
+    assert diff == code16diff
 
 def test_git_merge_sub_orig():
-   orig = code16
-   new = align_code(code16)
-   assert_line_equal(new, code16aln.rstrip())
-   merge = git_merge(
-      run_yapf(orig),
-      run_yapf(new),
-      substitute=new,
-   )
-   # print(len(merge), len(code16mergesuborig))
-   # print('----------------')
-   # print(merge)
-   # print('----------------')
-   for a, b in zip(merge.splitlines(), code16mergesuborig.splitlines()):
-      assert_line_equal(a, b)
+    orig = code16
+    new = align_code(code16)
+    assert_line_equal(new, code16aln.rstrip())
+    merge = git_merge(
+        run_yapf(orig),
+        run_yapf(new),
+        substitute=new,
+    )
+    # print(len(merge), len(code16mergesuborig))
+    # print('----------------')
+    # print(merge)
+    # print('----------------')
+    for a, b in zip(merge.splitlines(), code16mergesuborig.splitlines()):
+        assert_line_equal(a, b)
 
 def test_align_code16():
-   _test_align_code(code16, code16aln)
+    _test_align_code(code16, code16aln)
 
 def test_align_code14():
-   _test_align_code(
-      code15,
-      code13alndot,
-      align_through_comments=False,
-      yapf_preproc=False,
-      check_with_yapf=False,
-      no_whitespace_around_dot=False,
-   )
+    _test_align_code(
+        code15,
+        code13alndot,
+        align_through_comments=False,
+        yapf_preproc=False,
+        check_with_yapf=False,
+        no_whitespace_around_dot=False,
+    )
 
 def test_align_code14():
-   _test_align_code(
-      code13,
-      code13alndot,
-      align_through_comments=False,
-      yapf_preproc=False,
-      check_with_yapf=False,
-      no_whitespace_around_dot=False,
-   )
+    _test_align_code(
+        code13,
+        code13alndot,
+        align_through_comments=False,
+        yapf_preproc=False,
+        check_with_yapf=False,
+        no_whitespace_around_dot=False,
+    )
 
 def test_align_code13():
-   _test_align_code(
-      code13,
-      code13aln,
-      align_through_comments=False,
-      yapf_preproc=False,
-      check_with_yapf=False,
-      no_whitespace_around_dot=True,
-   )
+    _test_align_code(
+        code13,
+        code13aln,
+        align_through_comments=False,
+        yapf_preproc=False,
+        check_with_yapf=False,
+        no_whitespace_around_dot=True,
+    )
 
 def test_align_code11():
-   _test_align_code(
-      code11,
-      code11alndot,
-      align_through_comments=False,
-      yapf_preproc=False,
-      check_with_yapf=False,
-      no_whitespace_around_dot=False,
-   )
+    _test_align_code(
+        code11,
+        code11alndot,
+        align_through_comments=False,
+        yapf_preproc=False,
+        check_with_yapf=False,
+        no_whitespace_around_dot=False,
+    )
 
 def test_align_code12():
-   _test_align_code(
-      code11,
-      code11aln,
-      align_through_comments=False,
-      yapf_preproc=False,
-      check_with_yapf=False,
-      no_whitespace_around_dot=True,
-   )
+    _test_align_code(
+        code11,
+        code11aln,
+        align_through_comments=False,
+        yapf_preproc=False,
+        check_with_yapf=False,
+        no_whitespace_around_dot=True,
+    )
 
 def test_align_code10():
-   _test_align_code(
-      code10,
-      code10aln,
-      align_through_comments=True,
-      yapf_preproc=True,
-      check_with_yapf=False,
-   )
+    _test_align_code(
+        code10,
+        code10aln,
+        align_through_comments=True,
+        yapf_preproc=True,
+        check_with_yapf=False,
+    )
 
 def test_align_code9():
-   _test_align_code(
-      code9,
-      code9aln,
-      align_through_comments=True,
-      yapf_preproc=True,
-      check_with_yapf=False,
-   )
+    _test_align_code(
+        code9,
+        code9aln,
+        align_through_comments=True,
+        yapf_preproc=True,
+        check_with_yapf=False,
+    )
 
 def test_yapf():
-   code = 'foo      # ar   '
-   newcode = 'foo  # ar'
-   y = run_yapf(code)
-   assert y.rstrip() == newcode
+    code = 'foo      # ar   '
+    newcode = 'foo  # ar'
+    y = run_yapf(code)
+    assert y.rstrip() == newcode
 
 def test_split_by_chars():
-   chars = '{:}'
-   for line in codelines:
-      s, t = split_by_chars(line).values()
-      for x in s:
-         # print(x)
-         for c in chars:
-            assert x == c or not x.count(c)
-      assert_line_equal(str.join('', s), line)
+    chars = '{:}'
+    for line in codelines:
+        s, t = split_by_chars(line).values()
+        for x in s:
+            # print(x)
+            for c in chars:
+                assert x == c or not x.count(c)
+        assert_line_equal(str.join('', s), line)
 
 @pytest.mark.skip
 def test_align_mytok_block():
-   kw = dict()
-   orig = codelines[1:]
-   splt = [split_by_chars(l, **kw) for l in orig]
-   toks = [t.mytoks for t in splt]
-   rows = [t.linesplit for t in splt]
-   new = align_mytok_block(orig, rows)
-   for o, n in zip(orig, new):
-      assert o.replace(' ', '') == n.replace(' ', '')
-   # print('\n'.join(orig))
-   # print('\n'.join(new))
+    kw = dict()
+    orig = codelines[1:]
+    splt = [split_by_chars(l, **kw) for l in orig]
+    toks = [t.mytoks for t in splt]
+    rows = [t.linesplit for t in splt]
+    new = align_mytok_block(orig, rows)
+    for o, n in zip(orig, new):
+        assert o.replace(' ', '') == n.replace(' ', '')
+    # print('\n'.join(orig))
+    # print('\n'.join(new))
 
 def printlinenos(s):
-   for i, l in enumerate(s.splitlines()):
-      print(f'{i:4} {l}')
+    for i, l in enumerate(s.splitlines()):
+        print(f'{i:4} {l}')
 
 def _test_align_code(
-   code,
-   refcode,
-   check_with_yapf=False,
-   **kw,
+    code,
+    refcode,
+    check_with_yapf=False,
+    **kw,
 ):
-   if check_with_yapf:
-      if not code[0] == ' ':
-         code = no_indent_header(code1)
-         refcode = no_indent_header(code1new)
+    if check_with_yapf:
+        if not code[0] == ' ':
+            code = no_indent_header(code1)
+            refcode = no_indent_header(code1new)
 
-   newcode = align_code(
-      code,
-      check_with_yapf=check_with_yapf,
-      **kw,
-   )
-   try:
-      for a, b in zip(refcode.splitlines(), newcode.splitlines()):
-         assert_line_equal(a, b)
-   except AssertionError:
-      print('-------------------------')
-      printlinenos(newcode)
-      print('-------------------------')
-      printlinenos(code)
-      print('-------------------------')
-      raise AssertionError
+    newcode = align_code(
+        code,
+        check_with_yapf=check_with_yapf,
+        **kw,
+    )
+    try:
+        for a, b in zip(refcode.splitlines(), newcode.splitlines()):
+            assert_line_equal(a, b)
+    except AssertionError:
+        print('----------- NEW --------------')
+        printlinenos(newcode)
+        print('----------- ORIG ----------')
+        printlinenos(code)
+        print('-------------------------')
+        raise AssertionError
 
 def no_indent_header(s):
-   return 'if True:\n' + s
+    return 'if True:\n' + s
 
 def test_align_code1():
-   _test_align_code(
-      no_indent_header(code1),
-      no_indent_header(code1new),
-      check_with_yapf=True,
-   )
+    _test_align_code(
+        no_indent_header(code1),
+        no_indent_header(code1new),
+        check_with_yapf=True,
+    )
 
 def test_align_code2():
-   _test_align_code(
-      code2,
-      code2new,
-      check_with_yapf=True,
-   )
+    _test_align_code(
+        code2,
+        code2new,
+        check_with_yapf=True,
+    )
 
 def test_align_code3():
-   _test_align_code(
-      code3,
-      code3,
-      min_block_size=3,
-      check_with_yapf=True,
-   )
+    _test_align_code(
+        code3,
+        code3,
+        min_block_size=3,
+        check_with_yapf=True,
+    )
 
 def test_align_code4():
-   _test_align_code(
-      code4,
-      code4new,
-      min_block_size=2,
-      check_with_yapf=True,
-   )
+    _test_align_code(
+        code4,
+        code4new,
+        min_block_size=2,
+        check_with_yapf=True,
+    )
 
 def test_align_code5():
-   _test_align_code(code5, code5new)
-   _test_align_code(
-      code5,
-      code5new_thrucomm,
-      align_around_comments=False,
-      check_with_yapf=True,
-   )
+    _test_align_code(code5, code5new)
+    _test_align_code(
+        code5,
+        code5new_thrucomm,
+        align_around_comments=False,
+        check_with_yapf=True,
+    )
 
 def test_align_code6():
-   _test_align_code(
-      code5,
-      code5new_aligncomm,
-      align_through_comments=True,
-      check_with_yapf=True,
-   )
+    _test_align_code(
+        code5,
+        code5new_aligncomm,
+        align_through_comments=True,
+        check_with_yapf=True,
+    )
 
 def test_align_code7():
-   _test_align_code(
-      code7,
-      code7,
-      align_through_comments=True,
-      check_with_yapf=True,
-   )
+    _test_align_code(
+        code7,
+        code7,
+        align_through_comments=True,
+        check_with_yapf=True,
+    )
 
 def test_align_code8():
-   _test_align_code(
-      code8,
-      code8aln,
-      align_through_comments=True,
-      check_with_yapf=True,
-   )
+    _test_align_code(
+        code8,
+        code8aln,
+        align_through_comments=True,
+        check_with_yapf=True,
+    )
 
 def test_comments():
-   code1 = '''
+    code1 = '''
    1
    # 2
    3
@@ -584,13 +586,13 @@ def test_comments():
    6
    7
    '''.splitlines()
-   code2 = '''
+    code2 = '''
    1
    3
    6
    7
    '''.splitlines()
-   code3 = '''
+    code3 = '''
    1
 #  2
    3
@@ -600,20 +602,20 @@ def test_comments():
    7
    '''.splitlines()
 
-   com, codeA = extract_comment_lines(code1, align_through_comments=False)
-   assert com == {2: '   # 2', 4: '   # 4', 5: '   # 5'}
-   assert_line_equal(codeA, code2)
-   codeB = replace_comment_lines(com, codeA, align_through_comments=False)
-   assert codeB == code1
+    com, codeA = extract_comment_lines(code1, align_through_comments=False)
+    assert com == {2: '   # 2', 4: '   # 4', 5: '   # 5'}
+    assert_line_equal(codeA, code2)
+    codeB = replace_comment_lines(com, codeA, align_through_comments=False)
+    assert codeB == code1
 
-   com, codeC = extract_comment_lines(code1, align_through_comments=True)
-   # print(com)
-   assert com == {2: '   # 2', 4: '   # 4', 5: '   # 5'}
-   # assert codeC == code2
-   # print(os.linesep.join(codeC))
-   codeD = replace_comment_lines(com, codeC, align_through_comments=True)
-   # print(os.linesep.join(codeD))
-   assert codeD == code3
+    com, codeC = extract_comment_lines(code1, align_through_comments=True)
+    # print(com)
+    assert com == {2: '   # 2', 4: '   # 4', 5: '   # 5'}
+    # assert codeC == code2
+    # print(os.linesep.join(codeC))
+    codeD = replace_comment_lines(com, codeC, align_through_comments=True)
+    # print(os.linesep.join(codeD))
+    assert codeD == code3
 
 code20 = '''
    rot3[..., 0, 0] = aa + bb - cc - dd
@@ -628,36 +630,36 @@ code20 = '''
 '''
 
 def test_align_code20():
-   _test_align_code(code20, code20, debug=True)
+    _test_align_code(code20, code20, debug=True)
 
 def test_sub_orig_into_merge():
-   # merge = sub_orig_into_merge(substitute, merge)
+    # merge = sub_orig_into_merge(substitute, merge)
 
-   pass
+    pass
 
 if __name__ == '__main__':
 
-   test_git_diff()
-   test_align_code20()
-   test_sub_orig_into_merge()
-   test_git_merge_sub_orig()
-   test_git_merge()
-   test_align_code16()
-   test_align_code14()
-   test_align_code13()
-   test_align_code12()
-   test_align_code11()
-   test_align_code10()
-   test_align_code9()
-   test_yapf()
-   test_align_code8()
-   test_align_code7()
-   test_align_code6()
-   test_comments()
-   test_align_code5()
-   test_align_code4()
-   test_align_code3()
-   test_align_code2()
-   test_align_code1()
-   test_align_mytok_block()
-   test_split_by_chars()
+    test_git_diff()
+    test_align_code20()
+    test_sub_orig_into_merge()
+    test_git_merge_sub_orig()
+    test_git_merge()
+    test_align_code16()
+    test_align_code14()
+    test_align_code13()
+    test_align_code12()
+    test_align_code11()
+    test_align_code10()
+    test_align_code9()
+    test_yapf()
+    test_align_code8()
+    test_align_code7()
+    test_align_code6()
+    test_comments()
+    test_align_code5()
+    test_align_code4()
+    test_align_code3()
+    test_align_code2()
+    test_align_code1()
+    test_align_mytok_block()
+    test_split_by_chars()

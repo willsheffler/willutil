@@ -125,7 +125,7 @@ def test_rel_xform_info_rand(nsamp=100):
         assert np.allclose(hel0, xinfo.hel)
         assert np.allclose(rad0, xinfo.rad)
 
-@pytest.mark.xfail
+# @pytest.mark.xfail
 def test_symops_from_frames():
 
     # r = hm.hrot([1, 0, 0], 180)
