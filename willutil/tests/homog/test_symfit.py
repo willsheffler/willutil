@@ -127,7 +127,8 @@ def test_rel_xform_info_rand(nsamp=100):
 
 # @pytest.mark.xfail
 def test_symops_from_frames():
-
+    np.set_printoptions(precision=6, suppress=True, linewidth=98,
+                        formatter={'float': lambda f: '%9.5f' % f})
     # r = hm.hrot([1, 0, 0], 180)
     # xinfo.axs, a = hm.axis_angle_of(r)
     # print(r)
@@ -135,37 +136,94 @@ def test_symops_from_frames():
     # print(a)
     # assert 0
 
-    nframes = 3
-    frames = hm.octahedral_frames[:3]
+    nframes = 24
+    symframes = hm.octahedral_frames[:nframes]
     point_angs = {2: np.pi, 3: np.pi * 2 / 3, 4: np.pi / 2}
 
-    # pre = hm.rand_xform(len(frames))
+    # xpre = hm.rand_xform(len(symframes))
     # post = hm.rand_xform()
-    pre = np.tile(np.eye(4), (len(frames), 1, 1))
-    post = np.eye(4)
-    frames = post @ frames @ pre
+    # xpre = np.tile(np.eye(4), (len(symframes), 1, 1))
+    xpre = hm.htrans([1, 2, 3])  # subunits shouldn't overlap
+
+    frames = symframes @ xpre  # move subunit
+    xpost1 = np.eye(4)
+    # print(frames)
+    # print('-------------')
 
     # np.random.shuffle(frames)
     # frames = frames[:nframes]
 
     symops = hm.symops_from_frames(frames, point_angs)
+    assert len(symops) == len(frames) * (len(frames) - 1) / 2
+    print(list(symops[(0, 1)].keys()))
     for k, op in symops.items():
-        print(k)
-        print(np.degrees(op.ang))
-        print(op.err)
-        print()
+        wgood, ngood = None, 0
+        for n, e in op.err.items():
+            if e < 0.000001:
+                ngood += 1
+                wgood = n
+        if not ngood == 1:
+            print('ngood!=1', op.err)
+        assert np.allclose(0, op.cen[:3])
 
-    return
+    xpost2 = hm.htrans(np.array([4, 5, 6]))
+    xpost2inv = np.linalg.inv(xpost2)
+    frames2 = xpost2 @ frames  # move whole structure
+    symops2 = hm.symops_from_frames(frames2, point_angs)
+    assert len(symops2) == len(frames2) * (len(frames2) - 1) / 2
+    assert len(frames) == len(frames2)
+    for k in symops:
+        op1 = symops[k]
+        op2 = symops2[k]
+        try:
+            assert np.allclose(op1.axs, xpost2inv @ op2.axs, atol=1e-6)
+            assert np.allclose(op1.ang, op2.ang, atol=1e-6)
+            assert np.allclose(op1.cen, hm.proj_perp(op2.axs, xpost2inv @ op2.cen), atol=1e-6)
+            assert np.allclose(op1.rad, op2.rad, atol=1e-6)
+            assert np.allclose(op1.hel, op2.hel, atol=1e-6)
+            assert np.allclose(op1.err[2], op2.err[2], atol=1e-6)
+            assert np.allclose(op1.err[3], op2.err[3], atol=1e-6)
+            assert np.allclose(op1.err[4], op2.err[4], atol=1e-6)
+        except AssertionError as e:
+            print('op1   ', op1.cen)
+            print('op2   ', op2.cen)
+            print('op2   ', xpost2inv @ op2.cen)
+            print('proj  ', hm.proj_perp(op2.axs, xpost2inv @ op2.cen))
+            print('op1axs', op1.axs, op1.ang)
+            print('op2axs', op2.axs, op2.ang)
+            print(op1.xrel)
+            print(op2.xrel)
+            raise e
 
-    for k, op in symops.items():
-        if min(op.err.values()) > 0.000001:
-            for k2, v in op.items():
-                print(k, k2, v)
-
-    print([min(op.err.values()) for op in symops.values()])
-    assert np.allclose([min(op.err.values()) for op in symops.values()], 0)
-
-    # assert 0
+    # return
+    xpost3 = hm.rand_xform()
+    xpost3inv = np.linalg.inv(xpost3)
+    frames3 = xpost3 @ frames  # move whole structure
+    symops3 = hm.symops_from_frames(frames3, point_angs)
+    assert len(symops3) == len(frames3) * (len(frames3) - 1) / 2
+    assert len(frames) == len(frames3)
+    for k in symops:
+        op1 = symops[k]
+        op2 = symops3[k]
+        try:
+            # assert np.allclose(op1.axs, xpost3inv @ op2.axs, atol=1e-6)
+            assert np.allclose(op1.ang, op2.ang, atol=1e-6)
+            # assert np.allclose(op1.cen, hm.proj_perp(op2.axs, xpost3inv @ op2.cen), atol=1e-6)
+            # assert np.allclose(op1.rad, op2.rad, atol=1e-6)
+            # assert np.allclose(op1.hel, op2.hel, atol=1e-6)
+            # assert np.allclose(op1.err[2], op2.err[2], atol=1e-6)
+            # assert np.allclose(op1.err[3], op2.err[3], atol=1e-6)
+            # assert np.allclose(op1.err[4], op2.err[4], atol=1e-6)
+        except AssertionError as e:
+            print('op1   ', op1.cen)
+            print('op2   ', op2.cen)
+            print('op2   ', xpost3inv @ op2.cen)
+            print('proj  ', hm.proj_perp(op2.axs, xpost3inv @ op2.cen))
+            print('op1axs', op1.axs, op1.ang)
+            print('op2axs', op2.axs, op2.ang)
+            print(op1.xrel)
+            print(op2.xrel)
+            raise e
 
 if __name__ == '__main__':
     test_symops_from_frames()

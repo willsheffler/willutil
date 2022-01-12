@@ -71,39 +71,89 @@ def test_hcross():
     assert np.allclose(hdot(b, c), 0)
 
 def test_axis_angle_of():
-    ax, an = axis_angle_of(hrot([10, 10, 0], np.pi))
+    ax, an = axis_angle_of(hrot([10, 10, 0], np.pi), debug=True)
     assert 1e-5 > np.abs(ax[0] - ax[1])
     assert 1e-5 > np.abs(ax[2])
+    # print(np.linalg.norm(ax, axis=-1))
     assert np.allclose(np.linalg.norm(ax, axis=-1), 1.0)
-    ax, an = axis_angle_of(hrot([0, 1, 0], np.pi))
+
+    ax, an = axis_angle_of(hrot([0, 1, 0], np.pi), debug=True)
     assert 1e-5 > np.abs(ax[0])
     assert 1e-5 > np.abs(ax[1]) - 1
     assert 1e-5 > np.abs(ax[2])
     assert np.allclose(np.linalg.norm(ax, axis=-1), 1.0)
 
-    ax, an = axis_angle_of(hrot([0, 1, 0], np.pi * 0.25))
-    print(ax, an)
+    ax, an = axis_angle_of(hrot([0, 1, 0], np.pi * 0.25), debug=True)
+    # print(ax, an)
     assert np.allclose(ax, [0, 1, 0, 0], atol=1e-5)
     assert 1e-5 > np.abs(an - np.pi * 0.25)
     assert np.allclose(np.linalg.norm(ax, axis=-1), 1.0)
-    ax, an = axis_angle_of(hrot([0, 1, 0], np.pi * 0.75))
+    ax, an = axis_angle_of(hrot([0, 1, 0], np.pi * 0.75), debug=True)
     # print(ax, an)
     assert np.allclose(ax, [0, 1, 0, 0], atol=1e-5)
     assert 1e-5 > np.abs(an - np.pi * 0.75)
     assert np.allclose(np.linalg.norm(ax, axis=-1), 1.0)
 
-    ax, an = axis_angle_of(hrot([1, 0, 0], np.pi / 2))
+    ax, an = axis_angle_of(hrot([1, 0, 0], np.pi / 2), debug=True)
     # print(np.pi / an)
     assert 1e-5 > np.abs(an - np.pi / 2)
     assert np.allclose(np.linalg.norm(ax, axis=-1), 1.0)
 
 def test_axis_angle_of_rand():
     shape = (4, 5, 6, 7, 8)
+    # shape = (3, )
     axis = hnormalized(np.random.randn(*shape, 3))
     angl = np.random.random(shape) * np.pi / 2
+    # seed with one identity and one 180
+    angl[0, 0, 0, 0, 0] = np.pi
+    angl[1, 0, 0, 0, 0] = 0
+    axis[1, 0, 0, 0, 0] = [1, 0, 0, 0]
+    angl[0, 0, 0, 0, 0] = np.pi
+    angl[0, 0, 1, 0, 0] = 0
+    axis[0, 0, 1, 0, 0] = [1, 0, 0, 0]
+    # axis[1] = [1,0,0,0]
     rot = hrot(axis, angl, dtype='f8')
-    ax, an = axis_angle_of(rot)
-    assert np.allclose(axis, ax, atol=1e-3, rtol=1e-3)  # very loose to allow very rare cases
+    ax, an = axis_angle_of(rot, debug=True)
+    dot = np.sum(axis * ax, axis=-1)
+    ax[dot < 0] = -ax[dot < 0]
+
+    # for a, b, d in zip(axis, ax, dot):
+    # print(d)
+    # print('old', a)
+    # print('new', b)
+
+    # print(np.linalg.norm(ax, axis=-1), 1.0)
+    try:
+
+        assert np.allclose(axis, ax)
+    except:
+        print('ax.shape', ax.shape)
+        for u, v, w, x, y in zip(
+                axis.reshape(-1, 4),
+                ax.reshape(-1, 4),
+                angl.reshape(-1),
+                an.reshape(-1),
+                rot.reshape(-1, 4, 4),
+        ):
+            if not np.allclose(u, v):
+                print('u', u, w)
+                print('v', v, x)
+                print(y)
+        assert 0
+    assert np.allclose(angl, an)
+    assert np.allclose(np.linalg.norm(ax, axis=-1), 1.0)
+
+def test_axis_angle_of_rand_180(nsamp=100):
+    axis = hnormalized(np.random.randn(nsamp, 3))
+    angl = np.pi
+    rot = hrot(axis, angl, dtype='f8')
+    ax, an = axis_angle_of(rot, debug=True)
+    # print('rot', rot)
+    # print('ax,an', ax)
+    # print('ax,an', axis)
+    dot = np.abs(np.sum(axis * ax, axis=-1))
+    # print(dot)
+    assert np.allclose(np.abs(dot), 1)  # abs b/c could be flipped
     assert np.allclose(angl, an, atol=1e-4, rtol=1e-4)
     assert np.allclose(np.linalg.norm(ax, axis=-1), 1.0)
 
@@ -924,10 +974,34 @@ def test_xform_around_dof_for_vector_target_angle():
 #
 #    print(new_pts.T)
 
+def test_axis_angle_180_rand():
+    pass
+
 def test_axis_angle_180_bug():
 
-    return
-    np.set_printoptions(precision=3, suppress=True)
+    #    v = rand_unit()
+    #    x = np.stack([hrot(v, 180), hrot(v, 180)] * 3)
+    #    print('v', v)
+    #    print()
+    #    ev = np.linalg.eig(x[..., :3, :3])
+    #    val, vec = np.real(ev[0]), np.real(ev[1])
+    #    print(val)
+    #    cond = np.abs(val - 1) < 1e-6
+    #    a, b = np.where(cond)
+    #    print(a)
+    #    print(b)
+    #
+    #    assert np.all(np.sum(np.abs(val - 1) < 1e-6, axis=-1) == 1)
+    #
+    #    print(vec[a, :, b])
+    #
+    #    print(axis_of(np.array([
+    #        hrot(v, 180),
+    #        np.eye(4),
+    #    ]), debug=True))
+
+    # assert 0
+    # np.set_printoptions(precision=20)
 
     # yapf: disable
     x000 = np.array([
@@ -997,7 +1071,7 @@ def test_axis_angle_180_bug():
         [  0,  0,  0,  1],
     ],dtype='f8')
 
-    # assert np.allclose(0, hm.angle_of(x000))
+    r = np.sqrt(2)/2
 
     assert np.allclose(np.linalg.det(x000), 1)
     assert np.allclose(np.linalg.det(x100), 1)
@@ -1010,7 +1084,7 @@ def test_axis_angle_180_bug():
     assert np.allclose(np.linalg.det(x10n), 1)
     assert np.allclose(np.linalg.det(x01n), 1)
 
-    assert np.allclose(hm.hrot([ 0,  0,  1],   0), x000)
+    assert np.allclose(hm.hrot([ 1,  0,  0],   0), x000)
     assert np.allclose(hm.hrot([ 1,  0,  0], 180), x100)
     assert np.allclose(hm.hrot([ 0,  1,  0], 180), x010)
     assert np.allclose(hm.hrot([ 0,  0,  1], 180), x001)
@@ -1024,67 +1098,120 @@ def test_axis_angle_180_bug():
     assert np.allclose(hm.hrot([-1,  0,  1], 180), x10n)
     assert np.allclose(hm.hrot([ 0, -1,  1], 180), x01n)
 
-    assert np.allclose([ 0,  0,  1, 0], hm.axis_of(x000))
+    assert np.allclose([ 1,  0,  0, 0], hm.axis_of(x000))
     assert np.allclose([ 1,  0,  0, 0], hm.axis_of(x100))
     assert np.allclose([ 0,  1,  0, 0], hm.axis_of(x010))
     assert np.allclose([ 0,  0,  1, 0], hm.axis_of(x001))
-    assert np.allclose([ 1,  1,  0, 0], hm.axis_of(x110))
-    assert np.allclose([ 1,  0,  1, 0], hm.axis_of(x101))
-    assert np.allclose([ 0,  1,  1, 0], hm.axis_of(x011))
-    assert np.allclose([ 1, -1,  0, 0], hm.axis_of(x1n0))
-    assert np.allclose([ 1,  0, -1, 0], hm.axis_of(x10n))
-    assert np.allclose([ 0,  1, -1, 0], hm.axis_of(x01n))
+    assert np.allclose([ r,  r,  0, 0], hm.axis_of(x110))
+    assert np.allclose([ r,  0,  r, 0], hm.axis_of(x101))
+    assert np.allclose([ 0,  r,  r, 0], hm.axis_of(x011))
+    assert np.allclose([ r, -r,  0, 0], hm.axis_of(x1n0))
+    assert np.allclose([ r,  0, -r, 0], hm.axis_of(x10n))
+    assert np.allclose([ 0, -r,  r, 0], hm.axis_of(x01n))
 
-    assert np.allclose(180, hm.angle_of(x100))
-    assert np.allclose(180, hm.angle_of(x010))
-    assert np.allclose(180, hm.angle_of(x001))
-    assert np.allclose(180, hm.angle_of(x110))
-    assert np.allclose(180, hm.angle_of(x101))
-    assert np.allclose(180, hm.angle_of(x011))
-    assert np.allclose(180, hm.angle_of(x1n0))
-    assert np.allclose(180, hm.angle_of(x10n))
-    assert np.allclose(180, hm.angle_of(x01n))
+    assert np.allclose([ 1,  0,  0, 0], hm.axis_of(hm.htrans([1,2,3]) @ x000))
+    assert np.allclose([ 1,  0,  0, 0], hm.axis_of(hm.htrans([1,2,3]) @ x100))
+    assert np.allclose([ 0,  1,  0, 0], hm.axis_of(hm.htrans([1,2,3]) @ x010))
+    assert np.allclose([ 0,  0,  1, 0], hm.axis_of(hm.htrans([1,2,3]) @ x001))
+    assert np.allclose([ r,  r,  0, 0], hm.axis_of(hm.htrans([1,2,3]) @ x110))
+    assert np.allclose([ r,  0,  r, 0], hm.axis_of(hm.htrans([1,2,3]) @ x101))
+    assert np.allclose([ 0,  r,  r, 0], hm.axis_of(hm.htrans([1,2,3]) @ x011))
+    assert np.allclose([ r, -r,  0, 0], hm.axis_of(hm.htrans([1,2,3]) @ x1n0))
+    assert np.allclose([ r,  0, -r, 0], hm.axis_of(hm.htrans([1,2,3]) @ x10n))
+    assert np.allclose([ 0, -r,  r, 0], hm.axis_of(hm.htrans([1,2,3]) @ x01n))
+
+    assert np.allclose(0, hm.angle_of(x000))
+    assert np.allclose(np.pi, hm.angle_of(x100))
+    assert np.allclose(np.pi, hm.angle_of(x010))
+    assert np.allclose(np.pi, hm.angle_of(x001))
+    assert np.allclose(np.pi, hm.angle_of(x110))
+    assert np.allclose(np.pi, hm.angle_of(x101))
+    assert np.allclose(np.pi, hm.angle_of(x011))
+    assert np.allclose(np.pi, hm.angle_of(x1n0))
+    assert np.allclose(np.pi, hm.angle_of(x10n))
+    assert np.allclose(np.pi, hm.angle_of(x01n))
+
+    xtest = np.array([[ 1.00000000e+00,  1.18776717e-16,  2.37565125e-17,  0.00000000e+00],
+                      [-1.90327026e-18, -1.00000000e+00, -1.28807379e-16,  0.00000000e+00],
+                      [-3.48949361e-17, -3.34659469e-17, -1.00000000e+00,  0.00000000e+00],
+                      [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+    assert np.allclose(xtest,x100)
+    assert np.allclose(angle_of(xtest),angle_of(x100))
+    assert np.allclose(axis_of(xtest),axis_of(x100))
+
+
+    xform = rand_xform(cart_sd=0)
+    xinv = np.linalg.inv(xform)
+    x000 = xform @ x000
+    x100 = xform @ x100
+    x010 = xform @ x010
+    x001 = xform @ x001
+    x110 = xform @ x110
+    x101 = xform @ x101
+    x011 = xform @ x011
+    x1n0 = xform @ x1n0
+    x10n = xform @ x10n
+    x01n = xform @ x01n
+
+
+    # print(hrot([1,2,3,0],2))
+    # print()
+    # print(hrot([1,2,3,0],2)@xform)
+    # print()
+    # print(hrot(xform@[1,2,3,0],2))
+    # print()
+    # print(xform@hrot([1,2,3,0],2))
+    # print()
+    # print(hrot([1,2,3,0]@xform,2))
+    # print()
+
+    assert np.allclose(        hrot(       [1,2,3,0],2) @ xform,
+                       xform @ hrot(xinv @ [1,2,3,0],2)        )
+    assert np.allclose(        hrot(        [1,2,3,0],2) @ xinv,
+                        xinv @ hrot(xform @ [1,2,3,0],2)       , atol=1e-6)
+    assert np.allclose(        hrot(        [1,2,3,0],2)        ,
+                        xinv @ hrot(xform @ [1,2,3,0],2)@xform  )
+
+    assert np.allclose(        hrot(        [1,0,0,0],180)        ,
+                        xinv @ hrot(xform @ [1,0,0,0],180)@xform  )
+
+    # assert 0
+
+    assert np.allclose(np.linalg.det(x000), 1)
+    assert np.allclose(np.linalg.det(x100), 1)
+    assert np.allclose(np.linalg.det(x010), 1)
+    assert np.allclose(np.linalg.det(x001), 1)
+    assert np.allclose(np.linalg.det(x110), 1)
+    assert np.allclose(np.linalg.det(x101), 1)
+    assert np.allclose(np.linalg.det(x011), 1)
+    assert np.allclose(np.linalg.det(x1n0), 1)
+    assert np.allclose(np.linalg.det(x10n), 1)
+    assert np.allclose(np.linalg.det(x01n), 1)
+
+    assert np.allclose(xform @ hm.hrot([ 1,  0,  0, 0], 180), x100)
+    assert np.allclose(xform @ hm.hrot([ 0,  1,  0, 0], 180), x010)
+    assert np.allclose(xform @ hm.hrot([ 0,  0,  1, 0], 180), x001)
+    assert np.allclose(xform @ hm.hrot([ 1,  1,  0, 0], 180), x110)
+    assert np.allclose(xform @ hm.hrot([ 1,  0,  1, 0], 180), x101)
+    assert np.allclose(xform @ hm.hrot([ 0,  1,  1, 0], 180), x011)
+    assert np.allclose(xform @ hm.hrot([ 1, -1,  0, 0], 180), x1n0)
+    assert np.allclose(xform @ hm.hrot([ 1,  0, -1, 0], 180), x10n)
+    assert np.allclose(xform @ hm.hrot([ 0,  1, -1, 0], 180), x01n)
+    assert np.allclose(xform @ hm.hrot([-1,  1,  0, 0], 180), x1n0)
+    assert np.allclose(xform @ hm.hrot([-1,  0,  1, 0], 180), x10n)
+    assert np.allclose(xform @ hm.hrot([ 0, -1,  1, 0], 180), x01n)
+
+    assert np.allclose(xform @ hrot(        [1,2,3,0],2) @ xinv ,
+                               hrot(xform @ [1,2,3,0],2)   )
+
     # yapf: enable
-
-    x = np.array([
-        [1., 0., 0., 0.],
-        [0., 1., 0., 0.],
-        [0., 0., 1., 0.],
-        [0., 0., 0., 1.],
-    ])
-    ax, ang = axis_angle_of(x)
-    assert np.allclose(ang, 0)
-    assert np.allclose(np.linalg.norm(ax), 1.0)
-
-    # yapf: disable
-    x = np.array([
-        [-1.    , +0., +0., +0.],
-        [+0., -1., +0., +0.],
-        [+0., +0., +1., +0.],
-        [+0., +0., +0., +1.],
-    ])
-    # yapf: enable
-    xref = hrot([0, 0, 1], 180)
-
-    ax, ang = axis_angle_of(x)
-    assert np.allclose(x, hrot(ax, ang))
-    assert np.allclose([0, 0, 1, 0], ax)
-    assert np.allclose(np.pi, ang)
-    assert np.allclose(np.linalg.norm(ax, axis=-1), 1.0)
-
-    x = np.array([
-        [0., 1., 0., 0.],
-        [1., 0., 0., 0.],
-        [0., 0., -1., 0.],
-        [0., 0., 0., 1.],
-    ])
-    ax, ang = axis_angle_of(x)
-    print(ax, ang)
-    print(hrot([1, 1, 0], np.pi))
 
 if __name__ == '__main__':
 
-    test_axis_angle_180_bug()
+    # test_axis_angle_of_rand()
+    # test_axis_angle_of()
+    # test_axis_angle_180_bug()
+
     # assert 0
 
     test_sym()

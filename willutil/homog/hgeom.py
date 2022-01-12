@@ -138,7 +138,7 @@ def fast_axis_of_3x3(rots):
         rots[..., 1, 0] - rots[..., 0, 1],
     ), axis=-1)
 
-def axis_of(xforms):
+def axis_of(xforms, tol=1e-9, debug=False):
     dim = xforms.shape
     origshape = xforms.shape
     if xforms.ndim != 3:
@@ -146,38 +146,85 @@ def axis_of(xforms):
 
     axs = fast_axis_of(xforms)
     norm = np.linalg.norm(axs, axis=-1)
-    bad = (norm == 0)
-    axs[~bad] = axs[~bad] / norm[~bad].reshape(-1, 1)
-    if np.sum(bad) > 0:
-        x2 = xforms[bad]
-        tr = np.trace(x2, axis1=-1, axis2=-2)
-        sm = np.sum(x2, axis=(-1, -2))
-        antitrace = sm - tr
+    is180 = (norm < tol)
+    axs[~is180] = axs[~is180] / norm[~is180].reshape(-1, 1)
+    if np.sum(is180) > 0:
+        x180 = xforms[is180]
+        is_ident = np.all(np.isclose(np.eye(3), x180[:, :3, :3], atol=tol), axis=(-2, -1))
+        axs[np.where(is180)[0][is_ident]] = [1, 0, 0, 0]
+        is180[np.where(is180)[0][is_ident]] = False
+        x180 = x180[~is_ident]
 
-        bad100 = bad[x2[..., 0, 0] == 1]
-        bad010 = bad[x2[..., 1, 1] == 1]
-        bad001 = bad[x2[..., 2, 2] == 1]
-        axs[bad100] = [1, 0, 0, 0]
-        axs[bad010] = [0, 1, 0, 0]
-        axs[bad001] = [0, 0, 1, 0]
+        eig = np.linalg.eig(x180[..., :3, :3])
+        eigval, eigvec = np.real(eig[0]), np.real(eig[1])
+        eigval_is_1 = np.abs(eigval - 1) < tol
+        ixform, ieigval = np.where(eigval_is_1)
 
-        bad110 = bad[np.logical_and(x2[..., 2, 2] == -1, antitrace > 0)]
-        bad101 = bad[np.logical_and(x2[..., 1, 1] == -1, antitrace > 0)]
-        bad011 = bad[np.logical_and(x2[..., 0, 0] == -1, antitrace > 0)]
-        axs[bad110] = [1, 1, 0, 0]
-        axs[bad101] = [1, 0, 1, 0]
-        axs[bad011] = [0, 1, 1, 0]
+        # print(ixform)
+        # print(ieigval)
+        try:
+            axs[is180, :3] = eigvec[ixform, :, ieigval]
+        except Exception as e:
 
-        bad1n0 = bad[np.logical_and(x2[..., 2, 2] == -1, antitrace < 0)]
-        bad10n = bad[np.logical_and(x2[..., 1, 1] == -1, antitrace < 0)]
-        bad01n = bad[np.logical_and(x2[..., 0, 0] == -1, antitrace < 0)]
-        axs[bad1n0] = [1, -1, 0, 0]
-        axs[bad10n] = [1, 0, -1, 0]
-        axs[bad01n] = [0, 1, -1, 0]
+            # print(is_ident)
+            # print(is180)
+            # print(x180.shape)
+            for a, b, c in zip(eigval, eigvec, eigval_is_1):
+                print(a)
+                print(b)
+                print(c)
+            print()
+            raise e
+        # assert 0
+
+        if debug:
+            n_unit_eigval_1 = np.sum(np.abs(eigval - 1) < tol, axis=-1) == 1
+            n_unit_eigval_3 = np.sum(np.abs(eigval - 1) < tol, axis=-1) == 3
+            np.all(np.logical_or(n_unit_eigval_1, n_unit_eigval_3))
+            # assert np.allclose(np.all(np.sum(np.abs(eigval - 1) < tol, axis=-1) == 1)
+
+        # christ on a cracker, what was I smoking when I wrote this unit matric crap
+
+        # tr = np.trace(x180[..., :3, :3], axis1=-1, axis2=-2)
+        # sm = np.sum(x180[..., :3, :3], axis=(-1, -2))
+        # antitrace = sm - tr
+        # r = np.sqrt(2) / 2
+
+        # at_nul = np.abs(antitrace) < tol
+        # at_pos = antitrace >= +tol
+        # at_neg = antitrace <= -tol
+        # x00_is_one = np.abs(x180[..., 0, 0] - 1) < tol
+        # x00_is_neg = np.abs(x180[..., 0, 0] + 1) < tol
+        # x11_is_one = np.abs(x180[..., 1, 1] - 1) < tol
+        # x11_is_neg = np.abs(x180[..., 1, 1] + 1) < tol
+        # x22_is_one = np.abs(x180[..., 2, 2] - 1) < tol
+        # x22_is_neg = np.abs(x180[..., 2, 2] + 1) < tol
+
+        # bad100 = is180[np.logical_and(x00_is_one, at_nul)]
+        # bad010 = is180[np.logical_and(x11_is_one, at_nul)]
+        # bad001 = is180[np.logical_and(x22_is_one, at_nul)]
+        # axs[bad100] = [1, 0, 0, 0]
+        # axs[bad010] = [0, 1, 0, 0]
+        # axs[bad001] = [0, 0, 1, 0]
+
+        # bad110 = is180[np.logical_and(x22_is_neg, at_pos)]
+        # bad101 = is180[np.logical_and(x11_is_neg, at_pos)]
+        # bad011 = is180[np.logical_and(x00_is_neg, at_pos)]
+        # axs[bad110] = [r, r, 0, 0]
+        # axs[bad101] = [r, 0, r, 0]
+        # axs[bad011] = [0, r, r, 0]
+
+        # bad1n0 = is180[np.logical_and(x22_is_neg, at_neg)]
+        # bad10n = is180[np.logical_and(x11_is_neg, at_neg)]
+        # bad01n = is180[np.logical_and(x00_is_neg, at_neg)]
+        # axs[bad1n0] = [r, -r, 0, 0]
+        # axs[bad10n] = [r, 0, -r, 0]
+        # axs[bad01n] = [0, r, -r, 0]
 
     return axs.reshape(origshape[:-1])
 
-def axis_of_3x3(rots):
+def axis_of_3x3(rots, debug=False):
+    # todo, just merge this with axis_of...
     dim = rots.shape
     origshape = rots.shape
     assert rots.shape[-1] == 3
@@ -191,31 +238,27 @@ def axis_of_3x3(rots):
     bad = (norm == 0)
     axs[~bad] = axs[~bad] / norm[~bad].reshape(-1, 1)
     if np.sum(bad) > 0:
-        rots2 = rots[bad]
-        tr = np.trace(rots2, axis1=-1, axis2=-2)
-        sm = np.sum(rots2, axis=(-1, -2))
-        antitrace = sm - tr
+        x180 = xforms[bad]
+        is_ident = np.all(np.isclose(np.eye(3), x180[:, :3, :3]), axis=(-2, -1))
+        axs[is_ident] = [1, 0, 0, 0]
+        bad = np.logical_and(bad, ~is_ident)
+        x180 = xforms[bad]
 
-        bad100 = bad[rots2[..., 0, 0] == 1]
-        bad010 = bad[rots2[..., 1, 1] == 1]
-        bad001 = bad[rots2[..., 2, 2] == 1]
-        axs[bad100] = [1, 0, 0]
-        axs[bad010] = [0, 1, 0]
-        axs[bad001] = [0, 0, 1]
+        eig = np.linalg.eig(x180[..., :3, :3])
+        eigval, eigvec = np.real(eig[0]), np.real(eig[1])
+        eigval_is_1 = np.abs(eigval - 1) < tol
+        ixform, ieigval = np.where(eigval_is_1)
+        # print(ixform)
+        # print(ieigval)
+        axs[bad, :3] = eigvec[ixform, :, ieigval]
 
-        bad110 = bad[np.logical_and(rots2[..., 2, 2] == -1, antitrace > 0)]
-        bad101 = bad[np.logical_and(rots2[..., 1, 1] == -1, antitrace > 0)]
-        bad011 = bad[np.logical_and(rots2[..., 0, 0] == -1, antitrace > 0)]
-        axs[bad110] = [1, 1, 0]
-        axs[bad101] = [1, 0, 1]
-        axs[bad011] = [0, 1, 1]
+        # assert 0
 
-        bad1n0 = bad[np.logical_and(rots2[..., 2, 2] == -1, antitrace < 0)]
-        bad10n = bad[np.logical_and(rots2[..., 1, 1] == -1, antitrace < 0)]
-        bad01n = bad[np.logical_and(rots2[..., 0, 0] == -1, antitrace < 0)]
-        axs[bad1n0] = [1, -1, 0]
-        axs[bad10n] = [1, 0, -1]
-        axs[bad01n] = [0, 1, -1]
+        if debug:
+            n_unit_eigval_1 = np.sum(np.abs(eigval - 1) < tol, axis=-1) == 1
+            n_unit_eigval_3 = np.sum(np.abs(eigval - 1) < tol, axis=-1) == 3
+            np.all(np.logical_or(n_unit_eigval_1, n_unit_eigval_3))
+            # assert np.allclose(np.all(np.sum(np.abs(eigval - 1) < tol, axis=-1) == 1)
 
     return axs.reshape(origshape[:-1])
 
@@ -226,32 +269,27 @@ def is_homog_xform(xforms):
 def hinv(xforms):
     return np.linalg.inv(xforms)
 
-def axis_angle_of_3x3(rots):
+def axis_angle_of_3x3(rots, debug=False):
     assert rots.shape[-1] == 3
     assert rots.shape[-2] == 3
-    axis = axis_of_3x3(rots)
-    angl = angle_of_3x3(rots)
+    axis = axis_of_3x3(rots, debug=debug)
+    angl = angle_of(rots, debug=debug)
     return axis, angl
 
-def angle_of_3x3(rots):
-    tr = rots[..., 0, 0] + rots[..., 1, 1] + rots[..., 2, 2]
-    cos = (tr - 1.0) / 2.0
-    angl = np.arccos(cos)
-    return angl
-
-def axis_angle_of(xforms):
+def axis_angle_of(xforms, debug=False):
     if xforms.shape[-1] == 3:
-        return axis_angle_of_3x3(xforms)
-    axis = axis_of(xforms)
-    angl = angle_of(xforms)
+        return axis_angle_of_3x3(xforms, debug=debug)
+    axis = axis_of(xforms, debug=debug)
+    angl = angle_of(xforms, debug=debug)
     return axis, angl
 
-def angle_of(xforms):
+def angle_of(xforms, debug=False):
     tr = xforms[..., 0, 0] + xforms[..., 1, 1] + xforms[..., 2, 2]
     cos = (tr - 1.0) / 2.0
-    # print('foo', cos)
-    angl = np.arccos(cos)
+    angl = np.arccos(np.clip(cos, -1, 1))
     return angl
+
+angle_of_3x3 = angle_of
 
 def rot(axis, angle, degrees='auto', dtype='f8', shape=(3, 3)):
     axis = np.array(axis, dtype=dtype)
@@ -442,7 +480,7 @@ def rand_xform_aac(shape=(), axis=None, ang=None, cen=None):
     # q = rand_quat(shape)
     return hrot(axis, ang, cen)
 
-def rand_xform_small(shape=(), cart_sd=1, rot_sd=1):
+def rand_xform_small(shape=(), cart_sd=0.001, rot_sd=0.001):
     if isinstance(shape, int): shape = (shape, )
     axis = rand_unit(shape)
     ang = np.random.normal(0, rot_sd, shape) * np.pi

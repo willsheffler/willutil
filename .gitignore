@@ -98,3 +98,4 @@ tmp
 
 *.rendered.*
 *.cppimporthash
+/log

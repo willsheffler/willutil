@@ -1,13 +1,14 @@
-name: willutil
+name: willutil_pymol
 channels:
  - conda-forge
+ - schrodinger
  - default
 dependencies:
  - python
+ - pymol-bundle
  - xarray
  - netcdf4
  - numpy
- - biopython
  - numba
  - tqdm
  - yapf
