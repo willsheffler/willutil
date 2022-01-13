@@ -165,7 +165,7 @@ def test_axis_angle_of_3x3_rand():
     rot = hrot(axis, angl, dtype='f8')[..., :3, :3]
     assert rot.shape[-1] == 3
     assert rot.shape[-2] == 3
-    ax, an = axis_angle_of_3x3(rot)
+    ax, an = axis_angle_of(rot)
     assert np.allclose(axis, ax, atol=1e-3, rtol=1e-3)  # very loose to allow very rare cases
     assert np.allclose(angl, an, atol=1e-4, rtol=1e-4)
     assert np.allclose(np.linalg.norm(ax, axis=-1), 1.0)
@@ -312,6 +312,25 @@ def test_axis_ang_cen_of_rand():
     shape = (5, 6, 7, 8, 9)
     axis0 = hnormalized(np.random.randn(*shape, 3))
     ang0 = np.random.random(shape) * (np.pi - 0.1) + 0.1
+    cen0 = np.random.randn(*shape, 3) * 100.0
+
+    helical_trans = np.random.randn(*shape)[..., None] * axis0
+    rot = hrot(axis0, ang0, cen0, dtype='f8')
+    rot[..., :, 3] += helical_trans
+    axis, ang, cen = axis_ang_cen_of(rot)
+
+    assert np.allclose(axis0, axis, rtol=1e-5)
+    assert np.allclose(ang0, ang, rtol=1e-5)
+    #  check rotation doesn't move cen
+    cenhat = (rot @ cen[..., None]).squeeze()
+    assert np.allclose(cen + helical_trans, cenhat, rtol=1e-4, atol=1e-4)
+    assert np.allclose(np.linalg.norm(axis, axis=-1), 1.0)
+
+def test_axis_ang_cen_of_rand_180():
+    return
+    shape = (1, )
+    axis0 = hnormalized(np.random.randn(*shape, 3))
+    ang0 = np.pi
     cen0 = np.random.randn(*shape, 3) * 100.0
 
     helical_trans = np.random.randn(*shape)[..., None] * axis0
@@ -657,18 +676,6 @@ def test_place_lines_to_isect_F432_null():
     assert np.allclose(line_angle(xa2, ta2), 0.0, atol=0.001)
     isect_error = line_line_distance_pa(xp2, xa2, [0, 0, 0, 1], sl2)
     assert np.allclose(isect_error, 0, atol=0.001)
-
-def test_expand_xforms_basic():
-    x1 = hrot([0, 0, 1], np.pi)
-    x2 = hrot([1, 1, 1], np.pi * 2 / 3, [1, 0, 0])
-    xgen = x1, x2
-    frames = expand_xforms(xgen)
-    points = np.stack([x @ [1, 0, 0, 1] for x in frames])
-
-    correct = np.array([(-1.0, 0.0, 0.0, 1), (1.0, -0.0, 0.0, 1), (-1.0, 0.0, 0.0, 1),
-                        (1.0, -2.0, 0.0, 1), (1.0, 0.0, 0.0, 1), (-1.0, 2.0, 0.0, 1),
-                        (-1.0, 0.0, 0.0, 1), (1.0, -2.0, 0.0, 1), (1.0, -0.0, -2.0, 1)])
-    assert np.allclose(correct, points)
 
 def _vaildate_test_scale_translate_lines_isect_lines(samp, xalign, scale, i):
     assert xalign is not None
@@ -1214,6 +1221,8 @@ if __name__ == '__main__':
 
     # assert 0
 
+    test_axis_ang_cen_of_rand_180()
+
     test_sym()
     test_homo_rotation_single()
     test_homo_rotation_center()
@@ -1250,7 +1259,6 @@ if __name__ == '__main__':
     test_place_lines_to_isect_F432()
     test_place_lines_to_isect_onecase()
     test_place_lines_to_isect_F432_null()
-    test_expand_xforms_basic()
     test_scale_translate_lines_isect_lines_p4132()
     test_scale_translate_lines_isect_lines_nonorthog()
     test_scale_translate_lines_isect_lines_arbitrary()

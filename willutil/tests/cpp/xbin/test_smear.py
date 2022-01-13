@@ -35,7 +35,7 @@
 #       assert sorted(Counter(x[:, 0, 3]).values()) == counts
 #       assert sorted(Counter(x[:, 1, 3]).values()) == counts
 #       assert sorted(Counter(x[:, 2, 3]).values()) == counts
-#       ori_dist = hm.angle_of_3x3(x[:, :3, :3])
+#       ori_dist = hm.angle_of(x[:, :3, :3])
 #       assert np.allclose(np.unique(ori_dist), [0.0, 1.24466863])
 
 # def test_smear_one_oddori():
@@ -66,7 +66,7 @@
 #       assert sorted(Counter(x[:, 0, 3]).values()) == counts
 #       assert sorted(Counter(x[:, 1, 3]).values()) == counts
 #       assert sorted(Counter(x[:, 2, 3]).values()) == counts
-#       ori_dist = hm.angle_of_3x3(x[:, :3, :3])
+#       ori_dist = hm.angle_of(x[:, :3, :3])
 #       assert np.allclose(np.unique(ori_dist), [0.0, 1.24466863])
 
 # def test_smear_one_oddori_sphere():
@@ -108,7 +108,7 @@
 #       assert sorted(Counter(x[:, 0, 3]).values()) == counts[r - 1]
 #       assert sorted(Counter(x[:, 1, 3]).values()) == counts[r - 1]
 #       assert sorted(Counter(x[:, 2, 3]).values()) == counts[r - 1]
-#       ori_dist = hm.angle_of_3x3(x[:, :3, :3])
+#       ori_dist = hm.angle_of(x[:, :3, :3])
 #       assert np.allclose(np.unique(ori_dist), [0.0, 1.24466863])
 
 # def test_smear_one_exhalf_oddori_sphere():
@@ -151,7 +151,7 @@
 #       assert sorted(Counter(x[:, 0, 3]).values()) == counts[r - 1]
 #       assert sorted(Counter(x[:, 1, 3]).values()) == counts[r - 1]
 #       assert sorted(Counter(x[:, 2, 3]).values()) == counts[r - 1]
-#       ori_dist = hm.angle_of_3x3(x[:, :3, :3])
+#       ori_dist = hm.angle_of(x[:, :3, :3])
 #       assert np.allclose(np.unique(ori_dist), [0.0, 1.24466863])
 
 # def test_smear_two():

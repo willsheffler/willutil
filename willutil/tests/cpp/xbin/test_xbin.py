@@ -2,7 +2,7 @@ import _pickle
 from time import perf_counter
 import numpy as np
 from willutil.cpp.xbin import xbin_test, Xbin_double, Xbin_float, create_Xbin_nside_double
-from willutil.homog import angle_of_3x3
+from willutil.homog import angle_of
 from willutil.cpp.geom import bcc
 
 import willutil.homog as hm
@@ -69,7 +69,7 @@ def test_xbin_covrad(niter=20, nsamp=500):
         idx = xb.key_of(xforms)
         cen = xb.bincen_of(idx)
         cart_dist = np.linalg.norm(xforms[..., :3, 3] - cen[..., :3, 3], axis=-1)
-        ori_dist = angle_of_3x3(cen[:, :3, :3].swapaxes(-1, -2) @ xforms[:, :3, :3])
+        ori_dist = angle_of(cen[:, :3, :3].swapaxes(-1, -2) @ xforms[:, :3, :3])
         # if not np.all(cart_dist < cart_resl):
         # print('ori_resl', ori_resl, 'nside:', xb.ori_nside,
         # 'max(cart_dist):', np.max(cart_dist), cart_resl)
@@ -100,7 +100,7 @@ def test_xbin_covrad_ori():
         idx = xb.key_of(xforms)
         cen = xb.bincen_of(idx)
         cart_dist = np.linalg.norm(xforms[..., :3, 3] - cen[..., :3, 3], axis=-1)
-        ori_dist = angle_of_3x3(cen[:, :3, :3].swapaxes(-1, -2) @ xforms[:, :3, :3])
+        ori_dist = angle_of(cen[:, :3, :3].swapaxes(-1, -2) @ xforms[:, :3, :3])
         maxhole = np.max(ori_dist) * 180 / np.pi
         print(f"nside: {ori_nside:2} resl: {ori_resl:7.2f}", f"actual: {maxhole}")
         if maxhole > ori_resl:

@@ -17,3 +17,4 @@ from willutil import homog
 import deferred_import
 
 cpp = deferred_import.deferred_import('willutil.cpp')
+viz = deferred_import.deferred_import('willutil.viz')

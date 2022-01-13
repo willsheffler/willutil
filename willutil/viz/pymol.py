@@ -1,13 +1,14 @@
-import tempfile, numpy as np, time
+import sys, os, tempfile, numpy as np, time
 from collections import defaultdict
-from willutil import homog
+import willutil as wu
 from logging import info
 from functools import singledispatch
 from deferred_import import deferred_import
 
-pymol = deferred_import('pymol')
-# from pymol import cmd
-# from pymol import cgo
+# pymol = deferred_import('pymol')
+import pymol
+import pymol.cgo
+import pymol.cmd
 
 try:
     import DUMMY_DOESNT_EXIST
@@ -20,74 +21,80 @@ except ImportError:
 
     Pose = DummyPose
 
-_atom_record_format = (
-    "ATOM  {atomi:5d} {atomn:^4}{idx:^1}{resn:3s} {chain:1}{resi:4d}{insert:1s}   "
-    "{x:8.3f}{y:8.3f}{z:8.3f}{occ:6.2f}{b:6.2f}\n")
-
-def format_atom(
-    atomi=0,
-    atomn="ATOM",
-    idx=" ",
-    resn="RES",
-    chain="A",
-    resi=0,
-    insert=" ",
-    x=0,
-    y=0,
-    z=0,
-    occ=0,
-    b=0,
-):
-    return _atom_record_format.format(**locals())
-
-def is_rosetta_pose(to_show):
-    return isinstance(to_show, Pose)
-
-def pymol_load_pose(pose, name):
-    tmpdir = tempfile.mkdtemp()
-    fname = tmpdir + "/" + name + ".pdb"
-    pose.dump_pdb(fname)
-    pymol.cmd.load(fname)
-
-def pymol_xform(name, xform):
-    assert name in pymol.cmd.get_object_list()
-    pymol.cmd.transform_object(name, xform.flatten())
-
 @singledispatch
-def pymol_load(to_show, state=None, name=None, **kw):
-    raise NotImplementedError("pymol_load: don't know how to show " + str(type(to_show)))
+def pymol_load(toshow, state=None, name=None, **kw):
+    raise NotImplementedError("pymol_load: don't know how to show " + str(type(toshow)))
+
+@pymol_load.register(wu.homog.RelXformInfo)
+def _(toshow, state, name='noname', col='bycx', **kw):
+    ang = toshow.ang
+    if np.isclose(ang, np.pi * 4 / 5, atol=1e-4):
+        ang /= 2
+
+    if col == 'bycx':
+        if np.isclose(ang, np.pi * 2 / 2, atol=0.01): col = [1, 1, 0]
+        elif np.isclose(ang, np.pi * 2 / 3, atol=0.01): col = [0, 1, 1]
+        elif np.isclose(ang, np.pi * 2 / 4, atol=0.01): col = [1, 0, 1]
+        elif np.isclose(ang, np.pi * 2 / 5, atol=0.01): col = [1, 0, 1]
+        elif np.isclose(ang, np.pi * 2 / 6, atol=0.01): col = [1, 0, 1]
+        else: col = [1, 1, 1]
+    elif col == 'random':
+        col = np.random.rand(3) / 2 + 0.5
+    cen = toshow.framecen
+
+    showcyl(
+        cen + toshow.axs * 20,
+        cen - toshow.axs * 20,
+        0.03,
+        col=col,
+    )
+    showcyl(
+        cen + toshow.axs * toshow.hel / 2,
+        cen - toshow.axs * toshow.hel / 2,
+        0.1,
+        col=col,
+    )
+    delta = toshow.axs * (toshow.hel + 0.01) / 2
+    shift = 0  # 0.5 * (np.random.rand() - 0.5)
+    showfan(toshow.axs, cen + toshow.axs * shift, toshow.rad / 2, ang, col=col)
+
+    return state
 
 @pymol_load.register(Pose)
-def _(to_show, state=None, name=None, **kw):
+def _(toshow, state=None, name=None, **kw):
     name = name or "rif_thing"
     state["seenit"][name] += 1
     name += "_%i" % state["seenit"][name]
-    pymol_load_pose(to_show, name, **kw)
+    pymol_load_pose(toshow, name, **kw)
     state["last_obj"] = name
     return state
 
 @pymol_load.register(dict)
-def _(to_show, state=None, name=None, **kw):
-    assert "pose" in to_show
-    state = pymol_load(to_show["pose"], state, **kw)
-    pymol_xform(to_show["position"], state["last_obj"])
+def _(toshow, state=None, name=None, **kw):
+    if "pose" in toshow:
+        state = pymol_load(toshow["pose"], state, **kw)
+        pymol_xform(toshow["position"], state["last_obj"])
+    else:
+        for k, v in toshow.items():
+            state = pymol_load(v, state, name=k, **kw)
     return state
 
 @pymol_load.register(list)
-def _(to_show, state=None, name=None, **kw):
-    for t in to_show:
+def _(toshow, state=None, name=None, **kw):
+    for t in toshow:
+        print('    ##############', type(t), '################')
         state = pymol_load(t, state, **kw)
     return state
 
 @pymol_load.register(np.ndarray)
-def _(to_show, state, **kw):
+def _(toshow, state, **kw):
     showaxes()
-    if to_show.shape[-2:] == (3, 4):
-        return show_ndarray_n_ca_c(to_show, state, **kw)
-    elif to_show.shape[-2:] == (4, 2):
-        return show_ndarray_lines(to_show, state, **kw)
-    elif to_show.shape[-2:] == (4, 4):
-        pymol_visualize_xforms(to_show, state, **kw)
+    if toshow.shape[-2:] == (3, 4):
+        return show_ndarray_n_ca_c(toshow, state, **kw)
+    elif toshow.shape[-2:] == (4, 2):
+        return show_ndarray_lines(toshow, state, **kw)
+    elif toshow.shape[-2:] == (4, 4):
+        return pymol_visualize_xforms(toshow, state, **kw)
 
 def pymol_visualize_xforms(
     xforms,
@@ -98,7 +105,9 @@ def pymol_visualize_xforms(
     scale=1.0,
     **kw,
 ):
-    name = name or "rpxthing"
+    if xforms.shape == (4, 4):
+        xforms = xforms.reshape(1, 4, 4)
+    name = name or "xforms"
     state["seenit"][name] += 1
     name += "_%i" % state["seenit"][name]
     # mycgo = [cgo.BEGIN]
@@ -109,7 +118,7 @@ def pymol_visualize_xforms(
     y0 = [0, xyzlen[1], 0, 1]
     z0 = [0, 0, xyzlen[2], 1]
     if randpos > 0:
-        rr = homog.rand_xform()
+        rr = wu.homog.rand_xform()
         rr[:3, 3] *= randpos
         c0 = rr @ c0
         x0 = rr @ x0
@@ -122,38 +131,38 @@ def pymol_visualize_xforms(
         x = xform @ x0
         y = xform @ y0
         z = xform @ z0
-        mycgo.extend(cgo_cyl(c, x, 0.1, [1, 0, 0]))
-        mycgo.extend(cgo_cyl(c, y, 0.1, [0, 1, 0]))
-        mycgo.extend(cgo_cyl(c, z, 0.1, [0, 0, 1]))
+        mycgo.extend(cgo_cyl(c, x, 0.05, [1, 0, 0]))
+        mycgo.extend(cgo_cyl(c, y, 0.05, [0, 1, 0]))
+        mycgo.extend(cgo_cyl(c, z, 0.05, [0, 0, 1]))
     # mycgo.append(cgo.END)
     # print(mycgo)
     pymol.cmd.load_cgo(mycgo, name)
     return state
 
-def show_ndarray_lines(to_show, state=None, name=None, colors=None, **kw):
+def show_ndarray_lines(toshow, state=None, name=None, colors=None, **kw):
     name = name or "worms_thing"
     state["seenit"][name] += 1
     name += "_%i" % state["seenit"][name]
 
-    assert to_show.shape[-2:] == (4, 2)
-    to_show = to_show.reshape(-1, 4, 2)
+    assert toshow.shape[-2:] == (4, 2)
+    toshow = toshow.reshape(-1, 4, 2)
 
-    for i, ray in enumerate(to_show):
+    for i, ray in enumerate(toshow):
         color = colors[i] if colors else (1, 1, 1)
         showline(ray[:3, 1] * 100, ray[:3, 0], col=color)
         showsphere(ray[:3, 0], col=color)
     return state
 
-def show_ndarray_n_ca_c(to_show, state=None, name=None, **kw):
+def show_ndarray_n_ca_c(toshow, state=None, name=None, **kw):
     name = name or "worms_thing"
     state["seenit"][name] += 1
     name += "_%i" % state["seenit"][name]
 
     tmpdir = tempfile.mkdtemp()
     fname = tmpdir + "/" + name + ".pdb"
-    assert to_show.shape[-2:] == (3, 4)
+    assert toshow.shape[-2:] == (3, 4)
     with open(fname, "w") as out:
-        for i, a1 in enumerate(to_show.reshape(-1, 3, 4)):
+        for i, a1 in enumerate(toshow.reshape(-1, 3, 4)):
             for j, a in enumerate(a1):
                 line = format_atom(
                     atomi=3 * i + j,
@@ -170,7 +179,11 @@ def show_ndarray_n_ca_c(to_show, state=None, name=None, **kw):
 
 showme_state = dict(launched=0, seenit=defaultdict(lambda: -1))
 
-def showme_pymol(what, headless=False, block=False, **kw):
+def showme_pymol(what, name='noname', headless=False, block=False, **kw):
+    if "PYTEST_CURRENT_TEST" in os.environ and not headless:
+        print("NOT RUNNING PYMOL IN UNIT TEST")
+        return
+
     pymol.pymol_argv = ["pymol"]
     if headless:
         pymol.pymol_argv = ["pymol", "-c"]
@@ -178,8 +191,9 @@ def showme_pymol(what, headless=False, block=False, **kw):
         pymol.finish_launching()
         showme_state["launched"] = 1
 
+    print('############## showme_pymol', type(what), '##############')
     r = pymol_load(what, showme_state, **kw)
-    # pymol.cmd.set('internal_gui_width', '20')
+    # # pymol.cmd.set('internal_gui_width', '20')
 
     while block:
         time.sleep(1)
@@ -219,7 +233,7 @@ def cgo_sphere(c, r=1, col=(1, 1, 1)):
     # white sphere with 3A radius
     return [cgo.COLOR, col[0], col[1], col[2], cgo.SPHERE, c[0], c[1], c[2], r]
 
-def showsphere(c, r=1, col=(1, 1, 1), lbl=""):
+def showsphere(c, r=1, col=(1, 1, 1), lbl=''):
     v = pymol.cmd.get_view()
     if not lbl:
         global numvec
@@ -229,7 +243,7 @@ def showsphere(c, r=1, col=(1, 1, 1), lbl=""):
     pymol.cmd.load_cgo(mycgo, lbl)
     pymol.cmd.set_view(v)
 
-def showvecfrompoint(a, c, col=(1, 1, 1), lbl=""):
+def showvecfrompoint(a, c, col=(1, 1, 1), lbl=''):
     if not lbl:
         global numray
         lbl = "ray%i" % numray
@@ -285,7 +299,7 @@ def cgo_segment(c1, c2, col=(1, 1, 1)):
     #               col[0],col[1],col[2],col[0],col[1],col[2],], lbl)
     return OBJ
 
-def showsegment(c1, c2, col=(1, 1, 1), lbl=""):
+def showsegment(c1, c2, col=(1, 1, 1), lbl=''):
     if not lbl:
         global numseg
         lbl = "seg%i" % numseg
@@ -300,26 +314,13 @@ def showsegment(c1, c2, col=(1, 1, 1), lbl=""):
     pymol.cmd.set_view(v)
 
 def cgo_cyl(c1, c2, r, col=(1, 1, 1), col2=None):
-    if not col2:
-        col2 = col
+    col2 = col2 or col
     return [  # cgo.COLOR, col[0],col[1],col[2],
-        pymol.cgo.CYLINDER,
-        c1[0],
-        c1[1],
-        c1[2],
-        c2[0],
-        c2[1],
-        c2[2],
-        r,
-        col[0],
-        col[1],
-        col[2],
-        col2[0],
-        col2[1],
-        col2[2],
+        pymol.cgo.CYLINDER, c1[0], c1[1], c1[2], c2[0], c2[1], c2[2], r, col[0], col[1], col[2],
+        col2[0], col2[1], col2[2]
     ]
 
-def showcyl(c1, c2, r, col=(1, 1, 1), col2=None, lbl=""):
+def showcyl(c1, c2, r, col=(1, 1, 1), col2=None, lbl=''):
     if not lbl:
         global numseg
         lbl = "seg%i" % numseg
@@ -329,7 +330,7 @@ def showcyl(c1, c2, r, col=(1, 1, 1), col2=None, lbl=""):
     pymol.cmd.load_cgo(cgo_cyl(c1=c1, c2=c2, r=r, col=col, col2=col2), lbl)
     pymol.cmd.set_view(v)
 
-def showline(a, c, col=(1, 1, 1), lbl=""):
+def showline(a, c, col=(1, 1, 1), lbl=''):
     if not lbl:
         global numline
         lbl = "line%i" % numline
@@ -375,7 +376,7 @@ def cgo_lineabs(a, c, col=(1, 1, 1)):
         pymol.cgo.END,
     ]
 
-def showlineabs(a, c, col=(1, 1, 1), lbl=""):
+def showlineabs(a, c, col=(1, 1, 1), lbl=''):
     if not lbl:
         global numline
         lbl = "line%i" % numline
@@ -386,41 +387,72 @@ def showlineabs(a, c, col=(1, 1, 1), lbl=""):
     pymol.cmd.load_cgo(cgo, lbl)
     pymol.cmd.set_view(v)
 
-def show_with_axis(worms, idx=0):
-    pose = worms.pose(idx, align=0, end=1)
-    x_from = worms.positions[idx][worms.criteria.from_seg]
-    x_to = worms.positions[idx][worms.criteria.to_seg]
-    x = x_to @ np.linalg.inv(x_from)
-    axis, ang, cen = homog.axis_ang_cen_of(x)
-    np.set_printoptions(precision=20)
-    print(x)
-    print(axis)
-    print(ang)
-    print(cen)
-    axis *= 100
-    showme(pose, name="unit")
-    util.xform_pose(x, pose)
-    showme(pose, name="sym1")
-    util.xform_pose(x, pose)
-    showme(pose, name="sym2")
-    showline(axis, cen)
-    showsphere(cen)
+def cgo_fan(axis, cen, rad, arc, col=(1, 1, 1), col2=None):
+    ntri = 10
+    if arc > 10: arc = np.radians(arc)
+    col2 = col2 or col
+    rot = wu.homog.hrot(axis, arc / ntri, cen)
+    obj = []
+    pt1 = np.array([1, 2, 3, 0])
+    # pt1 = [0, 0, 0, 0]
+    # pt1[np.argmin(axis[:3])] = 1
+    axis = axis[:]
+    if wu.homog.hdot(pt1, axis) < 0:
+        pt1 = -pt1
 
-def show_with_z_axes(worms, idx=0, only_connected=0, **kw):
-    pose = worms.pose(idx, align=0, end=1, only_connected=only_connected, **kw)
-    x_from = worms.positions[idx][worms.criteria.from_seg]
-    x_to = worms.positions[idx][worms.criteria.to_seg]
-    cen1 = x_from[..., :, 3]
-    cen2 = x_to[..., :, 3]
-    axis1 = x_from[..., :, 2] * 100
-    axis2 = x_to[..., :, 2] * 100
-    showme(pose)
+    pt1 = wu.homog.proj_perp(axis, pt1)
+    pt1 = cen + wu.homog.hnormalized(pt1) * rad
+    for i in range(ntri):
+        # yapf: disable
+        print(pt1)
+        pt2 = rot @ pt1
+        # obj += [
+        #     pymol.cgo.TRIANGLE,
+        #        cen[0],cen[1],cen[2],
+        #        pt1[0],pt1[1],pt1[2],
+        #        pt2[0],pt2[1],pt2[2],
+        #        # normal-x1, normal-y1, normal-z1,
+        #        # axis[0]-cen[0],axis[1]-cen[1],axis[2]-cen[2],
+        #        # axis[0]-pt1[0],axis[1]-pt1[1],axis[2]-pt1[2],
+        #        # axis[0]-pt2[0],axis[1]-pt2[1],axis[2]-pt2[2],
+        #        axis[0],axis[1],axis[2],
+        #        axis[0],axis[1],axis[2],
+        #        axis[0],axis[1],axis[2],
+        #        col[0],col[1],col[2],
+        #        col[0],col[1],col[2],
+        #        col[0],col[1],col[2],
+        # ]
 
-    pymol.finish_launching()
-    showline(axis1, cen1)
-    showsphere(cen1)
-    showline(axis2, cen2)
-    showsphere(cen2)
+
+        obj += [
+               pymol.cgo.BEGIN,
+               pymol.cgo.TRIANGLES,
+               pymol.cgo.COLOR,    col[0],  col[1],  col[2],
+               pymol.cgo.ALPHA, 1,
+               pymol.cgo.NORMAL,  axis[0], axis[1], axis[2],
+               pymol.cgo.VERTEX,  cen [0], cen [1], cen [2],
+               pymol.cgo.NORMAL,  axis[0], axis[1], axis[2],
+               pymol.cgo.VERTEX,  pt1 [0], pt1 [1], pt1 [2],
+               pymol.cgo.NORMAL,  axis[0], axis[1], axis[2],
+               pymol.cgo.VERTEX,  pt2 [0], pt2 [1], pt2 [2],
+               pymol.cgo.END,
+            ]
+
+
+
+        pt1 = pt2
+        # yapf: enable
+    return obj
+
+def showfan(axis, cen, rad, arc, col=(1, 1, 1), lbl=''):
+    if not lbl:
+        global numseg
+        lbl = "seg%i" % numseg
+        numseg += 1
+    pymol.cmd.delete(lbl)
+    v = pymol.cmd.get_view()
+    pymol.cmd.load_cgo(cgo_fan(axis=axis, cen=cen, rad=rad, arc=arc, col=col), lbl)
+    pymol.cmd.set_view(v)
 
 def showaxes():
     v = pymol.cmd.get_view()
@@ -431,3 +463,36 @@ def showaxes():
         0.0, 1.0, pymol.cgo.VERTEX, 0.0, 0.0, 0.0, pymol.cgo.VERTEX, 00, 0.0, 20.0, pymol.cgo.END
     ]
     pymol.cmd.load_cgo(obj, "axes")
+
+_atom_record_format = (
+    "ATOM  {atomi:5d} {atomn:^4}{idx:^1}{resn:3s} {chain:1}{resi:4d}{insert:1s}   "
+    "{x:8.3f}{y:8.3f}{z:8.3f}{occ:6.2f}{b:6.2f}\n")
+
+def format_atom(
+    atomi=0,
+    atomn="ATOM",
+    idx=" ",
+    resn="RES",
+    chain="A",
+    resi=0,
+    insert=" ",
+    x=0,
+    y=0,
+    z=0,
+    occ=0,
+    b=0,
+):
+    return _atom_record_format.format(**locals())
+
+def is_rosetta_pose(toshow):
+    return isinstance(toshow, Pose)
+
+def pymol_load_pose(pose, name):
+    tmpdir = tempfile.mkdtemp()
+    fname = tmpdir + "/" + name + ".pdb"
+    pose.dump_pdb(fname)
+    pymol.cmd.load(fname)
+
+def pymol_xform(name, xform):
+    assert name in pymol.cmd.get_object_list()
+    pymol.cmd.transform_object(name, xform.flatten())

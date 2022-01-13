@@ -137,32 +137,32 @@ def test_symops_with_perfect_sym_frames():
 
     all_names = 'tet oct icos'.split()
     all_symframes = [
-        # hm.tetrahedral_frames,
+        hm.tetrahedral_frames,
         # hm.octahedral_frames,
-        hm.icosahedral_frames,
+        hm.icosahedral_frames[:7],
     ]
     all_point_angles = [
-        # {
-        # 2: [np.pi],
-        # 3: [np.pi * 2 / 3]
-        # },
+        {
+            2: [np.pi],
+            3: [np.pi * 2 / 3]
+        },
         # {
         # 2: [np.pi],
         # 3: [np.pi * 2 / 3],
         # 4: [np.pi / 2]
         # },
-        {
-            2: [np.pi],
-            3: [np.pi * 2 / 3],
-            5: [np.pi * 2 / 5, np.pi * 4 / 5]
-        },
+        # {
+        # 2: [np.pi],
+        # 3: [np.pi * 2 / 3],
+        # 5: [np.pi * 2 / 5, np.pi * 4 / 5]
+        # },
     ]
-    # xpost3 = hm.rand_xform()
-    xpost3 = np.array(
-        [[-0.9579827211004066, -0.2697986972771439, 0.0973538341341333, -0.5345926298039275],
-         [0.0362313657804560, -0.4505260684058727, -0.8920277741306206, 0.7021952604606366],
-         [0.2845283715321604, -0.8510199319841474, 0.4413713642262649, 0.9988688264173512],
-         [0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 1.0000000000000000]])
+    xpost3 = hm.rand_xform(cart_sd=10)
+    # xpost3 = np.array(
+    #     [[-0.9579827211004066, -0.2697986972771439, 0.0973538341341333, -0.5345926298039275],
+    #      [0.0362313657804560, -0.4505260684058727, -0.8920277741306206, 0.7021952604606366],
+    #      [0.2845283715321604, -0.8510199319841474, 0.4413713642262649, 0.9988688264173512],
+    #      [0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 1.0000000000000000]])
 
     print('-------------')
     print(repr(xpost3))
@@ -170,7 +170,7 @@ def test_symops_with_perfect_sym_frames():
 
     for name, symframes, point_angles in zip(all_names, all_symframes, all_point_angles):
         print('---------', name, '-----------')
-        xpre = hm.rand_xform()
+        xpre = hm.rand_xform(cart_sd=5)
         # xpre[:3, :3] = np.eye(3)
 
         frames = symframes @ xpre  # move subunit
@@ -204,7 +204,10 @@ def test_symops_with_perfect_sym_frames():
         for k in symops:
             op1 = symops[k]
             op2 = symops2[k]
+            frame1 = frames2[k[0]]
+            frame2 = frames2[k[1]]
             try:
+                assert np.allclose(op2.xrel @ frame1, frame2)
                 assert np.allclose(op1.axs, xpost2inv @ op2.axs, atol=1e-5)
                 assert np.allclose(op1.ang, op2.ang, atol=1e-5)
                 assert np.allclose(op1.cen, hm.proj_perp(op2.axs, xpost2inv @ op2.cen), atol=1e-4)
@@ -216,8 +219,28 @@ def test_symops_with_perfect_sym_frames():
                     assert np.allclose(op1.err[k], op2.err[k], atol=1e-5)
             except AssertionError as e:
                 from willutil import viz
-                viz.showme(symframes)
+                # assert 0
+                viz.showme(frames, 'frames1')
+                viz.showme(frames2, 'frames2')
+                viz.showme(list(symops2.values()), 'someops2')
+                viz.showme(op2, 'op2')
+                print('axs', op1.axs)
+                print('cen', op1.cen)
+                print('cen', hm.proj_perp(op2.axs, xpost2inv @ op2.cen))
+                print('cen', xpost2inv @ op2.cen)
+                print('cen', op2.cen)
+                assert 0
+                t2 = hm.hrot(op2.axs, np.pi, op2.cen)
+                viz.showme([
+                    [frame1, frame2],
+                    op2,
+                ], headless=False)
+                # assert 0
+                print(op2.xrel)
+                print(t2)
 
+                print()
+                print('hel   ', op1.hel, op2.hel)
                 print('rad   ', op1.rad, op2.rad)
                 print('op1   ', op1.cen)
                 print('op2   ', op2.cen)
@@ -266,6 +289,8 @@ def test_symops_with_perfect_sym_frames():
                 # print(op1.xrel)
                 # print(op2.xrel)
                 raise e
+
+        wu.viz.showme(list(symops3.values()), 'someops2')
 
 if __name__ == '__main__':
     test_symops_with_perfect_sym_frames()

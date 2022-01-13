@@ -1,12 +1,20 @@
 import numpy as np
 from willutil import homog as hm, Bunch
 
+class RelXformInfo(Bunch):
+    pass
+
 def rel_xform_info(frame1, frame2):
     # rel = np.linalg.inv(frame1) @ frame2
     rel = frame2 @ np.linalg.inv(frame1)
     rot = rel[:3, :3]
     # axs, ang = hm.axis_angle_of(rel)
     axs, ang, cen = hm.axis_ang_cen_of(rel)
+
+    # cenvec = frame2[:, 3] - frame1[:, 3]
+    # p, q = hm.line_line_closest_points_pa(cen, axs, frame1[:, 3], cenvec)
+    framecen = cen
+
     inplane = hm.proj_perp(axs, cen - frame1[:, 3])
     # inplane2 = hm.proj_perp(axs, cen - frame2[:, 3])
     rad = np.sqrt(np.sum(inplane**2))
@@ -16,13 +24,14 @@ def rel_xform_info(frame1, frame2):
         print('arosti', axs, ang)
         assert 0
     hel = np.sum(axs * rel[:, 3])
-    return Bunch(
+    return RelXformInfo(
         xrel=rel,
         axs=axs,
         ang=ang,
         cen=cen,
         rad=rad,
         hel=hel,
+        framecen=framecen,
     )
 
 def cyclic_sym_err(pair, angle):
