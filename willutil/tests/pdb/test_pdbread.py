@@ -3,15 +3,15 @@ import numpy as np, pandas as pd
 import willutil as wu
 
 def firstlines(s, num, skip):
-   count = 0
-   for line in s.splitlines():
-      if not line.startswith('ATOM'):
-         continue
-      count += 1
-      if count > skip:
-         print(line)
-      if count == num + skip:
-         break
+    count = 0
+    for line in s.splitlines():
+        if not line.startswith('ATOM'):
+            continue
+        count += 1
+        if count > skip:
+            print(line)
+        if count == num + skip:
+            break
 
 # COLUMNS        DATA TYPE       CONTENTS
 # --------------------------------------------------------------------------------
@@ -33,77 +33,77 @@ def firstlines(s, num, skip):
 # 79 - 80        LString(2)      Charge on the atom.
 
 def test_pdbread(pdbfname, pdbcontents):
-   pd.set_option("display.max_rows", None, "display.max_columns", None)
+    pd.set_option("display.max_rows", None, "display.max_columns", None)
 
-   foo = (
-      #    5    10   15   20   25   30   35   40   45   50   55   60   65   70   75   80
-      #    |    |    |    |    |    |    |    |    |    |    |    |    |    |    |    |
-      #hhhhhhiiiii_aaaaLrrr_CiiiiI___xxxxxxxxyyyyyyyyzzzzzzzzoooooobbbbbb      ssssEEcc
-      'HETATM12345 ATOM RES C 1234   1236.8572215.5813376.721440.50547.32      SEGIPBCH\n' +
-      'ATOM1234567 ATOM RES C 1234   1236.8572215.5813376.721440.50547.32      SEGIPBCH\n')
-   pdb = wu.pdb.readpdb(foo)
-   assert all(pdb.df.columns ==
-              ['het', 'ai', 'an', 'rn', 'ch', 'ri', 'x', 'y', 'z', 'occ', 'bfac', 'elem'])
-   assert pdb.df.shape == (2, 12)
-   assert all(pdb.df.ai == (12345, 1234567))
+    foo = (
+        #    5    10   15   20   25   30   35   40   45   50   55   60   65   70   75   80
+        #    |    |    |    |    |    |    |    |    |    |    |    |    |    |    |    |
+        #hhhhhhiiiii_aaaaLrrr_CiiiiI___xxxxxxxxyyyyyyyyzzzzzzzzoooooobbbbbb      ssssEEcc
+        'HETATM12345 ATOM RES C 1234   1236.8572215.5813376.721440.50547.32      SEGIPBCH\n' +
+        'ATOM1234567 ATOM RES C 1234   1236.8572215.5813376.721440.50547.32      SEGIPBCH\n')
+    pdb = wu.pdb.readpdb(foo)
+    assert all(pdb.df.columns ==
+               ['het', 'ai', 'an', 'rn', 'ch', 'ri', 'x', 'y', 'z', 'occ', 'bfac', 'elem'])
+    assert pdb.df.shape == (2, 12)
+    assert all(pdb.df.ai == (12345, 1234567))
 
-   # num, skip = 1, 0
-   # firstlines(pdbcontents, num, skip)
+    # num, skip = 1, 0
+    # firstlines(pdbcontents, num, skip)
 
-   pdb2 = wu.pdb.readpdb(pdbcontents)
-   pdb1 = wu.pdb.readpdb(pdbfname)
-   assert all(pdb1.df == pdb2.df)
-   assert pdb1.cryst1 == pdb2.cryst1
-   assert pdb1.seq == pdb2.seq
+    pdb2 = wu.pdb.readpdb(pdbcontents)
+    pdb1 = wu.pdb.readpdb(pdbfname)
+    assert all(pdb1.df == pdb2.df)
+    assert pdb1.cryst1 == pdb2.cryst1
+    assert pdb1.seq == pdb2.seq
 
-   assert pdb1.seq == 'ELTPAVTTYKLVINGKTLKGETTTKAVDAETAEKAFKQYANDNGVDGVWTYDDATKTFTVTEMVTEVPVA'
-   # print(pdbcontents)
-   # for c in pdb1.df.columns:
-   # print(pdb1.df[c][60])
-   types = [type(_) for _ in pdb1.df.loc[0]]
-   for i in range(len(pdb1.df)):
-      assert types == [type(_) for _ in pdb1.df.loc[i]]
+    assert pdb1.seq == 'ELTPAVTTYKLVINGKTLKGETTTKAVDAETAEKAFKQYANDNGVDGVWTYDDATKTFTVTEMVTEVPVA'
+    # print(pdbcontents)
+    # for c in pdb1.df.columns:
+    # print(pdb1.df[c][60])
+    types = [type(_) for _ in pdb1.df.loc[0]]
+    for i in range(len(pdb1.df)):
+        assert types == [type(_) for _ in pdb1.df.loc[i]]
 
 def test_load_pdbs(pdbfnames):
-   seqs = [
-      'ELTPAVTTYKLVINGKTLKGETTTKAVDAETAEKAFKQYANDNGVDGVWTYDDATKTFTVTEMVTEVPVA',
-      'DIQVQVNIDDNGKNFDYTYTVTTESELQKVLNELZDYIKKQGAKRVRISITARTKKEAEKFAAILIKVFAELGYNDINVTFDGDTVTVEGQL',
-   ]
-   pdbs = wu.pdb.load_pdbs(pdbfnames, cache=False, pbar=False)
-   assert set(pdbs.keys()) == set(pdbfnames)
-   for i, fname in enumerate(pdbs):
-      assert pdbs[fname].seq == seqs[i]
+    seqs = [
+        'ELTPAVTTYKLVINGKTLKGETTTKAVDAETAEKAFKQYANDNGVDGVWTYDDATKTFTVTEMVTEVPVA',
+        'DIQVQVNIDDNGKNFDYTYTVTTESELQKVLNELZDYIKKQGAKRVRISITARTKKEAEKFAAILIKVFAELGYNDINVTFDGDTVTVEGQL',
+    ]
+    pdbs = wu.pdb.load_pdbs(pdbfnames, cache=False, pbar=False)
+    assert set(pdbs.keys()) == set(pdbfnames)
+    for i, fname in enumerate(pdbs):
+        assert pdbs[fname].seq == seqs[i]
 
 def test_find_pdb_files():
-   pat = os.path.join(wu.tests.test_data_dir, 'pdb/*.pdb1.gz')
-   files = wu.pdb.find_pdb_files(pat)
-   found = set(os.path.basename(f) for f in files)
-   check = {'1qys.pdb1.gz', '1coi.pdb1.gz', '1pgx.pdb1.gz'}
-   assert check.issubset(found)
+    pat = os.path.join(wu.tests.test_data_dir, 'pdb/*.pdb1.gz')
+    files = wu.pdb.find_pdb_files(pat)
+    found = set(os.path.basename(f) for f in files)
+    check = {'1qys.pdb1.gz', '1coi.pdb1.gz', '1pgx.pdb1.gz'}
+    assert check.issubset(found)
 
 def test_pdbfile(pdbfile):
-   # print(pdbfile.df)
-   assert pdbfile.nres == 85
-   a = pdbfile.subfile('A')
-   b = pdbfile.subfile('B')
-   assert a.nres + b.nres == pdbfile.nres
-   assert np.all(a.df.ch == b'A')
-   assert np.all(b.df.ch == b'B')
+    # print(pdbfile.df)
+    assert pdbfile.nres == 85
+    a = pdbfile.subfile('A')
+    b = pdbfile.subfile('B')
+    assert a.nres + b.nres == pdbfile.nres
+    assert np.all(a.df.ch == b'A')
+    assert np.all(b.df.ch == b'B')
 
 def main():
-   from willutil.tests import fixtures
-   test_pdbread(fixtures.pdbfname(), fixtures.pdbcontents())
-   test_load_pdbs(fixtures.pdbfnames())
-   test_find_pdb_files()
-   test_pdbfile(fixtures.pdbfile())
+    from willutil.tests import fixtures
+    test_pdbread(fixtures.pdbfname(), fixtures.pdbcontents())
+    test_load_pdbs(fixtures.pdbfnames())
+    test_find_pdb_files()
+    test_pdbfile(fixtures.pdbfile())
 
-   # with wu.Timer():
-   #    ps = wu.pdb.load_pdbs('/home/sheffler/data/rcsb/divided/as/*.pdb?.gz', skip_errors=True,
-   #                          maxsize=50_000)
-   #    for fn, pf in ps.items():
-   #       if pf.nres < 2:
-   #          continue
-   #       print(pf.nchain, pf.nres, pf.code)
+    # with wu.Timer():
+    #    ps = wu.pdb.load_pdbs('/home/sheffler/data/rcsb/divided/as/*.pdb?.gz', skip_errors=True,
+    #                          maxsize=50_000)
+    #    for fn, pf in ps.items():
+    #       if pf.nres < 2:
+    #          continue
+    #       print(pf.nchain, pf.nres, pf.code)
 
 if __name__ == '__main__':
-   main()
+    main()

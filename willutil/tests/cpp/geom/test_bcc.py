@@ -581,14 +581,14 @@ from willutil.cpp.geom.bcc import *
 #       assert c * 0.9 < np.max(dc) < c
 
 if __name__ == "__main__":
-   # test_bcc_neighbors_3()
-   # test_bcc_neighbors_3_sphere()
-   # test_bcc_neighbors_3_exhalf_sphere()
-   # test_bcc_neighbors_6_3()
-   # test_bcc_neighbors_6_3_extrahalf()
-   # test_bcc_neighbors_6_3_oddlast3()
-   # test_bcc_neighbors_6_3_oddlast3_extrahalf()
-   # test_bcc_neighbors_6_3_oddlast3_sphere()
-   # test_bcc_neighbors_6_3_oddlast3_sphere_extrahalf()
-   # test_bcc_neighbor_radius()
-   pass
+    # test_bcc_neighbors_3()
+    # test_bcc_neighbors_3_sphere()
+    # test_bcc_neighbors_3_exhalf_sphere()
+    # test_bcc_neighbors_6_3()
+    # test_bcc_neighbors_6_3_extrahalf()
+    # test_bcc_neighbors_6_3_oddlast3()
+    # test_bcc_neighbors_6_3_oddlast3_extrahalf()
+    # test_bcc_neighbors_6_3_oddlast3_sphere()
+    # test_bcc_neighbors_6_3_oddlast3_sphere_extrahalf()
+    # test_bcc_neighbor_radius()
+    pass

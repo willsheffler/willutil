@@ -31,7 +31,7 @@ def cyclic_sym_err(pair, angle):
     # print('cyclic_sym_err', ang_err, angle, pair.ang, pair.rad)
     return np.sqrt(hel_err**2 + ang_err**2)
 
-def symops_from_frames(frames, angles):
+def symops_from_frames(frames, point_angles):
     assert len(frames) > 1
     assert frames.shape[-2:] == (4, 4)
     pairs = dict()
@@ -40,8 +40,8 @@ def symops_from_frames(frames, angles):
             frame2 = frames[j]
             pair = rel_xform_info(frame1, frame2)
             pair.err = dict()
-            for n, a in angles.items():
-                err = cyclic_sym_err(pair, a)
+            for n, angs in point_angles.items():
+                err = min(cyclic_sym_err(pair, a) for a in angs)
                 pair.err[n] = err
                 # print('symops_from_frames', n, a, err)
             pairs[i, j] = pair

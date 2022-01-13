@@ -157,7 +157,7 @@ def axis_of(xforms, tol=1e-9, debug=False):
 
         eig = np.linalg.eig(x180[..., :3, :3])
         eigval, eigvec = np.real(eig[0]), np.real(eig[1])
-        eigval_is_1 = np.abs(eigval - 1) < tol
+        eigval_is_1 = np.abs(eigval - 1) < 1e-6
         ixform, ieigval = np.where(eigval_is_1)
 
         # print(ixform)
