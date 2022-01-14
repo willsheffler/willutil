@@ -38,26 +38,43 @@ def test_rel_xform_info():
 
     axs0 = [0, 0, 1, 0]
     ang0 = (2 * np.random.random() - 1) * np.pi
-    shift = [0, 0, 2 * np.random.random() - 1, 0]
-    cen0 = [0, 0, 0, 1]
+    # frameAcen = [0, 0, 2 * np.random.random() - 1, 1]
+    frameAcen = np.array([2 * np.random.random() - 1, 2 * np.random.random() - 1, 1, 1])
+
+    xformcen = [0, 0, 0, 1]
+    trans = [0, 0, 0, 1]
+
     # print(axs0)
     # print(ang0)
     # print(shift)
 
     frameA = np.eye(4)
-    # frameA[:, 3] = shift
-    xrel0 = hm.hrot(axs0, ang0, cen0)
-    xrel0[:, 3] = shift
+    frameA[:, 3] = frameAcen
+    xrel0 = hm.hrot(axs0, ang0, xformcen)
+    xrel0[:, 3] = trans
 
     frameB = xrel0 @ frameA
-
     xinfo = hm.rel_xform_info(frameA, frameB)
+
+    rad = np.sqrt(np.sum(frameAcen[:2]**2))
+    # print('frameAcen', frameA[:, 3])
+    # print('frameBcen', frameB[:, 3])
+
     assert np.allclose(xrel0, xinfo.xrel)
     assert np.allclose(axs0, xinfo.axs if ang0 > 0 else -xinfo.axs)
     assert np.allclose(xinfo.ang, abs(ang0))
+    assert np.allclose(rad, xinfo.rad)
+    assert np.allclose([0, 0, frameAcen[2], 1], xinfo.framecen)
+
+    # print()
     # print('xinfo.cen', xinfo.cen)
-    # print('xinfo.rad', xinfo.rad, shift[0])
-    assert np.allclose(xinfo.hel, np.sum(xinfo.axs * shift))
+    # print()
+    # print('framecen', (frameA[:, 3] + frameB[:, 3]) / 2)
+    # print()
+    # print(axs0)
+    # print('xinfo.framecen', xinfo.framecen)
+
+    assert np.allclose(xinfo.hel, np.sum(xinfo.axs * trans))
 
 def test_rel_xform_info_rand(nsamp=100):
     for i in range(nsamp):
@@ -126,8 +143,12 @@ def test_rel_xform_info_rand(nsamp=100):
         assert np.allclose(rad0, xinfo.rad)
 
 def test_symops_with_perfect_sym_frames():
-    np.set_printoptions(precision=20, suppress=True, linewidth=98,
-                        formatter={'float': lambda f: '%20.16f' % f})
+    np.set_printoptions(
+        precision=10,
+        suppress=True,
+        linewidth=98,
+        formatter={'float': lambda f: '%14.10f' % f},
+    )
     # r = hm.hrot([1, 0, 0], 180)
     # xinfo.axs, a = hm.axis_angle_of(r)
     # print(r)
@@ -138,24 +159,24 @@ def test_symops_with_perfect_sym_frames():
     all_names = 'tet oct icos'.split()
     all_symframes = [
         hm.tetrahedral_frames,
-        # hm.octahedral_frames,
-        hm.icosahedral_frames[:7],
+        hm.octahedral_frames,
+        hm.icosahedral_frames[:30],
     ]
     all_point_angles = [
         {
             2: [np.pi],
             3: [np.pi * 2 / 3]
         },
-        # {
-        # 2: [np.pi],
-        # 3: [np.pi * 2 / 3],
-        # 4: [np.pi / 2]
-        # },
-        # {
-        # 2: [np.pi],
-        # 3: [np.pi * 2 / 3],
-        # 5: [np.pi * 2 / 5, np.pi * 4 / 5]
-        # },
+        {
+            2: [np.pi],
+            3: [np.pi * 2 / 3],
+            4: [np.pi / 2]
+        },
+        {
+            2: [np.pi],
+            3: [np.pi * 2 / 3],
+            5: [np.pi * 2 / 5, np.pi * 4 / 5]
+        },
     ]
     xpost3 = hm.rand_xform(cart_sd=10)
     # xpost3 = np.array(
@@ -187,7 +208,7 @@ def test_symops_with_perfect_sym_frames():
         for k, op in symops.items():
             wgood, ngood = None, 0
             for n, e in op.err.items():
-                if e < 0.001:
+                if e < 0.002:
                     ngood += 1
                     wgood = n
             if not ngood == 1:
@@ -220,22 +241,24 @@ def test_symops_with_perfect_sym_frames():
             except AssertionError as e:
                 from willutil import viz
                 # assert 0
-                viz.showme(frames, 'frames1')
-                viz.showme(frames2, 'frames2')
-                viz.showme(list(symops2.values()), 'someops2')
-                viz.showme(op2, 'op2')
+                # viz.showme(list(symops2.values()), 'someops2')
+                # viz.showme(op1, 'op1')
+                # viz.showme(op2, 'op2')
+
+                print(op1.ang)
+                print(repr(op1.frames))
+                print(op1.axs)
+
                 print('axs', op1.axs)
                 print('cen', op1.cen)
                 print('cen', hm.proj_perp(op2.axs, xpost2inv @ op2.cen))
                 print('cen', xpost2inv @ op2.cen)
                 print('cen', op2.cen)
-                assert 0
+
                 t2 = hm.hrot(op2.axs, np.pi, op2.cen)
-                viz.showme([
-                    [frame1, frame2],
-                    op2,
-                ], headless=False)
-                # assert 0
+                viz.showme([op2], headless=False)
+                # viz.showme(symops, headless=False)
+                assert 0
                 print(op2.xrel)
                 print(t2)
 
@@ -252,7 +275,7 @@ def test_symops_with_perfect_sym_frames():
                 # print(op2.xrel)
                 raise e
 
-        # return
+        # continue
 
         xpost3inv = np.linalg.inv(xpost3)
         frames3 = xpost3 @ frames  # move whole structure
@@ -264,8 +287,8 @@ def test_symops_with_perfect_sym_frames():
             op2 = symops3[k]
             try:
                 assert np.allclose(op1.ang, op2.ang, atol=1e-5)
-                assert np.allclose(op1.cen, hm.proj_perp(op1.axs, xpost3inv @ op2.cen), atol=1e-5)
-                assert np.allclose(op1.rad, op2.rad, atol=1e-5)
+                assert np.allclose(op1.cen, hm.proj_perp(op1.axs, xpost3inv @ op2.cen), atol=1e-4)
+                assert np.allclose(op1.rad, op2.rad, atol=1e-4)
                 assert np.allclose(op1.hel, op2.hel, atol=1e-5)
                 for k in point_angles:
                     assert np.allclose(op1.err[k], op2.err[k], atol=1e-5)
@@ -277,23 +300,26 @@ def test_symops_with_perfect_sym_frames():
 
                 # assert np.allclose(op1.cen, xpost3inv @ hm.proj_perp(op2.axs, op2.cen), atol=1e-5)
             except AssertionError as e:
-                # print('op1   ', op1.cen)
+                print('op1       ', op1.cen)
                 print('cen op2   ', op2.cen)
                 print('cen op2inv', xpost3inv @ op2.cen)
-                # print('proj  ', hm.proj_perp(op1.axs, xpost3inv @ op2.cen))
+                print('proj      ', hm.proj_perp(op1.axs, xpost3inv @ op2.cen))
+                print('proj      ', hm.proj_perp(op2.axs, xpost3inv @ op2.cen))
                 # print('proj  ', hm.proj_perp(op2.axs, op2.cen))
                 # print('proj  ', xpost3inv @ hm.proj_perp(op2.axs, op2.cen))
-                print('op1axs', op1.axs, op1.ang)
-                print('op2axs', xpost3inv @ op2.axs, op2.ang)
-                print('op2axs', op2.axs, op2.ang)
+                # print('op1axs', op1.axs, op1.ang)
+                # print('op2axs', xpost3inv @ op2.axs, op2.ang)
+                # print('op2axs', op2.axs, op2.ang)
                 # print(op1.xrel)
                 # print(op2.xrel)
                 raise e
 
-        wu.viz.showme(list(symops3.values()), 'someops2')
+        # wu.viz.showme(list(symops3.values()), 'someops2')
 
 if __name__ == '__main__':
-    test_symops_with_perfect_sym_frames()
+
     test_rel_xform_info()
+    test_symops_with_perfect_sym_frames()
+
     test_rel_xform_info_rand()
     test_cyclic_sym_err()

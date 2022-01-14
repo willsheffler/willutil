@@ -83,6 +83,7 @@ dask-worker-space
 /willutil/data/pdb/meta/*.pickle
 # /willutil/tests/testdata/pdb/*.pdb*.gz.pickle
 /*.pdb
+/*.cif
 /*.pdb1
 /*.pickle
 /*.log

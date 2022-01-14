@@ -11,17 +11,22 @@ def rel_xform_info(frame1, frame2):
     # axs, ang = hm.axis_angle_of(rel)
     axs, ang, cen = hm.axis_ang_cen_of(rel)
 
-    # cenvec = frame2[:, 3] - frame1[:, 3]
-    # p, q = hm.line_line_closest_points_pa(cen, axs, frame1[:, 3], cenvec)
-    framecen = cen
+    framecen = (frame2[:, 3] + frame1[:, 3]) / 2
+    framecen = framecen - cen
+    framecen = hm.proj(axs, framecen)
+    framecen = framecen + cen
 
     inplane = hm.proj_perp(axs, cen - frame1[:, 3])
     # inplane2 = hm.proj_perp(axs, cen - frame2[:, 3])
     rad = np.sqrt(np.sum(inplane**2))
     if np.isnan(rad):
+        print('isnan rad')
+        print('xrel')
         print(rel)
-        print(np.linalg.det(rel))
-        print('arosti', axs, ang)
+        print('det', np.linalg.det(rel))
+        print('axs ang', axs, ang)
+        print('cen', cen)
+        print('inplane', inplane)
         assert 0
     hel = np.sum(axs * rel[:, 3])
     return RelXformInfo(
@@ -32,6 +37,7 @@ def rel_xform_info(frame1, frame2):
         rad=rad,
         hel=hel,
         framecen=framecen,
+        frames=np.array([frame1, frame2]),
     )
 
 def cyclic_sym_err(pair, angle):

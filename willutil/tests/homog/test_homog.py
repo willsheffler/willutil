@@ -327,8 +327,7 @@ def test_axis_ang_cen_of_rand():
     assert np.allclose(np.linalg.norm(axis, axis=-1), 1.0)
 
 def test_axis_ang_cen_of_rand_180():
-    return
-    shape = (1, )
+    shape = (5, 6, 7)
     axis0 = hnormalized(np.random.randn(*shape, 3))
     ang0 = np.pi
     cen0 = np.random.randn(*shape, 3) * 100.0
@@ -338,7 +337,7 @@ def test_axis_ang_cen_of_rand_180():
     rot[..., :, 3] += helical_trans
     axis, ang, cen = axis_ang_cen_of(rot)
 
-    assert np.allclose(axis0, axis, rtol=1e-5)
+    assert np.allclose(np.abs(hdot(axis0, axis)), 1, rtol=1e-5)
     assert np.allclose(ang0, ang, rtol=1e-5)
     #  check rotation doesn't move cen
     cenhat = (rot @ cen[..., None]).squeeze()
@@ -1213,7 +1212,29 @@ def test_axis_angle_180_bug():
 
     # yapf: enable
 
+def test_symfit_180_bug():
+    frame1, frame2 = np.array(
+        [[[0.6033972864793846, 0.6015781253442000, -0.5234648855030042, -1.1532003332616305],
+          [-0.7755284347068191, 0.5955116423562440, -0.2095746725092504, -3.0368828586972385],
+          [0.1856538852343365, 0.5324186885984834, 0.8258710477468421, -0.2979720504392123],
+          [0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 1.0000000000000000]],
+         [[-0.0511070454710340, 0.9143894508662506, 0.4015968309458356, -2.1158643659518335],
+          [0.9864845374904164, -0.0164635475722965, 0.1630252172875522, 1.7882112409724600],
+          [0.1556802529904169, 0.4045007928280198, -0.9011896470823125, -1.7224210310494734],
+          [0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 1.0000000000000000]]])
+
+    rel = frame2 @ np.linalg.inv(frame1)
+    assert np.allclose(rel @ frame1, frame2)
+
+    axs, ang, cen = axis_ang_cen_of(rel)
+    print('axs', axs)
+    print('ang', ang)
+    print('cen', cen)
+
 if __name__ == '__main__':
+
+    test_symfit_180_bug()
+    assert 0
 
     # test_axis_angle_of_rand()
     # test_axis_angle_of()
@@ -1266,4 +1287,4 @@ if __name__ == '__main__':
     test_xform_around_dof_for_vector_target_angle()
     test_axis_angle_180_bug()
 
-    # print('test_homog.py done')
+    print('test_homog.py done')

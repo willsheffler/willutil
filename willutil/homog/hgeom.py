@@ -141,7 +141,7 @@ def fast_axis_of(xforms):
     else:
         raise ValueError('wrong shape for xform/rotation matrix: ' + str(xforms.shape))
 
-def axis_of(xforms, tol=1e-9, debug=False):
+def axis_of(xforms, tol=1e-7, debug=False):
     xdim = xforms.shape[-1]
     origshape = xforms.shape
     if xforms.ndim != 3:
@@ -332,6 +332,8 @@ def hstub(u, v, w, cen=None):
     stubs[..., :, 3] = hpoint(cen[..., :])
     return stubs
 
+hframe = hstub
+
 def htrans(trans, dtype='f8'):
     trans = np.asanyarray(trans)
     if trans.shape[-1] != 3:
@@ -460,7 +462,8 @@ def proj(u, v):
 def proj_perp(u, v):
     u = np.asanyarray(u)
     v = np.asanyarray(v)
-    return v - hdot(u, v)[..., None] / hnorm2(u)[..., None] * u
+    # return v - hdot(u, v)[..., None] / hnorm2(u)[..., None] * u
+    return v - proj(u, v)
 
 def point_in_plane(plane, pt):
     return np.abs(hdot(plane[..., :3, 1], pt[..., :3] - plane[..., :3, 0])) < 0.000001
@@ -551,23 +554,42 @@ def axis_ang_cen_of_eig(xforms, debug=False):
     return axis, angle, cen
 
 def axis_ang_cen_of_planes(xforms, debug=False):
+    origshape = xforms.shape[:-2]
+    xforms = xforms.reshape(-1, 4, 4)
+
     axis, angle = axis_angle_of(xforms)
-    #  sketchy magic points...
-    p1 = (-32.09501046777237, 03.36227004372687, 35.34672781477340, 1)
-    p2 = (21.15113978202345, 12.55664537217840, -37.48294301885574, 1)
-    # p1 = rand_point()
-    # p2 = rand_point()
-    tparallel = hdot(axis, xforms[..., :, 3])[..., None] * axis
-    q1 = xforms @ p1 - tparallel
-    q2 = xforms @ p2 - tparallel
-    n1 = hnormalized(q1 - p1)
-    n2 = hnormalized(q2 - p2)
-    c1 = (p1 + q1) / 2.0
-    c2 = (p2 + q2) / 2.0
-    plane1 = hray(c1, n1)
-    plane2 = hray(c2, n2)
-    isect, status = intersect_planes(plane1, plane2)
-    return axis, angle, isect[..., :, 0]
+    not_ident = np.abs(angle) > -1e-9
+    cen = np.tile([0, 0, 0, 1], np.shape(angle)).reshape(*np.shape(angle), 4)
+
+    if np.sum(not_ident):
+        xforms1 = xforms[not_ident]
+        axis1 = axis[not_ident]
+        #  sketchy magic points...
+        p1 = (-32.09501046777237, 03.36227004372687, 35.34672781477340, 1)
+        p2 = (21.15113978202345, 12.55664537217840, -37.48294301885574, 1)
+        # p1 = rand_point()
+        # p2 = rand_point()
+        tparallel = hdot(axis, xforms[..., :, 3])[..., None] * axis
+        q1 = xforms @ p1 - tparallel
+        q2 = xforms @ p2 - tparallel
+        n1 = hnormalized(q1 - p1)
+        n2 = hnormalized(q2 - p2)
+        c1 = (p1 + q1) / 2.0
+        c2 = (p2 + q2) / 2.0
+        plane1 = hray(c1, n1)
+        plane2 = hray(c2, n2)
+        isect, status = intersect_planes(plane1, plane2)
+        cen1 = isect[..., :, 0]
+
+    if len(cen) == len(cen1):
+        cen = cen1
+    else:
+        cen[not_ident] = cen1
+
+    axis = axis.reshape(*origshape, 4)
+    angle = angle.reshape(origshape)
+    cen = cen.reshape(*origshape, 4)
+    return axis, angle, cen
 
 axis_ang_cen_of = axis_ang_cen_of_planes
 
