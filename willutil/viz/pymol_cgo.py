@@ -199,7 +199,6 @@ def cgo_fan(
     col2 = col2 or col
     rot = wu.homog.hrot(axis, arc / (ntri + 0), cen)
 
-    print('arstrast', startpoint)
     dirn = startpoint - cen
 
     dirn = wu.homog.proj_perp(axis, dirn)

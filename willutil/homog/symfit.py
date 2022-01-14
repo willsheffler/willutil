@@ -42,9 +42,10 @@ def rel_xform_info(frame1, frame2):
 
 def cyclic_sym_err(pair, angle):
     hel_err = pair.hel
-    ang_err = pair.rad * (angle - pair.ang)
-    # print('cyclic_sym_err', ang_err, angle, pair.ang, pair.rad)
-    return np.sqrt(hel_err**2 + ang_err**2)
+    errrad = min(10000, max(pair.rad, 1.0))
+    ang_err = errrad * (angle - pair.ang)
+    err = np.sqrt(hel_err**2 + ang_err**2)
+    return err
 
 def symops_from_frames(frames, point_angles):
     assert len(frames) > 1

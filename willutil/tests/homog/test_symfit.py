@@ -20,7 +20,7 @@ def test_cyclic_sym_err(nsamp=100):
 
         tgtang2 = np.random.rand() * np.pi
         err2 = hm.cyclic_sym_err(pair, tgtang2)
-        assert np.allclose(err2, abs(tgtang - tgtang2) * rad)
+        assert np.allclose(err2, abs(tgtang - tgtang2) * min(10000, max(1, rad)))
 
         hlen = np.random.normal()
         rel[:3, 3] = hlen * axs[:3]
@@ -31,7 +31,7 @@ def test_cyclic_sym_err(nsamp=100):
 
         tgtang3 = np.random.rand() * np.pi
         err3 = hm.cyclic_sym_err(pair, tgtang3)
-        angerr = (tgtang - tgtang3) * rad
+        angerr = (tgtang - tgtang3) * min(10000, max(1, rad))
         assert np.allclose(err3, np.sqrt(hlen**2 + angerr**2))
 
 def test_rel_xform_info():
@@ -142,7 +142,7 @@ def test_rel_xform_info_rand(nsamp=100):
         assert np.allclose(hel0, xinfo.hel)
         assert np.allclose(rad0, xinfo.rad)
 
-def test_symops_with_perfect_sym_frames():
+def test_symops_with_perfect_sym_frames(nframes=9):
     np.set_printoptions(
         precision=10,
         suppress=True,
@@ -158,9 +158,13 @@ def test_symops_with_perfect_sym_frames():
 
     all_names = 'tet oct icos'.split()
     all_symframes = [
-        hm.tetrahedral_frames,
-        hm.octahedral_frames,
-        hm.icosahedral_frames[:30],
+        # hm.tetrahedral_frames,
+        # hm.octahedral_frames,
+        # hm.icosahedral_frames[:30],
+        hm.tetrahedral_frames[np.random.choice(12, nframes, replace=False), :, :],
+        hm.octahedral_frames[np.random.choice(24, nframes, replace=False), :, :],
+        hm.icosahedral_frames[np.random.choice(60, nframes, replace=False), :, :],
+        # hm.icosahedral_frames[(20, 21), :, :],
     ]
     all_point_angles = [
         {
@@ -179,19 +183,26 @@ def test_symops_with_perfect_sym_frames():
         },
     ]
     xpost3 = hm.rand_xform(cart_sd=10)
-    # xpost3 = np.array(
-    #     [[-0.9579827211004066, -0.2697986972771439, 0.0973538341341333, -0.5345926298039275],
-    #      [0.0362313657804560, -0.4505260684058727, -0.8920277741306206, 0.7021952604606366],
-    #      [0.2845283715321604, -0.8510199319841474, 0.4413713642262649, 0.9988688264173512],
-    #      [0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 1.0000000000000000]])
+    xpre = hm.rand_xform(cart_sd=5)
 
-    print('-------------')
-    print(repr(xpost3))
-    print('-------------')
+    #    xpre = np.array([[-0.4971291915, 0.5418972027, -0.6776503439, 1.5447300543],
+    #                     [0.5677267562, -0.3874638202, -0.7263319616, 2.4858980827],
+    #                     [-0.6561622492, -0.7458010524, -0.1150299654, -4.0124612619],
+    #                     [0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000]])
+    #    xprost3 = np.array([[0.2066723595, -0.9743827067, 0.0886841400, -4.8092830795],
+    #                        [0.9297657442, 0.2238133467, 0.2923067684, -7.8301135871],
+    #                        [-0.3046673543, 0.0220437459, 0.9522036949, -13.6244069897],
+    #                        [0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000]])
+
+    # print()
+    # print(repr(xpre))
+    # print('-------------')
+    # print(repr(xpost3))
+    # print('-------------')
 
     for name, symframes, point_angles in zip(all_names, all_symframes, all_point_angles):
-        print('---------', name, '-----------')
-        xpre = hm.rand_xform(cart_sd=5)
+        # print('---------', name, '-----------')
+
         # xpre[:3, :3] = np.eye(3)
 
         frames = symframes @ xpre  # move subunit
@@ -208,13 +219,14 @@ def test_symops_with_perfect_sym_frames():
         for k, op in symops.items():
             wgood, ngood = None, 0
             for n, e in op.err.items():
-                if e < 0.002:
+                if e < 5e-2:
                     ngood += 1
                     wgood = n
             if not ngood == 1:
-                print('ngood!=1', op.err)
+                print('ngood!=1', k, ngood, op.err)
+
                 assert 0
-            assert np.allclose(0, op.cen[:3], atol=1e-4)
+            assert np.allclose(0, op.cen[:3], atol=1e-3)
 
         xpost2 = hm.htrans(np.array([4, 5, 6]))
         xpost2inv = np.linalg.inv(xpost2)
@@ -228,17 +240,18 @@ def test_symops_with_perfect_sym_frames():
             frame1 = frames2[k[0]]
             frame2 = frames2[k[1]]
             try:
-                assert np.allclose(op2.xrel @ frame1, frame2)
-                assert np.allclose(op1.axs, xpost2inv @ op2.axs, atol=1e-5)
-                assert np.allclose(op1.ang, op2.ang, atol=1e-5)
-                assert np.allclose(op1.cen, hm.proj_perp(op2.axs, xpost2inv @ op2.cen), atol=1e-4)
-                assert np.allclose(op1.rad, op2.rad, atol=1e-4)
-                assert np.allclose(op1.hel, op2.hel, atol=1e-5)
+                assert np.allclose(op2.xrel @ frame1, frame2, atol=1e-8)
+                assert np.allclose(op1.axs, xpost2inv @ op2.axs, atol=1e-4)
+                assert np.allclose(op1.ang, op2.ang, atol=1e-4)
+                assert np.allclose(op1.cen, hm.proj_perp(op2.axs, xpost2inv @ op2.cen), atol=1e-3)
+                assert np.allclose(op1.rad, op2.rad, atol=1e-3)
+                assert np.allclose(op1.hel, op2.hel, atol=1e-4)
                 for k in point_angles:
-                    if not np.allclose(op1.err[k], op2.err[k], atol=1e-5):
+                    if not np.allclose(op1.err[k], op2.err[k], atol=1e-4):
                         print('err', op1.err[k], op2.err[k])
-                    assert np.allclose(op1.err[k], op2.err[k], atol=1e-5)
+                    assert np.allclose(op1.err[k], op2.err[k], atol=1e-4)
             except AssertionError as e:
+                print(repr(xpost2))
                 from willutil import viz
                 # assert 0
                 # viz.showme(list(symops2.values()), 'someops2')
@@ -286,25 +299,27 @@ def test_symops_with_perfect_sym_frames():
             op1 = symops[k]
             op2 = symops3[k]
             try:
-                assert np.allclose(op1.ang, op2.ang, atol=1e-5)
-                assert np.allclose(op1.cen, hm.proj_perp(op1.axs, xpost3inv @ op2.cen), atol=1e-4)
-                assert np.allclose(op1.rad, op2.rad, atol=1e-4)
-                assert np.allclose(op1.hel, op2.hel, atol=1e-5)
+                assert np.allclose(op1.ang, op2.ang, atol=1e-3)
+                assert np.allclose(op1.cen, hm.proj_perp(op1.axs, xpost3inv @ op2.cen), atol=1e-2)
+                assert np.allclose(op1.rad, op2.rad, atol=1e-2)
+                assert np.allclose(op1.hel, op2.hel, atol=1e-3)
                 for k in point_angles:
-                    assert np.allclose(op1.err[k], op2.err[k], atol=1e-5)
+                    assert np.allclose(op1.err[k], op2.err[k], atol=1e-2)
 
                 op2axsinv = xpost3inv @ op2.axs
                 if hm.hdot(op2axsinv, op1.axs) < 0:
                     op2axsinv = -op2axsinv
-                assert np.allclose(op1.axs, op2axsinv, atol=1e-5)
+                assert np.allclose(op1.axs, op2axsinv, atol=1e-4)
 
-                # assert np.allclose(op1.cen, xpost3inv @ hm.proj_perp(op2.axs, op2.cen), atol=1e-5)
+                # assert np.allclose(op1.cen, xpost3inv @ hm.proj_perp(op2.axs, op2.cen), atol=1e-4)
             except AssertionError as e:
+                print('op1       ', op1.rad)
                 print('op1       ', op1.cen)
                 print('cen op2   ', op2.cen)
                 print('cen op2inv', xpost3inv @ op2.cen)
                 print('proj      ', hm.proj_perp(op1.axs, xpost3inv @ op2.cen))
                 print('proj      ', hm.proj_perp(op2.axs, xpost3inv @ op2.cen))
+                print(op1.rad, op2.rad)
                 # print('proj  ', hm.proj_perp(op2.axs, op2.cen))
                 # print('proj  ', xpost3inv @ hm.proj_perp(op2.axs, op2.cen))
                 # print('op1axs', op1.axs, op1.ang)
@@ -319,7 +334,9 @@ def test_symops_with_perfect_sym_frames():
 if __name__ == '__main__':
 
     test_rel_xform_info()
-    test_symops_with_perfect_sym_frames()
+
+    for i in range(1):
+        test_symops_with_perfect_sym_frames()
 
     test_rel_xform_info_rand()
     test_cyclic_sym_err()
