@@ -1,3 +1,5 @@
+import os
+
 __all__ = ("Bunch", "bunchify", "unbunchify")
 
 class Bunch(dict):
@@ -10,6 +12,19 @@ class Bunch(dict):
         self.update(kw)
         self.__dict__['_special'] = dict()
         self.__dict__['_special']['_strict_lookup'] = _strict
+
+    def __str__(self):
+        s = 'Bunch(' + os.linesep
+        if len(self) == 0:
+            return 'Bunch()'
+        w = int(min(40, max(len(str(k)) for k in self)))
+        for k, v in self.items():
+            s += f'  {k:{f"{w}"}} = {v}' + os.linesep
+        s += ')'
+        return s
+
+    def reduce(self, func):
+        return Bunch({k: func(self[k]) for k in self})
 
     def __contains__(self, k):
         if k == '_special':

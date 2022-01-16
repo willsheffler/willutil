@@ -60,16 +60,16 @@ def showvecfrompoint(axis, cen, col=(1, 1, 1), lbl=''):
         cen[1],
         cen[2],
         cgo.VERTEX,
-        cen[0] + a[0],
-        cen[1] + a[1],
-        cen[2] + a[2],
+        cen[0] + axis[0],
+        cen[1] + axis[1],
+        cen[2] + axis[2],
         cgo.END,
     ]
     pymol.cmd.load_cgo(OBJ, lbl)
     # pymol.cmd.load_cgo([cgo.COLOR, col[0],col[1],col[2],
     #             cgo.SPHERE,   cen[0],       cen[1],       cen[2],    0.08,
     #             cgo.CYLINDER, cen[0],       cen[1],       cen[2],
-    #                       cen[0] + a[0], cen[1] + a[1], cen[2] + a[2], 0.02,
+    #                       cen[0] +axis[0], cen[1] +axis[1], cen[2] +axis[2], 0.02,
     #               col[0],col[1],col[2],col[0],col[1],col[2],], lbl)
     pymol.cmd.set_view(v)
 
@@ -143,13 +143,13 @@ def showline(axis, cen, col=(1, 1, 1), lbl=''):
         col[1],
         col[2],
         cgo.VERTEX,
-        cen[0] - a[0],
-        cen[1] - a[1],
-        cen[2] - a[2],
+        cen[0] - axis[0],
+        cen[1] - axis[1],
+        cen[2] - axis[2],
         cgo.VERTEX,
-        cen[0] + a[0],
-        cen[1] + a[1],
-        cen[2] + a[2],
+        cen[0] + axis[0],
+        cen[1] + axis[1],
+        cen[2] + axis[2],
         cgo.END,
     ]
     pymol.cmd.load_cgo(OBJ, lbl)
@@ -168,9 +168,9 @@ def cgo_lineabs(axis, cen, col=(1, 1, 1)):
         cen[1],
         cen[2],
         cgo.VERTEX,
-        a[0],
-        a[1],
-        a[2],
+        axis[0],
+        axis[1],
+        axis[2],
         cgo.END,
     ]
 
@@ -206,7 +206,7 @@ def cgo_fan(
     obj = []
     for i in range(ntri):
         # yapf: disable
-        print(pt1)
+        # print(pt1)
         pt2 = rot @ pt1
         obj += [
                cgo.BEGIN,

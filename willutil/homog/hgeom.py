@@ -188,47 +188,6 @@ def axis_of(xforms, tol=1e-7, debug=False):
 
     return axs.reshape(origshape[:-1])
 
-axis_of_3x3 = axis_of
-
-#def axis_of_3x3(rots, debug=False):
-#    # todo, just merge this with axis_of...
-#    dim = rots.shape
-#    origshape = rots.shape
-#    assert rots.shape[-1] == 3
-#    assert rots.shape[-2] == 3
-#    if rots.ndim != 3:
-#        rots = rots.reshape(-1, 3, 3)
-#
-#    axs = fast_axis_of_3x3(rots)
-#    assert axs.shape[-1] == 3
-#    norm = np.linalg.norm(axs, axis=-1)
-#    bad = (norm == 0)
-#    axs[~bad] = axs[~bad] / norm[~bad].reshape(-1, 1)
-#    if np.sum(bad) > 0:
-#        x180 = xforms[bad]
-#        is_ident = np.all(np.isclose(np.eye(3), x180[:, :3, :3]), axis=(-2, -1))
-#        axs[is_ident] = [1, 0, 0, 0]
-#        bad = np.logical_and(bad, ~is_ident)
-#        x180 = xforms[bad]
-#
-#        eig = np.linalg.eig(x180[..., :3, :3])
-#        eigval, eigvec = np.real(eig[0]), np.real(eig[1])
-#        eigval_is_1 = np.abs(eigval - 1) < tol
-#        ixform, ieigval = np.where(eigval_is_1)
-#        # print(ixform)
-#        # print(ieigval)
-#        axs[bad, :3] = eigvec[ixform, :, ieigval]
-#
-#        # assert 0
-#
-#        if debug:
-#            n_unit_eigval_1 = np.sum(np.abs(eigval - 1) < tol, axis=-1) == 1
-#            n_unit_eigval_3 = np.sum(np.abs(eigval - 1) < tol, axis=-1) == 3
-#            np.all(np.logical_or(n_unit_eigval_1, n_unit_eigval_3))
-#            # assert np.allclose(np.all(np.sum(np.abs(eigval - 1) < tol, axis=-1) == 1)
-#
-#    return axs.reshape(origshape[:-1])
-
 def is_homog_xform(xforms):
     return ((xforms.shape[-2:] == (4, 4)) and (np.allclose(1, np.linalg.det(xforms[..., :3, :3])))
             and (np.allclose(xforms[..., 3, :], [0, 0, 0, 1])))
@@ -246,6 +205,12 @@ def angle_of(xforms, debug=False):
     cos = (tr - 1.0) / 2.0
     angl = np.arccos(np.clip(cos, -1, 1))
     return angl
+
+def angle_of_degrees(xforms, debug=False):
+    tr = xforms[..., 0, 0] + xforms[..., 1, 1] + xforms[..., 2, 2]
+    cos = (tr - 1.0) / 2.0
+    angl = np.arccos(np.clip(cos, -1, 1))
+    return np.degrees(angl)
 
 def rot(axis, angle, degrees='auto', dtype='f8', shape=(3, 3)):
     axis = np.array(axis, dtype=dtype)
@@ -319,7 +284,7 @@ def hray(origin, direction):
     r[..., :, 1] = direction
     return r
 
-def hstub(u, v, w, cen=None):
+def hframe(u, v, w, cen=None):
     u, v, w = hpoint(u), hpoint(v), hpoint(w)
     assert u.shape == v.shape == w.shape
     if not cen: cen = u
@@ -331,8 +296,6 @@ def hstub(u, v, w, cen=None):
     stubs[..., :, 1] = hcross(stubs[..., :, 2], stubs[..., :, 0])
     stubs[..., :, 3] = hpoint(cen[..., :])
     return stubs
-
-hframe = hstub
 
 def htrans(trans, dtype='f8'):
     trans = np.asanyarray(trans)
@@ -442,9 +405,9 @@ def rand_xform_small(shape=(), cart_sd=0.001, rot_sd=0.001):
     if isinstance(shape, int): shape = (shape, )
     axis = rand_unit(shape)
     ang = np.random.normal(0, rot_sd, shape) * np.pi
-    x = hrot(axis, ang, [0, 0, 0, 1]).squeeze()
+    x = hrot(axis, ang, [0, 0, 0, 1], degrees=False).squeeze()
     trans = np.random.normal(0, cart_sd, shape + (3, ))
-    x[:3, 3] = trans
+    x[..., :3, 3] = trans
     return x.squeeze()
 
 def rand_xform(shape=(), cart_cen=0, cart_sd=1):
@@ -610,6 +573,9 @@ def line_line_distance(ray1, ray2):
     return line_line_distance_pa(pt1, ax1, pt2, ax2)
 
 def line_line_closest_points_pa(pt1, ax1, pt2, ax2, verbose=0):
+    assert pt1.shape == pt2.shape == ax1.shape == ax2.shape
+    # origshape = pt1.shape
+    # print(pt1.shape)
     C21 = pt2 - pt1
     M = hcross(ax1, ax2)
     m2 = np.sum(M**2, axis=-1)[..., None]

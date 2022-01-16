@@ -368,15 +368,15 @@ def test_hinv_rand():
     rot[..., :, 3] += helical_trans
     assert np.allclose(np.eye(4), hinv(rot) @ rot)
 
-def test_hstub():
+def test_hframe():
     sh = (5, 6, 7, 8, 9)
     u = h_rand_points(sh)
     v = h_rand_points(sh)
     w = h_rand_points(sh)
-    s = hstub(u, v, w)
+    s = hframe(u, v, w)
     assert is_homog_xform(s)
 
-    assert is_homog_xform(hstub([1, 2, 3], [5, 6, 4], [9, 7, 8]))
+    assert is_homog_xform(hframe([1, 2, 3], [5, 6, 4], [9, 7, 8]))
 
 def test_line_line_dist():
     lld = line_line_distance
@@ -1234,7 +1234,7 @@ def test_symfit_180_bug():
 if __name__ == '__main__':
 
     test_symfit_180_bug()
-    assert 0
+    # assert 0
 
     # test_axis_angle_of_rand()
     # test_axis_angle_of()
@@ -1264,7 +1264,7 @@ if __name__ == '__main__':
     test_axis_ang_cen_of_rand()
     test_axis_angle_vs_axis_angle_cen_performance(N=1000)
     test_hinv_rand()
-    test_hstub()
+    test_hframe()
     test_line_line_dist()
     test_line_line_closest_points()
     test_dihedral()

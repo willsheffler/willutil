@@ -76,7 +76,7 @@ def test_rel_xform_info():
 
     assert np.allclose(xinfo.hel, np.sum(xinfo.axs * trans))
 
-def test_rel_xform_info_rand(nsamp=100):
+def test_rel_xform_info_rand(nsamp=50):
     for i in range(nsamp):
         axs0 = [1, 0, 0, 0]
         ang0 = np.random.rand() * np.pi
@@ -166,22 +166,18 @@ def test_symops_with_perfect_sym_frames(nframes=9):
         hm.icosahedral_frames[np.random.choice(60, nframes, replace=False), :, :],
         # hm.icosahedral_frames[(20, 21), :, :],
     ]
-    all_point_angles = [
-        {
-            2: [np.pi],
-            3: [np.pi * 2 / 3]
-        },
-        {
-            2: [np.pi],
-            3: [np.pi * 2 / 3],
-            4: [np.pi / 2]
-        },
-        {
-            2: [np.pi],
-            3: [np.pi * 2 / 3],
-            5: [np.pi * 2 / 5, np.pi * 4 / 5]
-        },
-    ]
+    all_point_angles = [{
+        2: [np.pi],
+        3: [np.pi * 2 / 3]
+    }, {
+        2: [np.pi],
+        3: [np.pi * 2 / 3],
+        4: [np.pi / 2]
+    }, {
+        2: [np.pi],
+        3: [np.pi * 2 / 3],
+        5: [np.pi * 2 / 5, np.pi * 4 / 5]
+    }]
     xpost3 = hm.rand_xform(cart_sd=10)
     xpre = hm.rand_xform(cart_sd=5)
 
@@ -331,12 +327,103 @@ def test_symops_with_perfect_sym_frames(nframes=9):
 
         # wu.viz.showme(list(symops3.values()), 'someops2')
 
+def test_symops_with_imperfect_sym_frames(nsamp=50, manual=False):
+    np.set_printoptions(
+        precision=10,
+        suppress=True,
+        linewidth=98,
+        formatter={'float': lambda f: '%14.10f' % f},
+    )
+    # r = hm.hrot([1, 0, 0], 180)
+    # xinfo.axs, a = hm.axis_angle_of(r)
+    # print(r)
+    # print(xinfo.axs)
+    # print(a)
+    # assert 0
+    all_cen_err = list()
+
+    cart_sd = 1.0
+    rot_sd = np.radians(7)
+
+    for i in range(nsamp):
+
+        nframes = np.random.choice(6) + 6
+        sym = np.random.choice('tet oct icos'.split())
+        symframes = hm.sym_frames[sym]
+
+        # nframes = min(24, len(symframes))
+        selframes = symframes[np.random.choice(len(symframes), nframes, replace=False), :, :]
+        point_angles = hm.sym_point_angles[sym]
+
+        xpre = hm.rand_xform()
+        xpre[:, 3] = hm.rand_unit() * 20 * (1 + 0 * np.random.rand()) + [0, 0, 0, 1]
+
+        # xfuzz = hm.rand_xform_small(nframes, rot_sd=rot_sd, cart_sd=cart_sd)
+        xfuzz = hm.rand_xform_small(nframes, cart_sd=cart_sd, rot_sd=rot_sd)
+        # print(hm.angle_of_degrees(xfuzz))
+        # assert 0
+
+        xpost = hm.rand_xform()
+        xpost[:, 3] = hm.rand_unit() * 10 * (1 + 0 * np.random.rand()) + [0, 0, 0, 1]
+        cen0 = xpost[:, 3]
+
+        # print(hm.angle_of_degrees(xfuzz))
+        # assert 0
+
+        frames = xpost @ selframes @ xpre @ xfuzz  # move subunit
+        symops = hm.symops_from_frames(frames, point_angles)
+        symops_info = hm.symops_info(symops, remove_outliers_sd=3)
+        cen_err = np.linalg.norm(symops_info.mean_center - cen0)
+        all_cen_err.append(cen_err)
+
+        # wu.viz.showme(selframes, showcen=True, name='source_frames')
+        # wu.viz.showme(frames, showcen=True, name='source_frames')
+
+        # wu.viz.showme(frames, xyzlen=(.1, .1, .1), showcen=True)
+        # wu.viz.showme(xpost @ symframes, xyzlen=(.1, .1, .1), showcen=True)
+        # wu.viz.showme(symops, center=xpost[:, 3], expand=2.0, scalefans=0.125, name='symops',
+        # cyc_ang_match_tol=0.3, axislen=30, fixedfansize=2)
+        # assert 0
+
+    np.sort(all_cen_err)
+    err = wu.Bunch()
+    err.mean = np.mean(all_cen_err)
+    err.mean1 = np.mean(all_cen_err[1:-1])
+    err.mean2 = np.mean(all_cen_err[2:-2])
+    err.mean2 = np.mean(all_cen_err[3:-3])
+    err.median = np.median(all_cen_err)
+    err.min = np.min(all_cen_err)
+    err.max = np.max(all_cen_err)
+
+    print('test_symops_with_imperfect_sym_frames median err', err.median)
+    assert err.median < 3.0
+    if manual:
+        return err
+
+def test_symfit_align_axes():
+    pass
+
+def test_symfit_loss_mc():
+    pass
+
+def test_symfit_grad_gd():
+    pass
+
 if __name__ == '__main__':
 
+    # t = wu.Timer('')
+    # errs = list()
+    # for i in range(20):
+    #     errs.append(test_symops_with_imperfect_sym_frames(nsamp=10, manual=True))
+    #     t.checkpoint('foo')
+    # t.report(summary=np.mean)
+    # err = wu.Bunch({k: [err[k] for err in errs] for k in errs[0]})
+    # print(err.reduce(np.max))
+    # print(err)
+
+    test_symops_with_imperfect_sym_frames(nsamp=10, manual=True)
     test_rel_xform_info()
-
-    for i in range(1):
-        test_symops_with_perfect_sym_frames()
-
+    test_symops_with_perfect_sym_frames()
     test_rel_xform_info_rand()
     test_cyclic_sym_err()
+    print('test_symfit.py done')
