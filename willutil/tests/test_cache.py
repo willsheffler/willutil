@@ -8,7 +8,15 @@ def sum_(*args):
     _ncalc += 1
     return sum(args)
 
+# _thread = None
+
 def test_cache():
+
+    # for parallel testing, only do on the main thread
+    import threading
+    if not threading.current_thread() is threading.main_thread():
+        return
+
     cache = Cache()
     # with Timer() as t:
     #    for i in range(1000):

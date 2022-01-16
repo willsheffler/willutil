@@ -104,6 +104,12 @@ def test_pdb_meta_strict():
         meta.this_is_not_a_real_thing
 
 def test_meta_ligcount():
+
+    # for parallel testing, only do on the main thread
+    import threading
+    if not threading.current_thread() is threading.main_thread():
+        return
+
     meta.clear_pickle_cache('ligcount')
 
     df = meta.ligcount
