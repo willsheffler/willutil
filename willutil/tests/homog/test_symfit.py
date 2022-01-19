@@ -142,7 +142,7 @@ def test_rel_xform_info_rand(nsamp=50):
         assert np.allclose(hel0, xinfo.hel)
         assert np.allclose(rad0, xinfo.rad)
 
-def test_symops_with_perfect_sym_frames(nframes=9):
+def test_symops_cen_perfect(nframes=9):
     np.set_printoptions(
         precision=10,
         suppress=True,
@@ -210,24 +210,25 @@ def test_symops_with_perfect_sym_frames(nframes=9):
         # frames = frames[:nframes]
 
         symops = hm.symops_from_frames(frames, point_angles)
+        symops = hm.stupid_pairs_from_symops(symops)
         assert len(symops) == len(frames) * (len(frames) - 1) / 2
         # print(list(symops[(0, 1)].keys()))
         for k, op in symops.items():
-            wgood, ngood = None, 0
-            for n, e in op.err.items():
-                if e < 5e-2:
-                    ngood += 1
-                    wgood = n
-            if not ngood == 1:
-                print('ngood!=1', k, ngood, op.err)
-
-                assert 0
+            # wgood, ngood = None, 0
+            # for n, e in op.err.items():
+            #     if e < 5e-2:
+            #         ngood += 1
+            #         wgood = n
+            # if not ngood == 1:
+            #     print('ngood!=1', k, ngood, op.err)
+            #     assert 0
             assert np.allclose(0, op.cen[:3], atol=1e-3)
 
         xpost2 = hm.htrans(np.array([4, 5, 6]))
         xpost2inv = np.linalg.inv(xpost2)
         frames2 = xpost2 @ frames  # move whole structure
         symops2 = hm.symops_from_frames(frames2, point_angles)
+        symops2 = hm.stupid_pairs_from_symops(symops2)
         assert len(symops2) == len(frames2) * (len(frames2) - 1) / 2
         assert len(frames) == len(frames2)
         for k in symops:
@@ -242,10 +243,10 @@ def test_symops_with_perfect_sym_frames(nframes=9):
                 assert np.allclose(op1.cen, hm.proj_perp(op2.axs, xpost2inv @ op2.cen), atol=1e-3)
                 assert np.allclose(op1.rad, op2.rad, atol=1e-3)
                 assert np.allclose(op1.hel, op2.hel, atol=1e-4)
-                for k in point_angles:
-                    if not np.allclose(op1.err[k], op2.err[k], atol=1e-4):
-                        print('err', op1.err[k], op2.err[k])
-                    assert np.allclose(op1.err[k], op2.err[k], atol=1e-4)
+                # for k in point_angles:
+                #     if not np.allclose(op1.err[k], op2.err[k], atol=1e-4):
+                #         print('err', op1.err[k], op2.err[k])
+                #     assert np.allclose(op1.err[k], op2.err[k], atol=1e-4)
             except AssertionError as e:
                 print(repr(xpost2))
                 from willutil import viz
@@ -289,6 +290,7 @@ def test_symops_with_perfect_sym_frames(nframes=9):
         xpost3inv = np.linalg.inv(xpost3)
         frames3 = xpost3 @ frames  # move whole structure
         symops3 = hm.symops_from_frames(frames3, point_angles)
+        symops3 = hm.stupid_pairs_from_symops(symops3)
         assert len(symops3) == len(frames3) * (len(frames3) - 1) / 2
         assert len(frames) == len(frames3)
         for k in symops:
@@ -299,8 +301,8 @@ def test_symops_with_perfect_sym_frames(nframes=9):
                 assert np.allclose(op1.cen, hm.proj_perp(op1.axs, xpost3inv @ op2.cen), atol=1e-2)
                 assert np.allclose(op1.rad, op2.rad, atol=1e-2)
                 assert np.allclose(op1.hel, op2.hel, atol=1e-3)
-                for k in point_angles:
-                    assert np.allclose(op1.err[k], op2.err[k], atol=1e-2)
+                # for k in point_angles:
+                #     assert np.allclose(op1.err[k], op2.err[k], atol=1e-2)
 
                 op2axsinv = xpost3inv @ op2.axs
                 if hm.hdot(op2axsinv, op1.axs) < 0:
@@ -327,7 +329,7 @@ def test_symops_with_perfect_sym_frames(nframes=9):
 
         # wu.viz.showme(list(symops3.values()), 'someops2')
 
-def test_symops_with_imperfect_sym_frames(nsamp=50, manual=False):
+def test_symops_cen_imperfect(nsamp=20, manual=False):
     np.set_printoptions(
         precision=10,
         suppress=True,
@@ -342,38 +344,23 @@ def test_symops_with_imperfect_sym_frames(nsamp=50, manual=False):
     # assert 0
     all_cen_err = list()
 
-    cart_sd = 1.0
-    rot_sd = np.radians(7)
+    cart_sd_fuzz = 1.0
+    rot_sd_fuzz = np.radians(7)
 
     for i in range(nsamp):
 
         nframes = np.random.choice(6) + 6
         sym = np.random.choice('tet oct icos'.split())
-        symframes = hm.sym_frames[sym]
-
-        # nframes = min(24, len(symframes))
-        selframes = symframes[np.random.choice(len(symframes), nframes, replace=False), :, :]
+        nframes = min(nframes, len(hm.sym_frames[sym]))
         point_angles = hm.sym_point_angles[sym]
 
-        xpre = hm.rand_xform()
-        xpre[:, 3] = hm.rand_unit() * 20 * (1 + 0 * np.random.rand()) + [0, 0, 0, 1]
+        frames, xpre, xpost, xfuzz, radius = setup_test_frames(
+            nframes, sym, cart_sd_fuzz, rot_sd_fuzz, tprelen=20, tprerand=0, tpostlen=50,
+            tpostrand=20)
 
-        # xfuzz = hm.rand_xform_small(nframes, rot_sd=rot_sd, cart_sd=cart_sd)
-        xfuzz = hm.rand_xform_small(nframes, cart_sd=cart_sd, rot_sd=rot_sd)
-        # print(hm.angle_of_degrees(xfuzz))
-        # assert 0
-
-        xpost = hm.rand_xform()
-        xpost[:, 3] = hm.rand_unit() * 10 * (1 + 0 * np.random.rand()) + [0, 0, 0, 1]
-        cen0 = xpost[:, 3]
-
-        # print(hm.angle_of_degrees(xfuzz))
-        # assert 0
-
-        frames = xpost @ selframes @ xpre @ xfuzz  # move subunit
-        symops = hm.symops_from_frames(frames, point_angles)
-        symops_info = hm.symops_info(symops, remove_outliers_sd=3)
-        cen_err = np.linalg.norm(symops_info.mean_center - cen0)
+        symfit = hm.compute_symfit(sym, frames, remove_outliers_sd=3)
+        symops = symfit.symops
+        cen_err = np.linalg.norm(symfit.center - xpost[:, 3])
         all_cen_err.append(cen_err)
 
         # wu.viz.showme(selframes, showcen=True, name='source_frames')
@@ -385,6 +372,10 @@ def test_symops_with_imperfect_sym_frames(nsamp=50, manual=False):
         # cyc_ang_match_tol=0.3, axislen=30, fixedfansize=2)
         # assert 0
 
+        radius = np.mean(np.linalg.norm(frames[:, :, 3] - xpost[:, 3], axis=-1))
+        # print(radius, symfit.radius)
+        assert np.allclose(radius, symfit.radius, atol=cart_sd_fuzz * 3)
+
     np.sort(all_cen_err)
     err = wu.Bunch()
     err.mean = np.mean(all_cen_err)
@@ -395,35 +386,157 @@ def test_symops_with_imperfect_sym_frames(nsamp=50, manual=False):
     err.min = np.min(all_cen_err)
     err.max = np.max(all_cen_err)
 
-    print('test_symops_with_imperfect_sym_frames median err', err.median)
+    # print('test_symops_cen_imperfect median err', err.median)
     assert err.median < 3.0
     if manual:
         return err
 
+def setup_test_frames(nframes, sym, cart_sd_fuzz, rot_sd_fuzz, tprelen=20, tprerand=0,
+                      tpostlen=10, tpostrand=0, noxpost=False, **kw):
+    symframes = hm.sym_frames[sym]
+    selframes = symframes[np.random.choice(len(symframes), nframes, replace=False), :, :]
+    xpre = hm.rand_xform()
+    xpre[:3, 3] = hm.rand_unit()[:3] * (tprelen + tprerand * (np.random.rand() - 0.5))
+    xfuzz = hm.rand_xform_small(nframes, cart_sd=cart_sd_fuzz, rot_sd=rot_sd_fuzz)
+    xpost = hm.rand_xform()
+    xpost[:3, 3] = hm.rand_unit()[:3] * (tpostlen + tpostrand * (np.random.rand() - 0.5))
+    if noxpost: xpost = np.eye(4)
+    frames = xpost @ selframes @ xpre @ xfuzz  # move subunit
+    radius = None
+    return frames, xpre, xpost, xfuzz, radius
+
 def test_symfit_align_axes():
-    pass
+    kw = wu.Bunch()
+    # kw.sym = np.random.choice('tet oct icos'.split())
+    kw.sym = 'tet'
+    # kw.nframes = np.random.choice(6) + 6
+    kw.nframes = len(hm.sym_frames[kw.sym])
+    kw.tprelen = 20
+    kw.tprerand = 2
+    kw.tpostlen = 20
+    kw.tpostrand = 2
+    kw.fuzzstdfrac = 0.05  # frac of radian
+
+    # kw.cart_sd_fuzz = fuzzstdabs
+    # kw.rot_sd_fuzz = fuzzstdabs / tprelen
+
+    kw.cart_sd_fuzz = kw.fuzzstdfrac * kw.tprelen
+    kw.rot_sd_fuzz = kw.fuzzstdfrac
+
+    point_angles = hm.sym_point_angles[kw.sym]
+    frames, xpre, xpost, xfuzz, radius = setup_test_frames(noxpost=True, **kw)
+    symops = hm.symops_from_frames(frames, point_angles)
+    symops = hm.stupid_pairs_from_symops(symops)
+    # wu.viz.showme(symops)
+    # assert 0
+
+    symfit = hm.compute_symfit(kw.sym, frames, remove_outliers_sd=3)
+
+    print('ang_err', symfit.symop_ang_err)
+    print('hel_err', symfit.symop_hel_err)
+    print('cen_err', symfit.cen_err)
+    print('axes_err', symfit.axes_err)
+    print('total_err', symfit.total_err)
+    assert symfit.total_err < 10
+    # assert 0
 
 def test_symfit_loss_mc():
-    pass
+    # np.random.seed(0)
+
+    kw = wu.Bunch()
+    # kw.sym = np.random.choice('tet oct icos'.split())
+    # kw.nframes = len(hm.sym_frames[kw.sym])
+    # kw.nframes = np.random.choice(6) + 6
+
+    kw.sym = 'icos'
+    kw.nframes = 8
+
+    kw.tprelen = 10
+    kw.tprerand = 0
+    kw.tpostlen = 20
+    kw.tpostrand = 0
+    kw.fuzzstdfrac = 0.4  # frac of radian
+    kw.cart_sd_fuzz = kw.fuzzstdfrac * kw.tprelen
+    kw.rot_sd_fuzz = kw.fuzzstdfrac
+    frames, xpre, xpost, xfuzz, radius = setup_test_frames(noxpost=0, spheres=2, col='rand', **kw)
+
+    # frames = hm.rand_xform(len(frames), cart_sd=20)  #   @ frames
+
+    showargs = dict(headless=0, sphere=1)
+    # wu.viz.showme(frames, 'start', col=(1, 1, 1), **showargs)
+    symfit = hm.compute_symfit(kw.sym, frames, remove_outliers_sd=3)
+    frames = symfit.xfit @ frames
+    # wu.viz.showme(hm.sym_frames[kw.sym][:, None] @ frames[None, :], name='symstart',
+    # col=(1, 1, 0), rays=0.02, weight=0.3, **showargs)
+
+    low_err = symfit.total_err
+    best_err = low_err
+    best = frames, None
+    print('start', symfit.total_err)
+    t = wu.Timer()
+
+    nsamp = 10000
+    naccept = 0
+    for i in range(nsamp):
+        if i % 10 == 0: frames = best[0]
+        if i % 100 == 0: print(i, symfit.total_err, naccept / (i + 1))
+        cartsd = symfit.total_err / 15
+        rotsd = cartsd / symfit.radius
+        temp = symfit.total_err / 150
+        candidate_frames = hm.rand_xform_small(len(frames), cart_sd=cartsd, rot_sd=rotsd) @ frames
+        symfit = hm.compute_symfit(kw.sym, candidate_frames, remove_outliers_sd=3,
+                                   choose_closest_frame=False, timer=t)
+        candidate_frames = symfit.xfit @ candidate_frames
+
+        delta = symfit.total_err - low_err
+        if np.exp(-delta / temp) > np.random.rand():
+            naccept += 1
+            # frames = symfit.xfit @ candidate_frames
+            frames = candidate_frames
+            low_err = symfit.total_err
+            col = (i / nsamp, 1 - i / nsamp, 1)
+            # wu.viz.showme(candidate_frames, name='mc%05i' % i, col=col, center=[0, 0, 0],
+            # **showargs)
+            if low_err < best_err:
+                best_err = low_err
+                best = symfit.xfit @ frames, symfit
+                if low_err < 0.1:
+                    break
+                # best = frames
+                # print('    best %6i' % i, low_err)
+            # print(f'low %6i {low_err:7.4f} {best_err:7.4f}' % i)
+
+    frames, symfit = best
+    # wu.viz.showme(frames, name='best', col=(1, 1, 1), center=[0, 0, 0], **showargs)
+    # wu.viz.showme(hm.sym_frames[kw.sym][:, None] @ frames[None, :], name='xfitbest',
+    # col=(0, 0, 1), rays=0.1, **showargs)
+
+    t.report()
+    assert 0
 
 def test_symfit_grad_gd():
     pass
 
 if __name__ == '__main__':
 
-    # t = wu.Timer('')
+    test_symfit_align_axes()
+
+    test_symops_cen_imperfect()
+    # assert 0
+
     # errs = list()
-    # for i in range(20):
-    #     errs.append(test_symops_with_imperfect_sym_frames(nsamp=10, manual=True))
-    #     t.checkpoint('foo')
-    # t.report(summary=np.mean)
-    # err = wu.Bunch({k: [err[k] for err in errs] for k in errs[0]})
-    # print(err.reduce(np.max))
+    # for i in range(5):
+    #     errs.append(test_symops_cen_imperfect(nsamp=20, manual=True))
+    # err = wu.Bunch().accumulate(errs)
+    # err.reduce(max)
     # print(err)
 
-    test_symops_with_imperfect_sym_frames(nsamp=10, manual=True)
     test_rel_xform_info()
-    test_symops_with_perfect_sym_frames()
+
+    test_symops_cen_perfect()
+
     test_rel_xform_info_rand()
     test_cyclic_sym_err()
+
+    test_symfit_loss_mc()
     print('test_symfit.py done')

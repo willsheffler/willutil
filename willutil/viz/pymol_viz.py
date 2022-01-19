@@ -37,13 +37,14 @@ def _(
     name='xrel',
     showframes=True,
     center=np.array([0, 0, 0, 1]),
-    scalefans=0.25,
-    fixedfansize=None,
+    scalefans=None,
+    fixedfansize=1,
     expand=1.0,
     fuzz=0,
     make_cgo_only=False,
     cyc_ang_match_tol=0.1,
-    axislen=10,
+    axislen=20,
+    usefitaxis=False,
     **kw,
 ):
     global _nsymops
@@ -60,8 +61,8 @@ def _(
         elif np.isclose(ang, np.pi * 2 / 6, atol=cyc_ang_match_tol): col = [1, 0, 1]
         else: col = [1, 1, 1]
     elif col == 'random':
-        # col = np.random.rand(3) / 2 + 0.5
-        col = (1, 1, 1)
+        col = np.random.rand(3) / 2 + 0.5
+        # col = (1, 1, 1)
     # cen = (toshow.framecen - center) * expand + center
     cen = toshow.framecen
 
@@ -73,32 +74,26 @@ def _(
 
     cen1 = toshow.frames[0, :, 3]
     cen2 = toshow.frames[1, :, 3]
+    axis = toshow.cenaxis if usefitaxis else toshow.axs
 
     if abs(toshow.ang) < 1e-6:
         mycgo += cgo_cyl(cen1, cen2, 0.01, col=(1, 1, 1))
         mycgo += cgo_sphere(cen=(cen1 + cen2) / 2, rad=0.1, col=(1, 1, 1))
     else:
-        mycgo += cgo_cyl(
-            cen + toshow.axs * axislen / 2,
-            cen - toshow.axs * axislen / 2,
-            0.03,
-            col=col,
-        )
-        mycgo += cgo_cyl(
-            cen + toshow.axs * toshow.hel / 2,
-            cen - toshow.axs * toshow.hel / 2,
-            0.15,
-            col=col,
-        )
+        c1 = cen + axis * axislen / 2
+        c2 = cen - axis * axislen / 2
+        if 'isect_sphere' in toshow:
+            mycgo += cgo_sphere(toshow.closest_to_cen, rad=0.2, col=col)
+            mycgo += cgo_sphere(toshow.isect_sphere, rad=0.2, col=col)
+            mycgo += cgo_fan(axis, toshow.isect_sphere, rad=0.5, arc=2 * np.pi, col=col)
+            c1 = cen
+            c2 = toshow.isect_sphere
+        mycgo += cgo_cyl(c1, c2, 0.03, col=col)
+        mycgo += cgo_cyl(cen + axis * toshow.hel / 2, cen - axis * toshow.hel / 2, 0.10, col=col)
         shift = fuzz * (np.random.rand() - 0.5)
-        mycgo += cgo_fan(
-            toshow.axs,
-            cen + toshow.axs * shift,
-            fixedfansize if fixedfansize else toshow.rad * scalefans,
-            arc=ang,
-            col=col,
-            startpoint=cen1,
-        )
+        mycgo += cgo_fan(axis, cen + axis * shift,
+                         fixedfansize if fixedfansize else toshow.rad * scalefans, arc=ang,
+                         col=col, startpoint=cen1)
 
     if make_cgo_only:
         return state, mycgo
@@ -161,26 +156,50 @@ def get_different_colors(ncol, niter=100):
             maxmincoldis, best = np.min(cdis2), colors
     return best
 
+def get_cgo_name(name):
+    names = pymol.cmd.get_names()
+    if not name in names:
+        return name
+    i = 0
+    while name + str(i) in names:
+        i += 1
+    return name + str(i)
+
+    # if not 'seenit' in _showme_state:
+    # _showme_state['seenit'] = defaultdict(int)
+    # if name in _showme_state['seenit']:
+    # _showme_state['seenit'][name] += 1
+    # return name + '_%i' % _showme_state['seenit']
+    # return name
+
 def pymol_visualize_xforms(
     xforms,
     state,
-    name=None,
+    name='xforms',
     randpos=0.0,
     xyzlen=[5 / 4, 1, 4 / 5],
     scale=1.0,
     weight=1.0,
-    showcen=False,
+    spheres=0,
     make_cgo_only=False,
+    center_weight=1.0,
+    center=None,
+    rays=0,
+    col=None,
     **kw,
 ):
+    xforms = xforms.reshape(-1, 4, 4)
     global _nxforms
     _nxforms += 1
 
     if xforms.shape == (4, 4):
         xforms = xforms.reshape(1, 4, 4)
-    name = name or "xforms"
-    state["seenit"][name] += 1
-    name += "_%i" % state["seenit"][name]
+
+    name = get_cgo_name(name)
+    colors = None
+    if col == 'rand':
+        colors = get_different_colors(len(xforms) + 1)
+
     # mycgo = [cgo.BEGIN]
     mycgo = list()
 
@@ -196,59 +215,74 @@ def pymol_visualize_xforms(
         y0 = rr @ y0
         z0 = rr @ z0
 
-    for xform in xforms:
+    for ix, xform in enumerate(xforms):
         xform[:3, 3] *= scale
         cen = xform @ c0
         x = xform @ x0
         y = xform @ y0
         z = xform @ z0
-        mycgo.extend(cgo_cyl(cen, x, 0.05 * weight, [1, 0, 0]))
-        mycgo.extend(cgo_cyl(cen, y, 0.05 * weight, [0, 1, 0]))
-        mycgo.extend(cgo_cyl(cen, z, 0.05 * weight, [0, 0, 1]))
+        color = col if colors is None else colors[ix]
+        col1 = [1, 0, 0] if color is None else color
+        col2 = [0, 1, 0] if color is None else color
+        col3 = [0, 0, 1] if color is None else color
+        col4 = [1, 1, 1] if color is None else color
+        mycgo.extend(cgo_cyl(cen, x, 0.05 * weight, col1))
+        mycgo.extend(cgo_cyl(cen, y, 0.05 * weight, col2))
+        mycgo.extend(cgo_cyl(cen, z, 0.05 * weight, col3))
+        if spheres > 0:
+            mycgo.extend(cgo_sphere(cen, spheres, col=col4))
 
-    if showcen:
-        cen = np.mean(xforms[:, :, 3], axis=0)
-        mycgo.extend(cgo_sphere(cen=cen, rad=1, col=(1, 1, 1)))
-    # mycgo.append(cgo.END)
-    # print(mycgo)
+    if center is not None:
+        color = col if colors is None else colors[-1]
+        col1 = [1, 1, 1] if color is None else color
+        mycgo += cgo_sphere(center, center_weight, col=col1)
+    if rays > 0:
+        center = np.mean(xforms[:, :, 3], axis=0) if center is None else center
+        color = col if colors is None else colors[-1]
+        col1 = [1, 1, 1] if color is None else color
+        for ix, xform in enumerate(xforms):
+            mycgo += cgo_cyl(center, xform[:, 3], rays, col=col1)
+
     if make_cgo_only:
         return state, mycgo
-    pymol.cmd.load_cgo(mycgo, 'xforms%i' % _nxforms)
+    pymol.cmd.load_cgo(mycgo, name)
     return state
 
-def show_ndarray_lines(toshow, state=None, name=None, colors=None, **kw):
+def show_ndarray_lines(toshow, state=None, name=None, col=None, **kw):
     name = name or "worms_thing"
     state["seenit"][name] += 1
     name += "_%i" % state["seenit"][name]
+    if col == 'rand':
+        col = get_different_colors(len(toshow))
 
     assert toshow.shape[-2:] == (4, 2)
     toshow = toshow.reshape(-1, 4, 2)
 
     for i, ray in enumerate(toshow):
-        color = colors[i] if colors else (1, 1, 1)
+        color = col[i] if col else (1, 1, 1)
         showline(ray[:3, 1] * 100, ray[:3, 0], col=color)
         showsphere(ray[:3, 0], col=color)
     return state
 
-def show_ndarray_point_or_vec(toshow, state=None, name=None, colors=None, **kw):
-    name = name or "points"
+def show_ndarray_point_or_vec(toshow, state=None, name='points', col=None, **kw):
     state["seenit"][name] += 1
     name += "_%i" % state["seenit"][name]
-    if colors == 'rand':
-        colors = get_different_colors(len(toshow))
-
+    if col == 'rand':
+        col = get_different_colors(len(toshow))
+    mycgo = list()
     assert toshow.shape[-1] == 4
+    if toshow.ndim == 1: toshow = [toshow]
     for i, p_or_v in enumerate(toshow):
-        color = (1, 1, 1) if colors is None else colors
+        color = (1, 1, 1) if col is None else col
         if isinstance(color[0], (list, tuple, np.ndarray)):
             color = color[i]
         if p_or_v[3] > 0.999:
-            showsphere(p_or_v, 1.0, col=color)
+            mycgo += cgo_sphere(p_or_v, 1.0, col=color)
         elif np.abs(p_or_v[3]) < 0.001:
-            showvecfrompoint(p_or_v * 20, p_or_v, col=color)
+            mycgo += cgo_vecfrompoint(p_or_v * 20, p_or_v, col=color)
         else:
             raise NotImplementedError
-
+    pymol.cmd.load_cgo(mycgo, name)
     return state
 
 def show_ndarray_n_ca_c(toshow, state=None, name=None, **kw):
@@ -275,9 +309,10 @@ def show_ndarray_n_ca_c(toshow, state=None, name=None, **kw):
     pymol.cmd.load(fname)
     return state
 
-showme_state = dict(launched=0, seenit=defaultdict(lambda: -1))
+_showme_state = dict(launched=0, seenit=defaultdict(lambda: -1))
 
 def showme_pymol(what, name='noname', headless=False, block=False, **kw):
+    global _showme_state
     if "PYTEST_CURRENT_TEST" in os.environ and not headless:
         print("NOT RUNNING PYMOL IN UNIT TEST")
         return
@@ -285,13 +320,15 @@ def showme_pymol(what, name='noname', headless=False, block=False, **kw):
     pymol.pymol_argv = ["pymol"]
     if headless:
         pymol.pymol_argv = ["pymol", "-c"]
-    if not showme_state["launched"]:
+    if not _showme_state["launched"]:
         pymol.finish_launching()
-        showme_state["launched"] = 1
+        _showme_state["launched"] = 1
 
     print('############## showme_pymol', type(what), '##############')
-    result = pymol_load(what, showme_state, name=name, **kw)
+    result = pymol_load(what, _showme_state, name=name, **kw)
     # # pymol.cmd.set('internal_gui_width', '20')
+
+    pymol.cmd.zoom()
 
     while block:
         time.sleep(1)

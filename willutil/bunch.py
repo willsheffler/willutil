@@ -23,8 +23,37 @@ class Bunch(dict):
         s += ')'
         return s
 
-    def reduce(self, func):
-        return Bunch({k: func(self[k]) for k in self})
+    def reduce(self, func, strict=True):
+        'reduce all contained iterables using <func>'
+        for k in self:
+            try:
+                self[k] = func(self[k])
+            except TypeError as ex:
+                if not strict:
+                    raise ex
+        return self
+
+    def accumulate(self, other, strict=True):
+        'accumulate all keys in other, adding empty lists if k not in self, extend other[k] is list'
+        if isinstance(other, list):
+            for b in other:
+                self.accumulate(b)
+            return self
+        if not isinstance(other, dict):
+            raise TypeError('Bunch.accumulate needs Bunch or dict type')
+        not_empty = len(self)
+        for k in other:
+            if not k in self:
+                if strict and not_empty:
+                    raise ValueError(f'{k} not in this Bunch')
+                self[k] = list()
+            if not isinstance(self[k], list):
+                self[k] = [self[k]]
+            o = other[k]
+            if not isinstance(o, list):
+                o = [o]
+                self[k].extend(o)
+        return self
 
     def __contains__(self, k):
         if k == '_special':

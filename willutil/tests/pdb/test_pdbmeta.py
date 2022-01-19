@@ -80,7 +80,13 @@ def test_meta_clust():
         assert l == list(reversed(sorted(l)))  # largest clusters first
 
 def test_meta_entrytype():
-    # meta.clear_pickle_cache('entrytype byentrytype'.split())
+
+    # # for parallel testing, only do on the main thread
+    # import threading
+    #     import threading
+    # if threading.current_thread() is threading.main_thread():
+    #     meta.clear_pickle_cachr_pickle_cache('entrytype'.split())
+
     entrytype = meta.entrytype
     byentrytype = meta.byentrytype
     assert entrytype['1PGX'] == 'prot'
@@ -90,11 +96,19 @@ def test_meta_entrytype():
         assert k in byentrytype[v]
 
 def test_meta_source():
-    meta.clear_pickle_cache('source')
+
+    # for parallel testing, only do on the main thread
+    import threading
+    if threading.current_thread() is threading.main_thread():
+        meta.clear_pickle_cache('source')
     assert meta.source['1PGX'] == 'STREPTOCOCCUS'
 
 def test_meta_biotype():
-    meta.clear_pickle_cache('biotype')
+
+    # for parallel testing, only do on the main thread
+    import threading
+    if threading.current_thread() is threading.main_thread():
+        meta.clear_pickle_cache('biotype')
     bts = set(meta.biotype.values())
     assert len(bts) == 5405
     assert meta.biotype['1PGX'] == 'IMMUNOGLOBULIN BINDING PROTEIN'
@@ -107,10 +121,8 @@ def test_meta_ligcount():
 
     # for parallel testing, only do on the main thread
     import threading
-    if not threading.current_thread() is threading.main_thread():
-        return
-
-    meta.clear_pickle_cache('ligcount')
+    if threading.current_thread() is threading.main_thread():
+        meta.clear_pickle_cache('ligcount')
 
     df = meta.ligcount
     assert df.index[0] == 'HOH'
@@ -120,7 +132,11 @@ def test_meta_ligcount():
     assert df['count']['CHL'] == 100
 
 def test_meta_ligpdbs():
-    meta.clear_pickle_cache('ligpdbs')
+
+    # for parallel testing, only do on the main thread
+    import threading
+    if threading.current_thread() is threading.main_thread():
+        meta.clear_pickle_cache('ligpdbs')
     # print(meta.ligpdbs)
     d = set()
     for k, v in meta.ligpdbs.items():
@@ -141,7 +157,11 @@ def test_meta_ligpdbs():
     ]
 
 def test_meta_hetres():
-    meta.clear_pickle_cache(['rescount'])
+
+    # for parallel testing, only do on the main thread
+    import threading
+    if threading.current_thread() is threading.main_thread():
+        meta.clear_pickle_cache(['rescount'])
     # print(len(meta.hetres))
     assert len(meta.rescount) == 176277
 

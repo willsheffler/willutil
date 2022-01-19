@@ -1,10 +1,12 @@
 from willutil.homog.hgeom import *
 from willutil.homog.symframes import *
 
+m = -1
+
 tetrahedral_axes = {
     2: hnormalized([1, 0, 0]),
     3: hnormalized([1, 1, 1]),
-    7: hnormalized([1, 1, -1])  # other c3
+    7: hnormalized([1, 1, m])  # other c3
 }
 octahedral_axes = {
     2: hnormalized([1, 1, 0]),
@@ -16,67 +18,73 @@ icosahedral_axes = {
     3: hnormalized([0.934172, 0.000000, 0.356822]),
     5: hnormalized([0.850651, 0.525731, 0.000000])
 }
-# yapf: disable
+
 tetrahedral_axes_all = {
-    2: hnormalized([
-        [ 1,  0,  0],
-        [ 0,  1,  0],
-        [ 0,  0,  1],
-        [-1,  0,  0],
-        [ 0, -1,  0],
-        [ 0,  0, -1],
+    2:
+    hnormalized([
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+        [m, 0, 0],
+        [0, m, 0],
+        [0, 0, m],
     ]),
-    3: hnormalized([
-        [ 1,  1,  1],
-        [ 1, -1, -1],
-        [-1, -1,  1],
-        [-1,  1, -1],
+    3:
+    hnormalized([
+        [1, 1, 1],
+        [1, m, m],
+        [m, m, 1],
+        [m, 1, m],
+        [m, m, m],
+        [m, 1, 1],
+        [1, 1, m],
+        [1, m, 1],
     ]),
-    7: hnormalized([
-        [-1,  1,  1],
-        [ 1, -1,  1],
-        [ 1,  1, -1],
-        [-1, -1,- 1],
+    7:
+    hnormalized([
+        [m, 1, 1],
+        [1, m, 1],
+        [1, 1, m],
+        [m, m, -1],
     ]),
 }
 octahedral_axes_all = {
     2:
     hnormalized([
-        [ 1,  1,  0],
-        [ 0,  1,  1],
-        [ 1,  0,  1],
-        [-1,  1,  0],
-        [ 0, -1,  1],
-        [-1,  0,  1],
-        [ 1, -1,  0],
-        [ 0,  1, -1],
-        [ 1,  0, -1],
-        [-1, -1,  0],
-        [ 0, -1, -1],
-        [-1,  0, -1],
+        [1, 1, 0],
+        [0, 1, 1],
+        [1, 0, 1],
+        [m, 1, 0],
+        [0, m, 1],
+        [m, 0, 1],
+        [1, m, 0],
+        [0, 1, m],
+        [1, 0, m],
+        [m, m, 0],
+        [0, m, m],
+        [m, 0, m],
     ]),
     3:
     hnormalized([
-        [ 1,  1,  1],
-        [-1,  1,  1],
-        [ 1, -1,  1],
-        [ 1,  1, -1],
-        [-1,  1, -1],
-        [-1, -1,  1],
-        [ 1, -1, -1],
-        [-1, -1, -1],
+        [1, 1, 1],
+        [m, 1, 1],
+        [1, m, 1],
+        [1, 1, m],
+        [m, 1, m],
+        [m, m, 1],
+        [1, m, m],
+        [m, m, m],
     ]),
     4:
     hnormalized([
-        [ 1,  0,  0],
-        [ 0,  1,  0],
-        [ 0,  0,  1],
-        [-1,  0,  0],
-        [ 0, -1,  0],
-        [ 0,  0, -1],
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+        [m, 0, 0],
+        [0, m, 0],
+        [0, 0, m],
     ]),
 }
-# yapf: enable
 
 def _icosahedral_axes_all():
     a2 = icosahedral_frames @ icosahedral_axes[2]
@@ -90,7 +98,11 @@ def _icosahedral_axes_all():
     assert len(a2) == 30
     assert len(a3) == 20
     assert len(a5) == 12
-    icosahedral_axes_all = {2: a2, 3: a3, 5: a5}
+    icosahedral_axes_all = {
+        2: hnormalized(a2),
+        3: hnormalized(a3),
+        5: hnormalized(a5),
+    }
     return icosahedral_axes_all
 
 icosahedral_axes_all = _icosahedral_axes_all()
@@ -98,16 +110,25 @@ icosahedral_axes_all = _icosahedral_axes_all()
 symaxes = dict(tet=tetrahedral_axes, oct=octahedral_axes, icos=icosahedral_axes)
 symaxes_all = dict(tet=tetrahedral_axes_all, oct=octahedral_axes_all, icos=icosahedral_axes_all)
 
-tetrahedral_angles = {(i, j): angle(tetrahedral_axes[i], tetrahedral_axes[j]) for i, j in [
+tetrahedral_angles = {(i, j): angle(
+    tetrahedral_axes[i],
+    tetrahedral_axes[j],
+) for i, j in [
     (2, 3),
     (3, 7),
 ]}
-octahedral_angles = {(i, j): angle(octahedral_axes[i], octahedral_axes[j]) for i, j in [
+octahedral_angles = {(i, j): angle(
+    octahedral_axes[i],
+    octahedral_axes[j],
+) for i, j in [
     (2, 3),
     (2, 4),
     (3, 4),
 ]}
-icosahedral_angles = {(i, j): angle(icosahedral_axes[i], icosahedral_axes[j]) for i, j in [
+icosahedral_angles = {(i, j): angle(
+    icosahedral_axes[i],
+    icosahedral_axes[j],
+) for i, j in [
     (2, 3),
     (2, 5),
     (3, 5),
@@ -125,4 +146,9 @@ sym_point_angles = dict(tet={
     3: [np.pi * 2 / 3],
     5: [np.pi * 2 / 5, np.pi * 4 / 5]
 })
-sym_frames = dict(tet=tetrahedral_frames, oct=octahedral_frames, icos=icosahedral_frames)
+
+sym_frames = dict(
+    tet=tetrahedral_frames,
+    oct=octahedral_frames,
+    icos=icosahedral_frames,
+)

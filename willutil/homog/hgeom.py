@@ -3,6 +3,19 @@ import deferred_import
 
 np = deferred_import.deferred_import('numpy')
 
+def hxform(x, stuff):
+    assert x.shape[:2] == (4, 4)
+    if stuff.shape[-2:] == (4, 4):
+        result = x @ stuff
+    elif stuff.shape[-2:] == (4, 1) or stuff.shape[-1] == 4:
+        if stuff.shape[-1] == 4:
+            stuff = stuff[..., np.newaxis]
+        result = x @ stuff
+        result = result.reshape(result.shape[:-1])
+    else:
+        raise ValueError(f'hxform cant understand shape {stuff.shape}')
+    return result
+
 def is_valid_quat_rot(quat):
     assert quat.shape[-1] == 4
     return np.isclose(1, np.linalg.norm(quat, axis=-1))
@@ -417,6 +430,12 @@ def rand_xform(shape=(), cart_cen=0, cart_sd=1):
     x[..., :3, 3] = np.random.randn(*shape, 3) * cart_sd + cart_cen
     return x
 
+def rand_rot(shape=(), cart_cen=0, cart_sd=1):
+    if isinstance(shape, int): shape = (shape, )
+    quat = rand_quat(shape)
+    rot = quat_to_rot(quat)
+    return rot
+
 def proj(u, v):
     u = np.asanyarray(u)
     v = np.asanyarray(v)
@@ -516,15 +535,15 @@ def axis_ang_cen_of_eig(xforms, debug=False):
     # cen = proj_perp(axis, cen)  # move to reasonable position
     return axis, angle, cen
 
-def axis_ang_cen_of_planes(xforms, debug=False):
+def axis_ang_cen_of_planes(xforms, debug=False, ident_match_tol=1e-8):
     origshape = xforms.shape[:-2]
     xforms = xforms.reshape(-1, 4, 4)
 
     axis, angle = axis_angle_of(xforms)
-    not_ident = np.abs(angle) > -1e-9
+    not_ident = np.abs(angle) > ident_match_tol
     cen = np.tile([0, 0, 0, 1], np.shape(angle)).reshape(*np.shape(angle), 4)
 
-    if np.sum(not_ident):
+    if np.any(not_ident):
         xforms1 = xforms[not_ident]
         axis1 = axis[not_ident]
         #  sketchy magic points...
@@ -544,10 +563,10 @@ def axis_ang_cen_of_planes(xforms, debug=False):
         isect, status = intersect_planes(plane1, plane2)
         cen1 = isect[..., :, 0]
 
-    if len(cen) == len(cen1):
-        cen = cen1
-    else:
-        cen[not_ident] = cen1
+        if len(cen) == len(cen1):
+            cen = cen1
+        else:
+            cen[not_ident] = cen1
 
     axis = axis.reshape(*origshape, 4)
     angle = angle.reshape(origshape)

@@ -41,13 +41,7 @@ def showsphere(cen, rad=1, col=(1, 1, 1), lbl=''):
     pymol.cmd.load_cgo(mycgo, lbl)
     pymol.cmd.set_view(v)
 
-def showvecfrompoint(axis, cen, col=(1, 1, 1), lbl=''):
-    if not lbl:
-        global _numray
-        lbl = "ray%i" % _numray
-        _numray += 1
-    pymol.cmd.delete(lbl)
-    v = pymol.cmd.get_view()
+def cgo_vecfrompoint(axis, cen, col=(1, 1, 1), lbl=''):
     OBJ = [
         cgo.BEGIN,
         cgo.LINES,
@@ -65,6 +59,16 @@ def showvecfrompoint(axis, cen, col=(1, 1, 1), lbl=''):
         cen[2] + axis[2],
         cgo.END,
     ]
+    return OBJ
+
+def showvecfrompoint(axis, cen, col=(1, 1, 1), lbl=''):
+    if not lbl:
+        global _numray
+        lbl = "ray%i" % _numray
+        _numray += 1
+    pymol.cmd.delete(lbl)
+    v = pymol.cmd.get_view()
+    mycgo = cgo_vecfrompoints(axis, cen, col)
     pymol.cmd.load_cgo(OBJ, lbl)
     # pymol.cmd.load_cgo([cgo.COLOR, col[0],col[1],col[2],
     #             cgo.SPHERE,   cen[0],       cen[1],       cen[2],    0.08,
@@ -114,8 +118,20 @@ def showsegment(c1, c2, col=(1, 1, 1), lbl=''):
 def cgo_cyl(c1, c2, rad, col=(1, 1, 1), col2=None):
     col2 = col2 or col
     return [  # cgo.COLOR, col[0],col[1],col[2],
-        cgo.CYLINDER, c1[0], c1[1], c1[2], c2[0], c2[1], c2[2], rad, col[0], col[1], col[2],
-        col2[0], col2[1], col2[2]
+        cgo.CYLINDER,
+        c1[0],
+        c1[1],
+        c1[2],
+        c2[0],
+        c2[1],
+        c2[2],
+        rad,
+        col[0],
+        col[1],
+        col[2],
+        col2[0],
+        col2[1],
+        col2[2],
     ]
 
 def showcyl(c1, c2, rad, col=(1, 1, 1), col2=None, lbl=''):

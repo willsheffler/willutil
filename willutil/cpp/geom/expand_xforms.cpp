@@ -105,6 +105,7 @@ py::tuple expand_xforms_2gen_loop(X3<F> G1, X3<F> G2, int N = 5, F maxrad = 9e9,
 
   std::unordered_set<uint64_t> seenit;
 
+  // ZOMG...
   int count = 0;
   for (int i0a = 0; i0a < 2; ++i0a) {
     X3<F> x0a((i0a == 1 ? G1 : I) * I);
