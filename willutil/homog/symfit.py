@@ -189,12 +189,19 @@ def stupid_pairs_from_symops(symopinfo):
     return pairs
 
 def compute_symfit(
+    *,
     sym,
     frames,
     max_nan=0.333,  # totally arbitrary, downstream check for lacking info maybe better
     remove_outliers_sd=3,
+    # lossterms='CHNA',
+    lossterms=None,
     **kw,
 ):
+    assert lossterms
+
+    # return None
+
     kw = wu.Bunch(kw)
     point_angles = hm.sym_point_angles[sym]
     minsymang = dict(
@@ -202,7 +209,6 @@ def compute_symfit(
         oct=hm.angle(hm.octahedral_axes[2], hm.octahedral_axes[3]) / 2,
         icos=hm.angle(hm.icosahedral_axes[2], hm.icosahedral_axes[3]) / 2,
     )
-
     symops_ary = hm.symops_from_frames(frames, point_angles, **kw)
     # symops = stupid_pairs_from_symops(symops_ary)
     # if len(symops) <= len(hm.symaxes[sym]):
@@ -313,25 +319,31 @@ def compute_symfit(
     xfit, axesfiterr = hm.symops_align_axes(sym, symops_ary, symops, center, radius, **kw)
     _checkpoint(kw, 'align axes')
 
-    C = cen_err**2
-    H = op_hel_err**2
-    N = op_ang_err**2
-    A = axesfiterr**2
+    loss = dict()
+    loss['C'] = cen_err**2
+    loss['H'] = op_hel_err**2
+    loss['N'] = op_ang_err**2
+    loss['A'] = axesfiterr**2
+    losses = [loss[c] for c in lossterms]
+    # print('    ', lossterms.ljust(4), np.random.get_state()[1][0], losses)
+    weighted_err = np.sqrt(sum(losses))
+    total_err = np.sqrt(np.sum(list(loss.values())))
 
-    err = np.sqrt(C + H + N + A)
-
-    # err = np.sqrt(H + N + A)
-    # err = np.sqrt(C + N + A)
-    # err = np.sqrt(C + H + A)
-    # err = np.sqrt(C + H + N)
-
-    # err = np.sqrt(H + N) # bad
-    # err = np.sqrt(C + A)
-
-    # err = np.sqrt(C) # bad
-    # err = np.sqrt(H) # bad
-    # err = np.sqrt(N)  # bad
-    # err = np.sqrt(A) # bad
+    # C    iters  2000.0  fail 1.000  2.32 2.78 3.09 4.03 6.02
+    # H    iters  2000.0  fail 1.000  3.20 3.32 3.54 4.24 5.91
+    # A    iters  2000.0  fail 1.000  2.34 2.40 2.91 4.07 5.36
+    # CH   iters  2000.0  fail 1.000  2.30 2.32 2.73 4.82 5.71
+    # CN   iters  1729.2  fail 0.900  0.56 0.99 1.55 1.71 5.28
+    # CHN  iters  1853.4  fail 0.900  0.80 1.90 3.39 3.59 6.42
+    # HN   iters  1722.2  fail 0.800  0.31 0.84 1.32 2.76 5.89
+    # N    iters  1695.9  fail 0.700  0.86 1.50 2.63 3.58 5.42
+    # CNA  iters   496.6  fail 0.200  0.30 0.30 0.31 0.31 0.32
+    # HNA  iters   808.0  fail 0.100  0.84 0.84 0.84 0.84 0.84
+    # HA   iters  1100.7  fail 0.100  0.89 0.89 0.89 0.89 0.89
+    # NA   iters  1345.4  fail 0.100  1.16 1.16 1.16 1.16 1.16
+    # CA   iters   861.7  fail 0.000
+    # CHA  iters   884.7  fail 0.000
+    # CHNA iters   470.2  fail 0.000
 
     return SymOpsInfo(
         sym=sym,
@@ -350,7 +362,8 @@ def compute_symfit(
         symop_hel_err=op_hel_err,
         symop_ang_err=op_ang_err,
         axes_err=axesfiterr,
-        total_err=err,
+        total_err=total_err,
+        weighted_err=weighted_err,
     )
 
 def best_axes_fit(xsamp, nfolds, tgtaxes, tofitaxes, **kw):
