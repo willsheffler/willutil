@@ -4,7 +4,7 @@ import deferred_import
 np = deferred_import.deferred_import('numpy')
 
 def hxform(x, stuff):
-    assert x.shape[:2] == (4, 4)
+    assert x.shape[-2:] == (4, 4)
     if stuff.shape[-2:] == (4, 4):
         result = x @ stuff
     elif stuff.shape[-2:] == (4, 1) or stuff.shape[-1] == 4:

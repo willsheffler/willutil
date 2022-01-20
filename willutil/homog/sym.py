@@ -3,6 +3,8 @@ from willutil.homog.symframes import *
 
 m = -1
 
+ambuguous_axes = dict(tet=[], oct=[(2, 4)], icos=[])
+
 tetrahedral_axes = {
     2: hnormalized([1, 0, 0]),
     3: hnormalized([1, 1, 1]),
@@ -133,7 +135,11 @@ icosahedral_angles = {(i, j): angle(
     (2, 5),
     (3, 5),
 ]}
-
+nfold_axis_angles = dict(
+    tet=tetrahedral_angles,
+    oct=octahedral_angles,
+    icos=icosahedral_angles,
+)
 sym_point_angles = dict(tet={
     2: [np.pi],
     3: [np.pi * 2 / 3]

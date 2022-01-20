@@ -157,7 +157,7 @@ def test_symops_cen_perfect(nframes=9):
     # print(a)
     # assert 0
 
-    all_names = 'tet oct icos'.split()
+    allsym = 'tet oct icos'.split()
     all_symframes = [
         # hm.tetrahedral_frames,
         # hm.octahedral_frames,
@@ -197,8 +197,8 @@ def test_symops_cen_perfect(nframes=9):
     # print(repr(xpost3))
     # print('-------------')
 
-    for name, symframes, point_angles in zip(all_names, all_symframes, all_point_angles):
-        # print('---------', name, '-----------')
+    for sym, symframes, point_angles in zip(allsym, all_symframes, all_point_angles):
+        # print('---------', sym, '-----------')
 
         # xpre[:3, :3] = np.eye(3)
 
@@ -210,7 +210,7 @@ def test_symops_cen_perfect(nframes=9):
         # np.random.shuffle(frames)
         # frames = frames[:nframes]
 
-        symops = hm.symops_from_frames(frames, point_angles)
+        symops = hm.symops_from_frames(sym=sym, frames=frames)
         symops = hm.stupid_pairs_from_symops(symops)
         assert len(symops) == len(frames) * (len(frames) - 1) / 2
         # print(list(symops[(0, 1)].keys()))
@@ -228,7 +228,7 @@ def test_symops_cen_perfect(nframes=9):
         xpost2 = hm.htrans(np.array([4, 5, 6]))
         xpost2inv = np.linalg.inv(xpost2)
         frames2 = xpost2 @ frames  # move whole structure
-        symops2 = hm.symops_from_frames(frames2, point_angles)
+        symops2 = hm.symops_from_frames(sym=sym, frames=frames2)
         symops2 = hm.stupid_pairs_from_symops(symops2)
         assert len(symops2) == len(frames2) * (len(frames2) - 1) / 2
         assert len(frames) == len(frames2)
@@ -290,7 +290,7 @@ def test_symops_cen_perfect(nframes=9):
 
         xpost3inv = np.linalg.inv(xpost3)
         frames3 = xpost3 @ frames  # move whole structure
-        symops3 = hm.symops_from_frames(frames3, point_angles)
+        symops3 = hm.symops_from_frames(sym=sym, frames=frames3)
         symops3 = hm.stupid_pairs_from_symops(symops3)
         assert len(symops3) == len(frames3) * (len(frames3) - 1) / 2
         assert len(frames) == len(frames3)
@@ -434,7 +434,7 @@ def test_symfit_align_axes():
 
     point_angles = hm.sym_point_angles[kw.sym]
     frames, xpre, xpost, xfuzz, radius = setup_test_frames(**kw)
-    symops = hm.symops_from_frames(frames, point_angles)
+    symops = hm.symops_from_frames(frames=frames, **kw)
     symops = hm.stupid_pairs_from_symops(symops)
     # wu.viz.showme(symops)
     # assert 0
@@ -449,6 +449,33 @@ def test_symfit_align_axes():
     assert symfit.total_err < 10
     # assert 0
 
+def test_disambiguate_axes():
+    sym = 'oct'
+    nfold, axis0 = list(), list()
+    for nf, ax in hm.octahedral_axes_all.items():
+        nfold.append(np.repeat(nf, len(ax)))
+        axis0.append(ax)
+        if nf == 4:
+            axis0.append(ax)
+            nfold.append(np.repeat(2, len(ax)))
+    nfold = np.concatenate(nfold)
+    axis0 = np.concatenate(axis0)
+    tgt = [
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4
+    ]
+
+    axis = axis0
+    nfoldnew = hm.disambiguate_axes(sym, axis, nfold)
+    assert list(nfoldnew) == tgt
+
+    axis = hm.hxform(hm.rand_xform_small(len(axis0), rot_sd=0.01), axis0)
+    nfoldnew = hm.disambiguate_axes(sym, axis, nfold)
+    # print(nfoldnew)
+    assert list(nfoldnew) == tgt
+
+    # assert 0
+
 def test_symfit_loss_mc(seed=None, quiet=True, maxiters=1000, goalerr=0.1, **kw):
     kw = wu.Bunch(kw)
     if not 'timer' in kw: kw.timer = wu.Timer()
@@ -461,8 +488,8 @@ def test_symfit_loss_mc(seed=None, quiet=True, maxiters=1000, goalerr=0.1, **kw)
     # kw.sym = np.random.choice('tet oct icos'.split())
     # kw.nframes = len(hm.sym_frames[kw.sym])
     # kw.nframes = np.random.choice(6) + 6
-    kw.sym = 'tet'
-    kw.nframes = 6
+    kw.sym = 'icos'
+    kw.nframes = 7
 
     kw.tprelen = 10
     kw.tprerand = 0
@@ -525,7 +552,8 @@ def test_symfit_loss_mc(seed=None, quiet=True, maxiters=1000, goalerr=0.1, **kw)
     frames, symfit = best
     symdupframes = hm.sym_frames[kw.sym][:, None] @ frames[None, :]
     symerr = symframes_coherence(symdupframes)
-    # print('symerr', symerr)
+    # print('symerr', symerr, isamp + 1)
+    # assert 0
     # wu.viz.showme(frames, name='best', col=(1, 1, 1), center=[0, 0, 0], **showargs)
     # wu.viz.showme(symdupframes, name='xfitbest', col=(0, 0, 1), rays=0.1, **showargs)
 
@@ -552,7 +580,7 @@ def symfit_parallel_mc_trials(**kw):
     # termsset = ['C']
 
     kw = wu.Bunch()
-    ntrials = 10
+    ntrials = 100
     kw.goalerr = 0.1
     kw.maxiters = 2000
     kw.quiet = True
@@ -586,30 +614,41 @@ def test_symfit_grad_gd():
     pass
 
 if __name__ == '__main__':
-
-    # test_symfit_align_axes()
     t = wu.Timer()
 
-    symfit_parallel_mc_trials()
-    assert 0
+    # test_symfit_loss_mc()
+    # assert 0
+    # t.checkpoint('test_symfit_loss_mc')
+
+    test_disambiguate_axes()
+    t.checkpoint('test_disambiguate_axes')
+
+    test_symfit_align_axes()
+    t.checkpoint('test_symfit_align_axes')
+
+    test_rel_xform_info()
+    t.checkpoint('test_rel_xform_info')
+
+    test_symops_cen_perfect()
+    t.checkpoint('test_symops_cen_perfect')
+
+    test_symops_cen_imperfect()
+    t.checkpoint('test_symops_cen_imperfect')
+
+    test_rel_xform_info_rand()
+    t.checkpoint('test_rel_xform_info_rand')
+
+    test_cyclic_sym_err()
+    t.checkpoint('test_cyclic_sym_err')
+
+    # symfit_parallel_mc_trials()
+    # assert 0
     # errs = list()
     # for i in range(5):
     #     errs.append(test_symops_cen_imperfect(nsamp=20, manual=True))
     # err = wu.Bunch().accumulate(errs)
     # err.reduce(max)
     # print(err)
-    test_rel_xform_info()
-    t.checkpoint('test_rel_xform_info')
-    test_symops_cen_perfect()
-    t.checkpoint('test_symops_cen_perfect')
-    test_symops_cen_imperfect()
-    t.checkpoint('test_symops_cen_imperfect')
-    test_rel_xform_info_rand()
-    t.checkpoint('test_rel_xform_info_rand')
-    test_cyclic_sym_err()
-    t.checkpoint('test_cyclic_sym_err')
-    # test_symfit_loss_mc()
-    # t.checkpoint('test_symfit_loss_mc')
 
     t.report()
     print('test_symfit.py done')
