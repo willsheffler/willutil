@@ -188,6 +188,8 @@ def pymol_visualize_xforms(
     col=None,
     **kw,
 ):
+
+    origlen = xforms.shape[0] if xforms.ndim > 3 else 1
     xforms = xforms.reshape(-1, 4, 4)
     global _nxforms
     _nxforms += 1
@@ -229,7 +231,7 @@ def pymol_visualize_xforms(
         mycgo.extend(cgo_cyl(cen, x, 0.05 * weight, col1))
         mycgo.extend(cgo_cyl(cen, y, 0.05 * weight, col2))
         mycgo.extend(cgo_cyl(cen, z, 0.05 * weight, col3))
-        if spheres > 0:
+        if spheres > 0:  # and ix % origlen == 0:
             mycgo.extend(cgo_sphere(cen, spheres, col=col4))
 
     if center is not None:
@@ -246,6 +248,8 @@ def pymol_visualize_xforms(
     if make_cgo_only:
         return state, mycgo
     pymol.cmd.load_cgo(mycgo, name)
+
+    # pymol.cmd.zoom()
     return state
 
 def show_ndarray_lines(toshow, state=None, name=None, col=None, **kw):
@@ -311,7 +315,7 @@ def show_ndarray_n_ca_c(toshow, state=None, name=None, **kw):
 
 _showme_state = dict(launched=0, seenit=defaultdict(lambda: -1))
 
-def showme_pymol(what, name='noname', headless=False, block=False, **kw):
+def showme_pymol(what, name='noname', hideprev=False, headless=False, block=False, **kw):
     global _showme_state
     if "PYTEST_CURRENT_TEST" in os.environ and not headless:
         print("NOT RUNNING PYMOL IN UNIT TEST")
@@ -324,17 +328,19 @@ def showme_pymol(what, name='noname', headless=False, block=False, **kw):
         pymol.finish_launching()
         _showme_state["launched"] = 1
 
-    print('############## showme_pymol', type(what), '##############')
+    # print('############## showme_pymol', type(what), '##############')
+    if hideprev: pymol.cmd.disable('all')
     result = pymol_load(what, _showme_state, name=name, **kw)
     # # pymol.cmd.set('internal_gui_width', '20')
 
-    pymol.cmd.zoom()
+    # pymol.cmd.zoom()
 
     while block:
         time.sleep(1)
     return result
 
-def showme(*args, how="pymol", **kw):
+def showme(*args, how="pymol", showme=True, **kw):
+    if not showme: return
     if how == "pymol":
         return showme_pymol(*args, **kw)
     else:

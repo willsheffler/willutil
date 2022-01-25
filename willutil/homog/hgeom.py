@@ -430,11 +430,18 @@ def rand_xform(shape=(), cart_cen=0, cart_sd=1):
     x[..., :3, 3] = np.random.randn(*shape, 3) * cart_sd + cart_cen
     return x
 
-def rand_rot(shape=(), cart_cen=0, cart_sd=1):
+def rand_rot(shape=()):
     if isinstance(shape, int): shape = (shape, )
     quat = rand_quat(shape)
     rot = quat_to_rot(quat)
     return rot
+
+def rand_rot_small(shape=(), rot_sd=0.001):
+    if isinstance(shape, int): shape = (shape, )
+    axis = rand_unit(shape)
+    ang = np.random.normal(0, rot_sd, shape) * np.pi
+    r = rot(axis, ang, degrees=False).squeeze()
+    return r.squeeze()
 
 def proj(u, v):
     u = np.asanyarray(u)

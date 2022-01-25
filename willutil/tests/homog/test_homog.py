@@ -1231,8 +1231,26 @@ def test_symfit_180_bug():
     print('ang', ang)
     print('cen', cen)
 
+def torque_delta_sanity_check():
+    nsamp, scale = 1000, 0.0001
+    u = hm.rand_unit(nsamp)
+    v = hm.rand_unit(nsamp)
+    a, b = np.random.normal(size=2, scale=scale)
+    # check commutation
+    ax, ang = hm.axis_angle_of(hm.hrot(u, a) @ hm.hrot(v, b))
+    ax2, ang2 = hm.axis_angle_of(hm.hrot(v, b) @ hm.hrot(u, a))
+    assert np.allclose(ax, ax2, atol=5e-4)
+    assert np.allclose(ang * scale, ang2 * scale, atol=1e-5)
+
+    uv = a * u + b * v
+    anghat = np.linalg.norm(uv, axis=-1)
+    axhat = uv / anghat[:, None]
+    ax, ang = hm.axis_angle_of(hm.hrot(u, a) @ hm.hrot(v, b))
+    assert np.allclose(ax, axhat, atol=5e-4)
+
 if __name__ == '__main__':
 
+    torque_delta_sanity_check()
     test_symfit_180_bug()
     # assert 0
 

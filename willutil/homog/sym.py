@@ -27,9 +27,9 @@ tetrahedral_axes_all = {
         [1, 0, 0],
         [0, 1, 0],
         [0, 0, 1],
-        [m, 0, 0],
-        [0, m, 0],
-        [0, 0, m],
+        # [m, 0, 0],
+        # [0, m, 0],
+        # [0, 0, m],
     ]),
     3:
     hnormalized([
@@ -37,10 +37,10 @@ tetrahedral_axes_all = {
         [1, m, m],
         [m, m, 1],
         [m, 1, m],
-        [m, m, m],
-        [m, 1, 1],
-        [1, 1, m],
-        [1, m, 1],
+        # [m, m, m],
+        # [m, 1, 1],
+        # [1, 1, m],
+        # [1, m, 1],
     ]),
     7:
     hnormalized([
@@ -59,12 +59,12 @@ octahedral_axes_all = {
         [m, 1, 0],
         [0, m, 1],
         [m, 0, 1],
-        [1, m, 0],
-        [0, 1, m],
-        [1, 0, m],
-        [m, m, 0],
-        [0, m, m],
-        [m, 0, m],
+        # [1, m, 0],
+        # [0, 1, m],
+        # [1, 0, m],
+        # [m, m, 0],
+        # [0, m, m],
+        # [m, 0, m],
     ]),
     3:
     hnormalized([
@@ -72,19 +72,19 @@ octahedral_axes_all = {
         [m, 1, 1],
         [1, m, 1],
         [1, 1, m],
-        [m, 1, m],
-        [m, m, 1],
-        [1, m, m],
-        [m, m, m],
+        # [m, 1, m],
+        # [m, m, 1],
+        # [1, m, m],
+        # [m, m, m],
     ]),
     4:
     hnormalized([
         [1, 0, 0],
         [0, 1, 0],
         [0, 0, 1],
-        [m, 0, 0],
-        [0, m, 0],
-        [0, 0, m],
+        # [m, 0, 0],
+        # [0, m, 0],
+        # [0, 0, m],
     ]),
 }
 
@@ -97,9 +97,14 @@ def _icosahedral_axes_all():
     a2 = a2[np.unique(np.around(a2, decimals=6), axis=0, return_index=True)[1]]
     a3 = a3[np.unique(np.around(a3, decimals=6), axis=0, return_index=True)[1]]
     a5 = a5[np.unique(np.around(a5, decimals=6), axis=0, return_index=True)[1]]
-    assert len(a2) == 30
-    assert len(a3) == 20
-    assert len(a5) == 12
+
+    a2 = np.stack([a for i, a in enumerate(a2) if np.all(np.sum(a * a2[:i], axis=-1) > -0.999)])
+    a3 = np.stack([a for i, a in enumerate(a3) if np.all(np.sum(a * a3[:i], axis=-1) > -0.999)])
+    a5 = np.stack([a for i, a in enumerate(a5) if np.all(np.sum(a * a5[:i], axis=-1) > -0.999)])
+
+    assert len(a2) == 15  # 30
+    assert len(a3) == 10  # 20
+    assert len(a5) == 6  #12
     icosahedral_axes_all = {
         2: hnormalized(a2),
         3: hnormalized(a3),

@@ -3,7 +3,7 @@ import numpy as np
 import willutil as wu
 from willutil import homog as hm, Bunch
 
-class SymFItError(Exception):
+class SymFitError(Exception):
     pass
 
 def _checkpoint(kw, label):
@@ -145,17 +145,54 @@ def symops_from_frames(*, sym, frames, **kw):
     return result
 
 def disambiguate_axes(sym, axis, nfold):
+
     if not hm.ambuguous_axes[sym]: return nfold
     assert len(hm.ambuguous_axes[sym]) == 1
+
+    nfold = nfold[:]
     ambignfold, maybenfold = hm.ambuguous_axes[sym][0]
     # print(ambignfold, maybenfold)
     ambigaxis = axis[nfold == ambignfold]
     maybeaxis = axis[nfold == maybenfold]
+    # print('ambigaxis', ambigaxis.shape)
+    # print('maybeaxis', maybeaxis.shape)
+    # maybeaxis = (hm.sym_frames[sym][None, :] @ maybeaxis[:, None, :, None]).reshape(-1, 4)
+    # print(maybeaxis.shape)
+
+    nambig = len(ambigaxis)
+    nmaybe = len(maybeaxis)
+    # if nambig == 0:
+    #     # tgtnum = int((nmaybe + nambig) * 2 / 3)
+    #     nfold[np.random.rand(len(nfold)) < .25] = ambignfold
+    #     return nfold
+    # if nmaybe == 0:
+    #     # tgtnum = int((nmaybe + nambig) * 2 / 3)
+    #     nfold[np.random.rand(len(nfold)) < .25] = maybenfold
+    #     return nfold
+
     dot = np.abs(hm.hdot(ambigaxis[None, :], maybeaxis[:, None]))
-    maxdot = np.max(dot, axis=0)
-    nfold = nfold[:]
-    # todo make 0.85 threh better, 45degrees is 0.707 0 is 1
-    nfold[nfold == ambignfold] = np.where(maxdot > np.cos(np.pi / 8), maybenfold, ambignfold)
+    try:
+        maxdot = np.max(dot, axis=0)
+        # print(maxdot.shape)
+    except Exception as e:
+        raise SymFitError(f'missing axes: {nfold}')
+
+    # tgtnum = int((nmaybe + nambig) / 3)
+    # idx = np.argsort(maxdot)[-tgtnum:]
+    # maybe_so = np.zeros_like(maxdot, dtype='b')
+    # for i in idx:
+    # maybe_so[i] = True
+
+    # print(nambig, nmaybe, dot.shape, maxdot.shape)
+    # print(maxdot)
+    # assert 0
+    # print(nfold)
+    maybe_so = maxdot > np.cos(np.pi / 8)  # theoretically pi/8 ro 22.5 deg
+
+    nfold[nfold == ambignfold] = np.where(maybe_so, maybenfold, ambignfold)
+
+    # assert 0
+
     return nfold
 
 def stupid_pairs_from_symops(symops):
@@ -180,7 +217,7 @@ def compute_symfit(
     *,
     sym,
     frames,
-    max_nan=0.333,  # totally arbitrary, downstream check for lacking info maybe better
+    max_nan=0.9,  # totally arbitrary, downstream check for lacking info maybe better
     remove_outliers_sd=3,
     # lossterms='CHNA',
     lossterms=None,
@@ -195,8 +232,8 @@ def compute_symfit(
     )
     symops_ary = hm.symops_from_frames(sym=sym, frames=frames, **kw)
     # symops = stupid_pairs_from_symops(symops_ary)
-    # if len(symops) <= len(hm.symaxes[sym]):
-    # raise SymFItError('not enough symops/monomers')
+    # if len'nfolds',(symops) <= len(hm.symaxes[sym]):
+    # raise SymFitError('not enough symops/monomers')
     symops = None
     _checkpoint(kw, 'symops_from_frames')
     # cen1, cen2, axis1, axis2 = list(n), list(), list(), list()
@@ -266,7 +303,8 @@ def compute_symfit(
     # print('q', q.shape, 'isnan', np.sum(np.isnan(q)))
     tot_nan = np.sum(np.isnan(p)) / 4
     if tot_nan / len(p) > max_nan:
-        raise SymFItError(
+        print('nfolds', symops_ary.nfold)
+        raise SymFitError(
             f'{tot_nan/len(p)*100:7.3f}% of symops are parallel or cant be intersected')
 
     p = p[~np.isnan(p)].reshape(-1, 4)
@@ -300,7 +338,7 @@ def compute_symfit(
     op_ang_err = np.sqrt(np.mean(symops_ary.nfold_err**2))
     _checkpoint(kw, 'post intersect stuff')
 
-    xfit, axesfiterr = hm.symops_align_axes(sym, symops_ary, symops, center, radius, **kw)
+    xfit, axesfiterr = hm.symops_align_axes(sym, frames, symops_ary, symops, center, radius, **kw)
     _checkpoint(kw, 'align axes')
 
     loss = dict()
@@ -336,6 +374,7 @@ def compute_symfit(
 
     return SymOpsInfo(
         sym=sym,
+        frames=frames,
         symops=symops,
         center=center,
         opcen1=cen1,
@@ -355,14 +394,16 @@ def compute_symfit(
         weighted_err=weighted_err,
     )
 
-def best_axes_fit(xsamp, nfolds, tgtaxes, tofitaxes, **kw):
+def best_axes_fit(sym, xsamp, nfolds, tgtaxes, tofitaxes, **kw):
     xsamp = xsamp[:, None]
     randtgtaxes = [(xsamp @ ax.reshape(1, -1, 4, 1)).squeeze(-1) for ax in tgtaxes]
 
     err = list()
     for i, (nf, tgt, fit) in enumerate(zip(nfolds, randtgtaxes, tofitaxes)):
         n = np.newaxis
-        dotall = np.abs(hm.hdot(fit[n, n, :], tgt[:, :, n]))
+        dotall = hm.hdot(fit[n, n, :], tgt[:, :, n])
+        if sym != 'tet' or nf != 2:
+            dotall = np.abs(dotall)
         # angall = np.arccos(dotall)
         # angmatch = np.min(angall, axis=1)
         # angerr = np.mean(angmatch**2, axis=1)
@@ -374,14 +415,23 @@ def best_axes_fit(xsamp, nfolds, tgtaxes, tofitaxes, **kw):
     err = np.sqrt(np.min(err))
     return bestx, err
 
-def symops_align_axes(sym, opary, symops, center, radius, choose_closest_frame=False,
-                      align_ang_delta_thresh=0.001, **kw):
+def symops_align_axes(
+    sym,
+    frames,
+    opary,
+    symops,
+    center,
+    radius,
+    choose_closest_frame=False,
+    align_ang_delta_thresh=0.001,
+    **kw,
+):
 
     nfolds = list(hm.symaxes[sym].keys())
     if 7 in nfolds: nfolds.remove(7)  # what to do about T33?
     pang = hm.sym_point_angles[sym]
-    xtocen = np.eye(4)
-    xtocen[:, 3] = -center
+    # xtocen = np.eye(4)
+    # xtocen[:, 3] = -center
 
     _checkpoint(kw, 'symops_align_axes xtocen')
     # recenter frames without modification
@@ -397,6 +447,10 @@ def symops_align_axes(sym, opary, symops, center, radius, choose_closest_frame=F
     # opary.fitaxis = opary.isect_sphere
     # opary.fitaxis = opary.framecen
     opary.fitaxis = opary.axs
+    # for i, a in enumerate(opary.fitaxis):
+    #     cyccen = opary.framecen - center
+    #     if np.sum(cyccen * a) < 0:
+    #         opary.fitaxis[i] = -a
 
     # wu.viz.showme(symops)
     _checkpoint(kw, 'symops_align_axes xform xform_update_symop')
@@ -418,13 +472,13 @@ def symops_align_axes(sym, opary, symops, center, radius, choose_closest_frame=F
     # print('sopaxes     ', [a.shape for a in sopaxes])
     nsamp = 20
     xsamp = hm.rand_xform(nsamp, cart_sd=0)
-    xfit, angerr = best_axes_fit(xsamp, nfolds, tgtaxes, sopaxes)
+    xfit, angerr = best_axes_fit(sym, xsamp, nfolds, tgtaxes, sopaxes)
     best = 9e9, np.eye(4)
     for i in range(20):
         _checkpoint(kw, 'symops_align_axes make xsamp pre')
         xsamp = hm.rand_xform_small(nsamp, rot_sd=angerr / 2, cart_sd=0) @ xfit
         _checkpoint(kw, 'symops_align_axes make xsamp')
-        xfit, angerr = best_axes_fit(xsamp, nfolds, tgtaxes, sopaxes, **kw)
+        xfit, angerr = best_axes_fit(sym, xsamp, nfolds, tgtaxes, sopaxes, **kw)
         _checkpoint(kw, 'symops_align_axes best_axes_fit')
         delta = angerr - best[0]
         if delta < 0:
@@ -445,6 +499,32 @@ def symops_align_axes(sym, opary, symops, center, radius, choose_closest_frame=F
         which_frame = np.argmin(np.sum((hm.sym_frames[sym] @ xfit - np.eye(4))**2, axis=(-1, -2)))
         xfit = hm.sym_frames[sym][which_frame] @ xfit
         # print(which_frame)
+
+    # if sym == 'tet':
+    #     fit = xfit @ frames
+    #     cens = hm.hnormalized(fit[:, :, 3])
+    #     upper = np.any(hm.angle(cens, [1, 1, 1]) > 1.91 / 2)
+    #     if not upper:
+    #         # rotate 3fold around -1 -1 -1 to 3fold around 1 1 1
+    #         # this prevents mismatch with canonical tetrahedral 3fold position
+    #         # tetframes @ frames can form octahedra
+    #         xfit = hm.hrot([1, 1, -1], np.pi * 2 / 3) @ xfit
+    #         fit = xfit @ frames
+    #         cens = hm.hnormalized(fit[:, :, 3])
+    #         upper = np.any(hm.angle(cens, [1, 1, 1]) > 1.91 / 2)
+    #         # upper = np.any(np.all(cens > 0.0, axis=-1))
+    #         if not upper:
+    #             xfit = hm.hrot([1, 1, -1], np.pi * 2 / 3) @ xfit
+    #     # [1, 1, 1],
+    #     # [m, 1, 1],
+    #     # [1, m, 1],
+    #     # [1, 1, m],
+
+    #     # lower = np.any(np.all(cens < +0.1, axis=-1))
+    #     # if upper and lower:
+    #     # assert 0
+    #     # axesfiterr = 9e9
+    #     # assert 0, 'can this happen and be reasonable?'
 
     # print(xfit.shape, axesfiterr * 180 / np.pi)
 
