@@ -12,7 +12,10 @@ def _checkpoint(kw, label):
 class RelXformInfo(Bunch):
     pass
 
-class SymOpsInfo(Bunch):
+class SymOps(Bunch):
+    pass
+
+class SymFit(Bunch):
     pass
 
 def rel_xform_info(frame1, frame2, **kw):
@@ -104,19 +107,32 @@ def symops_from_frames(*, sym, frames, **kw):
     assert (len(frame1) == len(frame2) == len(xrel) == len(axs) == len(ang) == len(cen) ==
             len(framecen) == len(rad) == len(hel))
     errrad = np.minimum(10000, np.maximum(rad, 1.0))
+    angdelta = dict()
     err = dict()
     point_angles = hm.sym_point_angles[sym]
-    for n, angs in point_angles.items():
-        d = [np.abs(a - ang) for a in angs]
-        if len(d) == 1: d = d[0]
-        elif len(d) == 2: d = np.where(d[0] < d[1], d[0], d[1])
-        else: assert 0
-        ang_err = errrad * d
+    for n, tgtangs in point_angles.items():
+        dabs = [np.abs(ang - atgt) for atgt in tgtangs]
+        d = [atgt - ang for atgt in tgtangs]
+        if len(dabs) == 1:
+            dabs = dabs[0]
+            d = d[0]
+            atgt = tgtangs[0]
+        elif len(dabs) == 2:
+            d = np.where(dabs[0] < dabs[1], d[0], d[1])
+            atgt = np.where(dabs[0] < dabs[1], tgtangs[0], tgtangs[1])
+            dabs = np.where(dabs[0] < dabs[1], dabs[0], dabs[1])
+        else:
+            assert 0, 'too many point angle choices'
+        ang_err = errrad * dabs
         err[n] = np.sqrt(hel**2 + ang_err**2)
+        angdelta[n] = d
+
     errvals = np.stack(list(err.values()))
     w = np.argmin(errvals, axis=0)
     nfold = np.array(list(err.keys()))[w].astype('i4')
+    angdelta = np.array([angdelta[nf][i] for i, nf in enumerate(nfold)])
     nfold_err = np.min(errvals, axis=0)
+
     # pair.nfold, pair.nfold_err = None, 9e9
     # for n, angs in point_angles.items():
     #     err = min(cyclic_sym_err(pair, a) for a in angs)
@@ -127,7 +143,7 @@ def symops_from_frames(*, sym, frames, **kw):
 
     nfold = disambiguate_axes(sym, axs, nfold)
 
-    result = SymOpsInfo(
+    result = SymOps(
         key=keys,
         frame1=frame1,
         frame2=frame2,
@@ -140,12 +156,13 @@ def symops_from_frames(*, sym, frames, **kw):
         framecen=framecen,
         nfold=nfold,
         nfold_err=nfold_err,
+        angdelta=angdelta,
     )
 
     return result
 
 def disambiguate_axes(sym, axis, nfold):
-
+    if not sym in hm.ambuguous_axes: return nfold
     if not hm.ambuguous_axes[sym]: return nfold
     assert len(hm.ambuguous_axes[sym]) == 1
 
@@ -187,7 +204,7 @@ def disambiguate_axes(sym, axis, nfold):
     # print(maxdot)
     # assert 0
     # print(nfold)
-    maybe_so = maxdot > np.cos(np.pi / 8)  # theoretically pi/8 ro 22.5 deg
+    maybe_so = maxdot > np.cos(np.pi / 12)  # theoretically pi/8 ro 22.5 deg
 
     nfold[nfold == ambignfold] = np.where(maybe_so, maybenfold, ambignfold)
 
@@ -229,14 +246,16 @@ def compute_symfit(
         tet=hm.angle(hm.tetrahedral_axes[2], hm.tetrahedral_axes[3]) / 2,
         oct=hm.angle(hm.octahedral_axes[2], hm.octahedral_axes[3]) / 2,
         icos=hm.angle(hm.icosahedral_axes[2], hm.icosahedral_axes[3]) / 2,
+        d3=np.pi / 6,
+        d5=np.pi / 10,
     )
-    symops_ary = hm.symops_from_frames(sym=sym, frames=frames, **kw)
-    # symops = stupid_pairs_from_symops(symops_ary)
+    symops = hm.symops_from_frames(sym=sym, frames=frames, **kw)
+    # symops = stupid_pairs_from_symops(symops)
     # if len'nfolds',(symops) <= len(hm.symaxes[sym]):
     # raise SymFitError('not enough symops/monomers')
-    symops = None
+    # symops = None
     _checkpoint(kw, 'symops_from_frames')
-    # cen1, cen2, axis1, axis2 = list(n), list(), list(), list()
+    # cen1, cen2, opaxs1, opaxs2 = list(n), list(), list(), list()
     #cen1A, cen2A, axs1A, axs2A = list(), list(), list(), list()
     #for iop1, op1 in enumerate(symops.values()):
     #    for iop2, op2 in enumerate(symops.values()):
@@ -262,13 +281,13 @@ def compute_symfit(
     # axs2A = np.stack(axs2A)
 
     cen1, cen2, axs1, axs2 = list(), list(), list(), list()
-    nops = len(symops_ary.axs)
+    nops = len(symops.axs)
     # assert nops == len(symops)
     for i in range(nops):
-        cen1.append(np.tile(symops_ary.cen[i], nops - i - 1).reshape(-1, 4))
-        axs1.append(np.tile(symops_ary.axs[i], nops - i - 1).reshape(-1, 4))
-        cen2.append(symops_ary.cen[i + 1:])
-        axs2.append(symops_ary.axs[i + 1:])
+        cen1.append(np.tile(symops.cen[i], nops - i - 1).reshape(-1, 4))
+        axs1.append(np.tile(symops.axs[i], nops - i - 1).reshape(-1, 4))
+        cen2.append(symops.cen[i + 1:])
+        axs2.append(symops.axs[i + 1:])
         # print(cen1[-1].shape)
         # print(cen2[-1].shape)
         assert cen1[-1].shape == cen2[-1].shape
@@ -303,7 +322,7 @@ def compute_symfit(
     # print('q', q.shape, 'isnan', np.sum(np.isnan(q)))
     tot_nan = np.sum(np.isnan(p)) / 4
     if tot_nan / len(p) > max_nan:
-        print('nfolds', symops_ary.nfold)
+        print('nfolds', symops.nfold)
         raise SymFitError(
             f'{tot_nan/len(p)*100:7.3f}% of symops are parallel or cant be intersected')
 
@@ -331,14 +350,20 @@ def compute_symfit(
         center = np.mean(isect[not_outlier], axis=0)
         # print(center)
 
-    radius = np.mean(np.linalg.norm(frames[:, :, 3] - center, axis=-1))
+    radii = np.linalg.norm(frames[:, :, 3] - center, axis=-1)
+    radius = np.mean(radii)
+
+    # rad_err = np.sqrt(np.mean(radii**2))
+    # rad_err = np.sqrt(np.mean(radii**2) / radius)
+    rad_err = np.sqrt(np.mean(radii**2)) / radius
+
     cen_err = np.sqrt((np.sum((center - p)**2) + np.sum((center - q)**2)) / (len(q) + len(q)))
 
-    op_hel_err = np.sqrt(np.mean(symops_ary.hel**2))
-    op_ang_err = np.sqrt(np.mean(symops_ary.nfold_err**2))
+    op_hel_err = np.sqrt(np.mean(symops.hel**2))
+    op_ang_err = np.sqrt(np.mean(symops.nfold_err**2))
     _checkpoint(kw, 'post intersect stuff')
 
-    xfit, axesfiterr = hm.symops_align_axes(sym, frames, symops_ary, symops, center, radius, **kw)
+    xfit, axesfiterr = hm.symops_align_axes(sym, frames, symops, symops, center, radius, **kw)
     _checkpoint(kw, 'align axes')
 
     loss = dict()
@@ -346,6 +371,10 @@ def compute_symfit(
     loss['H'] = 0.7 * op_hel_err**2
     loss['N'] = 1.2 * op_ang_err**2
     loss['A'] = 1.5 * axesfiterr**2
+    # loss['R'] = 1.0 * rad_err**2
+    # loss['Q'] = 1.0 * quad_err**2
+    # loss['M'] = 1.0 * missing_axs_err**2
+    # loss['S'] = 1.0 * skew_axs_err**2
     total_err = np.sqrt(np.sum(list(loss.values())))
     weighted_err = total_err
     if lossterms:
@@ -372,15 +401,16 @@ def compute_symfit(
     # CHNA iters   480.1  fail 0.020  0.31 0.31 0.31 0.32 0.33
     # CNA  iters   512.2  fail 0.000
 
-    return SymOpsInfo(
+    return SymFit(
         sym=sym,
+        nframes=len(frames),
         frames=frames,
         symops=symops,
         center=center,
         opcen1=cen1,
         opcen2=cen2,
-        axis1=axs1,
-        axis2=axs2,
+        opaxs1=axs1,
+        opaxs2=axs2,
         iscet=isect,
         isect1=p,
         iscet2=q,
@@ -491,7 +521,7 @@ def symops_align_axes(
     angerr, xfit = best
     _checkpoint(kw, 'symops_align_axes check rand axes')
 
-    xfit[:, 3] = -center
+    xfit[:, 3] = center
     xfit = np.linalg.inv(xfit)
     axesfiterr = angerr * radius
 
@@ -536,3 +566,63 @@ def symops_align_axes(
     #     ax = hm.hxform(xfit, ax)
     #     wu.viz.showme(ax, col=col, usefitaxis=True, name='nfoldB')
     return xfit, axesfiterr
+
+def symfit_gradient(symfit):
+    # sym=sym,
+    # frames=frames,
+    # symops=symops,
+    # center=center,
+    # opcen1=cen1,
+    # opcen2=cen2,
+    # opaxs1=axs1,
+    # opaxs2=axs2,
+    # iscet=isect,
+    # isect1=p,
+    # iscet2=q,
+    # radius=radius,
+    # xfit=xfit,
+    # cen_err=cen_err,
+    # symop_hel_err=op_hel_err,
+    # symop_ang_err=op_ang_err,
+    # axes_err=axesfiterr,
+    # total_err=total_err,
+    # weighted_err=weighted_err,
+
+    # result = SymOps(
+    #     key=keys,
+    #     frame1=frame1,
+    #     frame2=frame2,
+    #     xrel=xrel,
+    #     axs=axs,
+    #     ang=ang,
+    #     cen=cen,
+    #     rad=rad,
+    #     hel=hel,
+    #     framecen=framecen,
+    #     nfold=nfold,
+    #     nfold_err=nfold_err,
+    sop = symfit.symops
+
+    print(list(symfit.symops.keys()))
+    for i in range(len(sop.key)):
+        print(
+            sop.nfold[i],
+            np.round(np.degrees(sop.ang[i] + sop.angdelta[i])),
+        )
+    cenforce = np.zeros
+    frametorq = np.zeros(shape=(symfit.nframes, 4))
+
+    for key, torq in zip(sop.key, optorq):
+        print(key, torq)
+        frametorq[key[0]] -= torq
+        frametorq[key[1]] += torq
+
+    frameforce = np.zeros((symfit.nframes, 4))
+    for key, force in zip(sop.key, sop.hel):
+        frameforce[key[0]] += force
+        frameforce[key[1]] -= force
+    # SHOULD I ADD CART ROTATION FORCE HERE TOO?????
+
+    # wu.viz.showme(sy,mfit.symops)
+
+    # assert 0

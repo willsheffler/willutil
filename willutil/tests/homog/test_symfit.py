@@ -460,13 +460,13 @@ def test_disambiguate_axes():
             nfold.append(np.repeat(2, len(ax)))
     nfold = np.concatenate(nfold)
     axis0 = np.concatenate(axis0)
-    tgt = [
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4
-    ]
+    # print(nfold)
+    tgt = [2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4]
 
     axis = axis0
     nfoldnew = hm.disambiguate_axes(sym, axis, nfold)
+    # print(tgt)
+    # print(nfoldnew)
     assert list(nfoldnew) == tgt
 
     axis = hm.hxform(hm.rand_xform_small(len(axis0), rot_sd=0.01), axis0)
@@ -476,7 +476,7 @@ def test_disambiguate_axes():
 
     # assert 0
 
-def test_symfit_loss_mc(
+def symfit_mc_test(
     seed=None,
     quiet=True,
     nframes=None,
@@ -496,9 +496,15 @@ def test_symfit_loss_mc(
     # kw.sym = np.random.choice('tet oct icos'.split())
     # kw.nframes = len(hm.sym_frames[kw.sym])
     # kw.nframes = np.random.choice(6) + 6
-    kw.sym = 'tet'
+    kw.sym = 'd5'
     if nframes is None:
-        nframes = dict(tet=6, oct=7, icos=7)[kw.sym]
+        nframes = dict(
+            d3=5,
+            d5=5,
+            tet=6,
+            oct=7,
+            icos=7,
+        )[kw.sym]
 
     kw.tprelen = 10
     kw.tprerand = 0
@@ -510,16 +516,19 @@ def test_symfit_loss_mc(
     kw.remove_outliers_sd = 3
     kw.choose_closest_frame = True
 
-    # frames, xpre, xpost, xfuzz, radius = setup_test_frames(nframes, **kw)
+    frames, xpre, xpost, xfuzz, radius = setup_test_frames(nframes, **kw)
 
-    frames = hm.rand_xform(nframes, cart_sd=20)  #   @ frames
+    # frames = hm.rand_xform(nframes, cart_sd=20)  #   @ frames
 
-    showargs = wu.Bunch(headless=0, spheres=0.0, showme=showme)
+    showargs = wu.Bunch(headless=0, spheres=0.0, showme=showme, hideprev=True)
     # wu.viz.showme(frames, 'start', col=(1, 1, 1), **showargs)
     symfit = hm.compute_symfit(frames=frames, **kw)
     frames = symfit.xfit @ frames
     # wu.viz.showme(hm.sym_frames[kw.sym][:, None] @ frames[None, :], name='symstart',
     # col=(1, 1, 0), rays=0.02, weight=0.3, **showargs)
+
+    pairs = hm.stupid_pairs_from_symops(symfit.symops)
+    wu.viz.showme(pairs, name='pairsstart', col='bycx', center=[0, 0, 0], **showargs)
 
     if not quiet: print('start', symfit.weighted_err)
     low_err = symfit.weighted_err
@@ -531,9 +540,9 @@ def test_symfit_loss_mc(
         if isamp % 10 == 0: frames = best[0]
         if isamp % 100 == 0 and not quiet:
             print(isamp, symfit.weighted_err, naccept / (isamp + 1))
-        cartsd = symfit.weighted_err / 20
+        cartsd = symfit.weighted_err / 15
         rotsd = cartsd / symfit.radius
-        temp = symfit.weighted_err / 120
+        temp = symfit.weighted_err / 150
         candidate_frames = hm.rand_xform_small(len(frames), cart_sd=cartsd, rot_sd=rotsd) @ frames
         symfit = hm.compute_symfit(frames=candidate_frames, **kw)
         candidate_frames = symfit.xfit @ candidate_frames
@@ -554,8 +563,7 @@ def test_symfit_loss_mc(
                 col = (isamp / maxiters, 1 - isamp / maxiters, 1)  #######
 
                 symdupframes = hm.sym_frames[kw.sym][:, None] @ frames[None, :]
-                wu.viz.showme(symdupframes, name='xfitmc%05i' % isamp, col=None, hideprev=True,
-                              **showargs)
+                wu.viz.showme(symdupframes, name='xfitmc%05i' % isamp, col=None, **showargs)
                 # wu.viz.showme(frames, name='xfitmc%05ib' % isamp, col=None,
                 # **showargs.sub(spheres=0.5, weight=1.5))
                 # wu.viz.showme(pairs, name='mc%05i' % isamp, col='bycx', center=[0, 0, 0],
@@ -576,8 +584,11 @@ def test_symfit_loss_mc(
 
     symdupframes = hm.sym_frames[kw.sym][:, None] @ frames[None, :]
     wu.viz.showme(symdupframes, name='xfitmcfinal', col=None, **showargs)
+    showargs.hideprev = False
     wu.viz.showme(frames, name='xfitmc%05ib' % isamp, col=None,
-                  **showargs.sub(spheres=0.5, weight=1.5))
+                  **showargs.sub(spheres=0.65, weight=1.5))
+    pairs = hm.stupid_pairs_from_symops(symfit.symops)
+    wu.viz.showme(pairs, name='pairsstop', col='bycx', center=[0, 0, 0], **showargs)
 
     # print('symerr', symerr, isamp + 1)
     # assert 0
@@ -599,7 +610,7 @@ def symframes_coherence(frames):
 
 def wrapper(*args, **kwargs):
     try:
-        return test_symfit_loss_mc(*args, **kwargs)
+        return symfit_mc_test(*args, **kwargs)
     except:
         return wu.Bunch(nsamp=9999, besterr=999, symerr=999)
 
@@ -648,7 +659,7 @@ def symfit_parallel_convergence_trials(**kw):
             for iseed, seed in enumerate(seeds):
                 kw.seed = seed
                 # print('submit', terms, seed)
-                # fut[nframes][seed] = exe.submit(test_symfit_loss_mc, **kw)
+                # fut[nframes][seed] = exe.submit(symfit_mc_test, **kw)
                 fut[nframes][seed] = exe.submit(wrapper, **kw)
         # for i, f in fut.items():
         # print(i, f.result())
@@ -689,7 +700,7 @@ def symfit_parallel_mc_scoreterms_trials(**kw):
             for iseed, seed in enumerate(seeds):
                 kw.seed = seed
                 # print('submit', terms, seed)
-                fut[terms][seed] = exe.submit(test_symfit_loss_mc, **kw)
+                fut[terms][seed] = exe.submit(symfit_mc_test, **kw)
         # for i, f in fut.items():
         # print(i, f.result())
         print('symfit_parallel_mc_trials mean iters:')
@@ -706,18 +717,38 @@ def symfit_parallel_mc_scoreterms_trials(**kw):
                     if badscores else '', ),
             )
 
+@pytest.mark.xfail
 def test_symfit_grad_gd():
-    pass
+    assert 0, 'test_symfit_grad_gd doesnt exist'
+
+def test_symops_gradient():
+    kw = wu.Bunch()
+    kw.remove_outliers_sd = 3
+    kw.choose_closest_frame = True
+    kw.sym = 'icos'
+    kw.nframes = 7
+
+    frames = hm.rand_xform(kw.nframes, cart_sd=20)  #   @ frames
+    symfit = hm.compute_symfit(frames=frames, **kw)
+    frames = symfit.xfit @ frames
+
+    grad = hm.symfit_gradient(symfit)
+
+    # assert 0
 
 if __name__ == '__main__':
     np.seterr(all="ignore")
     t = wu.Timer()
 
+    # test_symops_gradient()
+    # t.checkpoint('test_symops_gradient')
+
     # symfit_parallel_convergence_trials()
 
-    test_symfit_loss_mc(quiet=False, showme=True)
-    t.checkpoint('test_symfit_loss_mc')
-    assert 0
+    symfit_mc_test(quiet=False, showme=True)
+    # t.checkpoint('symfit_mc_test')
+    # assert 0
+
     test_disambiguate_axes()
     t.checkpoint('test_disambiguate_axes')
 

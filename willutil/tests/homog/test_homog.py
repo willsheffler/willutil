@@ -1248,7 +1248,15 @@ def torque_delta_sanity_check():
     ax, ang = hm.axis_angle_of(hm.hrot(u, a) @ hm.hrot(v, b))
     assert np.allclose(ax, axhat, atol=5e-4)
 
+    uv = a * u + b * v
+    anghat = np.linalg.norm(uv, axis=-1)
+    axhat = uv / anghat[:, None]
+    ax, ang = hm.axis_angle_of(hm.hrot(u, a) @ hm.hrot(v, b))
+    assert np.allclose(ax, axhat, atol=5e-4)
+
 if __name__ == '__main__':
+
+    # test_d3_frames()
 
     torque_delta_sanity_check()
     test_symfit_180_bug()
