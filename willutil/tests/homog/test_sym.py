@@ -3,7 +3,7 @@ import willutil.homog as hm
 def test_sym_frames():
     assert len(hm.tetrahedral_axes_all[2] == 6)
     assert len(hm.tetrahedral_axes_all[3] == 4)
-    assert len(hm.tetrahedral_axes_all[7] == 4)
+    assert len(hm.tetrahedral_axes_all['2b'] == 4)
     assert len(hm.octahedral_axes_all[2] == 12)
     assert len(hm.octahedral_axes_all[3] == 8)
     assert len(hm.octahedral_axes_all[4] == 6)

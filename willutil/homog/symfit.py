@@ -143,7 +143,9 @@ def symops_from_frames(*, sym, frames, **kw):
 
     errvals = np.stack(list(err.values()))
     w = np.argmin(errvals, axis=0)
-    nfold = np.array(list(err.keys()))[w].astype('i4')
+    nfold = np.array(list(err.keys()))[w]
+    nfold = np.array([hm.sym_nfold_map(nf) for nf in nfold])
+    nfold = nfold.astype('i4')
     angdelta = np.array([angdelta[nf][i] for i, nf in enumerate(nfold)])
     nfold_err = np.min(errvals, axis=0)
 
@@ -478,6 +480,7 @@ def best_axes_fit(sym, xsamp, nfolds, tgtaxes, tofitaxes, **kw):
     err = list()
     for i, (nf, tgt, fit) in enumerate(zip(nfolds, randtgtaxes, tofitaxes)):
         n = np.newaxis
+        nf = hm.sym_nfold_map(nf)
         dotall = hm.hdot(fit[n, n, :], tgt[:, :, n])
         if sym != 'tet' or nf != 2:
             dotall = np.abs(dotall)
@@ -504,9 +507,14 @@ def symops_align_axes(
     alignaxes_more_iters=1.0,
     **kw,
 ):
-
     nfolds = list(hm.symaxes[sym].keys())
-    if 7 in nfolds: nfolds.remove(7)  # what to do about T33?
+
+    if '2b' in nfolds: nfolds.remove('2b')  # what to do about T33?
+    if '2c' in nfolds: nfolds.remove('2c')
+    if '2d' in nfolds: nfolds.remove('2d')
+    # print(nfolds)
+    nfolds = list(map(hm.sym_nfold_map, nfolds))
+    # print(nfolds)
     pang = hm.sym_point_angles[sym]
     # xtocen = np.eye(4)
     # xtocen[:, 3] = -center
@@ -550,6 +558,7 @@ def symops_align_axes(
     # print('sopaxes     ', [a.shape for a in sopaxes])
     nsamp = int(20 * alignaxes_more_iters)
     xsamp = hm.rand_xform(nsamp, cart_sd=0)
+    # print(nfolds)
     xfit, angerr = best_axes_fit(sym, xsamp, nfolds, tgtaxes, sopaxes)
     best = 9e9, np.eye(4)
     for i in range(int(20 * alignaxes_more_iters)):

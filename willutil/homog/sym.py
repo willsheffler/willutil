@@ -1,3 +1,4 @@
+from willutil import Bunch
 from willutil.homog.hgeom import *
 from willutil.homog.symframes import *
 
@@ -12,7 +13,7 @@ ambiguous_axes = dict(
 tetrahedral_axes = {
     2: hnormalized([1, 0, 0]),
     3: hnormalized([1, 1, 1]),
-    7: hnormalized([1, 1, m])  # other c3
+    '2b': hnormalized([1, 1, m])  # other c3
 }
 octahedral_axes = {
     2: hnormalized([1, 1, 0]),
@@ -46,7 +47,7 @@ tetrahedral_axes_all = {
         # [1, 1, m],
         # [1, m, 1],
     ]),
-    7:
+    '2b':
     hnormalized([
         [m, 1, 1],
         [1, m, 1],
@@ -182,7 +183,7 @@ tetrahedral_angles = {(i, j): angle(
     tetrahedral_axes[j],
 ) for i, j in [
     (2, 3),
-    (3, 7),
+    (3, '2b'),
 ]}
 octahedral_angles = {(i, j): angle(
     octahedral_axes[i],
@@ -226,11 +227,11 @@ sym_frames = dict(
     oct=octahedral_frames,
     icos=icosahedral_frames,
 )
-
 minsymang = dict(
     tet=angle(tetrahedral_axes[2], tetrahedral_axes[3]) / 2,
     oct=angle(octahedral_axes[2], octahedral_axes[3]) / 2,
     icos=angle(icosahedral_axes[2], icosahedral_axes[3]) / 2,
+    d2=np.pi / 4,
 )
 for icyc in range(3, 33):
     sym = 'd%i' % icyc
@@ -244,3 +245,51 @@ for icyc in range(3, 33):
     minsymang[sym] = np.pi / icyc / 2
     symaxes_all[sym] = _d_axes_all(icyc)
     ambiguous_axes[sym] = [(2, icyc)]
+
+sym_frames['d2'] = np.stack([
+    np.eye(4),
+    hrot([1, 0, 0], np.pi),
+    hrot([0, 1, 0], np.pi),
+    hrot([0, 0, 1], np.pi),
+])
+
+symaxes['d2'] = {
+    '2a': np.array([1, 0, 0, 0]),
+    '2b': np.array([0, 1, 0, 0]),
+    '2c': np.array([0, 0, 1, 0]),
+}
+symaxes_all['d2'] = {
+    2: np.array([
+        np.array([1, 0, 0, 0]),
+        np.array([0, 1, 0, 0]),
+        np.array([0, 0, 1, 0]),
+    ])
+}
+
+sym_point_angles['d2'] = {2: [np.pi]}
+
+def sym_nfold_map(nfold):
+    if isinstance(nfold, str):
+        return int(nfold[:-1])
+    return nfold
+
+def get_syminfo(sym):
+    sym = sym.lower()
+    try:
+        ambig = list()
+        if sym in ambiguous_axes: ambig = ambiguous_axes[sym]
+        nfoldmap = {k: sym_nfold_map(k) for k in symaxes[sym]}
+        assert sym_frames[sym].shape[-2:] == (4, 4)
+        return Bunch(
+            frames=sym_frames[sym],
+            axes=symaxes[sym],
+            axesall=symaxes_all[sym],
+            point_angles=sym_point_angles[sym],
+            ambiguous_axes=ambig,
+            nfoldmap=nfoldmap,
+        )
+
+    except KeyError as e:
+        # raise ValueError(f'sim.py: dont know symmetry "{sym}"')
+        print(f'sym.py: dont know symmetry "{sym}"')
+        raise e
