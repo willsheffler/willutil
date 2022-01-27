@@ -330,6 +330,7 @@ def showme_pymol(what, name='noname', hideprev=False, headless=False, block=Fals
 
     # print('############## showme_pymol', type(what), '##############')
     if hideprev: pymol.cmd.disable('all')
+    pymol.cmd.full_screen('on')
     result = pymol_load(what, _showme_state, name=name, **kw)
     # # pymol.cmd.set('internal_gui_width', '20')
 
@@ -340,11 +341,14 @@ def showme_pymol(what, name='noname', hideprev=False, headless=False, block=Fals
     return result
 
 def showme(*args, how="pymol", showme=True, **kw):
+    randstate = np.random.get_state()
     if not showme: return
     if how == "pymol":
-        return showme_pymol(*args, **kw)
+        result = showme_pymol(*args, **kw)
     else:
-        raise NotImplementedError('showme how="%s" not implemented' % how)
+        result = NotImplemented('showme how="%s" not implemented' % how)
+    np.random.set_state(randstate)
+    return result
 
 _atom_record_format = (
     "ATOM  {atomi:5d} {atomn:^4}{idx:^1}{resn:3s} {chain:1}{resi:4d}{insert:1s}   "

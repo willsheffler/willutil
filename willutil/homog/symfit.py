@@ -1,4 +1,4 @@
-import itertools as it
+import itertools as it, sys
 import numpy as np
 import willutil as wu
 from willutil import homog as hm, Bunch
@@ -107,12 +107,13 @@ def symops_from_frames(*, sym, frames, **kw):
     assert (len(frame1) == len(frame2) == len(xrel) == len(axs) == len(ang) == len(cen) ==
             len(framecen) == len(rad) == len(hel))
     errrad = np.minimum(10000, np.maximum(rad, 1.0))
-    angdelta = dict()
-    err = dict()
+    angdelta, err, closest = dict(), dict(), dict()
     point_angles = hm.sym_point_angles[sym]
+    # print(point_angles)
     for n, tgtangs in point_angles.items():
-        dabs = [np.abs(ang - atgt) for atgt in tgtangs]
-        d = [atgt - ang for atgt in tgtangs]
+        tgtangs = np.asarray(tgtangs)
+        dabs = np.array([np.abs(ang - atgt) for atgt in tgtangs])
+        d = np.array([atgt - ang for atgt in tgtangs])
         if len(dabs) == 1:
             dabs = dabs[0]
             d = d[0]
@@ -122,16 +123,47 @@ def symops_from_frames(*, sym, frames, **kw):
             atgt = np.where(dabs[0] < dabs[1], tgtangs[0], tgtangs[1])
             dabs = np.where(dabs[0] < dabs[1], dabs[0], dabs[1])
         else:
-            assert 0, 'too many point angle choices'
+            # print('=========', n, '===========')
+            w = np.argmin(dabs, axis=0)
+            atgt = tgtangs[w]
+            d = d[w, np.arange(len(w))]
+            # print(dabs)
+            dabs = dabs[w, np.arange(len(w))]
+            # dabs = dabs[w]
+            # print(dabs)
+
         ang_err = errrad * dabs
         err[n] = np.sqrt(hel**2 + ang_err**2)
         angdelta[n] = d
+        closest[n] = np.argmin(dabs)
+
+    # for k, v in err.items():
+    #   print(k)
+    #   print(v)
 
     errvals = np.stack(list(err.values()))
     w = np.argmin(errvals, axis=0)
     nfold = np.array(list(err.keys()))[w].astype('i4')
     angdelta = np.array([angdelta[nf][i] for i, nf in enumerate(nfold)])
     nfold_err = np.min(errvals, axis=0)
+
+    # print('aorisent')
+    # print(np.degrees(ang))
+    # print(nfold)
+    # for nf in point_angles:
+    # print([np.degrees(a) for a in point_angles[nf]])
+
+    # wu.viz.showme(axs[nfold == 2], name='nfold2')
+    # wu.viz.showme(axs[nfold == 7], name='nfold7')
+    # print(np.degrees(ang))
+    # print(nfold)
+    # print(point_angles.items())
+    # print(np.degrees(ang[nfold == 6]))
+    # wu.viz.showme(axs[nfold == 6], name='nfold6')
+
+    # for nf in point_angles:
+    # if np.sum(nfold == nf) == 0:
+    # nfold[closest[nf]] = nf
 
     # pair.nfold, pair.nfold_err = None, 9e9
     # for n, angs in point_angles.items():
@@ -162,53 +194,71 @@ def symops_from_frames(*, sym, frames, **kw):
     return result
 
 def disambiguate_axes(sym, axis, nfold):
-    if not sym in hm.ambuguous_axes: return nfold
-    if not hm.ambuguous_axes[sym]: return nfold
-    assert len(hm.ambuguous_axes[sym]) == 1
+    if not sym in hm.ambiguous_axes: return nfold
+    if not hm.ambiguous_axes[sym]: return nfold
 
     nfold = nfold[:]
-    ambignfold, maybenfold = hm.ambuguous_axes[sym][0]
-    # print(ambignfold, maybenfold)
-    ambigaxis = axis[nfold == ambignfold]
-    maybeaxis = axis[nfold == maybenfold]
-    # print('ambigaxis', ambigaxis.shape)
-    # print('maybeaxis', maybeaxis.shape)
-    # maybeaxis = (hm.sym_frames[sym][None, :] @ maybeaxis[:, None, :, None]).reshape(-1, 4)
-    # print(maybeaxis.shape)
+    angcut = np.pi / 12
+    for ambignfold, maybenfold in reversed(hm.ambiguous_axes[sym]):
+        if sym.lower().startswith('d') and ambignfold != 2:
+            nfold[nfold == ambignfold] = maybenfold
+            continue
 
-    nambig = len(ambigaxis)
-    nmaybe = len(maybeaxis)
-    # if nambig == 0:
-    #     # tgtnum = int((nmaybe + nambig) * 2 / 3)
-    #     nfold[np.random.rand(len(nfold)) < .25] = ambignfold
-    #     return nfold
-    # if nmaybe == 0:
-    #     # tgtnum = int((nmaybe + nambig) * 2 / 3)
-    #     nfold[np.random.rand(len(nfold)) < .25] = maybenfold
-    #     return nfold
+        ambigaxis = axis[nfold == ambignfold]
+        maybeaxis = axis[nfold == maybenfold]
+        # print('ambigaxis', ambigaxis.shape)
+        # print('maybeaxis', maybeaxis.shape)
+        # maybeaxis = (hm.sym_frames[sym][None, :] @ maybeaxis[:, None, :, None]).reshape(-1, 4)
+        # print(maybeaxis.shape)
 
-    dot = np.abs(hm.hdot(ambigaxis[None, :], maybeaxis[:, None]))
-    try:
-        maxdot = np.max(dot, axis=0)
-        # print(maxdot.shape)
-    except Exception as e:
-        raise SymFitError(f'missing axes: {nfold}')
+        nambig = len(ambigaxis)
+        nmaybe = len(maybeaxis)
+        # if nambig == 0:
+        #     # tgtnum = int((nmaybe + nambig) * 2 / 3)
+        #     nfold[np.random.rand(len(nfold)) < .25] = ambignfold
+        #     return nfold
+        # if nmaybe == 0:
+        #     # tgtnum = int((nmaybe + nambig) * 2 / 3)
+        #     nfold[np.random.rand(len(nfold)) < .25] = maybenfold
+        #     return nfold
 
-    # tgtnum = int((nmaybe + nambig) / 3)
-    # idx = np.argsort(maxdot)[-tgtnum:]
-    # maybe_so = np.zeros_like(maxdot, dtype='b')
-    # for i in idx:
-    # maybe_so[i] = True
+        dot = np.abs(hm.hdot(ambigaxis[None, :], maybeaxis[:, None]))
 
-    # print(nambig, nmaybe, dot.shape, maxdot.shape)
-    # print(maxdot)
-    # assert 0
-    # print(nfold)
-    maybe_so = maxdot > np.cos(np.pi / 12)  # theoretically pi/8 ro 22.5 deg
+        # print(ambigaxis[0])
+        # print(maybeaxis)
 
-    nfold[nfold == ambignfold] = np.where(maybe_so, maybenfold, ambignfold)
+        # wu.viz.showme(ambigaxis, name='ambig')
+        # wu.viz.showme(maybeaxis, name='maybe')
 
-    # assert 0
+        # assert 0
+
+        # print(dot[0])
+        try:
+            maxdot = np.max(dot, axis=0)
+            # print(maxdot.shape)
+        except Exception as e:
+            # return nfold
+            # print(f'missing axes: {nfold}')
+            raise SymFitError(f'missing axes: {nfold}')
+
+        # tgtnum = int((nmaybe + nambig) / 3)
+        # idx = np.argsort(maxdot)[-tgtnum:]
+        # maybe_so = np.zeros_like(maxdot, dtype='b')
+        # for i in idx:
+        # maybe_so[i] = True
+
+        # print(nambig, nmaybe, dot.shape, maxdot.shape)
+        # print(maxdot)
+        # assert 0
+        # print(nfold)
+        maybe_so = maxdot > np.cos(angcut)  # theoretically pi/8 ro 22.5 deg
+
+        # if sym.startswith('d'):
+        # print(nfold[:36])
+        nfold[nfold == ambignfold] = np.where(maybe_so, maybenfold, ambignfold)
+        # if sym.startswith('d'):
+        # print(nfold[:36])
+        # assert 0
 
     return nfold
 
@@ -242,13 +292,6 @@ def compute_symfit(
 ):
     kw = wu.Bunch(kw)
     point_angles = hm.sym_point_angles[sym]
-    minsymang = dict(
-        tet=hm.angle(hm.tetrahedral_axes[2], hm.tetrahedral_axes[3]) / 2,
-        oct=hm.angle(hm.octahedral_axes[2], hm.octahedral_axes[3]) / 2,
-        icos=hm.angle(hm.icosahedral_axes[2], hm.icosahedral_axes[3]) / 2,
-        d3=np.pi / 6,
-        d5=np.pi / 10,
-    )
     symops = hm.symops_from_frames(sym=sym, frames=frames, **kw)
     # symops = stupid_pairs_from_symops(symops)
     # if len'nfolds',(symops) <= len(hm.symaxes[sym]):
@@ -305,7 +348,7 @@ def compute_symfit(
     # cen1, cen2, axs1, axs2 = cen1A, cen2A, axs1A, axs2A
     # assert 0
 
-    not_same_symaxis = hm.line_angle(axs1, axs2) > minsymang[sym]
+    not_same_symaxis = hm.line_angle(axs1, axs2) > hm.minsymang[sym]
     p1np = cen1[not_same_symaxis]
     p2np = cen2[not_same_symaxis]
     a1np = axs1[not_same_symaxis]
@@ -322,7 +365,7 @@ def compute_symfit(
     # print('q', q.shape, 'isnan', np.sum(np.isnan(q)))
     tot_nan = np.sum(np.isnan(p)) / 4
     if tot_nan / len(p) > max_nan:
-        print('nfolds', symops.nfold)
+        print('nan fail nfolds', symops.nfold)
         raise SymFitError(
             f'{tot_nan/len(p)*100:7.3f}% of symops are parallel or cant be intersected')
 
@@ -347,11 +390,14 @@ def compute_symfit(
         # print('norm', norm.shape, np.mean(norm), np.min(norm), np.max(norm), np.sum(not_outlier),
         # np.sum(not_outlier) / len(not_outlier))
         # print(center)
-        center = np.mean(isect[not_outlier], axis=0)
+        if np.sum(not_outlier) > 5:
+            center = np.mean(isect[not_outlier], axis=0)
         # print(center)
 
     radii = np.linalg.norm(frames[:, :, 3] - center, axis=-1)
     radius = np.mean(radii)
+    if radius > 1e6:
+        raise SymFitError(f'inferred radius is {radius}')
 
     # rad_err = np.sqrt(np.mean(radii**2))
     # rad_err = np.sqrt(np.mean(radii**2) / radius)
@@ -422,6 +468,7 @@ def compute_symfit(
         axes_err=axesfiterr,
         total_err=total_err,
         weighted_err=weighted_err,
+        losses=loss,
     )
 
 def best_axes_fit(sym, xsamp, nfolds, tgtaxes, tofitaxes, **kw):
@@ -452,8 +499,9 @@ def symops_align_axes(
     symops,
     center,
     radius,
-    choose_closest_frame=False,
+    choose_closest_frame=True,
     align_ang_delta_thresh=0.001,
+    alignaxes_more_iters=1.0,
     **kw,
 ):
 
@@ -500,11 +548,11 @@ def symops_align_axes(
     # print('origtgtaxes', [a.shape for a in origtgtaxes])
     # print('tgtdaxes   ', [a.shape for a in tgtdaxes])
     # print('sopaxes     ', [a.shape for a in sopaxes])
-    nsamp = 20
+    nsamp = int(20 * alignaxes_more_iters)
     xsamp = hm.rand_xform(nsamp, cart_sd=0)
     xfit, angerr = best_axes_fit(sym, xsamp, nfolds, tgtaxes, sopaxes)
     best = 9e9, np.eye(4)
-    for i in range(20):
+    for i in range(int(20 * alignaxes_more_iters)):
         _checkpoint(kw, 'symops_align_axes make xsamp pre')
         xsamp = hm.rand_xform_small(nsamp, rot_sd=angerr / 2, cart_sd=0) @ xfit
         _checkpoint(kw, 'symops_align_axes make xsamp')
@@ -526,7 +574,8 @@ def symops_align_axes(
     axesfiterr = angerr * radius
 
     if choose_closest_frame:
-        which_frame = np.argmin(np.sum((hm.sym_frames[sym] @ xfit - np.eye(4))**2, axis=(-1, -2)))
+        # which_frame = np.argmin(np.sum((hm.sym_frames[sym] @ xfit - np.eye(4))**2, axis=(-1, -2)))
+        which_frame = np.argmin(hm.angle_of(hm.sym_frames[sym] @ xfit))
         xfit = hm.sym_frames[sym][which_frame] @ xfit
         # print(which_frame)
 

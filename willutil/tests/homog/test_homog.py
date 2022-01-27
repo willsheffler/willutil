@@ -5,13 +5,13 @@ from willutil.homog import *
 import willutil.homog as hm
 
 def test_sym():
-    assert willutil.homog.sym.tetrahedral_frames.shape == (12, 4, 4)
-    assert willutil.homog.sym.octahedral_frames.shape == (24, 4, 4)
-    assert willutil.homog.sym.icosahedral_frames.shape == (60, 4, 4)
+    assert willutil.homog.symframes.tetrahedral_frames.shape == (12, 4, 4)
+    assert willutil.homog.symframes.octahedral_frames.shape == (24, 4, 4)
+    assert willutil.homog.symframes.icosahedral_frames.shape == (60, 4, 4)
     x = np.concatenate([
-        willutil.homog.sym.tetrahedral_frames,
-        willutil.homog.sym.octahedral_frames,
-        willutil.homog.sym.icosahedral_frames,
+        willutil.homog.symframes.tetrahedral_frames,
+        willutil.homog.symframes.octahedral_frames,
+        willutil.homog.symframes.icosahedral_frames,
     ])
     assert np.all(x[..., 3, 3] == 1)
     assert np.all(x[..., 3, :3] == 0)

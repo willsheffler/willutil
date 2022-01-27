@@ -477,18 +477,27 @@ def test_disambiguate_axes():
     # assert 0
 
 def symfit_mc_test(
+    sym=None,
     seed=None,
+    random_frames=False,
     quiet=True,
     nframes=None,
-    maxiters=2_000,
+    maxiters=1_000,
     goalerr=0.01,
     showme=False,
+    scalesamp=1.0,
+    scalecartsamp=1.0,
+    scalerotsamp=1.0,
+    scaletemp=1.0,
+    max_cartsd=10,
     **kw,
 ):
-    kw = wu.Bunch(kw)
+    kw = wu.Bunch(kw, _strict=False)
     if not 'timer' in kw: kw.timer = wu.Timer()
 
-    assert "PYTEST_CURRENT_TEST" not in os.environ
+    if "PYTEST_CURRENT_TEST" in os.environ:
+        showme = False
+
     if seed is None:
         seed = np.random.randint(2**32 - 1)
     np.random.seed(seed)
@@ -496,43 +505,51 @@ def symfit_mc_test(
     # kw.sym = np.random.choice('tet oct icos'.split())
     # kw.nframes = len(hm.sym_frames[kw.sym])
     # kw.nframes = np.random.choice(6) + 6
-    kw.sym = 'd5'
+    kw.sym = sym or 'icos'
     if nframes is None:
         nframes = dict(
-            d3=5,
-            d5=5,
+            d3=6,
+            d5=6,
             tet=6,
             oct=7,
             icos=7,
         )[kw.sym]
 
-    kw.tprelen = 10
-    kw.tprerand = 0
-    kw.tpostlen = 20
-    kw.tpostrand = 0
-    kw.fuzzstdfrac = 0.1  # frac of radian
-    kw.cart_sd_fuzz = kw.fuzzstdfrac * kw.tprelen
-    kw.rot_sd_fuzz = kw.fuzzstdfrac
-    kw.remove_outliers_sd = 3
-    kw.choose_closest_frame = True
+    kw.tprelen = kw.tprelen or 10
+    kw.tprerand = kw.tprerand or 0
+    kw.tpostlen = kw.tpostlen or 20
+    kw.tpostrand = kw.tpostrand or 0
+    kw.fuzzstdfrac = kw.fuzzstdfrac or 0.01  # frac of radian
+    kw.cart_sd_fuzz = kw.cart_sd_fuzz or kw.fuzzstdfrac * kw.tprelen
+    kw.rot_sd_fuzz = kw.rot_sd_fuzz or kw.fuzzstdfrac
+    kw.remove_outliers_sd = kw.remove_outliers_sd or 3
+    kw.choose_closest_frame = kw.choose_closest_frame or True
 
-    frames, xpre, xpost, xfuzz, radius = setup_test_frames(nframes, **kw)
+    if random_frames:
+        frames = hm.rand_xform(nframes, cart_sd=20)  #   @ frames
+    else:
+        frames, xpre, xpost, xfuzz, radius = setup_test_frames(nframes, **kw)
+    # frames = hm.sym_frames[kw.sym]
 
-    # frames = hm.rand_xform(nframes, cart_sd=20)  #   @ frames
+    # wu.viz.showme(frames)
+    # assert 0
 
     showargs = wu.Bunch(headless=0, spheres=0.0, showme=showme, hideprev=True)
     # wu.viz.showme(frames, 'start', col=(1, 1, 1), **showargs)
     symfit = hm.compute_symfit(frames=frames, **kw)
+    err0 = symfit.weighted_err
     frames = symfit.xfit @ frames
+    if not quiet: print('start', symfit.weighted_err)
     # wu.viz.showme(hm.sym_frames[kw.sym][:, None] @ frames[None, :], name='symstart',
     # col=(1, 1, 0), rays=0.02, weight=0.3, **showargs)
 
-    pairs = hm.stupid_pairs_from_symops(symfit.symops)
-    wu.viz.showme(pairs, name='pairsstart', col='bycx', center=[0, 0, 0], **showargs)
+    if showme:
+        pairs = hm.stupid_pairs_from_symops(symfit.symops)
+        wu.viz.showme(pairs, name='pairsstart', col='bycx', center=[0, 0, 0], **showargs)
 
     if not quiet: print('start', symfit.weighted_err)
-    low_err = symfit.weighted_err
-    best_err = low_err
+    lowerr = symfit.weighted_err
+    besterr = lowerr
     best = frames, None
     naccept, lastviz = 0, -999
     for isamp in range(maxiters):
@@ -540,25 +557,37 @@ def symfit_mc_test(
         if isamp % 10 == 0: frames = best[0]
         if isamp % 100 == 0 and not quiet:
             print(isamp, symfit.weighted_err, naccept / (isamp + 1))
-        cartsd = symfit.weighted_err / 15
-        rotsd = cartsd / symfit.radius
-        temp = symfit.weighted_err / 150
-        candidate_frames = hm.rand_xform_small(len(frames), cart_sd=cartsd, rot_sd=rotsd) @ frames
-        symfit = hm.compute_symfit(frames=candidate_frames, **kw)
-        candidate_frames = symfit.xfit @ candidate_frames
-        # if symfit.weighted_err > 9e6: break
+        cartsd = symfit.weighted_err / 15 * scalecartsamp * scalesamp
+        cartsd = min(max_cartsd, cartsd)
+        rotsd = cartsd / symfit.radius * scalerotsamp * scalesamp
+        temp = symfit.weighted_err / 150 * scaletemp
+        purturbation = hm.rand_xform_small(len(frames), cart_sd=cartsd, rot_sd=rotsd)
+        assert np.max(purturbation[:, :, 3]) < 1e7
+        purturbed = purturbation @ frames
+        try:
+            assert np.max(purturbed[:, :3, 3]) < 1e6
+            symfit = hm.compute_symfit(frames=purturbed, **kw)
+        except Exception as e:
+            print('SEED', seed)
+            print(np.max(frames[:, :3, 3]))
+            print(np.max(purturbation[:, :3, 3]))
+            print(np.max(purturbed[:, :3, 3]))
 
-        delta = symfit.weighted_err - low_err
+            raise e
+        candidate = symfit.xfit @ purturbed
+        if np.isnan(symfit.weighted_err): break
+
+        delta = symfit.weighted_err - lowerr
         if np.exp(-delta / temp) > np.random.rand():
             naccept += 1
-            # frames = symfit.xfit @ candidate_frames
-            frames = candidate_frames
-            low_err = symfit.weighted_err
+            # frames = symfit.xfit @ candidate
+            frames = candidate
+            lowerr = symfit.weighted_err
             # col = (isamp / maxiters, 1 - isamp / maxiters, 1)
-            # wu.viz.showme(candidate_frames, name='mc%05i' % isamp, col=col, center=[0, 0, 0],
+            # wu.viz.showme(candidate, name='mc%05i' % isamp, col=col, center=[0, 0, 0],
             # **showargs)b
 
-            if isamp - lastviz > 15:
+            if showme and isamp - lastviz > 15:
                 # pairs = hm.stupid_pairs_from_symops(symfit.symops)
                 col = (isamp / maxiters, 1 - isamp / maxiters, 1)  #######
 
@@ -570,8 +599,8 @@ def symfit_mc_test(
                 # **showargs)
                 lastviz = isamp
 
-            if low_err < best_err:
-                best_err = low_err
+            if lowerr < besterr:
+                besterr = lowerr
                 best = symfit.xfit @ frames, symfit
 
                 if symfit.total_err < goalerr * symfit.radius: break
@@ -582,13 +611,14 @@ def symfit_mc_test(
     symdupframes = hm.sym_frames[kw.sym][:, None] @ frames[None, :]
     symerr = symframes_coherence(symdupframes)
 
-    symdupframes = hm.sym_frames[kw.sym][:, None] @ frames[None, :]
-    wu.viz.showme(symdupframes, name='xfitmcfinal', col=None, **showargs)
-    showargs.hideprev = False
-    wu.viz.showme(frames, name='xfitmc%05ib' % isamp, col=None,
-                  **showargs.sub(spheres=0.65, weight=1.5))
-    pairs = hm.stupid_pairs_from_symops(symfit.symops)
-    wu.viz.showme(pairs, name='pairsstop', col='bycx', center=[0, 0, 0], **showargs)
+    if showme:
+        symdupframes = hm.sym_frames[kw.sym][:, None] @ frames[None, :]
+        wu.viz.showme(symdupframes, name='xfitmcfinal', col=None, **showargs)
+        showargs.hideprev = False
+        wu.viz.showme(frames, name='xfitmc%05ib' % isamp, col=None,
+                      **showargs.sub(spheres=0.65, weight=1.5))
+        pairs = hm.stupid_pairs_from_symops(symfit.symops)
+        wu.viz.showme(pairs, name='pairsstop', col='bycx', center=[0, 0, 0], **showargs)
 
     # print('symerr', symerr, isamp + 1)
     # assert 0
@@ -597,7 +627,41 @@ def symfit_mc_test(
 
     # t.report()
 
-    return wu.Bunch(nsamp=isamp + 1, besterr=best_err, symerr=symerr)
+    return wu.Bunch(nsamp=isamp + 1, besterr=besterr, symerr=symerr, frames=frames,
+                    start_err=err0)
+
+def test_symfit_mc():
+    kw = wu.Bunch()
+    kw.tprelen = 10
+    kw.tprerand = 0
+    kw.tpostlen = 20
+    kw.tpostrand = 0
+    kw.fuzzstdfrac = 0.01  # frac of radian
+    kw.remove_outliers_sd = 3
+    kw.choose_closest_frame = True
+    # kw.showme = True
+    # result = symfit_mc_test(sym='icos',nframes=5,seed=0, maxiters=100, **kw)
+    # print(result.start_err, result.besterr, result.symerr)
+    # assert np.isclose(result.start_err, 0.4195887257175782)
+    # assert np.isclose(result.besterr, 0.1689752948952585)
+    # assert np.isclose(result.symerr, 0.19297554111865917)
+
+    kw.fuzzstdfrac = 0.1
+    result = symfit_mc_test(nframes=4, sym='tet', seed=12, maxiters=200, **kw)
+    assert np.isclose(result.start_err, 2.467584262814621)
+    assert np.isclose(result.besterr, 0.09552787596768347)
+    assert np.isclose(result.symerr, 0.12641561080909042)
+
+    kw.fuzzstdfrac = 0.1
+    # for s in range(20):
+    # try:
+    result = symfit_mc_test(nframes=5, sym='oct', seed=7, maxiters=200, **kw)
+    # print(result.start_err, result.besterr, result.symerr, result.start_err / result.besterr)
+    # except:
+    # print('fail')
+    assert np.isclose(result.start_err, 4.967872160707628)
+    assert np.isclose(result.besterr, 0.4514411873704736)
+    assert np.isclose(result.symerr, 0.5324565429731142)
 
 def symframes_coherence(frames):
     frames = frames.reshape(-1, 4, 4)
@@ -721,22 +785,73 @@ def symfit_parallel_mc_scoreterms_trials(**kw):
 def test_symfit_grad_gd():
     assert 0, 'test_symfit_grad_gd doesnt exist'
 
-def test_symops_gradient():
-    kw = wu.Bunch()
-    kw.remove_outliers_sd = 3
-    kw.choose_closest_frame = True
-    kw.sym = 'icos'
-    kw.nframes = 7
+# def test_symops_gradient():
+#     kw = wu.Bunch()
+#     kw.remove_outliers_sd = 3
+#     kw.choose_closest_frame = True
+#     kw.sym = 'icos'
+#     kw.nframes = 7
+#
+#     frames = hm.rand_xform(kw.nframes, cart_sd=20)  #   @ frames
+#     symfit = hm.compute_symfit(frames=frames, **kw)
+#     frames = symfit.xfit @ frames
+#
+#     grad = hm.symfit_gradient(symfit)
+#
+#     # assert 0
 
-    frames = hm.rand_xform(kw.nframes, cart_sd=20)  #   @ frames
-    symfit = hm.compute_symfit(frames=frames, **kw)
-    frames = symfit.xfit @ frames
+def helper_test_symfit_dihedral(icyc, rand=True):
+    sym = 'd%i' % icyc
+    symframes = hm.sym_frames[sym]
+    frames = hm.hxform(symframes, hm.htrans([5, 7, 11]))
+    if rand:
+        frames = hm.rand_xform_small(len(frames), rot_sd=0.001) @ frames
+    frames = frames[:4]
+    symfit = hm.compute_symfit(sym=sym, frames=frames, alignaxes_more_iters=2)
+    # p = hm.stupid_pairs_from_symops(symfit.symops)
+    # wu.viz.showme(p)
+    # print(icyc)
+    # print(symfit.losses)
+    assert symfit.losses['A'] < 1e-2
+    assert symfit.losses['C'] < 1e-4
+    assert symfit.losses['H'] < 1e-4
+    assert symfit.losses['N'] < 1e-2
 
-    grad = hm.symfit_gradient(symfit)
+    # for s in range(10):
+    #     np.random.seed(s)
+    #     frames = hm.rand_xform(len(frames))  # @ frames
+    #     try:
+    #         symfit = hm.compute_symfit(sym=sym, frames=frames)
+    #         # p = hm.stupid_pairs_from_symops(symfit.symops)
+    #         # wu.viz.showme(p)
+    #         # print(symfit.weighted_err)
+    #     except:
+    #         print(seed)
+    #         assert 0
+    # assert 0
+
+def test_symfit_dihedral():
+    # helper_test_symfit_dihedral(2)
+    helper_test_symfit_dihedral(3)
+    helper_test_symfit_dihedral(4)
+    helper_test_symfit_dihedral(5)
+    helper_test_symfit_dihedral(6)
+    helper_test_symfit_dihedral(7)
+    helper_test_symfit_dihedral(8)
+    helper_test_symfit_dihedral(9)
+    for i in range(10, 33):
+        helper_test_symfit_dihedral(i, rand=False)
 
     # assert 0
 
 if __name__ == '__main__':
+    np.set_printoptions(
+        precision=10,
+        suppress=True,
+        linewidth=98,
+        formatter={'float': lambda f: '%8.4f' % f},
+    )
+
     np.seterr(all="ignore")
     t = wu.Timer()
 
@@ -745,9 +860,16 @@ if __name__ == '__main__':
 
     # symfit_parallel_convergence_trials()
 
-    symfit_mc_test(quiet=False, showme=True)
+    # symfit_mc_test(sym='icos', quiet=False, showme=True, fuzzstdfrac=0.4, random_frames=True,
+    # nframes=5, maxiters=1000, scaletemp=1, scalesamp=1, seed=None)
     # t.checkpoint('symfit_mc_test')
     # assert 0
+
+    test_symfit_dihedral()
+    t.checkpoint('test_symfit_dihedral')
+
+    test_symfit_mc()
+    t.checkpoint('test_symfit_mc')
 
     test_disambiguate_axes()
     t.checkpoint('test_disambiguate_axes')
@@ -771,7 +893,7 @@ if __name__ == '__main__':
     t.checkpoint('test_cyclic_sym_err')
 
     # symfit_parallel_mc_trials()
-    # assert 0print
+    # assert 0printe
     # errs = list()
     # for i in range(5):
     #     errs.append(test_symops_cen_imperfect(nsamp=20, manual=True))
