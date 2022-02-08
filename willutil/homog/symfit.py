@@ -295,6 +295,14 @@ def compute_symfit(
     kw = wu.Bunch(kw)
     point_angles = hm.sym_point_angles[sym]
     symops = hm.symops_from_frames(sym=sym, frames=frames, **kw)
+
+    if sym != 'd2':
+        if np.all(symops.nfold == 2):
+            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            print('!!!!!!! symfit only 2fold axes! !!!!!!!!!!!!!!!!!')
+            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            raise SymFitError('only twofold axes')
+
     # symops = stupid_pairs_from_symops(symops)
     # if len'nfolds',(symops) <= len(hm.symaxes[sym]):
     # raise SymFitError('not enough symops/monomers')

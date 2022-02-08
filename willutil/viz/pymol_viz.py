@@ -340,6 +340,9 @@ def showme_pymol(what, name='noname', hideprev=False, headless=False, block=Fals
         time.sleep(1)
     return result
 
+def clear():
+    pymol.cmd.delete('all')
+
 def showme(*args, how="pymol", showme=True, **kw):
     randstate = np.random.get_state()
     if not showme: return

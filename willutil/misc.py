@@ -1,4 +1,55 @@
-import datetime
+import datetime, sys
+
+class Tee:
+    def __init__(self, fd1, fd2=sys.stdout):
+        if isinstance(fd1, str):
+            self.fname = fd1
+            fd1 = open(fd1, 'w')
+        self.fd1 = fd1
+        self.fd2 = fd2
+        self.with_stderr = False
+
+    # def __del__(self):
+    #     if self.fd1 != sys.stdout and self.fd1 != sys.stderr:
+    #         self.fd1.close()
+    #     if self.fd2 != sys.stdout and self.fd2 != sys.stderr:
+    #         self.fd2.close()
+
+    def write(self, text):
+        self.fd1.write(text)
+        self.fd2.write(text)
+        self.flush()
+
+    def flush(self):
+        self.fd1.flush()
+        self.fd2.flush()
+
+def stdout_tee(fname, with_stderr=False):
+    print('!!!!!!! stdout_tee', fname, 'with_stderr:', with_stderr)
+    tee = Tee(fname)
+    sys.stdout = tee
+    if with_stderr:
+        sys.stderr = Tee(tee.fd1, sys.stderr)
+        sys.stdout.with_stderr = True
+
+def stdout_untee():
+    tee = sys.stdout
+    tee.fd1.close()
+    sys.stdout = tee.fd2
+    if tee.with_stderr:
+        sys.stderr = sys.stderr.fd2
+    print('!!!!!!! stdout_untee', tee.fname)
+
+class Flusher:
+    def __init__(self, out):
+        self.out = out
+
+    def write(self, *args, **kw):
+        self.out.write(*args, **kw)
+        self.out.flush()
+
+    def close(self):
+        self.out.close()
 
 def tobytes(s):
     if isinstance(s, str): return s.encode()

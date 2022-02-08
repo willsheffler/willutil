@@ -490,6 +490,7 @@ def symfit_mc_test(
     scalerotsamp=1.0,
     scaletemp=1.0,
     max_cartsd=10,
+    vizinterval=10,
     **kw,
 ):
     kw = wu.Bunch(kw, _strict=False)
@@ -527,15 +528,15 @@ def symfit_mc_test(
     kw.choose_closest_frame = kw.choose_closest_frame or True
 
     if random_frames:
-        frames = hm.rand_xform(nframes, cart_sd=20)  #   @ frames
+        frames = hm.rand_xform(nframes, cart_sd=kw.tprelen)  #   @ frames
     else:
-        frames, xpre, xpost, xfuzz, radius = setup_test_frames(nframes, **kw)
+        frames, *_ = setup_test_frames(nframes, **kw)
     # frames = hm.sym_frames[kw.sym]
 
     # wu.viz.showme(frames)
     # assert 0
 
-    showargs = wu.Bunch(headless=0, spheres=0.0, showme=showme, hideprev=True)
+    showargs = wu.Bunch(headless=0, spheres=0.0, showme=showme, hideprev=True, weight=2)
     # wu.viz.showme(frames, 'start', col=(1, 1, 1), **showargs)
     symfit = hm.compute_symfit(frames=frames, **kw)
     err0 = symfit.weighted_err
@@ -578,6 +579,9 @@ def symfit_mc_test(
         candidate = symfit.xfit @ purturbed
         if np.isnan(symfit.weighted_err): break
 
+        symdupframes = hm.sym_frames[kw.sym][:, None] @ frames[None, :]
+        wu.viz.showme(symdupframes, name='xfitmc%05i' % isamp, col=None, **showargs)
+
         delta = symfit.weighted_err - lowerr
         if np.exp(-delta / temp) > np.random.rand():
             naccept += 1
@@ -588,12 +592,12 @@ def symfit_mc_test(
             # wu.viz.showme(candidate, name='mc%05i' % isamp, col=col, center=[0, 0, 0],
             # **showargs)b
 
-            if showme and isamp - lastviz > 15:
+            if showme and isamp - lastviz > vizinterval:
                 # pairs = hm.stupid_pairs_from_symops(symfit.symops)
                 col = (isamp / maxiters, 1 - isamp / maxiters, 1)  #######
 
-                symdupframes = hm.sym_frames[kw.sym][:, None] @ frames[None, :]
-                wu.viz.showme(symdupframes, name='xfitmc%05i' % isamp, col=None, **showargs)
+                # symdupframes = hm.sym_frames[kw.sym][:, None] @ frames[None, :]
+                # wu.viz.showme(symdupframes, name='xfitmc%05i' % isamp, col=None, **showargs)
                 # wu.viz.showme(frames, name='xfitmc%05ib' % isamp, col=None,
                 # **showargs.sub(spheres=0.5, weight=1.5))
                 # wu.viz.showme(pairs, name='mc%05i' % isamp, col='bycx', center=[0, 0, 0],
@@ -834,26 +838,49 @@ def test_symfit_d2():
     helper_test_symfit_dihedral(2)
     # assert 0
 
-if __name__ == '__main__':
-    np.set_printoptions(
-        precision=10,
-        suppress=True,
-        linewidth=98,
-        formatter={'float': lambda f: '%8.4f' % f},
-    )
+def test_symfit_d2_af2():
+    frames = np.array([[[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.], [0., 0., 0., 1.]],
+                       [[0.80374831, 0.53927461, -0.25133951, 6.00417164],
+                        [-0.59387094, 0.75282344, -0.28385591, -1.2769798],
+                        [0.03613799, 0.37741194, 0.92534009, 5.12398778], [0., 0., 0., 1.]],
+                       [[0.23884698, 0.09262249, -0.96662981, 2.92136038],
+                        [0.01116147, -0.99563673, -0.09264402, -9.39450731],
+                        [-0.97099307, 0.01133874, -0.23883863, 2.89522226], [0., 0., 0., 1.]],
+                       [[0.11333779, -0.15687948, -0.98109295, -0.99280996],
+                        [0.62179177, -0.75898037, 0.19319367, -8.23571297],
+                        [-0.77493841, -0.63193167, 0.01152521, -4.02264787], [0., 0., 0., 1.]]])
+    fit = hm.compute_symfit(frames=frames, sym='d2')
+    print(fit.total_err)
 
-    np.seterr(all="ignore")
+if __name__ == '__main__':
     t = wu.Timer()
 
+    # np.set_printoptions(
+    # precision=10,
+    # suppress=True,
+    # linewidth=98,
+    # formatter={'float': lambda f: '%8.4f' % f},
+    # )
+    #
+    # np.seterr(all="ignore")
+
+    #
     # test_symops_gradient()
     # t.checkpoint('test_symops_gradient')
-
+    #
     # symfit_parallel_convergence_trials()
-
-    # symfit_mc_test(sym='d2', quiet=False, showme=True, fuzzstdfrac=0.4, random_frames=True,
-    # nframes=4, maxiters=1000, scaletemp=1, scalesamp=1, seed=None)
+    #
+    # symfit_mc_test(sym='d25', quiet=False, showme=True, fuzzstdfrac=0.4, random_frames=True,
+    # nframes=4, maxiters=10000, scaletemp=10, scalesamp=0.3, seed=None, tprelen=5,
+    # vizinterval=1)
+    # symfit_mc_test(sym='d8', quiet=False, showme=True, fuzzstdfrac=0.4, random_frames=True,
+    # nframes=4, maxiters=10000, scaletemp=1, scalesamp=1, seed=None, tprelen=5,
+    # vizinterval=1)
     # t.checkpoint('symfit_mc_test')
     # assert 0
+
+    test_symfit_d2_af2()
+    assert 0
 
     test_symfit_d2()
     t.checkpoint('test_symfit_d2')
