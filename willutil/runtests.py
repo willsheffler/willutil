@@ -110,10 +110,10 @@ _overrides = {
 
 _file_mappings = {
     # 'willutil/viz/pymol.py': ['willutil/tests/homog/test_symfit.py'],
-    'willutil/homog/sym.py': ['willutil/tests/homog/test_homog.py'],
-    'willutil/homog/quat.py': ['willutil/tests/homog/test_homog.py'],
-    'willutil/homog/hgeom.py': ['willutil/tests/homog/test_homog.py'],
-    'willutil/pdb/pisces.py': ['willutil/tests/pdb/test_pdbmeta.py'],
+    # 'willutil/homog/sym.py': ['willutil/tests/homog/test_homog.py'],
+    # 'willutil/homog/quat.py': ['willutil/tests/homog/test_homog.py'],
+    # 'willutil/homog/hgeom.py': ['willutil/tests/homog/test_homog.py'],
+    # 'willutil/pdb/pisces.py': ['willutil/tests/pdb/test_pdbmeta.py'],
     #    "rosetta.py": ["rpxdock/tests/test_body.py"],
     #   "bvh_algo.hpp": ["rpxdock/tests/bvh/test_bvh_nd.py"],
     #    "bvh.cpp": ["rpxdock/tests/bvh/test_bvh.py"],

@@ -108,7 +108,7 @@ def symops_from_frames(*, sym, frames, **kw):
             len(framecen) == len(rad) == len(hel))
     errrad = np.minimum(10000, np.maximum(rad, 1.0))
     angdelta, err, closest = dict(), dict(), dict()
-    point_angles = hm.sym_point_angles[sym]
+    point_angles = wu.sym.sym_point_angles[sym]
     # print(point_angles)
     for n, tgtangs in point_angles.items():
         tgtangs = np.asarray(tgtangs)
@@ -144,7 +144,7 @@ def symops_from_frames(*, sym, frames, **kw):
     errvals = np.stack(list(err.values()))
     w = np.argmin(errvals, axis=0)
     nfold = np.array(list(err.keys()))[w]
-    nfold = np.array([hm.sym_nfold_map(nf) for nf in nfold])
+    nfold = np.array([wu.sym.sym_nfold_map(nf) for nf in nfold])
     nfold = nfold.astype('i4')
     angdelta = np.array([angdelta[nf][i] for i, nf in enumerate(nfold)])
     nfold_err = np.min(errvals, axis=0)
@@ -196,12 +196,12 @@ def symops_from_frames(*, sym, frames, **kw):
     return result
 
 def disambiguate_axes(sym, axis, nfold):
-    if not sym in hm.ambiguous_axes: return nfold
-    if not hm.ambiguous_axes[sym]: return nfold
+    if not sym in wu.sym.ambiguous_axes: return nfold
+    if not wu.sym.ambiguous_axes[sym]: return nfold
 
     nfold = nfold[:]
     angcut = np.pi / 12
-    for ambignfold, maybenfold in reversed(hm.ambiguous_axes[sym]):
+    for ambignfold, maybenfold in reversed(wu.sym.ambiguous_axes[sym]):
         if sym.lower().startswith('d') and ambignfold != 2:
             nfold[nfold == ambignfold] = maybenfold
             continue
@@ -210,7 +210,7 @@ def disambiguate_axes(sym, axis, nfold):
         maybeaxis = axis[nfold == maybenfold]
         # print('ambigaxis', ambigaxis.shape)
         # print('maybeaxis', maybeaxis.shape)
-        # maybeaxis = (hm.sym_frames[sym][None, :] @ maybeaxis[:, None, :, None]).reshape(-1, 4)
+        # maybeaxis = (wu.sym.sym_frames[sym][None, :] @ maybeaxis[:, None, :, None]).reshape(-1, 4)
         # print(maybeaxis.shape)
 
         nambig = len(ambigaxis)
@@ -293,8 +293,8 @@ def compute_symfit(
     **kw,
 ):
     kw = wu.Bunch(kw)
-    point_angles = hm.sym_point_angles[sym]
-    symops = hm.symops_from_frames(sym=sym, frames=frames, **kw)
+    point_angles = wu.sym.sym_point_angles[sym]
+    symops = wu.sym.symops_from_frames(sym=sym, frames=frames, **kw)
 
     if sym != 'd2':
         if np.all(symops.nfold == 2):
@@ -304,7 +304,7 @@ def compute_symfit(
             raise SymFitError('only twofold axes')
 
     # symops = stupid_pairs_from_symops(symops)
-    # if len'nfolds',(symops) <= len(hm.symaxes[sym]):
+    # if len'nfolds',(symops) <= len(wu.sym.symaxes[sym]):
     # raise SymFitError('not enough symops/monomers')
     # symops = None
     _checkpoint(kw, 'symops_from_frames')
@@ -358,7 +358,7 @@ def compute_symfit(
     # cen1, cen2, axs1, axs2 = cen1A, cen2A, axs1A, axs2A
     # assert 0
 
-    not_same_symaxis = hm.line_angle(axs1, axs2) > hm.minsymang[sym]
+    not_same_symaxis = hm.line_angle(axs1, axs2) > wu.sym.minsymang[sym]
     p1np = cen1[not_same_symaxis]
     p2np = cen2[not_same_symaxis]
     a1np = axs1[not_same_symaxis]
@@ -419,7 +419,7 @@ def compute_symfit(
     op_ang_err = np.sqrt(np.mean(symops.nfold_err**2))
     _checkpoint(kw, 'post intersect stuff')
 
-    xfit, axesfiterr = hm.symops_align_axes(sym, frames, symops, symops, center, radius, **kw)
+    xfit, axesfiterr = wu.sym.symops_align_axes(sym, frames, symops, symops, center, radius, **kw)
     _checkpoint(kw, 'align axes')
 
     loss = dict()
@@ -488,7 +488,7 @@ def best_axes_fit(sym, xsamp, nfolds, tgtaxes, tofitaxes, **kw):
     err = list()
     for i, (nf, tgt, fit) in enumerate(zip(nfolds, randtgtaxes, tofitaxes)):
         n = np.newaxis
-        nf = hm.sym_nfold_map(nf)
+        nf = wu.sym.sym_nfold_map(nf)
         dotall = hm.hdot(fit[n, n, :], tgt[:, :, n])
         if sym != 'tet' or nf != 2:
             dotall = np.abs(dotall)
@@ -515,15 +515,15 @@ def symops_align_axes(
     alignaxes_more_iters=1.0,
     **kw,
 ):
-    nfolds = list(hm.symaxes[sym].keys())
+    nfolds = list(wu.sym.symaxes[sym].keys())
 
     if '2b' in nfolds: nfolds.remove('2b')  # what to do about T33?
     if '2c' in nfolds: nfolds.remove('2c')
     if '2d' in nfolds: nfolds.remove('2d')
     # print(nfolds)
-    nfolds = list(map(hm.sym_nfold_map, nfolds))
+    nfolds = list(map(wu.sym.sym_nfold_map, nfolds))
     # print(nfolds)
-    pang = hm.sym_point_angles[sym]
+    pang = wu.sym.sym_point_angles[sym]
     # xtocen = np.eye(4)
     # xtocen[:, 3] = -center
 
@@ -553,11 +553,11 @@ def symops_align_axes(
     # allopaxes = np.array([op.fitaxis for op in symops.values()])
     # opnfold = np.array([op.nfold for op in symops.values()], dtype='i4')
     # sopaxes = [allopaxes[opnfold == nf] for nf in nfolds]
-    # tgtaxes = [hm.symaxes_all[sym][nf] for nf in nfolds]
+    # tgtaxes = [wu.sym.symaxes_all[sym][nf] for nf in nfolds]
     allopaxes = opary.fitaxis
     opnfold = opary.nfold
     sopaxes = [allopaxes[opnfold == nf] for nf in nfolds]
-    tgtaxes = [hm.symaxes_all[sym][nf] for nf in nfolds]
+    tgtaxes = [wu.sym.symaxes_all[sym][nf] for nf in nfolds]
 
     _checkpoint(kw, 'symops_align_axes build arrays')
     # axes = symin
@@ -591,9 +591,9 @@ def symops_align_axes(
     axesfiterr = angerr * radius
 
     if choose_closest_frame:
-        # which_frame = np.argmin(np.sum((hm.sym_frames[sym] @ xfit - np.eye(4))**2, axis=(-1, -2)))
-        which_frame = np.argmin(hm.angle_of(hm.sym_frames[sym] @ xfit))
-        xfit = hm.sym_frames[sym][which_frame] @ xfit
+        # which_frame = np.argmin(np.sum((wu.sym.sym_frames[sym] @ xfit - np.eye(4))**2, axis=(-1, -2)))
+        which_frame = np.argmin(hm.angle_of(wu.sym.sym_frames[sym] @ xfit))
+        xfit = wu.sym.sym_frames[sym][which_frame] @ xfit
         # print(which_frame)
 
     # if sym == 'tet':

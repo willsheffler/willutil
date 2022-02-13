@@ -4,19 +4,6 @@ import willutil
 from willutil.homog import *
 import willutil.homog as hm
 
-def test_sym():
-    assert willutil.homog.symframes.tetrahedral_frames.shape == (12, 4, 4)
-    assert willutil.homog.symframes.octahedral_frames.shape == (24, 4, 4)
-    assert willutil.homog.symframes.icosahedral_frames.shape == (60, 4, 4)
-    x = np.concatenate([
-        willutil.homog.symframes.tetrahedral_frames,
-        willutil.homog.symframes.octahedral_frames,
-        willutil.homog.symframes.icosahedral_frames,
-    ])
-    assert np.all(x[..., 3, 3] == 1)
-    assert np.all(x[..., 3, :3] == 0)
-    assert np.all(x[..., :3, 3] == 0)
-
 def test_homo_rotation_single():
     axis0 = hnormalized(np.random.randn(3))
     ang0 = np.pi / 4.0

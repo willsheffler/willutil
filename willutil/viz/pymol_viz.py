@@ -1,18 +1,19 @@
 import sys, os, tempfile, numpy as np, time
 from collections import defaultdict
-import willutil as wu
+
 from logging import info
 from functools import singledispatch
-
-from deferred_import import deferred_import
-
-# pymol = deferred_import('pymol')
-# cgo = deferred_import('pymol.cgo')
-# cmd = deferred_import('pymol.cmd')
+#
+# from deferred_import import deferred_import
+#
+# # pymol = deferred_import('pymol')
+# # cgo = deferred_import('pymol.cgo')
+# # cmd = deferred_import('pymol.cmd')
 import pymol
 from pymol import cgo, cmd
 from willutil import homog as hm
 from willutil.viz.pymol_cgo import *
+import willutil as wu
 
 try:
     from pyrosetta.rosetta.core.pose import Pose
@@ -29,7 +30,7 @@ def pymol_load(toshow, state=None, name=None, **kw):
 
 _nsymops = 0
 
-@pymol_load.register(wu.homog.RelXformInfo)
+@pymol_load.register(wu.sym.RelXformInfo)
 def _(
     toshow,
     state,

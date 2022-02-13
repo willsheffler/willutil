@@ -6,7 +6,7 @@ def pymol_viz_example():
     rel = hm.hrot([1, 0, 0], 90, [0, 0, 10])
     rel[0, 3] = 3
     frame2 = rel @ frame1
-    xinfo = hm.rel_xform_info(frame1, frame2)
+    xinfo = wu.sym.rel_xform_info(frame1, frame2)
     wu.viz.showme(xinfo)
 
 if __name__ == '__main__':

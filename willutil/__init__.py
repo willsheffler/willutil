@@ -12,9 +12,10 @@ from willutil import tests
 from willutil import reproducibility
 from willutil import format
 from willutil import homog
+from willutil import sym
 
 # anything from homog?
 import deferred_import
 
 cpp = deferred_import.deferred_import('willutil.cpp')
-viz = deferred_import.deferred_import('willutil.viz')
+# viz = deferred_import.deferred_import('willutil.viz')
