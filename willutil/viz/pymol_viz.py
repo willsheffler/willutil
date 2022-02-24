@@ -50,6 +50,7 @@ def _(
 ):
     global _nsymops
     _nsymops += 1
+    v = pymol.cmd.get_view()
 
     ang = toshow.ang
     if np.isclose(ang, np.pi * 4 / 5, atol=1e-4):
@@ -99,6 +100,8 @@ def _(
     if make_cgo_only:
         return state, mycgo
     pymol.cmd.load_cgo(mycgo, 'symops%i' % _nsymops)
+    pymol.cmd.set_view(v)
+
     return state
 
 @pymol_load.register(Pose)
@@ -250,7 +253,7 @@ def pymol_visualize_xforms(
         return state, mycgo
     pymol.cmd.load_cgo(mycgo, name)
 
-    # pymol.cmd.zoom()
+    pymol.cmd.zoom()
     return state
 
 def show_ndarray_lines(toshow, state=None, name=None, col=None, **kw):
@@ -270,6 +273,7 @@ def show_ndarray_lines(toshow, state=None, name=None, col=None, **kw):
     return state
 
 def show_ndarray_point_or_vec(toshow, state=None, name='points', col=None, **kw):
+    v = pymol.cmd.get_view()
     state["seenit"][name] += 1
     name += "_%i" % state["seenit"][name]
     if col == 'rand':
@@ -288,6 +292,7 @@ def show_ndarray_point_or_vec(toshow, state=None, name='points', col=None, **kw)
         else:
             raise NotImplementedError
     pymol.cmd.load_cgo(mycgo, name)
+    pymol.cmd.set_view(v)
     return state
 
 def show_ndarray_n_ca_c(toshow, state=None, name=None, **kw):
@@ -327,6 +332,11 @@ def showme_pymol(what, name='noname', hideprev=False, headless=False, block=Fals
         pymol.pymol_argv = ["pymol", "-c"]
     if not _showme_state["launched"]:
         pymol.finish_launching()
+        # v = list(cmd.get_view())
+        # v[15] *= 2
+        # cmd.set_view(v)
+        # print(repr(v))
+        # assert 0
         _showme_state["launched"] = 1
 
     # print('############## showme_pymol', type(what), '##############')
@@ -334,8 +344,6 @@ def showme_pymol(what, name='noname', hideprev=False, headless=False, block=Fals
     pymol.cmd.full_screen('on')
     result = pymol_load(what, _showme_state, name=name, **kw)
     # # pymol.cmd.set('internal_gui_width', '20')
-
-    # pymol.cmd.zoom()
 
     while block:
         time.sleep(1)

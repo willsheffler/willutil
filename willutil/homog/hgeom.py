@@ -6,6 +6,8 @@ np = deferred_import.deferred_import('numpy')
 def hxform(x, stuff):
     x = np.asanyarray(x)
     stuff = np.asanyarray(stuff)
+    if stuff.shape[-1] == 3:
+        stuff = hpoint(stuff)
     assert x.shape[-2:] == (4, 4)
     if stuff.shape[-2:] == (4, 4):
         result = x @ stuff

@@ -2,6 +2,7 @@ import willutil as wu
 import willutil.homog as hm
 
 def pymol_viz_example():
+    import willutil.viz
     frame1 = hm.hframe([1, 0, 0], [0, 1, 0], [0, 0, 1], [9, 0, 0])
     rel = hm.hrot([1, 0, 0], 90, [0, 0, 10])
     rel[0, 3] = 3

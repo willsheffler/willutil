@@ -244,7 +244,8 @@ for icyc in range(3, 33):
     }
     minsymang[sym] = np.pi / icyc / 2
     symaxes_all[sym] = _d_axes_all(icyc)
-    ambiguous_axes[sym] = [(2, icyc)]
+    if icyc % 2 == 0:
+        ambiguous_axes[sym] = [(2, icyc)]
 
 sym_frames['d2'] = np.stack([
     np.eye(4),
@@ -293,3 +294,24 @@ def get_syminfo(sym):
         # raise ValueError(f'sim.py: dont know symmetry "{sym}"')
         print(f'sym.py: dont know symmetry "{sym}"')
         raise e
+
+_sym_permute_axes_choices = dict(
+    d2=np.array([
+        np.eye(4),  #           x y z
+        hrot([1, 0, 0], 90),  # x z y
+        hrot([0, 0, 1], 90),  # y z x
+        hrot([1, 0, 0], 90) @ hrot([0, 0, 1], 90),  # y x z
+        hrot([0, 1, 0], 90),  # z y x
+        hrot([1, 0, 0], 90) @ hrot([0, 1, 0], 90),  # z y x        
+    ]),
+    d3=np.array([
+        np.eye(4),
+        hrot([0, 0, 1], 180),
+    ]),
+)
+
+def sym_permute_axes_choices(sym):
+    if sym in _sym_permute_axes_choices:
+        return _sym_permute_axes_choices[sym]
+    else:
+        return np.eye(4).reshape(1, 4, 4)

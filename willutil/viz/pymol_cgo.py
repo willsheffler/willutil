@@ -1,7 +1,7 @@
 import numpy as np
 import willutil as wu
 import pymol
-from pymol import cgo
+from pymol import cgo, cmd
 
 _numcom = 0
 _numvec = 0
@@ -280,3 +280,78 @@ def cgo_cyl_arrow(c1, c2, r, col=(1, 1, 1), col2=None, arrowlen=4.0):
     # -dirn to shift to sphere surf
     CGO.extend(cgo_cyl(c2 - dirn * 3.0, arrow2 - dirn * 3.0, r=r, col=col2))
     return CGO
+
+def showcube(lb=[-10, -10, -10], ub=[10, 10, 10], r=0.1, xform=np.eye(4)):
+    cmd.delete('CUBE')
+    v = cmd.get_view()
+    a = [
+        wu.homog.hxform(xform, [ub[0], ub[1], ub[2]]),
+        wu.homog.hxform(xform, [ub[0], ub[1], lb[2]]),
+        wu.homog.hxform(xform, [ub[0], lb[1], lb[2]]),
+        wu.homog.hxform(xform, [ub[0], lb[1], ub[2]]),
+        wu.homog.hxform(xform, [lb[0], ub[1], ub[2]]),
+        wu.homog.hxform(xform, [lb[0], ub[1], lb[2]]),
+        wu.homog.hxform(xform, [lb[0], lb[1], lb[2]]),
+        wu.homog.hxform(xform, [lb[0], lb[1], ub[2]]),
+        wu.homog.hxform(xform, [lb[0], ub[1], ub[2]]),
+        wu.homog.hxform(xform, [lb[0], ub[1], lb[2]]),
+        wu.homog.hxform(xform, [lb[0], lb[1], ub[2]]),
+        wu.homog.hxform(xform, [lb[0], lb[1], lb[2]]),
+    ]
+    b = [
+        wu.homog.hxform(xform, [ub[0], ub[1], lb[2]]),
+        wu.homog.hxform(xform, [ub[0], lb[1], lb[2]]),
+        wu.homog.hxform(xform, [ub[0], lb[1], ub[2]]),
+        wu.homog.hxform(xform, [ub[0], ub[1], ub[2]]),
+        wu.homog.hxform(xform, [lb[0], ub[1], lb[2]]),
+        wu.homog.hxform(xform, [lb[0], lb[1], lb[2]]),
+        wu.homog.hxform(xform, [lb[0], lb[1], ub[2]]),
+        wu.homog.hxform(xform, [lb[0], ub[1], ub[2]]),
+        wu.homog.hxform(xform, [ub[0], ub[1], ub[2]]),
+        wu.homog.hxform(xform, [ub[0], ub[1], lb[2]]),
+        wu.homog.hxform(xform, [ub[0], lb[1], ub[2]]),
+        wu.homog.hxform(xform, [ub[0], lb[1], lb[2]]),
+    ]
+    mycgo = [
+        cgo.CYLINDER, a[0][0], a[0][1], a[0][2], b[0][0], b[0][1], b[0][2], r, 1, 1, 1, 1, 1, 1,
+        cgo.CYLINDER, a[1][0], a[1][1], a[1][2], b[1][0], b[1][1], b[1][2], r, 1, 1, 1, 1, 1, 1,
+        cgo.CYLINDER, a[2][0], a[2][1], a[2][2], b[2][0], b[2][1], b[2][2], r, 1, 1, 1, 1, 1, 1,
+        cgo.CYLINDER, a[3][0], a[3][1], a[3][2], b[3][0], b[3][1], b[3][2], r, 1, 1, 1, 1, 1, 1,
+        cgo.CYLINDER, a[4][0], a[4][1], a[4][2], b[4][0], b[4][1], b[4][2], r, 1, 1, 1, 1, 1, 1,
+        cgo.CYLINDER, a[5][0], a[5][1], a[5][2], b[5][0], b[5][1], b[5][2], r, 1, 1, 1, 1, 1, 1,
+        cgo.CYLINDER, a[6][0], a[6][1], a[6][2], b[6][0], b[6][1], b[6][2], r, 1, 1, 1, 1, 1, 1,
+        cgo.CYLINDER, a[7][0], a[7][1], a[7][2], b[7][0], b[7][1], b[7][2], r, 1, 1, 1, 1, 1, 1,
+        cgo.CYLINDER, a[8][0], a[8][1], a[8][2], b[8][0], b[8][1], b[8][2], r, 1, 1, 1, 1, 1, 1,
+        cgo.CYLINDER, a[9][0], a[9][1], a[9][2], b[9][0], b[9][1], b[9][2], r, 1, 1, 1, 1, 1, 1,
+        cgo.CYLINDER, a[10][0], a[10][1], a[10][2], b[10][0], b[10][1], b[10][2], r, 1, 1, 1, 1,
+        1, 1, cgo.CYLINDER, a[11][0], a[11][1], a[11][2], b[11][0], b[11][1], b[11][2], r, 1, 1,
+        1, 1, 1, 1
+    ]
+    # yapf: disable
+    #   l=10#*sqrt(3)
+    #   m=-l
+    #   mycgo += [
+    #      cgo.CYLINDER, 0,0,0, l, 0, 0, r, 1, 1, 1, 1, 1, 1,
+    #      cgo.CYLINDER, 0,0,0, 0, l, 0, r, 1, 1, 1, 1, 1, 1,
+    #      cgo.CYLINDER, 0,0,0, 0, 0, l, r, 1, 1, 1, 1, 1, 1,
+    #      cgo.CYLINDER, 0,0,0, m, 0, 0, r, 1, 1, 1, 1, 1, 1,
+    #      cgo.CYLINDER, 0,0,0, 0, m, 0, r, 1, 1, 1, 1, 1, 1,
+    #      cgo.CYLINDER, 0,0,0, 0, 0, m, r, 1, 1, 1, 1, 1, 1,
+    #
+    #      cgo.CYLINDER, 0,0,0, l, l, 0, r, 1, 1, 1, 1, 1, 1,
+    #      cgo.CYLINDER, 0,0,0, 0, l, l, r, 1, 1, 1, 1, 1, 1,
+    #      cgo.CYLINDER, 0,0,0, l, 0, l, r, 1, 1, 1, 1, 1, 1,
+    #      cgo.CYLINDER, 0,0,0, m, l, 0, r, 1, 1, 1, 1, 1, 1,
+    #      cgo.CYLINDER, 0,0,0, 0, m, l, r, 1, 1, 1, 1, 1, 1,
+    #      cgo.CYLINDER, 0,0,0, m, 0, l, r, 1, 1, 1, 1, 1, 1,
+    #      cgo.CYLINDER, 0,0,0, m, m, 0, r, 1, 1, 1, 1, 1, 1,
+    #      cgo.CYLINDER, 0,0,0, 0, m, m, r, 1, 1, 1, 1, 1, 1,
+    #      cgo.CYLINDER, 0,0,0, m, 0, m, r, 1, 1, 1, 1, 1, 1,
+    #      cgo.CYLINDER, 0,0,0, l, m, 0, r, 1, 1, 1, 1, 1, 1,
+    #      cgo.CYLINDER, 0,0,0, 0, l, m, r, 1, 1, 1, 1, 1, 1,
+    #      cgo.CYLINDER, 0,0,0, l, 0, m, r, 1, 1, 1, 1, 1, 1,
+    #
+    #   ]
+    # yapf: enable
+    cmd.load_cgo(mycgo, "CUBE")
+    cmd.set_view(v)
