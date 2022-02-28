@@ -216,36 +216,10 @@ def disambiguate_axes(sym, axis, nfold):
         if sym.lower().startswith('d') and ambignfold != 2:
             nfold[nfold == ambignfold] = maybenfold
             continue
-
         ambigaxis = axis[nfold == ambignfold]
         maybeaxis = axis[nfold == maybenfold]
-        # print('ambigaxis', ambigaxis.shape)
-        # print('maybeaxis', maybeaxis.shape)
-        # maybeaxis = (wu.sym.sym_frames[sym][None, :] @ maybeaxis[:, None, :, None]).reshape(-1, 4)
-        # print(maybeaxis.shape)
-
-        nambig = len(ambigaxis)
-        nmaybe = len(maybeaxis)
-        # if nambig == 0:
-        #     # tgtnum = int((nmaybe + nambig) * 2 / 3)
-        #     nfold[np.random.rand(len(nfold)) < .25] = ambignfold
-        #     return nfold
-        # if nmaybe == 0:
-        #     # tgtnum = int((nmaybe + nambig) * 2 / 3)
-        #     nfold[np.random.rand(len(nfold)) < .25] = maybenfold
-        #     return nfold
-
         dot = np.abs(hm.hdot(ambigaxis[None, :], maybeaxis[:, None]))
 
-        # print(ambigaxis[0])
-        # print(maybeaxis)
-
-        # wu.viz.showme(ambigaxis, name='ambig')
-        # wu.viz.showme(maybeaxis, name='maybe')
-
-        # assert 0
-
-        # print(dot[0])
         try:
             maxdot = np.max(dot, axis=0)
             # print(maxdot.shape)
@@ -254,24 +228,8 @@ def disambiguate_axes(sym, axis, nfold):
             # print(f'missing axes: {nfold}')
             raise SymFitError(f'missing axes: {nfold}')
 
-        # tgtnum = int((nmaybe + nambig) / 3)
-        # idx = np.argsort(maxdot)[-tgtnum:]
-        # maybe_so = np.zeros_like(maxdot, dtype='b')
-        # for i in idx:
-        # maybe_so[i] = True
-
-        # print(nambig, nmaybe, dot.shape, maxdot.shape)
-        # print(maxdot)
-        # assert 0
-        # print(nfold)
         maybe_so = maxdot > np.cos(angcut)  # theoretically pi/8 ro 22.5 deg
-
-        # if sym.startswith('d'):
-        # print(nfold[:36])
         nfold[nfold == ambignfold] = np.where(maybe_so, maybenfold, ambignfold)
-        # if sym.startswith('d'):
-        # print(nfold[:36])
-        # assert 0
 
     return nfold
 
@@ -626,11 +584,11 @@ def symops_align_axes(
     xfit, angerr = best_axes_fit(sym, xsamp, nfolds, tgtaxes, sopaxes)
     best = 9e9, np.eye(4)
     for i in range(int(20 * alignaxes_more_iters)):
-        _checkpoint(kw, 'symops_align_axes make xsamp pre')
+        # _checkpoint(kw, 'symops_align_axes make xsamp pre')
         xsamp = hm.rand_xform_small(nsamp, rot_sd=angerr / 2, cart_sd=0) @ xfit
-        _checkpoint(kw, 'symops_align_axes make xsamp')
+        # _checkpoint(kw, 'symops_align_axes make xsamp')
         xfit, angerr = best_axes_fit(sym, xsamp, nfolds, tgtaxes, sopaxes, **kw)
-        _checkpoint(kw, 'symops_align_axes best_axes_fit')
+        # _checkpoint(kw, 'symops_align_axes best_axes_fit')
         delta = angerr - best[0]
         if delta < 0:
             best = angerr, xfit
@@ -640,10 +598,19 @@ def symops_align_axes(
         xfit = best[1]
         # if i % 1 == 0: print(angerr)
 
+    # if False:
+    if sym == 'd2':
+        # all nfolds are 2, must make sure not all aligned to same axis
+        maxang = hm.line_angle(sopaxes[0][:, None], sopaxes[0][None])
+        err = (np.pi / 2 - np.max(maxang)) * 3  # 3 is arbitrary
+        best = best[0] + err, best[1]
+        # print(maxang, best[0], err)
+        # assert 0
+
     angerr, xfit = best
     assert angerr < 9e6
 
-    _checkpoint(kw, 'symops_align_axes check rand axes')
+    # _checkpoint(kw, 'symops_align_axes check rand axes')
 
     xfit[:, 3] = center
     xfit = np.linalg.inv(xfit)

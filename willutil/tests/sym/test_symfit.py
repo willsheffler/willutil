@@ -927,22 +927,20 @@ if __name__ == '__main__':
     for i in range(ntest):
         result = symfit_mc_play(
             sym='d2',
+            nframes=3,
+            # showme=True,
+            # seed=137925405,
+            # choose_closest_frame=True,
             quiet=True,
-            showme=False,
             fuzzstdfrac=0.4,
             random_frames=True,
-            nframes=3,
-            maxiters=1000,
+            maxiters=2000,
             scaletemp=1.0,
             scalesamp=1.0,
-            # seed=1999158771,
-            seed=None,
             tprelen=5,
             vizinterval=10,
             min_radius=10,
             max_radius=100,
-            # choose_closest_frame=True,
-            choose_closest_frame=False,
         )
         if result.besterr > 0.3:
             nfail += 1
