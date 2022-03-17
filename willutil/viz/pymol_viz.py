@@ -13,16 +13,7 @@ import pymol
 from pymol import cgo, cmd
 from willutil import homog as hm
 from willutil.viz.pymol_cgo import *
-import willutil as wu
-
-try:
-    from pyrosetta.rosetta.core.pose import Pose
-except ImportError:
-
-    class DummyPose:
-        pass
-
-    Pose = DummyPose
+from willutil.sym.symfit import RelXformInfo
 
 @singledispatch
 def pymol_load(toshow, state=None, name=None, **kw):
@@ -30,7 +21,7 @@ def pymol_load(toshow, state=None, name=None, **kw):
 
 _nsymops = 0
 
-@pymol_load.register(wu.sym.RelXformInfo)
+@pymol_load.register(RelXformInfo)
 def _(
     toshow,
     state,
@@ -102,15 +93,6 @@ def _(
     pymol.cmd.load_cgo(mycgo, 'symops%i' % _nsymops)
     pymol.cmd.set_view(v)
 
-    return state
-
-@pymol_load.register(Pose)
-def _(toshow, state=None, name=None, **kw):
-    name = name or "rif_thing"
-    state["seenit"][name] += 1
-    name += "_%i" % state["seenit"][name]
-    pymol_load_pose(toshow, name, **kw)
-    state["last_obj"] = name
     return state
 
 @pymol_load.register(dict)
@@ -257,7 +239,7 @@ def pymol_visualize_xforms(
     return state
 
 def show_ndarray_lines(toshow, state=None, name=None, col=None, **kw):
-    name = name or "worms_thing"
+    name = name or "ndarray_lines"
     state["seenit"][name] += 1
     name += "_%i" % state["seenit"][name]
     if col == 'rand':
@@ -270,6 +252,41 @@ def show_ndarray_lines(toshow, state=None, name=None, col=None, **kw):
         color = col[i] if col else (1, 1, 1)
         showline(ray[:3, 1] * 100, ray[:3, 0], col=color)
         showsphere(ray[:3, 0], col=color)
+    return state
+
+def show_ndarray_line_strip(toshow, state=None, name='lines', col=None, stateno=1, **kw):
+    # v = pymol.cmd.get_view()
+    state["seenit"][name] += 1
+    name += "_%i" % state["seenit"][name]
+    if col == 'rand':
+        col = get_different_colors(len(toshow))
+    mycgo = list()
+    assert toshow.shape[-1] == 4
+
+    toshow = toshow.reshape(-1, 4)
+
+    col = [1, 1, 1]
+    cgoary = np.empty(len(toshow) * 4 + 9)
+    # cgoary = np.empty(2 * 4 + 9)
+    cgoary[0] = cgo.BEGIN
+    cgoary[1] = cgo.LINE_STRIP
+    cgoary[2] = cgo.LINEWIDTH
+    cgoary[3] = 1
+    cgoary[4] = cgo.COLOR
+    cgoary[5] = col[0]
+    cgoary[6] = col[1]
+    cgoary[7] = col[2]
+    cgoary[8] = cgo.VERTEX
+
+    toshow[:, 3] = cgo.VERTEX
+    cgoary[9:] = toshow.reshape(-1)
+
+    cgoary[-1] = cgo.END  # overrwites last VERTEX op
+
+    pymol.cmd.load_cgo(cgoary, name, -1)
+    # print(stateno, flush=True)
+    # pymol.cmd.load_cgo(cgoary, name, state=stateno)
+    # pymol.cmd.set_view(v)
     return state
 
 def show_ndarray_point_or_vec(toshow, state=None, name='points', col=None, **kw):
@@ -296,7 +313,7 @@ def show_ndarray_point_or_vec(toshow, state=None, name='points', col=None, **kw)
     return state
 
 def show_ndarray_n_ca_c(toshow, state=None, name=None, **kw):
-    name = name or "worms_thing"
+    name = name or "ndarray_n_ca_c"
     state["seenit"][name] += 1
     name += "_%i" % state["seenit"][name]
 
@@ -319,7 +336,10 @@ def show_ndarray_n_ca_c(toshow, state=None, name=None, **kw):
     pymol.cmd.load(fname)
     return state
 
-_showme_state = dict(launched=0, seenit=defaultdict(lambda: -1))
+_showme_state = dict(
+    launched=0,
+    seenit=defaultdict(lambda: -1),
+)
 
 def showme_pymol(what, name='noname', hideprev=False, headless=False, block=False, **kw):
     global _showme_state
@@ -341,7 +361,7 @@ def showme_pymol(what, name='noname', hideprev=False, headless=False, block=Fals
 
     # print('############## showme_pymol', type(what), '##############')
     if hideprev: pymol.cmd.disable('all')
-    pymol.cmd.full_screen('on')
+    # pymol.cmd.full_screen('on')
     result = pymol_load(what, _showme_state, name=name, **kw)
     # # pymol.cmd.set('internal_gui_width', '20')
 
@@ -381,15 +401,6 @@ def format_atom(
     b=0,
 ):
     return _atom_record_format.format(**locals())
-
-def is_rosetta_pose(toshow):
-    return isinstance(toshow, Pose)
-
-def pymol_load_pose(pose, name):
-    tmpdir = tempfile.mkdtemp()
-    fname = tmpdir + "/" + name + ".pdb"
-    pose.dump_pdb(fname)
-    pymol.cmd.load(fname)
 
 def pymol_xform(name, xform):
     assert name in pymol.cmd.get_object_list()

@@ -4,6 +4,144 @@ import pytest
 import willutil as wu
 import willutil.homog as hm
 import willutil.viz
+from willutil.sym import symfit_mc_play, setup_test_frames
+
+def main():
+    t = wu.Timer()
+
+    test_d4_error()
+    t.checkpoint('test_d4_error')
+
+    # np.set_printoptions(
+    # precision=10,
+    # suppress=True,
+    # linewidth=98,
+    # formatter={'float': lambda f: '%8.4f' % f},
+    # )
+    #
+    # np.seterr(all="ignore")
+
+    #
+    # test_symops_gradient()
+    # t.checkpoint('test_symops_gradient')
+    #
+    # symfit_parallel_convergence_trials()
+    #
+    # symfit_mc_play(sym='icos', quiet=False, showme=True, fuzzstdfrac=0.4, random_frames=True,
+    # nframes=4, maxiters=1000, scaletemp=1, scalesamp=1, seed=None, tprelen=5,
+    # vizinterval=10)
+    # d2   5%
+    # d3  16%
+    # d4   9%
+    # d5  21%
+    # d6  21%
+    # d7  26%
+    # d8  22%
+    # d9  36%
+    # d10 26%
+    # d11 72%
+    # d12 36%
+    # d13 75%
+    # for isym in range(2, 15):
+    for isym in range(1):
+        sym = 'd%i' % isym
+        # nfail, ntest = 0, 100
+        nfail, ntest = 0, 1
+        for i in range(ntest):
+            result = wu.sym.symfit_mc_play(
+                sym='icos',
+                nframes=3,
+                showme=True,
+                # seed=137925405,
+                # choose_closest_frame=True,
+                quiet=True,
+                fuzzstdfrac=0.4,
+                random_frames=True,
+                maxiters=3000,
+                scaletemp=1.0,
+                scalesamp=1.0,
+                tprelen=5,
+                vizinterval=10,
+                min_radius=10,
+                max_radius=100,
+            )
+            if result.besterr > 0.3:
+                nfail += 1
+        # # t.checkpoint('symfit_mc_play')
+        print(sym, nfail, ntest)
+    assert 0
+
+    test_af2_example()
+    t.checkpoint('test_af2_example')
+
+    test_symfit_d3_nfold_error()
+    t.checkpoint('test_symfit_d3_nfold_error')
+    # assert 0
+
+    # SEED 4284572842
+    # start 19.838108001495662
+    # start 19.838108001495662
+    # 0 19.838108001495662 0.0
+    # 100 5.027766047712338 0.18811881188118812
+    # 200 2.2378296496548282 0.208955223880597
+    # 300 1.802095342227487 0.18604651162790697
+    # 400 1.6264830366647551 0.17206982543640897
+    # 500 1.604944965772087 0.15768463073852296
+    # 600 2.9234244829889984 0.13810316139767054
+    # 700 1.3972099214645886 0.12696148359486448
+    # 800 1.5741736808536937 0.12109862671660425
+    # 900 2.7650750598000853 0.1120976692563818
+    # symfit_mc_play END 1.377131126759568
+    # Traceback (most recent call last):
+
+    test_symfit_d2_af2()
+    t.checkpoint('test_symfit_d2_af2')
+    # assert 0
+
+    test_symfit_d2()
+    t.checkpoint('test_symfit_d2')
+
+    test_symfit_dihedral()
+    t.checkpoint('test_symfit_dihedral')
+
+    # test_symfit_mc()
+    t.checkpoint('test_symfit_mc')
+
+    test_disambiguate_axes()
+    t.checkpoint('test_disambiguate_axes')
+
+    test_symfit_align_axes()
+    t.checkpoint('test_symfit_align_axes')
+
+    test_rel_xform_info()
+    t.checkpoint('test_rel_xform_info')
+
+    test_symops_cen_perfect()
+    t.checkpoint('test_symops_cen_perfect')
+
+    test_symops_cen_imperfect()
+    t.checkpoint('test_symops_cen_imperfect')
+
+    test_rel_xform_info_rand()
+    t.checkpoint('test_rel_xform_info_rand')
+
+    test_cyclic_sym_err()
+    t.checkpoint('test_cyclic_sym_err')
+
+    # test_cyclic()
+    # t.checkpoint('test_cyclic')
+
+    # symfit_parallel_mc_trials()
+    # assert 0printe
+    # errs = list()
+    # for i in range(5):
+    #     errs.append(test_symops_cen_imperfect(nsamp=20, manual=True))
+    # err = wu.Bunch().accumulate(errs)
+    # err.reduce(max)
+    # print(err)
+
+    t.report()
+    print('test_symfit.py done')
 
 def test_cyclic_sym_err(nsamp=100):
     for i in range(nsamp):
@@ -401,20 +539,6 @@ def test_symops_cen_imperfect(nsamp=20, manual=False, **kw):
     if manual:
         return err
 
-def setup_test_frames(nframes, sym, cart_sd_fuzz, rot_sd_fuzz, tprelen=20, tprerand=0,
-                      tpostlen=10, tpostrand=0, noxpost=False, **kw):
-    symframes = wu.sym.sym_frames[sym]
-    selframes = symframes[np.random.choice(len(symframes), nframes, replace=False), :, :]
-    xpre = hm.rand_xform()
-    xpre[:3, 3] = hm.rand_unit()[:3] * (tprelen + tprerand * (np.random.rand() - 0.5))
-    xfuzz = hm.rand_xform_small(nframes, cart_sd=cart_sd_fuzz, rot_sd=rot_sd_fuzz)
-    xpost = hm.rand_xform()
-    xpost[:3, 3] = hm.rand_unit()[:3] * (tpostlen + tpostrand * (np.random.rand() - 0.5))
-    if noxpost: xpost = np.eye(4)
-    frames = xpost @ selframes @ xpre @ xfuzz  # move subunit
-    radius = None
-    return frames, xpre, xpost, xfuzz, radius
-
 def test_symfit_align_axes():
     kw = wu.Bunch()
     # kw.sym = np.random.choice('tet oct icos'.split())
@@ -477,174 +601,6 @@ def test_disambiguate_axes():
 
     # assert 0
 
-def symfit_mc_play(
-    sym=None,
-    seed=None,
-    random_frames=False,
-    quiet=True,
-    nframes=None,
-    maxiters=1_000,
-    goalerr=0.01,
-    showme=False,
-    scalesamp=1.0,
-    scalecartsamp=1.0,
-    scalerotsamp=1.0,
-    scaletemp=1.0,
-    max_cartsd=10,
-    vizinterval=10,
-    **kw,
-):
-    kw = wu.Bunch(kw, _strict=False)
-
-    if not 'timer' in kw: kw.timer = wu.Timer()
-
-    if "PYTEST_CURRENT_TEST" in os.environ:
-        showme = False
-
-    if seed is None:
-        seed = np.random.randint(2**32 - 1)
-    np.random.seed(seed)
-    print('SEED', seed, flush=True)
-
-    # kw.sym = np.random.choice('tet oct icos'.split())
-    # kw.nframes = len(wu.sym.sym_frames[kw.sym])
-    # kw.nframes = np.random.choice(6) + 6
-    kw.sym = sym or 'icos'
-    if nframes is None:
-        nframes = dict(
-            d3=6,
-            d5=6,
-            tet=6,
-            oct=7,
-            icos=7,
-        )[kw.sym]
-    nframes = min(nframes, len(wu.sym.sym_frames[sym]))
-
-    kw.tprelen = kw.tprelen or 10
-    kw.tprerand = kw.tprerand or 0
-    kw.tpostlen = kw.tpostlen or 20
-    kw.tpostrand = kw.tpostrand or 0
-    kw.fuzzstdfrac = kw.fuzzstdfrac or 0.01  # frac of radian
-    kw.cart_sd_fuzz = kw.cart_sd_fuzz or kw.fuzzstdfrac * kw.tprelen
-    kw.rot_sd_fuzz = kw.rot_sd_fuzz or kw.fuzzstdfrac
-    kw.remove_outliers_sd = kw.remove_outliers_sd or 3
-    # kw.choose_closest_frame = kw.choose_closest_frame or True
-
-    if random_frames:
-        frames = hm.rand_xform(nframes, cart_sd=kw.tprelen)  #   @ frames
-    else:
-        frames, *_ = setup_test_frames(nframes, **kw)
-    # frames = wu.sym.sym_frames[kw.sym]
-
-    # wu.viz.showme(frames)
-    # assert 0
-
-    showargs = wu.Bunch(headless=0, spheres=0.0, showme=showme, hideprev=True, weight=2)
-    # wu.viz.showme(frames, 'start', col=(1, 1, 1), **showargs)
-    symfit = wu.sym.compute_symfit(frames=frames, **kw)
-    err0 = symfit.weighted_err
-    frames = symfit.xfit @ frames
-    if not quiet: print('start', symfit.weighted_err)
-    # wu.viz.showme(wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :], name='symstart',
-    # col=(1, 1, 0), rays=0.02, weight=0.3, **showargs)
-
-    if showme:
-        pairs = wu.sym.stupid_pairs_from_symops(symfit.symops)
-        wu.viz.showme(pairs, name='pairsstart', col='bycx', center=[0, 0, 0], **showargs)
-
-    lowerr = symfit.weighted_err
-    besterr = lowerr
-    best = frames, None
-    naccept, lastviz = 0, -999
-    for isamp in range(maxiters):
-
-        if isamp % 10 == 0: frames = best[0]
-        if isamp % 100 == 0 and not quiet:
-            print(
-                f'{isamp:6} {symfit.weighted_err:7.3} {naccept / (isamp + 1):7.3} {lowerr:7.3} {symfit.radius:9.3}'
-            )
-        cartsd = symfit.weighted_err / 15 * scalecartsamp * scalesamp
-        cartsd = min(max_cartsd, cartsd)
-        rotsd = cartsd / symfit.radius * scalerotsamp * scalesamp
-        temp = symfit.weighted_err / 150 * scaletemp
-        purturbation = hm.rand_xform_small(len(frames), cart_sd=cartsd, rot_sd=rotsd)
-        assert np.max(purturbation[:, :, 3]) < 1e7
-        purturbed = purturbation @ frames
-        try:
-            assert np.max(purturbed[:, :3, 3]) < 1e6
-            symfit = wu.sym.compute_symfit(frames=purturbed, **kw)
-            # print('SCORE', isamp, symfit.weighted_err)
-        except Exception as e:
-            print('FAIL', isamp, 'SEED', seed)
-            print(repr(purturbed))
-            # print(np.max(frames[:, :3, 3]))
-            # print(np.max(purturbation[:, :3, 3]))
-            # print(np.max(purturbed[:, :3, 3]))
-            raise e
-
-        candidate = symfit.xfit @ purturbed
-
-        if np.isnan(symfit.weighted_err): break
-
-        # symdupframes = wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :]
-        # wu.viz.showme(symdupframes, name='xfitmc%05i' % isamp, col=None, **showargs)
-
-        delta = symfit.weighted_err - lowerr
-        if np.exp(-delta / temp) > np.random.rand():
-            naccept += 1
-            # frames = symfit.xfit @ candidate
-            frames = candidate
-            lowerr = symfit.weighted_err
-            # col = (isamp / maxiters, 1 - isamp / maxiters, 1)
-            # wu.viz.showme(candidate, name='mc%05i' % isamp, col=col, center=[0, 0, 0],
-            # **showargs)b
-
-            if showme and isamp - lastviz > vizinterval:
-                # pairs = wu.sym.stupid_pairs_from_symops(symfit.symops)
-                col = (isamp / maxiters, 1 - isamp / maxiters, 1)  #######
-
-                symdupframes = wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :]
-                wu.viz.showme(symdupframes, name='xfitmc%05i' % isamp, col=None, **showargs)
-                # wu.viz.showme(frames, name='xfitmc%05ib' % isamp, col=None,
-                # **showargs.sub(spheres=0.5, weight=1.5))
-                # wu.viz.showme(pairs, name='mc%05i' % isamp, col='bycx', center=[0, 0, 0],
-                # **showargs)
-                lastviz = isamp
-
-            if lowerr < besterr:
-                besterr = lowerr
-                best = symfit.xfit @ frames, symfit
-
-                if symfit.total_err < goalerr * symfit.radius:
-                    break
-                # abserr = symframes_coherence(wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :])
-                # if abserr < goalerr: break
-
-    frames, symfit = best
-    symdupframes = wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :]
-    symerr = symframes_coherence(symdupframes)
-
-    print('symfit_mc_play END', symfit.weighted_err)
-
-    if showme:
-        symdupframes = wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :]
-        wu.viz.showme(symdupframes, name='xfitmcfinal', col=None, **showargs)
-        showargs.hideprev = False
-        wu.viz.showme(frames, name='xfitmc%05ib' % isamp, col=None,
-                      **showargs.sub(spheres=0.65, weight=1.5))
-        pairs = wu.sym.stupid_pairs_from_symops(symfit.symops)
-        wu.viz.showme(pairs, name='pairsstop', col='bycx', center=[0, 0, 0], **showargs)
-
-    # print('symerr', symerr, isamp + 1)
-    # assert 0
-    # wu.viz.showme(frames, name='best', col=(1, 1, 1), center=[0, 0, 0], **showargs)
-    # wu.viz.showme(symdupframes, name='xfitbest', col=(0, 0, 1), rays=0.1, **showargs)
-
-    # t.report()
-
-    return wu.Bunch(nsamp=isamp + 1, besterr=besterr, symerr=symerr, frames=frames,
-                    start_err=err0)
-
 def test_symfit_mc():
     kw = wu.Bunch()
     kw.tprelen = 10
@@ -682,124 +638,6 @@ def test_symfit_mc():
     # assert np.isclose(result.symerr, 0.5324565429731142)
     assert np.isclose(result.besterr, 0.5411346166998205)
     assert np.isclose(result.symerr, 0.8198090180340757)
-
-def symframes_coherence(frames):
-    frames = frames.reshape(-1, 4, 4)
-    norms = np.linalg.norm(frames[:, None, :, 3] - frames[None, :, :, 3], axis=-1)
-    np.fill_diagonal(norms, 9e9)
-    normmin = np.sort(norms, axis=0)[2]  # should always be at leart 3 frames
-    err = np.max(normmin, axis=0)
-    # print(norms.shape, err)
-    return err
-
-def wrapper(*args, **kwargs):
-    try:
-        return symfit_mc_play(*args, **kwargs)
-    except:
-        return wu.Bunch(nsamp=9999, besterr=999, symerr=999)
-
-def symfit_parallel_convergence_trials(**kw):
-    # ====== Octahedral convergence ======
-    # perturbed from ideal
-    # kw.tprelen = 10
-    # kw.fuzzstdfrac = 0.1  # frac of radian
-    # kw.cart_sd_fuzz = kw.fuzzstdfrac * kw.tprelen
-    # kw.rot_sd_fuzz = kw.fuzzstdfrac
-    #  5 iters  1811.2  fail 0.312  1.29 1.55 1.77 2.06 3.16
-    #  6 iters  2076.0  fail 0.344  1.14 1.24 1.43 1.57 2.75
-    #  7 iters  1914.9  fail 0.250  1.38 1.39 1.65 1.89 2.72
-    #  8 iters  1230.7  fail 0.031  2.74 2.74 2.74 2.74 2.74
-    #  9 iters  1542.4  fail 0.031  2.52 2.52 2.52 2.52 2.52
-    # 10 iters  1823.3  fail 0.031  3.51 3.51 3.51 3.51 3.51
-    # 11 iters  2454.2  fail 0.125  1.74 1.80 1.89 2.08 2.36
-    # 12 iters  2850.6  fail 0.062  1.40 1.45 1.53 1.66 1.92
-    # totally random frames:
-    #  5 iters  9422.3  fail 0.938  5.53 999.00 999.00 999.00 999.00
-    #  6 iters  8318.8  fail 0.812  0.75 2.76 999.00 999.00 999.00
-    #  7 iters  4090.8  fail 0.312  1.42 2.53 3.63 501.94 999.00
-    #  8 iters  4369.6  fail 0.344  0.87 0.94 1.79 999.00 999.00
-    #  9 iters  5967.1  fail 0.531  0.44 1.66 2.61 999.00 999.00
-    # 10 iters  5911.8  fail 0.438  0.87 1.04 1.45 2.94 999.00
-    # 11 iters  7526.1  fail 0.656  0.59 1.14 2.17 3.93 999.00
-    # 12 iters  9048.2  fail 0.844  0.47 1.03 1.39 5.37 999.00
-    import concurrent.futures as cf
-    from itertools import repeat, chain, combinations
-    from collections import defaultdict
-
-    kw = wu.Bunch()
-    ntrials = 32
-    kw.goalerr = 0.1
-    kw.maxiters = 10_000
-    kw.quiet = True
-    kw.showme = False
-    seeds = list(np.random.randint(2**32 - 1) for i in range(ntrials))
-    nnframesset = [5, 6, 7, 8, 9, 10, 11, 12]
-    # nnframesset = [1, 2, 3, 4]
-    # print('seeds', seeds)
-    fut = defaultdict(dict)
-    with cf.ProcessPoolExecutor() as exe:
-        for inframes, nframes in enumerate(nnframesset):
-            kw.nframes = nframes
-            for iseed, seed in enumerate(seeds):
-                kw.seed = seed
-                # print('submit', terms, seed)
-                # fut[nframes][seed] = exe.submit(symfit_mc_play, **kw)
-                fut[nframes][seed] = exe.submit(wrapper, **kw)
-        # for i, f in fut.items():
-        # print(i, f.result())
-        print('symfit_parallel_convergence_trials iters:')
-        for nframes in nnframesset:
-            niters = [f.result().nsamp for k, f in fut[nframes].items()]
-            score = [f.result().symerr for k, f in fut[nframes].items()]
-            badscores = [s for s in score if s > 3 * kw.goalerr]
-            # badscores = []
-            print(
-                f'{nframes:4} iters {np.mean(niters):7.1f} ',
-                f'fail {len(badscores)/ntrials:5.3f} ',
-                ' '.join(
-                    ['%4.2f' % q for q in np.quantile(badscores, [0.0, 0.1, 0.25, 0.5, 1.0])]
-                    if badscores else '', ),
-            )
-
-def symfit_parallel_mc_scoreterms_trials(**kw):
-    import concurrent.futures as cf
-    from itertools import repeat, chain, combinations
-    from collections import defaultdict
-
-    termsset = list(chain(*(combinations("CHNA", i + 1) for i in range(4))))
-    termsset = list(str.join('', combo) for combo in termsset)
-    # termsset = ['C']
-
-    kw = wu.Bunch()
-    ntrials = 100
-    kw.goalerr = 0.1
-    kw.maxiters = 2000
-    kw.quiet = True
-    seeds = list(np.random.randint(2**32 - 1) for i in range(ntrials))
-    # print('seeds', seeds)
-    fut = defaultdict(dict)
-    with cf.ProcessPoolExecutor() as exe:
-        for iterms, terms in enumerate(termsset):
-            kw.lossterms = terms
-            for iseed, seed in enumerate(seeds):
-                kw.seed = seed
-                # print('submit', terms, seed)
-                fut[terms][seed] = exe.submit(symfit_mc_play, **kw)
-        # for i, f in fut.items():
-        # print(i, f.result())
-        print('symfit_parallel_mc_trials mean iters:')
-        for terms in termsset:
-            niters = [f.result().nsamp for k, f in fut[terms].items()]
-            score = [f.result().symerr for k, f in fut[terms].items()]
-            badscores = [s for s in score if s > 3 * kw.goalerr]
-            # badscores = []
-            print(
-                f'{terms:4} iters {np.mean(niters):7.1f} ',
-                f'fail {len(badscores)/ntrials:5.3f} ',
-                ' '.join(
-                    ['%4.2f' % q for q in np.quantile(badscores, [0.0, 0.1, 0.25, 0.5, 1.0])]
-                    if badscores else '', ),
-            )
 
 def helper_test_symfit_dihedral(icyc, rand=True):
     sym = 'd%i' % icyc
@@ -854,18 +692,18 @@ def test_symfit_d2():
     # assert 0
 
 def test_symfit_d2_af2():
-    frames = np.array([[[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.], [0., 0., 0., 1.]],
+    frames = np.array([[[1, 0, 0, 0.], [0, 1, 0, 0.], [0, 0, 1, 0.], [0, 0, 0, 1]],
                        [[0.80374831, 0.53927461, -0.25133951, 6.00417164],
                         [-0.59387094, 0.75282344, -0.28385591, -1.2769798],
-                        [0.03613799, 0.37741194, 0.92534009, 5.12398778], [0., 0., 0., 1.]],
+                        [0.03613799, 0.37741194, 0.92534009, 5.12398778], [0, 0, 0, 1]],
                        [[0.23884698, 0.09262249, -0.96662981, 2.92136038],
                         [0.01116147, -0.99563673, -0.09264402, -9.39450731],
-                        [-0.97099307, 0.01133874, -0.23883863, 2.89522226], [0., 0., 0., 1.]],
+                        [-0.97099307, 0.01133874, -0.23883863, 2.89522226], [0, 0, 0, 1]],
                        [[0.11333779, -0.15687948, -0.98109295, -0.99280996],
                         [0.62179177, -0.75898037, 0.19319367, -8.23571297],
-                        [-0.77493841, -0.63193167, 0.01152521, -4.02264787], [0., 0., 0., 1.]]])
+                        [-0.77493841, -0.63193167, 0.01152521, -4.02264787], [0, 0, 0, 1]]])
     fit = wu.sym.compute_symfit(frames=frames, sym='d2')
-    print(fit.total_err)
+    # print(fit.total_err)
 
 def test_af2_example():
     frames = np.array([[[1.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00],
@@ -885,131 +723,40 @@ def test_af2_example():
                         [-1.99005100e-01, 5.89530922e-01, 7.82847535e-01, 5.97667763e+00],
                         [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]])
     fit = wu.sym.compute_symfit(sym='d3', frames=frames)
-    print(fit.weighted_err)
+    # print(fit.weighted_err)
 
 def test_symfit_d3_nfold_error():
     frames = np.array([[[0.97054542, -0.20623367, -0.12453623, -5.53040854],
                         [-0.06242719, 0.28398443, -0.95679448, -6.0806959],
-                        [0.23268958, 0.93638695, 0.2627452, 1.31800166], [0., 0., 0., 1.]],
+                        [0.23268958, 0.93638695, 0.2627452, 1.31800166], [0, 0, 0, 1]],
                        [[0.59226722, 0.19978753, -0.78057958, -2.35530704],
                         [0.58528258, 0.55914571, 0.58719704, 0.0447721],
-                        [0.55377237, -0.8046372, 0.21423152, -4.86428115], [0., 0., 0., 1.]],
+                        [0.55377237, -0.8046372, 0.21423152, -4.86428115], [0, 0, 0, 1]],
                        [[0.06409955, -0.90166908, -0.42764953, -11.91285626],
                         [0.8669915, 0.26252498, -0.42356389, -2.64170283],
-                        [0.49418314, -0.34361826, 0.79856716, -5.94434196], [0., 0., 0., 1.]],
+                        [0.49418314, -0.34361826, 0.79856716, -5.94434196], [0, 0, 0, 1]],
                        [[-0.36814632, -0.45993818, -0.80803784, 7.8419424],
                         [0.90118702, 0.03730856, -0.43182175, -4.40349732],
-                        [0.22875804, -0.88716681, 0.40075531, -3.87763387], [0., 0., 0., 1.]]])
+                        [0.22875804, -0.88716681, 0.40075531, -3.87763387], [0, 0, 0, 1]]])
     fit = wu.sym.compute_symfit(sym='d3', frames=frames)
 
+# @pytest.mark.xfail
+def test_d4_error():
+    frames = np.array([[[-0.49537276, -0.04757512, -0.86737676, -0.40013152],
+                        [-0.06300325, 0.9978372, -0.01874864, 3.60776545],
+                        [0.86639276, 0.04536, -0.49729875, -1.93353317], [0, 0, 0, 1]],
+                       [[0.72021416, 0.3984008, 0.56795103, 4.50082754],
+                        [-0.19837333, 0.90274918, -0.38169614, -4.50196276],
+                        [-0.66478537, 0.16223663, 0.72920483, -1.66057906], [0, 0, 0, 1]],
+                       [[-0.8942695, 0.4165067, 0.16372, 0.44246407],
+                        [0.43142538, 0.89958473, 0.06796655, -4.28919314],
+                        [-0.11897149, 0.13141337, -0.98416275, 3.76007159], [0, 0, 0, 1]]])
+    fit = wu.sym.compute_symfit(sym='d4', frames=frames)
+    assert fit
+
+@pytest.mark.xfail
+def test_cyclic():
+    assert 0
+
 if __name__ == '__main__':
-    t = wu.Timer()
-
-    # np.set_printoptions(
-    # precision=10,
-    # suppress=True,
-    # linewidth=98,
-    # formatter={'float': lambda f: '%8.4f' % f},
-    # )
-    #
-    # np.seterr(all="ignore")
-
-    #
-    # test_symops_gradient()
-    # t.checkpoint('test_symops_gradient')
-    #
-    # symfit_parallel_convergence_trials()
-    #
-    # symfit_mc_play(sym='icos', quiet=False, showme=True, fuzzstdfrac=0.4, random_frames=True,
-    # nframes=4, maxiters=1000, scaletemp=1, scalesamp=1, seed=None, tprelen=5,
-    # vizinterval=10)
-    nfail, ntest = 0, 0
-    for i in range(ntest):
-        result = symfit_mc_play(
-            sym='d2',
-            nframes=3,
-            # showme=True,
-            # seed=137925405,
-            # choose_closest_frame=True,
-            quiet=True,
-            fuzzstdfrac=0.4,
-            random_frames=True,
-            maxiters=2000,
-            scaletemp=1.0,
-            scalesamp=1.0,
-            tprelen=5,
-            vizinterval=10,
-            min_radius=10,
-            max_radius=100,
-        )
-        if result.besterr > 0.3:
-            nfail += 1
-    # # t.checkpoint('symfit_mc_play')
-    if ntest:
-        print(nfail, ntest)
-        assert 0
-
-    test_af2_example()
-    test_symfit_d3_nfold_error()
-    # assert 0
-
-    # SEED 4284572842
-    # start 19.838108001495662
-    # start 19.838108001495662
-    # 0 19.838108001495662 0.0
-    # 100 5.027766047712338 0.18811881188118812
-    # 200 2.2378296496548282 0.208955223880597
-    # 300 1.802095342227487 0.18604651162790697
-    # 400 1.6264830366647551 0.17206982543640897
-    # 500 1.604944965772087 0.15768463073852296
-    # 600 2.9234244829889984 0.13810316139767054
-    # 700 1.3972099214645886 0.12696148359486448
-    # 800 1.5741736808536937 0.12109862671660425
-    # 900 2.7650750598000853 0.1120976692563818
-    # symfit_mc_play END 1.377131126759568
-    # Traceback (most recent call last):
-
-    test_symfit_d2_af2()
-    # assert 0
-
-    test_symfit_d2()
-    t.checkpoint('test_symfit_d2')
-
-    test_symfit_dihedral()
-    t.checkpoint('test_symfit_dihedral')
-
-    test_symfit_mc()
-    t.checkpoint('test_symfit_mc')
-
-    test_disambiguate_axes()
-    t.checkpoint('test_disambiguate_axes')
-
-    test_symfit_align_axes()
-    t.checkpoint('test_symfit_align_axes')
-
-    test_rel_xform_info()
-    t.checkpoint('test_rel_xform_info')
-
-    test_symops_cen_perfect()
-    t.checkpoint('test_symops_cen_perfect')
-
-    test_symops_cen_imperfect()
-    t.checkpoint('test_symops_cen_imperfect')
-
-    test_rel_xform_info_rand()
-    t.checkpoint('test_rel_xform_info_rand')
-
-    test_cyclic_sym_err()
-    t.checkpoint('test_cyclic_sym_err')
-
-    # symfit_parallel_mc_trials()
-    # assert 0printe
-    # errs = list()
-    # for i in range(5):
-    #     errs.append(test_symops_cen_imperfect(nsamp=20, manual=True))
-    # err = wu.Bunch().accumulate(errs)
-    # err.reduce(max)
-    # print(err)
-
-    t.report()
-    print('test_symfit.py done')
+    main()

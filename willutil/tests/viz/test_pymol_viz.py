@@ -1,5 +1,10 @@
 import willutil as wu
 import willutil.homog as hm
+import willutil.viz
+
+def main():
+    pass
+    # pymol_viz_example()
 
 def pymol_viz_example():
     import willutil.viz
@@ -11,4 +16,4 @@ def pymol_viz_example():
     wu.viz.showme(xinfo)
 
 if __name__ == '__main__':
-    pymol_viz_example()
+    main()

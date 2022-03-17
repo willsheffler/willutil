@@ -1,8 +1,38 @@
 from willutil import Bunch
 from willutil.homog.hgeom import *
 from willutil.sym.symframes import *
+from willutil.viz import showme
 
 m = -1
+
+def frames(sym, bbsym=None):
+    frames = sym_frames[sym.lower()]
+    if bbsym:
+        if not bbsym.lower().startswith('c'):
+            raise ValueError(f'bad bblock sym {bbsym}')
+        bbnfold = int(bbsym[1:])
+        bbaxes = symaxes_all[sym][bbnfold]
+        # xform symaxs by frame
+        frames = remove_if_same_axis(frames, bbaxes)
+    return frames
+
+def remove_if_same_axis(frames, bbaxes, onesided=True):
+    assert onesided
+    axes = hxform(frames, bbaxes[0])  # bblocks always aligned on z axis
+    dots = hdot(bbaxes, axes, outerprod=True)
+    # print('bbaxis', bbaxes[0], bbaxes.shape)
+    assert np.allclose(1, np.max(np.abs(dots), axis=-1))
+    # print(dots)
+    uniq = list()
+    for i, dot in enumerate(dots):
+        w = np.where(np.logical_and(0.999 < abs(dot), abs(dot) < 1.001))[0]
+        assert len(w) == 1
+        w = w[0]
+        # print(w)
+        if not np.any(np.isclose(dots[:i, w], dot[w])):
+            uniq.append(i)
+    # print(len(bbaxes), uniq)
+    return frames[uniq]
 
 ambiguous_axes = dict(
     tet=[],
@@ -315,3 +345,15 @@ def sym_permute_axes_choices(sym):
         return _sym_permute_axes_choices[sym]
     else:
         return np.eye(4).reshape(1, 4, 4)
+
+for icyc in range(2, 33):
+    sym = 'c%i' % icyc
+    symaxes[sym] = {icyc: np.array([0, 0, 1, 0])}
+    angles = np.pi * np.arange(icyc) / icyc
+    # print(angles * 180 / np.pi)
+    sym_frames[sym] = hrot(Uz, angles)
+    sym_point_angles[sym] = {
+        icyc: [angles],
+    }
+    minsymang[sym] = np.pi / icyc / 2
+    symaxes_all[sym] = symaxes[sym]

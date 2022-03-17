@@ -3,6 +3,110 @@ import numpy as np
 import willutil as wu
 from willutil import homog as hm, Bunch
 
+def compute_symfit(
+    *,
+    sym,
+    frames,
+    lossterms=None,
+    max_radius=100000.0,
+    min_radius=0.0,
+    **kw,
+):
+    kw = wu.Bunch(kw)
+    sym = sym.lower()
+
+    iscyclic = sym.startswith('c')
+    if not iscyclic and len(frames) < 3:
+        raise ValueError(f'symmetry {sym} requires at least 3 subunits, {len(frames)} provided')
+    if len(frames) > len(wu.sym.sym_frames[sym]):
+        raise ValueError(f'symmetry {sym} has at most {nnativeframes}, {len(frames)} supplied')
+
+    symops = wu.sym.symops_from_frames(sym=sym, frames=frames, **kw)
+    _checkpoint(kw, 'symops_from_frames')
+
+    cen1, cen2, axs1, axs2 = get_symop_pairs(symops, **kw)
+    _checkpoint(kw, 'get_symop_pairs')
+
+    p, q, isect, center = get_symops_isect(sym, cen1, cen2, axs1, axs2, **kw)
+    _checkpoint(kw, 'get_symops_isect')
+
+    radius, rad_err, framedist_err = get_radius_err(frames, center, **kw)
+
+    cen_err = np.sqrt((np.sum((center - p)**2) + np.sum((center - q)**2)) / (len(q) + len(q)))
+    op_hel_err = np.sqrt(np.mean(symops.hel**2))
+    op_ang_err = np.sqrt(np.mean(symops.nfold_err**2))
+    _checkpoint(kw, 'post intersect stuff')
+
+    xfit, axesfiterr = wu.sym.symops_align_axes(sym, frames, symops, symops, center, radius, **kw)
+    _checkpoint(kw, 'align axes')
+
+    assert not lossterms
+    loss = dict()
+    loss['C'] = 1.0 * cen_err**2
+    loss['H'] = 0.7 * op_hel_err**2
+    loss['N'] = 1.2 * op_ang_err**2
+    loss['A'] = 1.5 * axesfiterr**2
+    # loss['R'] = 1.0 * rad_err**2
+    loss['S'] = 0.01 * max(0, radius - max_radius)**2 + max(0, min_radius - radius)**2
+    # loss['Q'] = 1.0 * quad_err**2
+    # loss['M'] = 1.0 * missing_axs_err**2
+    # loss['S'] = 1.0 * skew_axs_err**2
+    loss['D'] = 0.1 * framedist_err
+    # print(framedist_err)
+    lossterms = 'CHNASD'
+    # lossterms = 'CHNARS'
+    total_err = np.sqrt(np.sum(list(loss.values())))
+    weighted_err = total_err
+    if lossterms:
+        weighted_err = np.sqrt(sum(loss[c] for c in lossterms))
+    # for l in 'CHNA':
+    # print('loss %s' % l, loss[l])
+
+    # CA   iters   861.7  fail 0.000
+    # CHA  iters   884.7  fail 0.000
+    # CHNA iters   470.2  fail 0.000
+    # C    iters  2000.0  fail 1.000  1.56 2.38 3.17 3.92 5.96
+    # H    iters  2000.0  fail 1.000  1.22 2.57 3.14 4.04 6.29
+    # A    iters  2000.0  fail 1.000  2.23 2.73 3.16 4.13 8.09
+    # CH   iters  2000.0  fail 1.000  1.71 2.51 3.44 4.10 6.58
+    # CN   iters  1614.5  fail 0.810  0.30 0.53 1.60 3.46 5.56
+    # CHN  iters  1790.7  fail 0.890  0.30 0.54 1.71 4.01 6.61
+    # HN   iters  1633.5  fail 0.760  0.31 0.56 1.28 4.12 6.35
+    # N    iters  1590.0  fail 0.570  0.33 0.87 1.84 3.68 6.56
+
+    # A7 N4 H4 C4
+    # NA   iters  1251.3  fail 0.040  0.31 0.96 1.95 3.00 4.05
+    # HA   iters  1131.2  fail 0.020  3.67 3.67 3.68 3.69 3.72
+    # HNA  iters   830.2  fail 0.020  2.55 2.69 2.90 3.25 3.95
+    # CA   iters   863.9  fail 0.020  0.96 0.97 0.99 1.02 1.09
+    # CHA  iters   798.1  fail 0.020  0.32 0.37 0.44 0.57 0.81
+    # CHNA iters   480.1  fail 0.020  0.31 0.31 0.31 0.32 0.33
+    # CNA  iters   512.2  fail 0.000
+
+    return SymFit(
+        sym=sym,
+        nframes=len(frames),
+        frames=frames,
+        symops=symops,
+        center=center,
+        opcen1=cen1,
+        opcen2=cen2,
+        opaxs1=axs1,
+        opaxs2=axs2,
+        iscet=isect,
+        isect1=p,
+        iscet2=q,
+        radius=radius,
+        xfit=xfit,
+        cen_err=cen_err,
+        symop_hel_err=op_hel_err,
+        symop_ang_err=op_ang_err,
+        axes_err=axesfiterr,
+        total_err=total_err,
+        weighted_err=weighted_err,
+        losses=loss,
+    )
+
 class SymFitError(Exception):
     pass
 
@@ -111,39 +215,28 @@ def symops_from_frames(*, sym, frames, **kw):
     point_angles = wu.sym.sym_point_angles[sym]
     # print(point_angles)
 
-    if False:  #sym.startswith('d'):
-        pass
-    else:
-        for n, tgtangs in point_angles.items():
-            tgtangs = np.asarray(tgtangs)
-            dabs = np.array([np.abs(ang - atgt) for atgt in tgtangs])
-            d = np.array([atgt - ang for atgt in tgtangs])
-            if len(dabs) == 1:
-                dabs = dabs[0]
-                d = d[0]
-                atgt = tgtangs[0]
-            elif len(dabs) == 2:
-                d = np.where(dabs[0] < dabs[1], d[0], d[1])
-                atgt = np.where(dabs[0] < dabs[1], tgtangs[0], tgtangs[1])
-                dabs = np.where(dabs[0] < dabs[1], dabs[0], dabs[1])
-            else:
-                # print('=========', n, '===========')
-                w = np.argmin(dabs, axis=0)
-                atgt = tgtangs[w]
-                d = d[w, np.arange(len(w))]
-                # print(dabs)
-                dabs = dabs[w, np.arange(len(w))]
-                # dabs = dabs[w]
-                # print(dabs)
+    for n, tgtangs in point_angles.items():
+        tgtangs = np.asarray(tgtangs)
+        dabs = np.array([np.abs(ang - atgt) for atgt in tgtangs])
+        d = np.array([atgt - ang for atgt in tgtangs])
+        if len(dabs) == 1:
+            dabs = dabs[0]
+            d = d[0]
+            atgt = tgtangs[0]
+        elif len(dabs) == 2:
+            d = np.where(dabs[0] < dabs[1], d[0], d[1])
+            atgt = np.where(dabs[0] < dabs[1], tgtangs[0], tgtangs[1])
+            dabs = np.where(dabs[0] < dabs[1], dabs[0], dabs[1])
+        else:
+            w = np.argmin(dabs, axis=0)
+            atgt = tgtangs[w]
+            d = d[w, np.arange(len(w))]
+            dabs = dabs[w, np.arange(len(w))]
 
-            ang_err = errrad * dabs
-            err[n] = np.sqrt(hel**2 + ang_err**2)
-            angdelta[n] = d
-            closest[n] = np.argmin(dabs)
-
-    # for k, v in err.items():
-    #   print(k)
-    #   print(v)
+        ang_err = errrad * dabs
+        err[n] = np.sqrt(hel**2 + ang_err**2)
+        angdelta[n] = d
+        closest[n] = np.argmin(dabs)
 
     errvals = np.stack(list(err.values()))
     w = np.argmin(errvals, axis=0)
@@ -153,40 +246,17 @@ def symops_from_frames(*, sym, frames, **kw):
     angdelta = np.array([angdelta[nf][i] for i, nf in enumerate(nfold)])
     nfold_err = np.min(errvals, axis=0)
 
-    # print('aorisent')
-    # print(np.degrees(ang))
-    # print(nfold)
-    # for nf in point_angles:
-    # print([np.degrees(a) for a in point_angles[nf]])
-
-    # wu.viz.showme(axs[nfold == 2], name='nfold2')
-    # wu.viz.showme(axs[nfold == 7], name='nfold7')
-    # print(np.degrees(ang))
-    # print(nfold)
-    # print(point_angles.items())
-    # print(np.degrees(ang[nfold == 6]))
-    # wu.viz.showme(axs[nfold == 6], name='nfold6')
-
     for nf in point_angles:
         if np.sum(nfold == nf) == 0:
             nfold[closest[nf]] = nf
 
-    # print(nfold)
-
-    # pair.nfold, pair.nfold_err = None, 9e9
-    # for n, angs in point_angles.items():
-    #     err = min(cyclic_sym_err(pair, a) for a in angs)
-    #     pair.err[n] = err
-    #     if err < pair.nfold_err:
-    #         pair.nfold, pair.nfold_err = n, err
-    #     # print('symops_from_frames', n, a, err)
-
     nfold = disambiguate_axes(sym, axs, nfold)
 
-    if sym != 'd2':
-        assert min(nfold) != max(nfold)
+    only1nfold = (sym == 'd2' or sym.startswith('c'))
+    if not only1nfold and min(nfold) == max(nfold):
+        raise SymFitError(f'sym {sym} all axes are same nfold {nfold[0]}')
 
-    result = SymOps(
+    return SymOps(
         key=keys,
         frame1=frame1,
         frame2=frame2,
@@ -202,39 +272,29 @@ def symops_from_frames(*, sym, frames, **kw):
         angdelta=angdelta,
     )
 
-    return result
-
 def disambiguate_axes(sym, axis, nfold):
     if not sym in wu.sym.ambiguous_axes: return nfold
     if not wu.sym.ambiguous_axes[sym]: return nfold
-    # print(sym, wu.sym.ambiguous_axes)
-    # print('disambiguate_axes nfolds start', nfold)
-
-    nfold = nfold[:]
+    nfold1 = nfold.copy()
     angcut = np.pi / 12
     for ambignfold, maybenfold in reversed(wu.sym.ambiguous_axes[sym]):
         if sym.lower().startswith('d') and ambignfold != 2:
-            nfold[nfold == ambignfold] = maybenfold
+            nfold1[nfold1 == ambignfold] = maybenfold
             continue
-        ambigaxis = axis[nfold == ambignfold]
-        maybeaxis = axis[nfold == maybenfold]
+        ambigaxis = axis[nfold1 == ambignfold]
+        maybeaxis = axis[nfold1 == maybenfold]
         dot = np.abs(hm.hdot(ambigaxis[None, :], maybeaxis[:, None]))
-
         try:
             maxdot = np.max(dot, axis=0)
-            # print(maxdot.shape)
         except Exception as e:
-            # return nfold
-            # print(f'missing axes: {nfold}')
-            raise SymFitError(f'missing axes: {nfold}')
-
+            raise SymFitError(f'missing axes: {nfold1}')
         maybe_so = maxdot > np.cos(angcut)  # theoretically pi/8 ro 22.5 deg
-        nfold[nfold == ambignfold] = np.where(maybe_so, maybenfold, ambignfold)
-
-    return nfold
+        nfold1[nfold1 == ambignfold] = np.where(maybe_so, maybenfold, ambignfold)
+    if all(nfold1 == nfold1[0]):
+        return nfold
+    return nfold1
 
 def stupid_pairs_from_symops(symops):
-    # assert 0, 'no more stupid_pairs_from_symops'
     pairs = dict()
     for i, k in enumerate(symops.key):
         pairs[k] = RelXformInfo(
@@ -251,111 +311,36 @@ def stupid_pairs_from_symops(symops):
         )
     return pairs
 
-def compute_symfit(
-    *,
-    sym,
-    frames,
-    max_nan=0.9,  # totally arbitrary, downstream check for lacking info maybe better
-    remove_outliers_sd=3,
-    # lossterms='CHNA',
-    lossterms=None,
-    max_radius=100000.0,
-    min_radius=0.0,
-    **kw,
-):
-    kw = wu.Bunch(kw)
-    point_angles = wu.sym.sym_point_angles[sym]
-    symops = wu.sym.symops_from_frames(sym=sym, frames=frames, **kw)
-
-    if sym != 'd2':
-        if np.all(symops.nfold == 2):
-            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-            print('!!!!!!! symfit only 2fold axes! !!!!!!!!!!!!!!!!!')
-            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-            raise SymFitError('only twofold axes')
-
-    # symops = stupid_pairs_from_symops(symops)
-    # if len'nfolds',(symops) <= len(wu.sym.symaxes[sym]):
-    # raise SymFitError('not enough symops/monomers')
-    # symops = None
-    _checkpoint(kw, 'symops_from_frames')
-    # cen1, cen2, opaxs1, opaxs2 = list(n), list(), list(), list()
-    #cen1A, cen2A, axs1A, axs2A = list(), list(), list(), list()
-    #for iop1, op1 in enumerate(symops.values()):
-    #    for iop2, op2 in enumerate(symops.values()):
-    #        if iop1 < iop2:
-    #            cen1A.append(op1.cen)
-    #            cen2A.append(op2.cen)
-    #            axs1A.append(op1.axs)
-    #            axs2A.append(op2.axs)
-    #cen1A = np.stack(cen1A)
-    # cen2A = np.stack(cen2A)
-    # axs1A = np.stack(axs1A)
-    # axs2A = np.stack(axs2A)
-    # cen1A, cen2A, axs1A, axs2A = list(), list(), list(), list()
-    # for op1, op2 in it.combinations(symops.values(), 2):
-    #     if op1 is op2: continue
-    #     cen1A.append(op1.cen)
-    #     cen2A.append(op2.cen)
-    #     axs1A.append(op1.axs)
-    #     axs2A.append(op2.axs)
-    # cen1A = np.stack(cen1A)
-    # cen2A = np.stack(cen2A)
-    # axs1A = np.stack(axs1A)
-    # axs2A = np.stack(axs2A)
-
+def get_symop_pairs(symops, **kw):
     cen1, cen2, axs1, axs2 = list(), list(), list(), list()
     nops = len(symops.axs)
-    # assert nops == len(symops)
     for i in range(nops):
         cen1.append(np.tile(symops.cen[i], nops - i - 1).reshape(-1, 4))
         axs1.append(np.tile(symops.axs[i], nops - i - 1).reshape(-1, 4))
         cen2.append(symops.cen[i + 1:])
         axs2.append(symops.axs[i + 1:])
-        # print(cen1[-1].shape)
-        # print(cen2[-1].shape)
         assert cen1[-1].shape == cen2[-1].shape
     cen1 = np.concatenate(cen1)
     cen2 = np.concatenate(cen2)
     axs1 = np.concatenate(axs1)
     axs2 = np.concatenate(axs2)
-    # assert cen1.shape == cen1A.shape
-    # assert cen2.shape == cen2A.shape
-    # assert np.allclose(cen1, cen1A)
-    # assert np.allclose(cen2, cen2A)
-    # assert np.allclose(axs1, axs1A)
-    # assert np.allclose(axs2, axs2A)
+    return cen1, cen2, axs1, axs2
 
-    # cen1, cen2, axs1, axs2 = cen1A, cen2A, axs1A, axs2A
-    # assert 0
-    # print(axs1)
-    # print(axs2)
-    # print(hm.line_angle(axs1, axs2) * 180 / np.pi)
-    # print(wu.sym.minsymang[sym])
+def get_symops_isect(sym, cen1, cen2, axs1, axs2, max_nan=0.9, isect_outliers_sd=3, **kw):
+    # max_nan 0.9 totally arbitrary, downstream check for lacking info maybe better
     axes_angles = hm.line_angle(axs1, axs2)
     not_same_symaxis = axes_angles > wu.sym.minsymang[sym]
     if not any(not_same_symaxis):
+        # pick furthest apart axes to be distinct
         not_same_symaxis[np.argmax(axes_angles)] = True
         assert any(not_same_symaxis)
-    # assert any(not_same_symaxis)
     p1np = cen1[not_same_symaxis]
     p2np = cen2[not_same_symaxis]
     a1np = axs1[not_same_symaxis]
     a2np = axs2[not_same_symaxis]
-    _checkpoint(kw, 'make symop pair arrays')
-    # print('cen1', cen1.shape, 'isnan', np.sum(np.isnan(cen1)))
-    # print('cen2', cen2.shape, 'isnan', np.sum(np.isnan(cen2)))
-    # print('axs1', axs1.shape, 'isnan', np.sum(np.isnan(axs1)))
-    # print('axs2', axs2.shape, 'isnan', np.sum(np.isnan(axs2)))
 
     p, q = hm.line_line_closest_points_pa(p1np, a1np, p2np, a2np)
-    # print('--------- p, q ---------')
-    # print(p)
-    # print(q)
 
-    _checkpoint(kw, 'compute symax intersects')
-    # print('p', p.shape, 'isnan', np.sum(np.isnan(p)))
-    # print('q', q.shape, 'isnan', np.sum(np.isnan(q)))
     tot_nan = np.sum(np.isnan(p)) / 4
     if tot_nan / len(p) > max_nan:
         print('nan fail nfolds', symops.nfold)
@@ -365,122 +350,31 @@ def compute_symfit(
     p = p[~np.isnan(p)].reshape(-1, 4)
     q = q[~np.isnan(q)].reshape(-1, 4)
     isect = (p + q) / 2
-
-    # print(hm.angle_degrees(axs1, axs2)[:10])
-    # print('p', p[:10])
-    # print('q', q[:10])
-    # print('isect', isect[:10])
-    # print(p.shape, q.shape)
-
     assert len(isect) > 0
     center = np.mean(isect, axis=0)
-    # print(center.shape, center)
 
-    if remove_outliers_sd is not None:
-        norm = np.linalg.norm(p - center, axis=-1)
-        meannorm = np.mean(norm)
-        sdnorm = np.std(norm)
-        not_outlier = norm - meannorm < sdnorm * remove_outliers_sd
-        # print('norm', norm.shape, np.mean(norm), np.min(norm), np.max(norm), np.sum(not_outlier),
-        # np.sum(not_outlier) / len(not_outlier))
-        # print(center)
-        if np.sum(not_outlier) > 5:
-            center = np.mean(isect[not_outlier], axis=0)
-        # print(center)
+    norm = np.linalg.norm(p - center, axis=-1)
+    meannorm = np.mean(norm)
+    sdnorm = np.std(norm)
+    not_outlier = norm - meannorm < sdnorm * isect_outliers_sd
+    if np.sum(not_outlier) > 5:
+        center = np.mean(isect[not_outlier], axis=0)
 
+    return p, q, isect, center
+
+def get_radius_err(frames, center, **kw):
     dist = np.linalg.norm(frames[None, :, :3, 3] - frames[:, None, :3, 3], axis=-1)
     np.fill_diagonal(dist, 9e9)
-    # print(frames[:, :3, 3])
-    # print(dist)
-    # assert 0
-
     mindist = np.min(dist)
-
     radii = np.linalg.norm(frames[:, :, 3] - center, axis=-1)
     radius = np.mean(radii)
     if radius > 1e6:
         raise SymFitError(f'inferred radius is {radius}')
-    # rad_err = np.sqrt(np.mean(radii**2) / radius)
     rad_err = np.sqrt(np.mean(radii**2)) - radius
     if rad_err < -0.001:
         print('WARNING rad_err', rad_err, radii)
-    # assert rad_err >= -0.00001
-
     framedist_err = max(0, radius / mindist - 5)
-
-    cen_err = np.sqrt((np.sum((center - p)**2) + np.sum((center - q)**2)) / (len(q) + len(q)))
-    op_hel_err = np.sqrt(np.mean(symops.hel**2))
-    op_ang_err = np.sqrt(np.mean(symops.nfold_err**2))
-    _checkpoint(kw, 'post intersect stuff')
-
-    xfit, axesfiterr = wu.sym.symops_align_axes(sym, frames, symops, symops, center, radius, **kw)
-    _checkpoint(kw, 'align axes')
-
-    loss = dict()
-    loss['C'] = 1.0 * cen_err**2
-    loss['H'] = 0.7 * op_hel_err**2
-    loss['N'] = 1.2 * op_ang_err**2
-    loss['A'] = 1.5 * axesfiterr**2
-    # loss['R'] = 1.0 * rad_err**2
-    loss['S'] = 0.01 * max(0, radius - max_radius)**2 + max(0, min_radius - radius)**2
-    # loss['Q'] = 1.0 * quad_err**2
-    # loss['M'] = 1.0 * missing_axs_err**2
-    # loss['S'] = 1.0 * skew_axs_err**2
-    loss['D'] = 0.1 * framedist_err
-    # print(framedist_err)
-    lossterms = 'CHNASD'
-    # lossterms = 'CHNARS'
-    total_err = np.sqrt(np.sum(list(loss.values())))
-    weighted_err = total_err
-    if lossterms:
-        weighted_err = np.sqrt(sum(loss[c] for c in lossterms))
-    # for l in 'CHNA':
-    # print('loss %s' % l, loss[l])
-
-    # CA   iters   861.7  fail 0.000
-    # CHA  iters   884.7  fail 0.000
-    # CHNA iters   470.2  fail 0.000
-    # C    iters  2000.0  fail 1.000  1.56 2.38 3.17 3.92 5.96
-    # H    iters  2000.0  fail 1.000  1.22 2.57 3.14 4.04 6.29
-    # A    iters  2000.0  fail 1.000  2.23 2.73 3.16 4.13 8.09
-    # CH   iters  2000.0  fail 1.000  1.71 2.51 3.44 4.10 6.58
-    # CN   iters  1614.5  fail 0.810  0.30 0.53 1.60 3.46 5.56
-    # CHN  iters  1790.7  fail 0.890  0.30 0.54 1.71 4.01 6.61
-    # HN   iters  1633.5  fail 0.760  0.31 0.56 1.28 4.12 6.35
-    # N    iters  1590.0  fail 0.570  0.33 0.87 1.84 3.68 6.56
-
-    # A7 N4 H4 C4
-    # NA   iters  1251.3  fail 0.040  0.31 0.96 1.95 3.00 4.05
-    # HA   iters  1131.2  fail 0.020  3.67 3.67 3.68 3.69 3.72
-    # HNA  iters   830.2  fail 0.020  2.55 2.69 2.90 3.25 3.95
-    # CA   iters   863.9  fail 0.020  0.96 0.97 0.99 1.02 1.09
-    # CHA  iters   798.1  fail 0.020  0.32 0.37 0.44 0.57 0.81
-    # CHNA iters   480.1  fail 0.020  0.31 0.31 0.31 0.32 0.33
-    # CNA  iters   512.2  fail 0.000
-
-    return SymFit(
-        sym=sym,
-        nframes=len(frames),
-        frames=frames,
-        symops=symops,
-        center=center,
-        opcen1=cen1,
-        opcen2=cen2,
-        opaxs1=axs1,
-        opaxs2=axs2,
-        iscet=isect,
-        isect1=p,
-        iscet2=q,
-        radius=radius,
-        xfit=xfit,
-        cen_err=cen_err,
-        symop_hel_err=op_hel_err,
-        symop_ang_err=op_ang_err,
-        axes_err=axesfiterr,
-        total_err=total_err,
-        weighted_err=weighted_err,
-        losses=loss,
-    )
+    return radius, rad_err, framedist_err
 
 def best_axes_fit(sym, xsamp, nfolds, tgtaxes, tofitaxes, **kw):
     xsamp = xsamp[:, None]
@@ -730,3 +624,303 @@ def symfit_gradient(symfit):
     # wu.viz.showme(sy,mfit.symops)
 
     # assert 0
+
+def symfit_mc_play(
+    sym=None,
+    seed=None,
+    random_frames=False,
+    quiet=True,
+    nframes=None,
+    maxiters=1_000,
+    goalerr=0.01,
+    showme=False,
+    scalesamp=1.0,
+    scalecartsamp=1.0,
+    scalerotsamp=1.0,
+    scaletemp=1.0,
+    max_cartsd=10,
+    vizinterval=10,
+    **kw,
+):
+    kw = wu.Bunch(kw, _strict=False)
+
+    if not 'timer' in kw: kw.timer = wu.Timer()
+
+    import os
+    if "PYTEST_CURRENT_TEST" in os.environ:
+        showme = False
+
+    if seed is None:
+        seed = np.random.randint(2**32 - 1)
+    np.random.seed(seed)
+
+    # kw.sym = np.random.choice('tet oct icos'.split())
+    # kw.nframes = len(wu.sym.sym_frames[kw.sym])
+    # kw.nframes = np.random.choice(6) + 6
+    kw.sym = sym or 'icos'
+    if nframes is None:
+        nframes = dict(
+            d3=6,
+            d5=6,
+            tet=6,
+            oct=7,
+            icos=7,
+        )[kw.sym]
+    nframes = min(nframes, len(wu.sym.sym_frames[sym]))
+
+    kw.tprelen = kw.tprelen or 10
+    kw.tprerand = kw.tprerand or 0
+    kw.tpostlen = kw.tpostlen or 20
+    kw.tpostrand = kw.tpostrand or 0
+    kw.fuzzstdfrac = kw.fuzzstdfrac or 0.01  # frac of radian
+    kw.cart_sd_fuzz = kw.cart_sd_fuzz or kw.fuzzstdfrac * kw.tprelen
+    kw.rot_sd_fuzz = kw.rot_sd_fuzz or kw.fuzzstdfrac
+    kw.remove_outliers_sd = kw.remove_outliers_sd or 3
+    # kw.choose_closest_frame = kw.choose_closest_frame or True
+
+    if random_frames:
+        frames = hm.rand_xform(nframes, cart_sd=kw.tprelen)  #   @ frames
+    else:
+        frames, *_ = setup_test_frames(nframes, **kw)
+    # frames = wu.sym.sym_frames[kw.sym]
+
+    # wu.viz.showme(frames)
+    # assert 0
+
+    showargs = wu.Bunch(headless=0, spheres=0.0, showme=showme, hideprev=True, weight=2)
+    # wu.viz.showme(frames, 'start', col=(1, 1, 1), **showargs)
+    symfit = wu.sym.compute_symfit(frames=frames, **kw)
+    err0 = symfit.weighted_err
+    frames = symfit.xfit @ frames
+    if not quiet: print('start', symfit.weighted_err)
+    # wu.viz.showme(wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :], name='symstart',
+    # col=(1, 1, 0), rays=0.02, weight=0.3, **showargs)
+
+    if showme:
+        pairs = wu.sym.stupid_pairs_from_symops(symfit.symops)
+        wu.viz.showme(pairs, name='pairsstart', col='bycx', center=[0, 0, 0], **showargs)
+
+    lowerr = symfit.weighted_err
+    besterr = lowerr
+    best = frames, None
+    naccept, lastviz = 0, -999
+    for isamp in range(maxiters):
+
+        if isamp % 10 == 0: frames = best[0]
+        if isamp % 100 == 0 and not quiet:
+            print(
+                f'{isamp:6} {symfit.weighted_err:7.3} {naccept / (isamp + 1):7.3} {lowerr:7.3} {symfit.radius:9.3}'
+            )
+        cartsd = symfit.weighted_err / 15 * scalecartsamp * scalesamp
+        cartsd = min(max_cartsd, cartsd)
+        rotsd = cartsd / symfit.radius * scalerotsamp * scalesamp
+        temp = symfit.weighted_err / 150 * scaletemp
+        purturbation = hm.rand_xform_small(len(frames), cart_sd=cartsd, rot_sd=rotsd)
+        assert np.max(purturbation[:, :, 3]) < 1e7
+        purturbed = purturbation @ frames
+        try:
+            assert np.max(purturbed[:, :3, 3]) < 1e6
+            symfit = wu.sym.compute_symfit(frames=purturbed, **kw)
+            # print('SCORE', isamp, symfit.weighted_err)
+        except Exception as e:
+            print('FAIL', isamp, 'SEED', seed)
+            print(repr(purturbed))
+            # print(np.max(frames[:, :3, 3]))
+            # print(np.max(purturbation[:, :3, 3]))
+            # print(np.max(purturbed[:, :3, 3]))
+            raise e
+
+        candidate = symfit.xfit @ purturbed
+
+        if np.isnan(symfit.weighted_err): break
+
+        # symdupframes = wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :]
+        # wu.viz.showme(symdupframes, name='xfitmc%05i' % isamp, col=None, **showargs)
+
+        delta = symfit.weighted_err - lowerr
+        if np.exp(-delta / temp) > np.random.rand():
+            naccept += 1
+            # frames = symfit.xfit @ candidate
+            frames = candidate
+            lowerr = symfit.weighted_err
+            # col = (isamp / maxiters, 1 - isamp / maxiters, 1)
+            # wu.viz.showme(candidate, name='mc%05i' % isamp, col=col, center=[0, 0, 0],
+            # **showargs)b
+
+            if showme and isamp - lastviz > vizinterval:
+                # pairs = wu.sym.stupid_pairs_from_symops(symfit.symops)
+                col = (isamp / maxiters, 1 - isamp / maxiters, 1)  #######
+
+                symdupframes = wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :]
+                wu.viz.showme(symdupframes, name='xfitmc%05i' % isamp, col=None, **showargs)
+                # wu.viz.showme(frames, name='xfitmc%05ib' % isamp, col=None,
+                # **showargs.sub(spheres=0.5, weight=1.5))
+                # wu.viz.showme(pairs, name='mc%05i' % isamp, col='bycx', center=[0, 0, 0],
+                # **showargs)
+                lastviz = isamp
+
+            if lowerr < besterr:
+                besterr = lowerr
+                best = symfit.xfit @ frames, symfit
+
+                if symfit.total_err < goalerr * symfit.radius:
+                    break
+                # abserr = symframes_coherence(wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :])
+                # if abserr < goalerr: break
+
+    frames, symfit = best
+    symdupframes = wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :]
+    symerr = symframes_coherence(symdupframes)
+
+    # print(f'symfit_mc_play SEED {seed:15} ERR {symfit.weighted_err:7.3}')
+
+    if showme:
+        symdupframes = wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :]
+        wu.viz.showme(symdupframes, name='xfitmcfinal', col=None, **showargs)
+        showargs.hideprev = False
+        wu.viz.showme(frames, name='xfitmc%05ib' % isamp, col=None,
+                      **showargs.sub(spheres=0.65, weight=1.5))
+        pairs = wu.sym.stupid_pairs_from_symops(symfit.symops, )
+        wu.viz.showme(pairs, name='pairsstop', col='bycx', center=[0, 0, 0], **showargs)
+
+    # print('symerr', symerr, isamp + 1)
+    # assert 0
+    # wu.viz.showme(frames, name='best', col=(1, 1, 1), center=[0, 0, 0], **showargs)
+    # wu.viz.showme(symdupframes, name='xfitbest', col=(0, 0, 1), rays=0.1, **showargs)
+
+    # t.report()
+
+    return wu.Bunch(nsamp=isamp + 1, besterr=besterr, symerr=symerr, frames=frames,
+                    start_err=err0)
+
+def symframes_coherence(frames):
+    frames = frames.reshape(-1, 4, 4)
+    norms = np.linalg.norm(frames[:, None, :, 3] - frames[None, :, :, 3], axis=-1)
+    np.fill_diagonal(norms, 9e9)
+    normmin = np.sort(norms, axis=0)[2]  # should always be at leart 3 frames
+    err = np.max(normmin, axis=0)
+    # print(norms.shape, err)
+    return err
+
+def wrapper(*args, **kwargs):
+    try:
+        return symfit_mc_play(*args, **kwargs)
+    except:
+        return wu.Bunch(nsamp=9999, besterr=999, symerr=999)
+
+def symfit_parallel_convergence_trials(**kw):
+    # ====== Octahedral convergence ======
+    # perturbed from ideal
+    # kw.tprelen = 10
+    # kw.fuzzstdfrac = 0.1  # frac of radian
+    # kw.cart_sd_fuzz = kw.fuzzstdfrac * kw.tprelen
+    # kw.rot_sd_fuzz = kw.fuzzstdfrac
+    #  5 iters  1811.2  fail 0.312  1.29 1.55 1.77 2.06 3.16
+    #  6 iters  2076.0  fail 0.344  1.14 1.24 1.43 1.57 2.75
+    #  7 iters  1914.9  fail 0.250  1.38 1.39 1.65 1.89 2.72
+    #  8 iters  1230.7  fail 0.031  2.74 2.74 2.74 2.74 2.74
+    #  9 iters  1542.4  fail 0.031  2.52 2.52 2.52 2.52 2.52
+    # 10 iters  1823.3  fail 0.031  3.51 3.51 3.51 3.51 3.51
+    # 11 iters  2454.2  fail 0.125  1.74 1.80 1.89 2.08 2.36
+    # 12 iters  2850.6  fail 0.062  1.40 1.45 1.53 1.66 1.92
+    # totally random frames:
+    #  5 iters  9422.3  fail 0.938  5.53 999.00 999.00 999.00 999.00
+    #  6 iters  8318.8  fail 0.812  0.75 2.76 999.00 999.00 999.00
+    #  7 iters  4090.8  fail 0.312  1.42 2.53 3.63 501.94 999.00
+    #  8 iters  4369.6  fail 0.344  0.87 0.94 1.79 999.00 999.00
+    #  9 iters  5967.1  fail 0.531  0.44 1.66 2.61 999.00 999.00
+    # 10 iters  5911.8  fail 0.438  0.87 1.04 1.45 2.94 999.00
+    # 11 iters  7526.1  fail 0.656  0.59 1.14 2.17 3.93 999.00
+    # 12 iters  9048.2  fail 0.844  0.47 1.03 1.39 5.37 999.00
+    import concurrent.futures as cf
+    from itertools import repeat, chain, combinations
+    from collections import defaultdict
+
+    kw = wu.Bunch()
+    ntrials = 32
+    kw.goalerr = 0.1
+    kw.maxiters = 10_000
+    kw.quiet = True
+    kw.showme = False
+    seeds = list(np.random.randint(2**32 - 1) for i in range(ntrials))
+    nnframesset = [5, 6, 7, 8, 9, 10, 11, 12]
+    # nnframesset = [1, 2, 3, 4]
+    # print('seeds', seeds)
+    fut = defaultdict(dict)
+    with cf.ProcessPoolExecutor() as exe:
+        for inframes, nframes in enumerate(nnframesset):
+            kw.nframes = nframes
+            for iseed, seed in enumerate(seeds):
+                kw.seed = seed
+                # print('submit', terms, seed)
+                # fut[nframes][seed] = exe.submit(symfit_mc_play, **kw)
+                fut[nframes][seed] = exe.submit(wrapper, **kw)
+        # for i, f in fut.items():
+        # print(i, f.result())
+        print('symfit_parallel_convergence_trials iters:')
+        for nframes in nnframesset:
+            niters = [f.result().nsamp for k, f in fut[nframes].items()]
+            score = [f.result().symerr for k, f in fut[nframes].items()]
+            badscores = [s for s in score if s > 3 * kw.goalerr]
+            # badscores = []
+            print(
+                f'{nframes:4} iters {np.mean(niters):7.1f} ',
+                f'fail {len(badscores)/ntrials:5.3f} ',
+                ' '.join(
+                    ['%4.2f' % q for q in np.quantile(badscores, [0.0, 0.1, 0.25, 0.5, 1.0])]
+                    if badscores else '', ),
+            )
+
+def symfit_parallel_mc_scoreterms_trials(**kw):
+    import concurrent.futures as cf
+    from itertools import repeat, chain, combinations
+    from collections import defaultdict
+
+    termsset = list(chain(*(combinations("CHNA", i + 1) for i in range(4))))
+    termsset = list(str.join('', combo) for combo in termsset)
+    # termsset = ['C']
+
+    kw = wu.Bunch()
+    ntrials = 100
+    kw.goalerr = 0.1
+    kw.maxiters = 2000
+    kw.quiet = True
+    seeds = list(np.random.randint(2**32 - 1) for i in range(ntrials))
+    # print('seeds', seeds)
+    fut = defaultdict(dict)
+    with cf.ProcessPoolExecutor() as exe:
+        for iterms, terms in enumerate(termsset):
+            kw.lossterms = terms
+            for iseed, seed in enumerate(seeds):
+                kw.seed = seed
+                # print('submit', terms, seed)
+                fut[terms][seed] = exe.submit(symfit_mc_play, **kw)
+        # for i, f in fut.items():
+        # print(i, f.result())
+        print('symfit_parallel_mc_trials mean iters:')
+        for terms in termsset:
+            niters = [f.result().nsamp for k, f in fut[terms].items()]
+            score = [f.result().symerr for k, f in fut[terms].items()]
+            badscores = [s for s in score if s > 3 * kw.goalerr]
+            # badscores = []
+            print(
+                f'{terms:4} iters {np.mean(niters):7.1f} ',
+                f'fail {len(badscores)/ntrials:5.3f} ',
+                ' '.join(
+                    ['%4.2f' % q for q in np.quantile(badscores, [0.0, 0.1, 0.25, 0.5, 1.0])]
+                    if badscores else '', ),
+            )
+
+def setup_test_frames(nframes, sym, cart_sd_fuzz, rot_sd_fuzz, tprelen=20, tprerand=0,
+                      tpostlen=10, tpostrand=0, noxpost=False, **kw):
+    symframes = wu.sym.sym_frames[sym]
+    selframes = symframes[np.random.choice(len(symframes), nframes, replace=False), :, :]
+    xpre = hm.rand_xform()
+    xpre[:3, 3] = hm.rand_unit()[:3] * (tprelen + tprerand * (np.random.rand() - 0.5))
+    xfuzz = hm.rand_xform_small(nframes, cart_sd=cart_sd_fuzz, rot_sd=rot_sd_fuzz)
+    xpost = hm.rand_xform()
+    xpost[:3, 3] = hm.rand_unit()[:3] * (tpostlen + tpostrand * (np.random.rand() - 0.5))
+    if noxpost: xpost = np.eye(4)
+    frames = xpost @ selframes @ xpre @ xfuzz  # move subunit
+    radius = None
+    return frames, xpre, xpost, xfuzz, radius

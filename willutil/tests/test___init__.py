@@ -5,7 +5,7 @@ def test_init_is_fast():
     import willutil
     t = perf_counter() - t0
     print('time to import willutil ', t)
-    assert t < 0.2
+    assert t < 0.5
 
 if __name__ == '__main__':
     test_init_is_fast()

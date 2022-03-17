@@ -63,6 +63,9 @@ class Bunch(dict):
         except:
             return False
 
+    def is_strict(self):
+        return self._special['_strict_lookup']
+
     def __getattr__(self, k):
         if k == '_special':
             raise ValueError(f'_special is a reseved name for Bunch')

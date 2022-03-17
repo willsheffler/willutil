@@ -3,6 +3,10 @@ import deferred_import
 
 np = deferred_import.deferred_import('numpy')
 
+Ux = np.array([1, 0, 0, 0])
+Uy = np.array([0, 1, 0, 0])
+Uz = np.array([0, 0, 1, 0])
+
 def hxform(x, stuff):
     x = np.asanyarray(x)
     stuff = np.asanyarray(stuff)
@@ -323,9 +327,14 @@ def htrans(trans, dtype='f8'):
     t[..., :trans.shape[-1], 3] = trans
     return t
 
-def hdot(a, b):
+def hdot(a, b, outerprod=False):
     a = np.asanyarray(a)
     b = np.asanyarray(b)
+    if outerprod:
+        shape1 = a.shape[:-1]
+        shape2 = b.shape[:-1]
+        a = a.reshape((1, ) * len(shape2) + shape1 + (-1, ))
+        b = b.reshape(shape2 + (1, ) * len(shape1) + (-1, ))
     return np.sum(a[..., :3] * b[..., :3], axis=-1)
 
 def hcross(a, b):
