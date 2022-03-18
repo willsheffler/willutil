@@ -3,10 +3,11 @@ from willutil.homog.hgeom import *
 from willutil.sym.symframes import *
 from willutil.viz import showme
 
-m = -1
-
-def frames(sym, bbsym=None):
+def frames(sym, axis=None, bbsym=None, asym_of=None):
+    sym = sym.lower()
     frames = sym_frames[sym.lower()]
+    if asym_of:
+        assert asym_of.startswith('c')
     if bbsym:
         if not bbsym.lower().startswith('c'):
             raise ValueError(f'bad bblock sym {bbsym}')
@@ -14,7 +15,19 @@ def frames(sym, bbsym=None):
         bbaxes = symaxes_all[sym][bbnfold]
         # xform symaxs by frame
         frames = remove_if_same_axis(frames, bbaxes)
+    if axis is not None:
+        assert sym.startswith('c')
+        frames = align_vector(Uz, axis)
     return frames
+
+def axes(sym, nfold, all=False):
+    if isinstance(nfold, str):
+        assert nfold.lower().startswith('c')
+        nfold = int(nfold[1:])
+    sym = sym.lower()
+    if all:
+        return symaxes_all[sym][nfold]
+    return symaxes[sym][nfold]
 
 def remove_if_same_axis(frames, bbaxes, onesided=True):
     assert onesided
@@ -39,6 +52,8 @@ ambiguous_axes = dict(
     oct=[(2, 4)],
     icos=[],
 )
+
+m = -1
 
 tetrahedral_axes = {
     2: hnormalized([1, 0, 0]),

@@ -116,9 +116,11 @@ def _(toshow, state=None, name=None, **kw):
     return state
 
 @pymol_load.register(np.ndarray)
-def _(toshow, state, **kw):
+def _(toshow, state, line_strip=False, **kw):
     # showaxes()
     shape = toshow.shape
+    if line_strip:
+        return show_ndarray_line_strip(toshow, state, **kw)
     if shape[-2:] == (3, 4):
         return show_ndarray_n_ca_c(toshow, state, **kw)
     elif shape[-2:] == (4, 2):
@@ -254,7 +256,16 @@ def show_ndarray_lines(toshow, state=None, name=None, col=None, **kw):
         showsphere(ray[:3, 0], col=color)
     return state
 
-def show_ndarray_line_strip(toshow, state=None, name='lines', col=None, stateno=1, **kw):
+def show_ndarray_line_strip(
+    toshow,
+    state=None,
+    name='lines',
+    col=[1, 1, 1],
+    stateno=1,
+    linewidth=1,
+    breaks=1,
+    **kw,
+):
     # v = pymol.cmd.get_view()
     state["seenit"][name] += 1
     name += "_%i" % state["seenit"][name]
@@ -262,27 +273,32 @@ def show_ndarray_line_strip(toshow, state=None, name='lines', col=None, stateno=
         col = get_different_colors(len(toshow))
     mycgo = list()
     assert toshow.shape[-1] == 4
-
     toshow = toshow.reshape(-1, 4)
 
-    col = [1, 1, 1]
-    cgoary = np.empty(len(toshow) * 4 + 9)
-    # cgoary = np.empty(2 * 4 + 9)
+    toshow[:, 3] = cgo.VERTEX
+    toshow = toshow.reshape(-1)
+    n = len(toshow) // breaks
+    nextra, nheader = 16, 3
+    cgoary = np.empty((n + nextra) * breaks + 3)
+    # print(f'len cgoary {len(cgoary)} {breaks*n} breaks {breaks}')
     cgoary[0] = cgo.BEGIN
     cgoary[1] = cgo.LINE_STRIP
-    cgoary[2] = cgo.LINEWIDTH
-    cgoary[3] = 1
-    cgoary[4] = cgo.COLOR
-    cgoary[5] = col[0]
-    cgoary[6] = col[1]
-    cgoary[7] = col[2]
-    cgoary[8] = cgo.VERTEX
-
-    toshow[:, 3] = cgo.VERTEX
-    cgoary[9:] = toshow.reshape(-1)
-
+    cgoary[2] = cgo.VERTEX
+    for i in range(breaks):
+        lb0 = (i + 0) * (n + nextra) + nheader + 4
+        ub0 = (i + 1) * (n + nextra) + nheader + 4 - nextra
+        lb1 = (i + 0) * n
+        ub1 = (i + 1) * n
+        cgoary[lb0 - 5:lb0] = cgo.COLOR, 1, 1, 1, cgo.VERTEX
+        cgoary[lb0:ub0] = toshow[lb1:ub1].reshape(-1)
+        # color block gaps
+        cgoary[ub0 - 1:ub0 + 4] = cgo.COLOR, 0, 0, 0, cgo.VERTEX
+        cgoary[ub0 + 4:ub0 + 8] = toshow[ub1 - 4:ub1]
+        ub1 = ub1 if ub1 < len(toshow) else 0
+        cgoary[ub0 + 8:ub0 + 12] = toshow[ub1:ub1 + 4]
     cgoary[-1] = cgo.END  # overrwites last VERTEX op
 
+    pymol.cmd.set('cgo_line_width', linewidth)
     pymol.cmd.load_cgo(cgoary, name, -1)
     # print(stateno, flush=True)
     # pymol.cmd.load_cgo(cgoary, name, state=stateno)
