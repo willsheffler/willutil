@@ -320,6 +320,8 @@ def hframe(u, v, w, cen=None):
 
 def htrans(trans, dtype='f8'):
     trans = np.asanyarray(trans)
+    if trans.shape[-1] == 4:
+        trans = trans[..., :3]
     if trans.shape[-1] != 3:
         raise ValueError('trans should be shape (..., 3)')
     tileshape = trans.shape[:-1] + (1, 1)

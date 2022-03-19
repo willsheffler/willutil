@@ -3,22 +3,76 @@ from willutil.homog.hgeom import *
 from willutil.sym.symframes import *
 from willutil.viz import showme
 
-def frames(sym, axis=None, bbsym=None, asym_of=None):
+def frames(sym, axis=None, axis0=None, bbsym=None, asym_of=None):
+    '''generate symmetrical coordinate frames
+    axis aligns Cx or bbaxis or axis0 to this
+    bbsym removes redundant building block frames, e.g. TET with c3 bbs has 4 frames 
+    asym_of removes redundant frames wrt a point group, e.g. turn TET into C3 and get asym unit of that C3
+    '''
+
     sym = sym.lower()
-    frames = sym_frames[sym.lower()]
+    f = sym_frames[sym.lower()].copy()
     if asym_of:
         assert asym_of.startswith('c')
+        dupaxis = axes(sym, asym_of)
+        dupnfold = int(asym_of[1:])
+        # print('asym_of', asym_of, dupaxis)
+
+        angs = np.arange(dupnfold) / dupnfold * 2 * np.pi
+        dups = hrot(dupaxis, angs)  #.reshape(-1, 4, 4)
+        f2 = dups[None, :] @ f[:, None]
+
+        # print(f2.shape)
+        # showme(dups)
+        # showme(f2[:, 2].reshape(-1, 4, 4) @ htrans(dupaxis * 10))
+
+        # these vectors are arbitrary, must just avoid aligning any axes along dup axis
+        # tiny deltas break symmetry
+        x = hdot(f2, dupaxis + [0.0001, 0.0002, 0.0003, 0])
+        tgtdir = hcross([70, 3, 0.1, 0], dupaxis)
+        # tgtdir = [7, 3, 1, 0]
+        dot = hdot(tgtdir, x)
+        # print(dot)
+        # print(dot.shape)
+        # print(dot)
+        order = np.argsort(-dot, axis=-1)
+        # print(np.sum(dot[:, 0] == dot[:, 1]))
+        # print(np.sum(order, axis=0))
+        # print(np.sum(order[:, 0] == 0))
+        # showme(f)
+        assert np.sum(order[:, 0] == 0) == len(f) / dupnfold
+        f = f[order[:, 0] == 0]
+
+        # print(f.shape)
+        # print(dupaxis)
+        # showme(dupaxis / 10)
+        # showme(dupaxis / -10)
+        # showme(f @ htrans(dupaxis * 4) @ align_vector(dupaxis, Ux))
+
     if bbsym:
+        assert asym_of is None or bbsym == asym_of
         if not bbsym.lower().startswith('c'):
             raise ValueError(f'bad bblock sym {bbsym}')
         bbnfold = int(bbsym[1:])
-        bbaxes = symaxes_all[sym][bbnfold]
-        # xform symaxs by frame
-        frames = remove_if_same_axis(frames, bbaxes)
+        # bbaxes = axes(sym, bbnfold, all=True)
+        bbaxes = symaxes_all[sym][bbnfold].copy()
+        partial_ok = asym_of is not None
+        f = remove_if_same_axis(f, bbaxes, partial_ok=partial_ok)
+
     if axis is not None:
-        assert sym.startswith('c')
-        frames = align_vector(Uz, axis)
-    return frames
+        if axis0 is not None: startax = axis0
+        elif sym.startswith('c'): startax = Uz
+        elif bbsym: startax = axes(sym, bbnfold)
+        elif asym_of: startax = axes(sym, asym_of)
+        else: raise ValueError(f'dont know what to align to axis={axis}')
+        # print(startax)
+        # print(axis)
+        # showme(f @ htrans(10 * f[0, :, 2]), name='a')
+        f = align_vector(startax, axis) @ f
+        # showme(f @ htrans(10 * f[0, :, 2]), name='b')
+        # assert 0
+
+    return f
 
 def axes(sym, nfold, all=False):
     if isinstance(nfold, str):
@@ -26,25 +80,38 @@ def axes(sym, nfold, all=False):
         nfold = int(nfold[1:])
     sym = sym.lower()
     if all:
-        return symaxes_all[sym][nfold]
-    return symaxes[sym][nfold]
+        return symaxes_all[sym][nfold].copy()
+    return symaxes[sym][nfold].copy()
 
-def remove_if_same_axis(frames, bbaxes, onesided=True):
+def remove_if_same_axis(frames, bbaxes, onesided=True, partial_ok=False):
     assert onesided
-    axes = hxform(frames, bbaxes[0])  # bblocks always aligned on z axis
+    axes = hxform(frames, bbaxes[0])
     dots = hdot(bbaxes, axes, outerprod=True)
-    # print('bbaxis', bbaxes[0], bbaxes.shape)
-    assert np.allclose(1, np.max(np.abs(dots), axis=-1))
-    # print(dots)
+
     uniq = list()
+    whichaxis = list()
     for i, dot in enumerate(dots):
-        w = np.where(np.logical_and(0.999 < abs(dot), abs(dot) < 1.001))[0]
+        w = np.where(np.logical_and(0.99999999 < np.abs(dot), np.abs(dot) < 1.00000001))[0]
         assert len(w) == 1
         w = w[0]
-        # print(w)
-        if not np.any(np.isclose(dots[:i, w], dot[w])):
+        if not np.any(np.isclose(dots[:i, w], dot[w], atol=0.00000001)):
+            whichaxis.append(w)
             uniq.append(i)
-    # print(len(bbaxes), uniq)
+    whichaxis = np.array(whichaxis)
+    # should be same num of bblocks on axis, (1 or 2)
+    for i in range(len(bbaxes)):
+        n = np.sum(whichaxis == i)
+        # print(i, n)
+        if not partial_ok:
+            assert n == np.sum(whichaxis == 0)
+        if n == 2:
+            a, b = np.where(whichaxis == i)[0]
+            assert np.allclose(axes[uniq[a]], -axes[uniq[b]], atol=1e-6)
+        elif n != 1:
+            if not partial_ok:
+                assert 0
+
+    uniq = np.array(uniq)
     return frames[uniq]
 
 ambiguous_axes = dict(
@@ -364,7 +431,7 @@ def sym_permute_axes_choices(sym):
 for icyc in range(2, 33):
     sym = 'c%i' % icyc
     symaxes[sym] = {icyc: np.array([0, 0, 1, 0])}
-    angles = np.pi * np.arange(icyc) / icyc
+    angles = 2 * np.pi * np.arange(icyc) / icyc
     # print(angles * 180 / np.pi)
     sym_frames[sym] = hrot(Uz, angles)
     sym_point_angles[sym] = {

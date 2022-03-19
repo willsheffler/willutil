@@ -3,7 +3,7 @@ import pytest
 import willutil.chem.roschem
 import willutil as wu
 
-def test_extract_rosetta_chem_data():
+def _test_extract_rosetta_chem_data():
     pytest.importorskip('pyrosetta')
     aas = ['LYS']
     # aas = []

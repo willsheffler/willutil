@@ -135,6 +135,8 @@ def _(toshow, state, line_strip=False, **kw):
 _nxforms = 0
 
 def get_different_colors(ncol, niter=100):
+    rs = np.random.get_state()
+    np.random.seed(0)
     maxmincoldis, best = 0, None
     for i in range(niter):
         colors = np.random.rand(ncol, 3)
@@ -142,6 +144,10 @@ def get_different_colors(ncol, niter=100):
         np.fill_diagonal(cdis2, 4.0)
         if np.min(cdis2) > maxmincoldis:
             maxmincoldis, best = np.min(cdis2), colors
+    np.random.set_state(rs)
+    # paranoid sanity cheeck
+    newrs = np.random.get_state()
+    assert rs[0] == newrs[0] and np.all(rs[1] == newrs[1]) and rs[2:] == newrs[2:]
     return best
 
 def get_cgo_name(name):
@@ -264,13 +270,18 @@ def show_ndarray_line_strip(
     stateno=1,
     linewidth=1,
     breaks=1,
+    breaks_groups=1,
     **kw,
 ):
     # v = pymol.cmd.get_view()
     state["seenit"][name] += 1
     name += "_%i" % state["seenit"][name]
+
     if col == 'rand':
-        col = get_different_colors(len(toshow))
+        col = get_different_colors(breaks // 3)
+    else:
+        col = np.ones((breaks, 3))
+
     mycgo = list()
     assert toshow.shape[-1] == 4
     toshow = toshow.reshape(-1, 4)
@@ -289,7 +300,9 @@ def show_ndarray_line_strip(
         ub0 = (i + 1) * (n + nextra) + nheader + 4 - nextra
         lb1 = (i + 0) * n
         ub1 = (i + 1) * n
-        cgoary[lb0 - 5:lb0] = cgo.COLOR, 1, 1, 1, cgo.VERTEX
+        cgoary[lb0 - 5:lb0 - 4] = cgo.COLOR
+        cgoary[lb0 - 4:lb0 - 1] = col[i // 3]
+        cgoary[lb0 - 1:lb0] = cgo.VERTEX
         cgoary[lb0:ub0] = toshow[lb1:ub1].reshape(-1)
         # color block gaps
         cgoary[ub0 - 1:ub0 + 4] = cgo.COLOR, 0, 0, 0, cgo.VERTEX
@@ -376,9 +389,10 @@ def showme_pymol(what, name='noname', hideprev=False, headless=False, block=Fals
         _showme_state["launched"] = 1
 
     # print('############## showme_pymol', type(what), '##############')
-    if hideprev: pymol.cmd.disable('all')
+    # if hideprev:
+    # pymol.cmd.disable('all')
     # pymol.cmd.full_screen('on')
-    result = pymol_load(what, _showme_state, name=name, **kw)
+    result = pymol_load(what, _showme_state, name=name, hideprev=hideprev, **kw)
     # # pymol.cmd.set('internal_gui_width', '20')
 
     while block:
