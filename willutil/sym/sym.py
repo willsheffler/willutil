@@ -3,13 +3,21 @@ from willutil.homog.hgeom import *
 from willutil.sym.symframes import *
 from willutil.viz import showme
 
-def frames(sym, axis=None, axis0=None, bbsym=None, asym_of=None):
+def frames(
+    sym,
+    axis=None,
+    axis0=None,
+    bbsym=None,
+    asym_of=None,
+    sortframes=True,
+):
     '''generate symmetrical coordinate frames
     axis aligns Cx or bbaxis or axis0 to this
     bbsym removes redundant building block frames, e.g. TET with c3 bbs has 4 frames 
     asym_of removes redundant frames wrt a point group, e.g. turn TET into C3 and get asym unit of that C3
     '''
-
+    if sym is None:
+        return np.eye(4).reshape(1, 4, 4)
     sym = sym.lower()
     f = sym_frames[sym.lower()].copy()
     if asym_of:
@@ -72,6 +80,15 @@ def frames(sym, axis=None, axis0=None, bbsym=None, asym_of=None):
         # showme(f @ htrans(10 * f[0, :, 2]), name='b')
         # assert 0
 
+    if sortframes:
+        csym = bbsym or asym_of
+        if csym:
+            if axis is None: axis = axes(sym, csym)
+            order = np.argsort(-hdot(axis, hdot(f, axes(sym, csym))))
+            f = f[order]
+            # print(order)
+            # assert 0
+
     return f
 
 def axes(sym, nfold, all=False):
@@ -99,6 +116,7 @@ def remove_if_same_axis(frames, bbaxes, onesided=True, partial_ok=False):
             uniq.append(i)
     whichaxis = np.array(whichaxis)
     # should be same num of bblocks on axis, (1 or 2)
+    whichpartial = list()
     for i in range(len(bbaxes)):
         n = np.sum(whichaxis == i)
         # print(i, n)

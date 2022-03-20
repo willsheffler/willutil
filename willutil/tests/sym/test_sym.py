@@ -43,30 +43,37 @@ def test_frames_asym_remove_sameaxis():
     ]
     for i, ((sym, csym), (n1, n2, n3, n4)) in enumerate(config):
         # print(i, sym, csym)
-        cart = 10 * wu.sym.axes(sym, csym)
+        cart = wu.sym.axes(sym, csym)
+        # cart = [0, 0, 10]
 
         f = wu.sym.frames(sym, bbsym=csym, asym_of=csym, axis=[0, 0, 1])
         assert len(f) == n1
         # print(i, sym, csym, len(f))
-        # f[:, :, 3] += wu.homog.hdot(f, cart)
+        f[:, :, 3] += 10 * wu.homog.hdot(f, cart)
+        # print(f[0, :, 2])
+        # assert 0
+
+        # order frames along Z!!!
+
         # wu.viz.showme(f, spheres=0.5, name=f'test_{sym}_{csym}_bbsym_asymof')
+        # wu.viz.showme(f[1:-1], spheres=1, name=f'test_{sym}_{csym}_bbsym_asymof')
 
         f = wu.sym.frames(sym, asym_of=csym, axis=[0, 0, 1])
         assert len(f) == n2
         # print(i, sym, csym, len(f))
-        # f[:, :, 3] += wu.homog.hdot(f, cart)
+        f[:, :, 3] += 10 * wu.homog.hdot(f, cart)
         # wu.viz.showme(f, spheres=0.4, name=f'test_{sym}_{csym}_asymof')
 
         f = wu.sym.frames(sym, bbsym=csym, axis=[0, 0, 1])
         assert len(f) == n3
         # print(i, sym, csym, len(f))
-        # f[:, :, 3] += wu.homog.hdot(f, cart)
+        f[:, :, 3] += 10 * wu.homog.hdot(f, cart)
         # wu.viz.showme(f, spheres=0.3, name=f'test_{sym}_{csym}_bbsym')
 
         f = wu.sym.frames(sym, axis=[0, 0, 1], axis0=wu.sym.axes(sym, csym))
         assert len(f) == n4
         # print(i, sym, csym, len(f))
-        # f[:, :, 3] += wu.homog.hdot(f, cart)
+        f[:, :, 3] += 10 * wu.homog.hdot(f, cart)
         # wu.viz.showme(f, spheres=0.2, name=f'test_{sym}_{csym}_all')
 
 def test_remove_if_same_axis():

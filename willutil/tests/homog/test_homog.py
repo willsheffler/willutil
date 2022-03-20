@@ -41,7 +41,7 @@ def test_htrans():
     assert np.allclose(htrans([1, 3, 7])[:3, 3], (1, 3, 7))
 
     with pytest.raises(ValueError):
-        htrans([4, 3, 2, 1])
+        htrans([4, 3, 2, 1, 1])
 
     s = (2, )
     t = np.random.randn(*s, 3)
@@ -1257,7 +1257,7 @@ if __name__ == '__main__':
 
     test_axis_ang_cen_of_rand_180()
 
-    test_sym()
+    # test_sym()
     test_homo_rotation_single()
     test_homo_rotation_center()
     test_homo_rotation_array()
