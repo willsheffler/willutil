@@ -11,22 +11,22 @@ p.add_argument("--check_with_yapf", action='store_false', default=True)
 kw = wu.Bunch(p.parse_args())
 
 def main():
-    import sys
-    if kw.files:
-        for f in kw.files:
-            wu.format.align_code_file(
-                f,
-                inplace=True,
-                yapf=True,
-                **kw,
-            )
-    else:
-        wu.format.align_code_file(
-            None,
+   import sys
+   if kw.files:
+      for f in kw.files:
+         wu.format.align_code_file(
+            f,
             inplace=True,
             yapf=True,
             **kw,
-        )
+         )
+   else:
+      wu.format.align_code_file(
+         None,
+         inplace=True,
+         yapf=True,
+         **kw,
+      )
 
 if __name__ == '__main__':
-    main()
+   main()

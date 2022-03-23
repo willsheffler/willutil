@@ -3,177 +3,208 @@ import os
 __all__ = ("Bunch", "bunchify", "unbunchify")
 
 class Bunch(dict):
-    def __init__(self, __arg_or_ns=None, _strict=True, **kw):
-        if __arg_or_ns is not None:
-            try:
-                super().__init__(__arg_or_ns)
-            except TypeError:
-                super().__init__(vars(__arg_or_ns))
-        self.update(kw)
-        self.__dict__['_special'] = dict()
-        self.__dict__['_special']['_strict_lookup'] = _strict
+   def __init__(self, __arg_or_ns=None, _strict='__STRICT', _default='__NODEFALT', **kw):
+      if __arg_or_ns is not None:
+         try:
+            super().__init__(__arg_or_ns)
+         except TypeError:
+            super().__init__(vars(__arg_or_ns))
+      self.update(kw)
+      self.__dict__['_special'] = dict()
+      self.__dict__['_special']['strict_lookup'] = _strict or _strict == '__STRICT'
+      if _default == '__NODEFALT':
+         _default = None
+      elif _strict == '__STRICT':
+         # if _default passed explicitly, and strict is not, don't be strict
+         self.__dict__['_special']['strict_lookup'] = False
+      self.__dict__['_special']['default'] = _default
+      # self._clear = self.clear()
+      # del self.__dict__['clear']
+      for k in self:
+         if hasattr(super(), k):
+            raise ValueError(f'{k} is a reseved name for Bunch')
 
-    def __str__(self):
-        s = 'Bunch(' + os.linesep
-        if len(self) == 0:
-            return 'Bunch()'
-        w = int(min(40, max(len(str(k)) for k in self)))
-        for k, v in self.items():
-            s += f'  {k:{f"{w}"}} = {v}' + os.linesep
-        s += ')'
-        return s
+   def default(self):
+      dflt = self._special['default']
+      if hasattr(dflt, '__call__'):
+         return dflt()
+      else:
+         return dflt
 
-    def reduce(self, func, strict=True):
-        'reduce all contained iterables using <func>'
-        for k in self:
-            try:
-                self[k] = func(self[k])
-            except TypeError as ex:
-                if not strict:
-                    raise ex
-        return self
+   def __str__(self):
+      s = 'Bunch(' + os.linesep
+      if len(self) == 0:
+         return 'Bunch()'
+      w = int(min(40, max(len(str(k)) for k in self)))
+      for k, v in self.items():
+         s += f'  {k:{f"{w}"}} = {v}' + os.linesep
+      s += ')'
+      return s
 
-    def accumulate(self, other, strict=True):
-        'accumulate all keys in other, adding empty lists if k not in self, extend other[k] is list'
-        if isinstance(other, list):
-            for b in other:
-                self.accumulate(b)
-            return self
-        if not isinstance(other, dict):
-            raise TypeError('Bunch.accumulate needs Bunch or dict type')
-        not_empty = len(self)
-        for k in other:
-            if not k in self:
-                if strict and not_empty:
-                    raise ValueError(f'{k} not in this Bunch')
-                self[k] = list()
-            if not isinstance(self[k], list):
-                self[k] = [self[k]]
-            o = other[k]
-            if not isinstance(o, list):
-                o = [o]
-                self[k].extend(o)
-        return self
+   def reduce(self, func, strict=True):
+      'reduce all contained iterables using <func>'
+      for k in self:
+         try:
+            self[k] = func(self[k])
+         except TypeError as ex:
+            if not strict:
+               raise ex
+      return self
 
-    def __contains__(self, k):
-        if k == '_special':
-            return False
-        try:
-            return dict.__contains__(self, k) or k in self.__dict__
-        except:
-            return False
+   def accumulate(self, other, strict=True):
+      'accumulate all keys in other, adding empty lists if k not in self, extend other[k] is list'
+      if isinstance(other, list):
+         for b in other:
+            self.accumulate(b)
+         return self
+      if not isinstance(other, dict):
+         raise TypeError('Bunch.accumulate needs Bunch or dict type')
+      not_empty = len(self)
+      for k in other:
+         if not k in self:
+            if strict and not_empty:
+               raise ValueError(f'{k} not in this Bunch')
+            self[k] = list()
+         if not isinstance(self[k], list):
+            self[k] = [self[k]]
+         o = other[k]
+         if not isinstance(o, list):
+            o = [o]
+            self[k].extend(o)
+      return self
 
-    def is_strict(self):
-        return self._special['_strict_lookup']
+   def __contains__(self, k):
+      if k == '_special':
+         return False
+      try:
+         return dict.__contains__(self, k) or k in self.__dict__
+      except:
+         return False
 
-    def __getattr__(self, k):
-        if k == '_special':
-            raise ValueError(f'_special is a reseved name for Bunch')
-        if self._special['_strict_lookup'] and not k in self:
-            raise KeyError(f'Bunch is missing value for key {k}')
-        try:
-            # Throws exception if not in prototype chain
-            return object.__getattribute__(self, k)
-        except AttributeError:
-            try:
-                return self[k]
-            except KeyError:
-                return None
+   def is_strict(self):
+      return self._special['strict_lookup']
 
-    def __setattr__(self, k, v):
-        try:
-            # Throws exception if not in prototype chain
-            object.__getattribute__(self, k)
-        except AttributeError:
-            try:
-                self[k] = v
-            except:
-                raise AttributeError(k)
-        else:
-            object.__setattr__(self, k, v)
+   def __getitem__(self, key):
+      return self.__getattr__(key)
 
-    def __delattr__(self, k):
-        try:
-            # Throws exception if not in prototype chain
-            object.__getattribute__(self, k)
-        except AttributeError:
-            try:
-                del self[k]
-            except KeyError:
-                raise AttributeError(k)
-        else:
-            object.__delattr__(self, k)
+   # try:
+   # super().__getitem__(key)
+   # except KeyError:
+   # return self._special('default')()
 
-    def copy(self):
-        return Bunch.from_dict(super().copy())
-
-    def sub(self, __BUNCH_SUB_ITEMS=None, **kw):
-        if len(kw) == 0:
-            if isinstance(__BUNCH_SUB_ITEMS, dict):
-                kw = __BUNCH_SUB_ITEMS
+   def __getattr__(self, k):
+      if k == '_special':
+         raise ValueError(f'_special is a reseved name for Bunch')
+      if self._special['strict_lookup'] and not k in self:
+         raise KeyError(f'Bunch is missing value for key {k}')
+      try:
+         # Throws exception if not in prototype chain
+         return object.__getattribute__(self, k)
+      except AttributeError:
+         try:
+            return super().__getitem__(k)
+         except KeyError as e:
+            if self._special['strict_lookup']:
+               raise e
             else:
-                kw = vars(__BUNCH_SUB_ITEMS)
-        newbunch = self.copy()
-        newbunch._special = self._special
-        for k, v in kw.items():
-            if v is None and k in newbunch:
-                del newbunch[k]
-            else:
-                newbunch.__setattr__(k, v)
-        return newbunch
+               return self.default()
 
-    def visit_remove_if(self, func, recurse=True, depth=0):
-        toremove = list()
-        for k, v in self.__dict__.items():
-            if k == '_special':
-                continue
-            if func(k, v, depth):
-                toremove.append(k)
-            elif isinstance(v, Bunch) and recurse:
-                v.visit_remove_if(func, recurse, depth=depth + 1)
-        for k, v in self.items():
-            if func(k, v, depth):
-                toremove.append(k)
-            elif isinstance(v, Bunch) and recurse:
-                v.visit_remove_if(func, recurse, depth=depth + 1)
-        for k in toremove:
-            self.__delattr__(k)
+   def __setattr__(self, k, v):
+      if hasattr(super(), k):
+         raise ValueError(f'{k} is a reseved name for Bunch')
+      try:
+         # Throws exception if not in prototype chain
+         object.__getattribute__(self, k)
+      except AttributeError:
+         try:
+            self[k] = v
+         except:
+            raise AttributeError(k)
+      else:
+         object.__setattr__(self, k, v)
 
-    def __add__(self, addme):
-        newbunch = self.copy()
-        for k, v in addme.items():
-            if k in self:
-                newbunch.__setattr__(k, self[k] + v)
-            else:
-                newbunch.__setattr__(k, v)
-        return newbunch
+   def __delattr__(self, k):
+      try:
+         # Throws exception if not in prototype chain
+         object.__getattribute__(self, k)
+      except AttributeError:
+         try:
+            del self[k]
+         except KeyError:
+            raise AttributeError(k)
+      else:
+         object.__delattr__(self, k)
 
-    def __getstate__(self):
-        return self.__dict__
+   def copy(self):
+      return Bunch.from_dict(super().copy())
 
-    def __setstate__(self, d):
-        self.__dict__.update(d)
+   def sub(self, __BUNCH_SUB_ITEMS=None, _onlynone=False, **kw):
+      if len(kw) == 0:
+         if isinstance(__BUNCH_SUB_ITEMS, dict):
+            kw = __BUNCH_SUB_ITEMS
+         else:
+            kw = vars(__BUNCH_SUB_ITEMS)
+      newbunch = self.copy()
+      newbunch._special = self._special
+      for k, v in kw.items():
+         if v is None and k in newbunch:
+            del newbunch[k]
+         elif not _onlynone or k not in self or self[k] is None:
+            newbunch.__setattr__(k, v)
+      return newbunch
 
-    def __repr__(self):
-        args = ", ".join(["%s=%r" % (key, self[key]) for key in self.keys()])
-        return "%s(%s)" % (self.__class__.__name__, args)
+   def visit_remove_if(self, func, recurse=True, depth=0):
+      toremove = list()
+      for k, v in self.__dict__.items():
+         if k == '_special':
+            continue
+         if func(k, v, depth):
+            toremove.append(k)
+         elif isinstance(v, Bunch) and recurse:
+            v.visit_remove_if(func, recurse, depth=depth + 1)
+      for k, v in self.items():
+         if func(k, v, depth):
+            toremove.append(k)
+         elif isinstance(v, Bunch) and recurse:
+            v.visit_remove_if(func, recurse, depth=depth + 1)
+      for k in toremove:
+         self.__delattr__(k)
 
-    @staticmethod
-    def from_dict(d):
-        return bunchify(d)
+   def __add__(self, addme):
+      newbunch = self.copy()
+      for k, v in addme.items():
+         if k in self:
+            newbunch.__setattr__(k, self[k] + v)
+         else:
+            newbunch.__setattr__(k, v)
+      return newbunch
+
+   def __getstate__(self):
+      return self.__dict__
+
+   def __setstate__(self, d):
+      self.__dict__.update(d)
+
+   def __repr__(self):
+      args = ", ".join(["%s=%r" % (key, self[key]) for key in self.keys()])
+      return "%s(%s)" % (self.__class__.__name__, args)
+
+   @staticmethod
+   def from_dict(d):
+      return bunchify(d)
 
 def bunchify(x):
-    if isinstance(x, dict):
-        return Bunch(**x)
-    elif isinstance(x, (list, tuple)):
-        return type(x)(bunchify(v) for v in x)
-    else:
-        return x
+   if isinstance(x, dict):
+      return Bunch(**x)
+   elif isinstance(x, (list, tuple)):
+      return type(x)(bunchify(v) for v in x)
+   else:
+      return x
 
 def unbunchify(x):
-    if isinstance(x, dict):
-        return dict((k, unbunchify(v)) for k, v in x.items())
-    elif isinstance(x, (list, tuple)):
-        return type(x)(unbunchify(v) for v in x)
-    else:
-        return x
+   if isinstance(x, dict):
+      return dict((k, unbunchify(v)) for k, v in x.items())
+   elif isinstance(x, (list, tuple)):
+      return type(x)(unbunchify(v) for v in x)
+   else:
+      return x

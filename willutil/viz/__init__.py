@@ -1,5 +1,14 @@
-from willutil.viz import pymol_cgo
-from willutil.viz import pymol_viz
+try:
+   from willutil.viz import pymol_cgo
+   from willutil.viz import pymol_viz
+   from willutil.viz.pymol_viz import *
+except ImportError:
+   printed_warning = False
 
-# from willutil.viz.pymol_viz import showme, clear, pymol_load
-from willutil.viz.pymol_viz import *
+   def showme(*a, **b):
+      global printed_warning
+      if not printed_warning:
+         printed_warning = True
+         print('!' * 80)
+         print('WARNING willutil.viz.showme not available without pymol')
+         print('!' * 80)
