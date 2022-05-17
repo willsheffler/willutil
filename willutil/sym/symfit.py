@@ -786,7 +786,7 @@ def symfit_mc_play(
          # frames = symfit.xfit @ candidate
          frames = candidate
          lowerr = symfit.weighted_err
-         if isamp % 20 == 0: print(f'accept rate {naccept/(isamp+1)}')
+         # if isamp % 20 == 0: print(f'accept rate {naccept/(isamp+1)}')
          # col = (isamp / maxiters, 1 - iasmp / maxiters, 1)
          # wu.showme(candidate, name='mc%05i' % isamp, col=col, center=[0, 0, 0],
          # **showme_opts)b
@@ -798,21 +798,27 @@ def symfit_mc_play(
             if showsymdups:
                fresh = not showfulltraj
                fresh = True
-               symdupframes = wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :]
+               # symdupframes = wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :]
+               symdupframes = frames
                wu.showme(symdupframes, name='xfitmc%05i' % isamp, col=None,
                          **showme_opts.sub(fresh=fresh))
 
                # os.makedirs('symfit_movie', exist_ok=True)
                # pymol.cmd.png(f'symfit_movie/symdup_{ipng:04}.png', )
 
-            pymol.cmd.turn('y', 1)
+            # pymol.cmd.turn('y', 1)
 
             if showsymops:
-               fresh = True  # not showfulltraj and not showsymdups
+               fresh = not showfulltraj and not showsymdups
                pairs = wu.sym.stupid_pairs_from_symops(symfit.symops)
+               # print(type(pairs))
+               # print(pairs)
+               # pairs = {(0, 1): pairs[(0, 1)]}
+               del pairs[(0, 1)]
+               # assert 0
                wu.showme(pairs, name='pairsstop', col='bycx', center=[0, 0, 0],
                          **showme_opts.sub(fresh=fresh))
-
+               # assert 0
                # os.makedirs('symfit_movie', exist_ok=True)
                # fname = f'symfit_movie/symops_{ipng:04}.png'
                # print('MOVIE FRAME', isamp, fname, flush=True)
@@ -834,8 +840,13 @@ def symfit_mc_play(
             # abserr = symframes_coherence(wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :])
             # if abserr < goalerr: break
 
+   # pairs = wu.sym.stupid_pairs_from_symops(symfit.symops)
+   # wu.showme(pairs, name='pairsstop', col='bycx', center=[0, 0, 0],
+   # **showme_opts.sub(fresh=fresh))
+
    frames, symfit = best
    symdupframes = wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :]
+   symdupframes = frames
    symerr = symframes_coherence(symdupframes)
 
    os.system(
@@ -994,3 +1005,16 @@ def setup_test_frames(nframes, sym, cart_sd_fuzz, rot_sd_fuzz, tprelen=20, tprer
    frames = xpost @ selframes @ xpre @ xfuzz  # move subunit
    radius = None
    return frames, xpre, xpost, xfuzz, radius
+
+'''
+
+
+   symop_hel_err
+   symop_ang_err
+   cen_align_err
+   axes_fit_err
+   radius_err
+   redundant_cyclic_err
+
+
+'''

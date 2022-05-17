@@ -213,8 +213,8 @@ def cgo_fan(
       col=(1, 1, 1),
       col2=None,
       startpoint=[1, 2, 3, 1],
+      ntri=10,
 ):
-   ntri = 10
    if arc > 10: arc = np.radians(arc)
    col2 = col2 or col
    rot = wu.homog.hrot(axis, arc / (ntri + 0), cen)

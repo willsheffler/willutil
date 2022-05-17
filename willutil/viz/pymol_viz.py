@@ -54,7 +54,7 @@ def _(
       elif np.isclose(ang, np.pi * 2 / 4, atol=cyc_ang_match_tol): col = [1, 0, 1]
       elif np.isclose(ang, np.pi * 2 / 5, atol=cyc_ang_match_tol): col = [1, 0, 1]
       elif np.isclose(ang, np.pi * 2 / 6, atol=cyc_ang_match_tol): col = [1, 0, 1]
-      else: col = [1, 1, 1]
+      else: col = [0.5, 0.5, 0.5]
    elif col == 'random':
       col = np.random.rand(3) / 2 + 0.5
       # col = (1, 1, 1)
@@ -72,7 +72,7 @@ def _(
    axis = toshow.cenaxis if usefitaxis else toshow.axs
 
    if abs(toshow.ang) < 1e-6:
-      mycgo += cgo_cyl(cen1, cen2, 0.01, col=(1, 1, 1))
+      mycgo += cgo_cyl(cen1, cen2, 0.01, col=(1, 0, 0))
       mycgo += cgo_sphere(cen=(cen1 + cen2) / 2, rad=0.1, col=(1, 1, 1))
    else:
       c1 = cen + axis * axislen / 2
@@ -263,6 +263,8 @@ def show_ndarray_lines(toshow, state=None, name=None, col=None, scale=100, boths
    name += "_%i" % state["seenit"][name]
    if col == 'rand':
       col = get_different_colors(len(toshow))
+   if not isinstance(col[0], (list, np.ndarray, tuple)):
+      col = [col] * len(toshow)
 
    assert toshow.shape[-2:] == (4, 2)
    toshow = toshow.reshape(-1, 4, 2)
@@ -394,7 +396,18 @@ _showme_state = dict(
    seenit=defaultdict(lambda: -1),
 )
 
-def showme_pymol(what, name='noname', headless=False, block=False, fresh=False, **kw):
+def showme_pymol(
+   what,
+   name='noname',
+   headless=False,
+   block=False,
+   fresh=False,
+   png=None,
+   pngturn=0,
+   ray=True,
+   one_png_only=False,
+   **kw,
+):
    global _showme_state
    if "PYTEST_CURRENT_TEST" in os.environ and not headless:
       print("NOT RUNNING PYMOL IN UNIT TEST")
@@ -413,6 +426,9 @@ def showme_pymol(what, name='noname', headless=False, block=False, fresh=False, 
       # assert 0
       _showme_state["launched"] = 1
 
+      cmd.turn('x', -90)
+      cmd.turn('y', 100)
+
    # print('############## showme_pymol', type(what), '##############')
 
    if fresh:
@@ -421,6 +437,17 @@ def showme_pymol(what, name='noname', headless=False, block=False, fresh=False, 
    # pymol.cmd.full_screen('on')
    result = pymol_load(what, _showme_state, name=name, **kw)
    # # pymol.cmd.set('internal_gui_width', '20')
+
+   if png:
+      pymol.cmd.set('ray_opaque_background', 1)
+      if os.path.dirname(png):
+         os.makedirs(os.path.dirname(png), exist_ok=True)
+      pymol.cmd.turn('y', pngturn)
+      if ray:
+         pymol.cmd.ray()
+      pymol.cmd.png(png)
+      if one_png_only:
+         assert 0
 
    while block:
       time.sleep(1)

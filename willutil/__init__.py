@@ -34,6 +34,9 @@ from willutil.viz import showme
 from willutil.sym import compute_symfit as symfit
 from willutil.homog import (
    I,
+   Ux,
+   Uy,
+   Uz,
    align_vector as halign,
    align_vector,
    align_vectors as halign2,

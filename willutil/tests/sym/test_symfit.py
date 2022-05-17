@@ -16,14 +16,14 @@ def main():
       seed = np.random.randint(2**32 - 1)
       for i in range(ntest):
          result = wu.sym.symfit_mc_play(
-            sym='oct',
-            nframes=6,
-            goalerr=0.004,
+            sym='tet',
+            nframes=3,
+            goalerr=0.04,
             showme=True,
             quiet=True,
             fuzzstdfrac=0.4,
             random_frames=True,
-            maxiters=100000,
+            maxiters=500,
             max_cartsd=1,
             scaletemp=1.0,
             scalesamp=1.0,
@@ -36,16 +36,18 @@ def main():
             showsymops=True,
             showopts=wu.Bunch(
                cyc_ang_match_tol=0.3,
-               axisrad=0.09,
+               axisrad=0.19,
                helicalrad=None,
-               fixedfansize=1.0,
-               spheres=0.1,
-               headless=True,
+               fixedfansize=2.0,
+               spheres=0.8,
+               weight=4,
+               headless=False,
+               xyzlen=[2, 2, 2],
                # headless=False,
             ),
             # seed=seed,
             noambigaxes=True,
-            seed=2123641879,
+            # seed=4193001408,
          )
          if result.besterr > 0.3:
             nfail += 1
