@@ -1,8 +1,13 @@
 import willutil as wu
 from willutil.sym.pymol_symgen import (SymElem, generate_sym_trie, BuildCGO,
                                        ComponentCenterVisitor, CountFrames, Vec)
-import pymol
-from pymol import cmd
+try:
+   import pymol
+   from pymol import cmd
+
+except ImportError:
+   pymol = None
+   cmd = None
 
 # I213
 #    AXS = [Vec(1, 1, 1), Vec(1, 0, 0)]

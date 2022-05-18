@@ -782,7 +782,8 @@ def mofview():
    # cmd.show('lin')
    # cmd.show('sti', 'resn asp+das+cys+dcs+his+dhi+glu+dgu+zn')
 
-cmd.extend('mofview', mofview)
+if cmd is not None:
+   cmd.extend('mofview', mofview)
 
 def makedx(sel='all', n=2, name=None):
    if not name:
