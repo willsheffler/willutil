@@ -9,6 +9,7 @@ def allclose(a, b, atol):
          return False
    return True
 
+@pytest.mark.skip
 def test_timer():
    with Timer() as timer:
       time.sleep(0.02)
@@ -32,6 +33,7 @@ def test_timer():
    with pytest.raises(ValueError):
       timer.report_dict(order='oarenstoiaen')
 
+@pytest.mark.skip
 def test_summary():
    with Timer() as timer:
       time.sleep(0.01)

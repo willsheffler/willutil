@@ -14,6 +14,8 @@ setup(
       'pandas',
       'xarray',
       'netcdf4',
+      'rmsd',
+      'seaborn',
    ], package_data={
       'willutil': [
          'data/rosetta_residue_type_info.json.xz',

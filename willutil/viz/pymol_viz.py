@@ -15,8 +15,18 @@ from willutil import homog as hm
 from willutil.viz.pymol_cgo import *
 from willutil.sym.symfit import RelXformInfo
 
+_showme_state = wu.Bunch(
+   launched=0,
+   seenit=defaultdict(lambda: -1),
+)
+
 @singledispatch
-def pymol_load(toshow, state=None, name=None, **kw):
+def pymol_load(
+   toshow,
+   # state=_showme_state,
+   # name=None,
+   **kw,
+):
    raise NotImplementedError("pymol_load: don't know how to show " + str(type(toshow)))
 
 _nsymops = 0
@@ -24,7 +34,7 @@ _nsymops = 0
 @pymol_load.register(RelXformInfo)
 def _(
    toshow,
-   state,
+   state=_showme_state,
    col='bycx',
    name='xrel',
    showframes=True,
@@ -39,6 +49,7 @@ def _(
    usefitaxis=False,
    axisrad=0.1,
    helicalrad=None,
+   addtocgo=None,
    **kw,
 ):
    global _nsymops
@@ -64,7 +75,7 @@ def _(
    mycgo = list()
 
    if showframes:
-      state, cgo = pymol_visualize_xforms(toshow.frames, state, make_cgo_only=True, **kw)
+      cgo = pymol_visualize_xforms(toshow.frames, state, make_cgo_only=True, **kw)
       mycgo += cgo
 
    cen1 = toshow.frames[0, :, 3]
@@ -94,35 +105,51 @@ def _(
                        fixedfansize if fixedfansize else toshow.rad * scalefans, arc=ang, col=col,
                        startpoint=cen1)
 
-   if make_cgo_only:
-      return state, mycgo
-   pymol.cmd.load_cgo(mycgo, 'symops%i' % _nsymops)
-   pymol.cmd.set_view(v)
+   if addtocgo is None:
+      pymol.cmd.load_cgo(mycgo, 'symops%i' % _nsymops)
+      pymol.cmd.set_view(v)
+   else:
+      addtocgo.extend(mycgo)
 
-   return state
+   if make_cgo_only:
+      return mycgo
+   return None
 
 @pymol_load.register(dict)
-def _(toshow, state=None, name='stuff_in_dict', **kw):
+def _(
+   toshow,
+   state=_showme_state,
+   name='stuff_in_dict',
+   **kw,
+):
    if "pose" in toshow:
-      state = pymol_load(toshow["pose"], state, **kw)
+      pymol_load(toshow["pose"], state, **kw)
       pymol_xform(toshow["position"], state["last_obj"])
    else:
       mycgo = list()
       for k, v in toshow.items():
-         state, cgo = pymol_load(v, state, name=k, make_cgo_only=True, **kw)
+         cgo = pymol_load(v, state, name=k, make_cgo_only=True, **kw)
          mycgo += cgo
       pymol.cmd.load_cgo(mycgo, name)
-   return state
 
 @pymol_load.register(list)
-def _(toshow, state=None, name=None, **kw):
+def _(
+   toshow,
+   state=_showme_state,
+   name=None,
+   **kw,
+):
    for t in toshow:
       print('    ##############', type(t), '################')
-      state = pymol_load(t, state, **kw)
-   return state
+      pymol_load(t, state, **kw)
 
 @pymol_load.register(np.ndarray)
-def _(toshow, state, line_strip=False, **kw):
+def _(
+   toshow,
+   state=_showme_state,
+   line_strip=False,
+   **kw,
+):
    # showaxes()
    shape = toshow.shape
    if line_strip:
@@ -136,7 +163,7 @@ def _(toshow, state, line_strip=False, **kw):
    elif shape == (4, ) or len(shape) == 2 and shape[-1] == 4:
       return show_ndarray_point_or_vec(toshow, state, **kw)
    else:
-      raise NotImplementedError
+      raise NotImplementedError(f'cant understand np.ndarray type {type(toshow)}')
 
 _nxforms = 0
 
@@ -174,7 +201,7 @@ def get_cgo_name(name):
 
 def pymol_visualize_xforms(
    xforms,
-   state,
+   state=_showme_state,
    name='xforms',
    randpos=0.0,
    xyzlen=[5 / 4, 1, 4 / 5],
@@ -188,6 +215,7 @@ def pymol_visualize_xforms(
    rays=0,
    framecolors=None,
    perturb=0,
+   addtocgo=None,
    **kw,
 ):
    if perturb != 0: raise NotImplementedError
@@ -249,15 +277,28 @@ def pymol_visualize_xforms(
       for ix, xform in enumerate(xforms):
          mycgo += cgo_cyl(center, xform[:, 3], rays, col=col1)
 
+   if addtocgo is None:
+      pymol.cmd.load_cgo(mycgo, name)
+      pymol.cmd.zoom()
+   else:
+      addtocgo.extend(cgo)
+
    if make_cgo_only:
-      return state, mycgo
-   pymol.cmd.load_cgo(mycgo, name)
+      return mycgo
+   return None
 
-   pymol.cmd.zoom()
-   return state
-
-def show_ndarray_lines(toshow, state=None, name=None, col=None, scale=100, bothsides=False,
-                       spheres=3, cyl=0, **kw):
+def show_ndarray_lines(
+   toshow,
+   state=_showme_state,
+   name=None,
+   col=None,
+   scale=100,
+   bothsides=False,
+   spheres=3,
+   cyl=0,
+   addtocgo=None,
+   **kw,
+):
    name = name or "ndarray_lines"
    state["seenit"][name] += 1
    name += "_%i" % state["seenit"][name]
@@ -280,12 +321,14 @@ def show_ndarray_lines(toshow, state=None, name=None, col=None, scale=100, boths
          cgo.extend(cgo_sphere(ray[:3, 0], col=color, rad=spheres))
          if bothsides:
             cgo.extend(cgo_sphere(ray[:3, 0] + ray[:3, 1], col=color, rad=spheres))
-   cmd.load_cgo(cgo, name + '_%i' % i)
-   return state
+   if addtocgo is None:
+      cmd.load_cgo(cgo, name + '_%i' % i)
+   else:
+      addtocgo.extend(cgo)
 
 def show_ndarray_line_strip(
    toshow,
-   state=None,
+   state=_showme_state,
    name='lines',
    col=[1, 1, 1],
    stateno=1,
@@ -293,9 +336,11 @@ def show_ndarray_line_strip(
    breaks=1,
    breaks_groups=1,
    whitetopn=0,
+   addtocgo=None,
    **kw,
 ):
    # v = pymol.cmd.get_view()
+   print('!!!!!!!!!!!!!!!!!!!!!!!!', state)
    state["seenit"][name] += 1
    name += "_%i" % state["seenit"][name]
 
@@ -338,13 +383,25 @@ def show_ndarray_line_strip(
    cgoary[-1] = cgo.END  # overrwites last VERTEX op
 
    pymol.cmd.set('cgo_line_width', linewidth)
-   pymol.cmd.load_cgo(cgoary, name, -1)
+
+   if addtocgo is None:
+      pymol.cmd.load_cgo(cgoary, name, -1)
+   else:
+      addtocgo.extend(cgoary)
+
    # print(stateno, flush=True)
    # pymol.cmd.load_cgo(cgoary, name, state=stateno)
    # pymol.cmd.set_view(v)
-   return state
 
-def show_ndarray_point_or_vec(toshow, state=None, name='points', col=None, **kw):
+def show_ndarray_point_or_vec(
+   toshow,
+   state=_showme_state,
+   name='points',
+   col=None,
+   sphere=1.0,
+   addtocgo=None,
+   **kw,
+):
    v = pymol.cmd.get_view()
    state["seenit"][name] += 1
    name += "_%i" % state["seenit"][name]
@@ -358,16 +415,25 @@ def show_ndarray_point_or_vec(toshow, state=None, name='points', col=None, **kw)
       if isinstance(color[0], (list, tuple, np.ndarray)):
          color = color[i]
       if p_or_v[3] > 0.999:
-         mycgo += cgo_sphere(p_or_v, 1.0, col=color)
+         mycgo += cgo_sphere(p_or_v, sphere, col=color)
       elif np.abs(p_or_v[3]) < 0.001:
          mycgo += cgo_vecfrompoint(p_or_v * 20, p_or_v, col=color)
       else:
          raise NotImplementedError
-   pymol.cmd.load_cgo(mycgo, name)
-   pymol.cmd.set_view(v)
-   return state
 
-def show_ndarray_n_ca_c(toshow, state=None, name=None, **kw):
+   if addtocgo is None:
+      pymol.cmd.load_cgo(mycgo, name)
+      pymol.cmd.set_view(v)
+   else:
+      addtocgo.extend(mycgo)
+
+def show_ndarray_n_ca_c(
+   toshow,
+   state=_showme_state,
+   name=None,
+   col=[1, 1, 1],
+   **kw,
+):
    name = name or "ndarray_n_ca_c"
    state["seenit"][name] += 1
    name += "_%i" % state["seenit"][name]
@@ -389,16 +455,9 @@ def show_ndarray_n_ca_c(toshow, state=None, name=None, **kw):
             )
             out.write(line)
    pymol.cmd.load(fname)
-   return state
-
-_showme_state = dict(
-   launched=0,
-   seenit=defaultdict(lambda: -1),
-)
 
 def showme_pymol(
    what,
-   name='noname',
    headless=False,
    block=False,
    fresh=False,
@@ -426,8 +485,8 @@ def showme_pymol(
       # assert 0
       _showme_state["launched"] = 1
 
-      cmd.turn('x', -90)
-      cmd.turn('y', 100)
+      # cmd.turn('x', -90)
+      # cmd.turn('y', 100)
 
    # print('############## showme_pymol', type(what), '##############')
 
@@ -435,7 +494,7 @@ def showme_pymol(
       clear_pymol()
 
    # pymol.cmd.full_screen('on')
-   result = pymol_load(what, _showme_state, name=name, **kw)
+   result = pymol_load(what, state=_showme_state, **kw)
    # # pymol.cmd.set('internal_gui_width', '20')
 
    if png:

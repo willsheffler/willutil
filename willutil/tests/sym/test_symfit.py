@@ -807,9 +807,9 @@ def test_d4_error():
    fit = wu.sym.compute_symfit(sym='d4', frames=frames)
    assert fit
 
-@pytest.mark.xfail
-def test_cyclic():
-   assert 0
+# @pytest.mark.xfail
+# def test_cyclic():
+#    assert 0
 
 if __name__ == '__main__':
    main()
