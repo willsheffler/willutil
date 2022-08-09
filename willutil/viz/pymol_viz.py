@@ -340,18 +340,20 @@ def show_ndarray_line_strip(
    **kw,
 ):
    # v = pymol.cmd.get_view()
-   print('!!!!!!!!!!!!!!!!!!!!!!!!', state)
+   # print('!!!!!!!!!!!!!!!!!!!!!!!!', state)
    state["seenit"][name] += 1
    name += "_%i" % state["seenit"][name]
 
    if col == 'rand':
       col = get_different_colors(breaks // breaks_groups)
-      # print(col)
-   else:
-      col = np.array(col)
-      if col.shape == (3, ):
-         col = np.tile(col, (breaks, 1))
-   col[:whitetopn] = (1, 1, 1)
+   if isinstance(col, list) and isinstance(col[0], (int, float)):
+      col = [col] * breaks
+   if isinstance(col, (tuple, str)):
+      col = [col] * breaks
+   col[:whitetopn] = [(1, 1, 1)] * whitetopn
+   # print('-' * 10)
+   # print(col)
+   # print('-' * 10)
 
    mycgo = list()
    assert toshow.shape[-1] == 4
@@ -547,3 +549,22 @@ def format_atom(
 def pymol_xform(name, xform):
    assert name in pymol.cmd.get_object_list()
    pymol.cmd.transform_object(name, xform.flatten())
+
+def get_palette(kind='default', rgb=True, blacklist=['white', 'black']):
+   if kind is None:
+      kind = 'default'
+
+   palette = list()
+   if kind == 'default':
+      for col, idx in cmd.get_color_indices():
+         if col in blacklist: continue
+         if rgb: col = cmd.get_color_tuple(idx)
+         palette.append(col)
+
+   elif isinstance(kind, list):
+      palette = kind  # pass through for convenience
+
+   else:
+      raise ValueError(f'unknown palette kind {kind}')
+
+   return palette

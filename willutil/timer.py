@@ -67,6 +67,7 @@ class Timer:
       verbose=False,
       keeppriorname=False,
    ):
+      name = str(name)
       if name is None:
          name = self.lastname
       elif not keeppriorname:

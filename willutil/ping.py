@@ -9,10 +9,10 @@ def PING(
    printit=True,
    ntraceback=-1,
    skip_process=True,
-   fullpath=True,
+   # fullpath=False,
    flush=True,
    exit=False,
-   emphasis=0,
+   emphasis=1,
    **kw,
 ):
    # message = str(message) if message else '<no msg>'
@@ -35,6 +35,7 @@ def PING(
       # for ix, x in enumerate(frame):
       # print('   ', ix, x)
    if message is not None: message = str(message) + ' '
+   message = '*' + message + '* '
    msg = 'PING ' + message + '/'.join(framestrs)
    for i in range(emphasis):
       msg = '!' * 80 + '\n' + msg + '\n' + '!' * 80

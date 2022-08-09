@@ -95,6 +95,8 @@ class Bunch(dict):
    def __getattr__(self, k):
       if k == '_special':
          raise ValueError(f'_special is a reseved name for Bunch')
+      if k == '__deepcopy__':
+         return None
       if self._special['strict_lookup'] and not k in self:
          raise KeyError(f'Bunch is missing value for key {k}')
       try:

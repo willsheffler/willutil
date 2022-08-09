@@ -18,8 +18,9 @@ def frames(
     bbsym removes redundant building block frames, e.g. TET with c3 bbs has 4 frames 
     asym_of removes redundant frames wrt a point group, e.g. turn TET into C3 and get asym unit of that C3
     '''
-   if sym is None:
+   if sym is None or sym.upper() == 'C1':
       return np.eye(4).reshape(1, 4, 4)
+   sym = map_sym_abbreviation(sym)
    sym = sym.lower()
    f = sym_frames[sym.lower()].copy()
 
@@ -79,6 +80,12 @@ def frames(
          # assert 0
 
    return f
+
+def map_sym_abbreviation(sym):
+   if sym == 'I': return 'icos'
+   if sym == 'O': return 'oct'
+   if sym == 'T': return 'tet'
+   return sym
 
 def min_symaxis_angle(sym):
    symaxes = axes(sym)
