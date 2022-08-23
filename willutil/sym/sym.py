@@ -150,7 +150,7 @@ _ = -1
 tetrahedral_axes = {
    2: hnormalized([1, 0, 0]),
    3: hnormalized([1, 1, 1]),
-   '2b': hnormalized([1, 1, _])  # other c3
+   '3b': hnormalized([1, 1, _])  # other c3
 }
 octahedral_axes = {
    2: hnormalized([1, 1, 0]),
@@ -184,7 +184,7 @@ tetrahedral_axes_all = {
       # [1, 1, _],
       # [1, _, 1],
    ]),
-   '2b':
+   '3b':
    hnormalized([
       [_, 1, 1],
       [1, _, 1],
@@ -320,7 +320,7 @@ tetrahedral_angles = {(i, j): angle(
    tetrahedral_axes[j],
 ) for i, j in [
    (2, 3),
-   (3, '2b'),
+   (3, '3b'),
 ]}
 octahedral_angles = {(i, j): angle(
    octahedral_axes[i],
