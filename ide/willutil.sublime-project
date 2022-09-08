@@ -24,6 +24,10 @@
 		{
 			"name": "test_align_code",
 			"shell_cmd": "cd $folder; ./willutil/app/codealign  tmp.py &> log/sublime_build.log"
+		},
+		{
+			"name": "gm220902",
+			"shell_cmd": "cd $folder; python ./willutil/app/gm220902.py &> log/sublime_build.log"
 		}
 
 	],

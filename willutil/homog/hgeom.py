@@ -2,12 +2,225 @@ import itertools as it, functools as ft
 import deferred_import
 
 np = deferred_import.deferred_import('numpy')
+torch = deferred_import.deferred_import('torch')
 
 I = np.eye(4)
 Ux = np.array([1, 0, 0, 0])
 Uy = np.array([0, 1, 0, 0])
 Uz = np.array([0, 0, 1, 0])
 
+def th_homog(rot, trans=None, **kw):
+   if trans is None:
+      trans = torch.as_tensor([0, 0, 0, 0], **kw)
+   trans = torch.as_tensor(trans)
+
+   if rot.shape == (3, 3):
+      rot = torch.cat([rot, torch.tensor([[0., 0., 0.]])], axis=0)
+      rot = torch.cat([rot, torch.tensor([[0], [0], [0], [1]])], axis=1)
+
+   assert rot.shape[-2:] == (4, 4)
+   assert trans.shape[-1:] == (4, )
+
+   h = torch.cat([rot[:, :3], trans[:, None]], axis=1)
+   return h
+
+def th_rot(axis, angle, center=None, dtype=None, requires_grad=False):
+   dtype = dtype or torch.float32
+   rot = t_rot(axis, angle, dtype=dtype, shape=(4, 4), requires_grad=requires_grad)
+   if center is None: center = [0, 0, 0, 1]
+   center = torch.tensor(center, dtype=dtype, requires_grad=requires_grad)
+
+   # cen = center.detach().numpy().copy()
+   # x, y, z = cen[..., 0], cen[..., 1], cen[..., 2]
+   # tmp = rot.detach().numpy().copy()
+   # tmp[..., 0, 3] = x - tmp[..., 0, 0] * x - tmp[..., 0, 1] * y - tmp[..., 0, 2] * z
+   # tmp[..., 1, 3] = y - tmp[..., 1, 0] * x - tmp[..., 1, 1] * y - tmp[..., 1, 2] * z
+   # tmp[..., 2, 3] = z - tmp[..., 2, 0] * x - tmp[..., 2, 1] * y - tmp[..., 2, 2] * z
+   # tmp[..., 3, 3] = 1
+   # ic(tmp)
+
+   x, y, z = center[..., 0], center[..., 1], center[..., 2]
+   center = torch.tensor([
+      x - rot[..., 0, 0] * x - rot[..., 0, 1] * y - rot[..., 0, 2] * z,
+      y - rot[..., 1, 0] * x - rot[..., 1, 1] * y - rot[..., 1, 2] * z,
+      z - rot[..., 2, 0] * x - rot[..., 2, 1] * y - rot[..., 2, 2] * z,
+      1.0,
+   ], requires_grad=requires_grad)
+   r = torch.cat([rot[:, :3], center[:, None]], axis=1)
+   # r[0].backward()
+   # assert 0
+   return r
+
+def t_rot(axis, angle, degrees=False, dtype=None, shape=(3, 3), requires_grad=False):
+
+   dtype = dtype or torch.float32
+   axis = torch.tensor(axis, dtype=dtype, requires_grad=requires_grad)
+   angle = angle * np.pi / 180.0 if degrees else angle
+   angle = torch.tensor(angle, dtype=dtype, requires_grad=requires_grad)
+   if axis.shape and angle.shape and not is_broadcastable(axis.shape[:-1], angle.shape):
+      raise ValueError('axis and angle not compatible: ' + str(axis.shape) + ' ' +
+                       str(angle.shape))
+   axis = axis / torch.linalg.norm(axis, axis=-1)[..., None]
+   a = torch.cos(angle / 2.0)
+   tmp = axis * -torch.sin(angle / 2)[..., None]
+   b, c, d = tmp[..., 0], tmp[..., 1], tmp[..., 2]
+   aa, bb, cc, dd = a * a, b * b, c * c, d * d
+   bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
+   if shape == (3, 3):
+      rot = torch.tensor([
+         [aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
+         [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
+         [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc],
+      ], requires_grad=requires_grad)
+   elif shape == (4, 4):
+      rot = torch.tensor([
+         [aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac), 0],
+         [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab), 0],
+         [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc, 0],
+         [0, 0, 0, 1],
+      ], requires_grad=requires_grad)
+   else:
+      raise ValueError(f't_rot shape must be 3,3 or 4,4')
+
+   return rot
+
+def th_rms(a, b):
+   assert a.shape == b.shape
+   return torch.sqrt(torch.sum(torch.square(a - b)) / len(a))
+
+def th_xform(xform, stuff, **kw):
+   xform = xform.to(stuff.dtype)
+   return _hxform_impl(xform, stuff, **kw)
+
+def th_rmsfit(mobile, target):
+   'use kabsch method to get rmsd fit'
+   mobile_cen = torch.mean(mobile, axis=0)
+   target_cen = torch.mean(target, axis=0)
+   mobile = mobile - mobile_cen
+   target = target - target_cen
+
+   covariance = mobile.T[:3] @ target[:, :3]
+   V, S, W = torch.linalg.svd(covariance)
+   if 0 > torch.det(V) * torch.det(W):
+      S = torch.tensor([S[0], S[1], -S[2]], dtype=S.dtype)
+      # S[-1] = -S[-1]
+      # ic(S - S1)
+      V = torch.cat([V[:, :-1], -V[:, -1, None]], dim=1)
+      # V[:, -1] = -V[:, -1]
+      # ic(V - V1)
+      # assert 0
+   rot_m2t = th_homog(V @ W).T
+   trans_m2t = target_cen - rot_m2t @ mobile_cen
+   xform_mobile_to_target = th_homog(rot_m2t, trans_m2t)
+
+   mobile = mobile + mobile_cen
+   target = target + target_cen
+   mobile_fit_to_target = th_xform(xform_mobile_to_target, mobile)
+   rms = th_rms(target, mobile_fit_to_target)
+
+   return rms, mobile_fit_to_target, xform_mobile_to_target
+
+def th_randpoint(shape=(), cen=[0, 0, 0], std=1, dtype=None):
+   dtype = dtype or torch.float32
+   cen = torch.as_tensor(cen)
+   if isinstance(shape, int): shape = (shape, )
+   p = th_point(torch.randn(*(shape) + (3, )) * std + cen)
+   return p
+
+def th_randvec(shape=(), std=1, dtype=None):
+   dtype = dtype or torch.float32
+   if isinstance(shape, int): shape = (shape, )
+   return th_vec(torch.randn(*(shape + (3, ))) * std)
+
+def th_randunit(shape=(), cen=[0, 0, 0], std=1):
+   dtype = dtype or torch.float32
+   if isinstance(shape, int): shape = (shape, )
+   v = th_normalized(np.random.randn(*(shape + (3, ))) * std)
+   return v
+
+def th_point(point, **kw):
+   if point.shape[-1] == 4:
+      return point
+   elif point.shape[-1] == 3:
+      r = torch.ones(point.shape[:-1] + (4, ), **kw)
+      r[..., :3] = point
+      return r
+   elif point.shape[-2:] == (4, 4):
+      return point[..., :, 3]
+   else:
+      raise ValueError('point must len 3 or 4')
+
+def th_vec(vec):
+   vec = torch.as_tensor(vec)
+   if vec.shape[-1] == 4:
+      vec[..., 3] = 0
+      return vec
+   elif vec.shape[-1] == 3:
+      r = torch.zeros(vec.shape[:-1] + (4, ), dtype=vec.dtype)
+      r[..., :3] = vec
+      return r
+   else:
+      raise ValueError('vec must len 3 or 4')
+
+def th_normalized(a):
+   a = torch.as_tensor(a)
+   if (not a.shape and len(a) == 3) or (a.shape and a.shape[-1] == 3):
+      a, tmp = torch.zeros(a.shape[:-1] + (4, ), dtype=a.type), a
+      a[..., :3] = tmp
+   a2 = a[:]
+   a2[..., 3] = 0
+   return a2 / th_norm(a2)[..., None]
+
+def th_norm(a):
+   a = torch.as_tensor(a)
+   return torch.sqrt(torch.sum(a[..., :3] * a[..., :3], axis=-1))
+
+def th_axis_angle_hel(xforms):
+   axis, angle = th_axis_angle(xforms)
+   hel = th_dot(axis, xforms[..., :, 3])
+   return axis, angle, hel
+
+def th_axis_angle(xforms):
+   axis = th_axis(xforms)
+   angl = th_angle(xforms)
+   return axis, angl
+
+def th_axis(xforms):
+   if xforms.shape[-2:] == (4, 4):
+      return th_normalized(
+         torch.stack((
+            xforms[..., 2, 1] - xforms[..., 1, 2],
+            xforms[..., 0, 2] - xforms[..., 2, 0],
+            xforms[..., 1, 0] - xforms[..., 0, 1],
+            torch.zeros(xforms.shape[:-2]),
+         ), axis=-1))
+   if xforms.shape[-2:] == (3, 3):
+      return th_normalized(
+         torch.stack((
+            xforms[..., 2, 1] - xforms[..., 1, 2],
+            xforms[..., 0, 2] - xforms[..., 2, 0],
+            xforms[..., 1, 0] - xforms[..., 0, 1],
+         ), axis=-1))
+   else:
+      raise ValueError('wrong shape for xform/rotation matrix: ' + str(xforms.shape))
+
+def th_angle(xforms):
+   tr = xforms[..., 0, 0] + xforms[..., 1, 1] + xforms[..., 2, 2]
+   cos = (tr - 1.0) / 2.0
+   angl = torch.arccos(torch.clip(cos, -1, 1))
+   return angl
+
+def th_dot(a, b, outerprod=False):
+   a = torch.as_tensor(a)
+   b = torch.as_tensor(b)
+   if outerprod:
+      shape1 = a.shape[:-1]
+      shape2 = b.shape[:-1]
+      a = a.reshape((1, ) * len(shape2) + shape1 + (-1, ))
+      b = b.reshape(shape2 + (1, ) * len(shape1) + (-1, ))
+   return torch.sum(a[..., :3] * b[..., :3], axis=-1)
+
+###############################################################################
 def hdist(x, y):
    shape1 = x.shape[:-2]
    shape2 = y.shape[:-2]
@@ -48,10 +261,13 @@ def hdiff(x, y, lever):
 
    return diff
 
-def hxform(x, stuff, outerprod=False, flat=False):
-   x = np.asanyarray(x)
+def hxform(x, stuff, **kw):
+   x = np.asarray(x)
    # print('hxform', x.shape, stuff.shape, outerprod, flat)
-   stuff = np.asanyarray(stuff)
+   stuff = np.asarray(stuff)
+   return _hxform_impl(x, stuff, **kw)
+
+def _hxform_impl(x, stuff, outerprod=False, flat=False):
    if stuff.shape[-1] == 3:
       stuff = hpoint(stuff)
    assert x.shape[-2:] == (4, 4)
@@ -68,7 +284,7 @@ def hxform(x, stuff, outerprod=False, flat=False):
          result = x @ stuff
    elif stuff.shape[-2:] == (4, 1) or stuff.shape[-1] == 4:
       if stuff.shape[-1] != 1:
-         stuff = stuff[..., np.newaxis]
+         stuff = stuff[..., None]
       if outerprod:
          shape1 = x.shape[:-2]
          shape2 = stuff.shape[:-2]
@@ -78,8 +294,8 @@ def hxform(x, stuff, outerprod=False, flat=False):
          result = a @ b
 
       # if stuff.shape[-1] == 4:
-      # stuff = stuff[..., np.newaxis]
-      # stuff = stuff[np.newaxis]
+      # stuff = stuff[..., None]
+      # stuff = stuff[None]
       else:
          result = x @ stuff
       result = result.squeeze()
@@ -109,10 +325,15 @@ def quat_to_upper_half(quat):
    quat[ineg] = -quat[ineg]
    return quat
 
-def rand_quat(shape=()):
+def rand_quat(shape=(), seed=None):
+   if seed is not None:
+      randstate = np.random.get_state()
+      np.random.seed(seed)
+
    if isinstance(shape, int): shape = (shape, )
    q = np.random.randn(*shape, 4)
    q /= np.linalg.norm(q, axis=-1)[..., np.newaxis]
+   if seed is not None: np.random.set_state(randstate)
    return quat_to_upper_half(q)
 
 def rot_to_quat(xform):
@@ -193,11 +414,16 @@ def quat_multiply(q, r):
    t[..., 3] = r0 * q3 - r1 * q2 + r2 * q1 + r3 * q0
    return t
 
-def h_rand_points(shape=(1, )):
+def h_rand_points(shape=(1, ), seed=None):
+   if seed is not None:
+      randstate = np.random.get_state()
+      np.random.seed(seed)
+
    pts = np.ones(shape + (4, ))
    pts[..., 0] = np.random.randn(*shape)
    pts[..., 1] = np.random.randn(*shape)
    pts[..., 2] = np.random.randn(*shape)
+   if seed is not None: np.random.set_state(randstate)
    return pts
 
 def guess_is_degrees(angle):
@@ -463,17 +689,34 @@ def is_valid_rays(r):
       return False
    return True
 
-def rand_point(shape=()):
-   if isinstance(shape, int): shape = (shape, )
-   return hpoint(np.random.randn(*(shape + (3, ))))
+def rand_point(shape=(), seed=None):
+   if seed is not None:
+      randstate = np.random.get_state()
+      np.random.seed(seed)
 
-def rand_vec(shape=()):
    if isinstance(shape, int): shape = (shape, )
+   p = hpoint(np.random.randn(*(shape + (3, ))))
+   if seed is not None: np.random.set_state(randstate)
+   return p
+
+def rand_vec(shape=(), seed=None):
+   if seed is not None:
+      randstate = np.random.get_state()
+      np.random.seed(seed)
+
+   if isinstance(shape, int): shape = (shape, )
+   if seed is not None: np.random.set_state(randstate)
    return hvec(np.random.randn(*(shape + (3, ))))
 
-def rand_unit(shape=()):
+def rand_unit(shape=(), seed=None):
+   if seed is not None:
+      randstate = np.random.get_state()
+      np.random.seed(seed)
+
    if isinstance(shape, int): shape = (shape, )
-   return hnormalized(np.random.randn(*(shape + (3, ))))
+   v = hnormalized(np.random.randn(*(shape + (3, ))))
+   if seed is not None: np.random.set_state(randstate)
+   return v
 
 def angle(u, v, outerprod=False):
    u, v = hnormalized(u), hnormalized(v)
@@ -491,7 +734,10 @@ def line_angle(u, v, outerprod=False):
 def line_angle_degrees(u, v, outerprod=False):
    return np.degrees(line_angle(u, v, outerprod))
 
-def rand_ray(shape=(), cen=(0, 0, 0), sdev=1):
+def rand_ray(shape=(), cen=(0, 0, 0), sdev=1, seed=None):
+   if seed is not None:
+      randstate = np.random.get_state()
+      np.random.seed(seed)
    if isinstance(shape, int): shape = (shape, )
    cen = np.asanyarray(cen)
    if cen.shape[-1] not in (3, 4):
@@ -504,9 +750,13 @@ def rand_ray(shape=(), cen=(0, 0, 0), sdev=1):
    r[..., :3, 0] = cen
    r[..., 3, 0] = 1
    r[..., :3, 1] = norm
+   if seed is not None: np.random.set_state(randstate)
    return r
 
-def rand_xform_aac(shape=(), axis=None, ang=None, cen=None):
+def rand_xform_aac(shape=(), axis=None, ang=None, cen=None, seed=None):
+   if seed is not None:
+      randstate = np.random.get_state()
+      np.random.seed(seed)
    if isinstance(shape, int): shape = (shape, )
    if axis is None:
       axis = rand_unit(shape)
@@ -515,35 +765,54 @@ def rand_xform_aac(shape=(), axis=None, ang=None, cen=None):
    if cen is None:
       cen = rand_point(shape)
    # q = rand_quat(shape)
+   if seed is not None: np.random.set_state(randstate)
    return hrot(axis, ang, cen)
 
-def rand_xform_small(shape=(), cart_sd=0.001, rot_sd=0.001):
+def rand_xform_small(shape=(), cart_sd=0.001, rot_sd=0.001, seed=None):
+   if seed is not None:
+      randstate = np.random.get_state()
+      np.random.seed(seed)
    if isinstance(shape, int): shape = (shape, )
    axis = rand_unit(shape)
    ang = np.random.normal(0, rot_sd, shape) * np.pi
    x = hrot(axis, ang, [0, 0, 0, 1], degrees=False).squeeze()
    trans = np.random.normal(0, cart_sd, shape + (3, ))
    x[..., :3, 3] = trans
+   if seed is not None: np.random.set_state(randstate)
    return x.squeeze()
 
-def rand_xform(shape=(), cart_cen=0, cart_sd=1):
+def rand_xform(shape=(), cart_cen=0, cart_sd=1, seed=None):
+   if seed is not None:
+      randstate = np.random.get_state()
+      np.random.seed(seed)
    if isinstance(shape, int): shape = (shape, )
-   q = rand_quat(shape)
+   q = rand_quat(shape, )
    x = quat_to_xform(q)
    x[..., :3, 3] = np.random.randn(*shape, 3) * cart_sd + cart_cen
+   if seed is not None: np.random.set_state(randstate)
    return x
 
-def rand_rot(shape=()):
+def rand_rot(shape=(), seed=None):
+   if seed is not None:
+      randstate = np.random.get_state()
+      np.random.seed(seed)
+
    if isinstance(shape, int): shape = (shape, )
    quat = rand_quat(shape)
    rot = quat_to_rot(quat)
+   if seed is not None: np.random.set_state(randstate)
    return rot
 
-def rand_rot_small(shape=(), rot_sd=0.001):
+def rand_rot_small(shape=(), rot_sd=0.001, seed=None):
+   if seed is not None:
+      randstate = np.random.get_state()
+      np.random.seed(seed)
+
    if isinstance(shape, int): shape = (shape, )
    axis = rand_unit(shape)
    ang = np.random.normal(0, rot_sd, shape) * np.pi
    r = rot(axis, ang, degrees=False).squeeze()
+   if seed is not None: np.random.set_state(randstate)
    return r.squeeze()
 
 def proj(u, v):

@@ -14,10 +14,12 @@ from pymol import cgo, cmd
 from willutil import homog as hm
 from willutil.viz.pymol_cgo import *
 from willutil.sym.symfit import RelXformInfo
+import willutil.viz.primitives as prim
 
 _showme_state = wu.Bunch(
    launched=0,
    seenit=defaultdict(lambda: -1),
+   _nsymops=0,
 )
 
 @singledispatch
@@ -29,7 +31,31 @@ def pymol_load(
 ):
    raise NotImplementedError("pymol_load: don't know how to show " + str(type(toshow)))
 
-_nsymops = 0
+@pymol_load.register(prim.Cylinder)
+def _(
+   toshow,
+   state=_showme_state,
+   # name=None,
+   addtocgo=None,
+   make_cgo_only=False,
+   **kw,
+):
+   v = pymol.cmd.get_view()
+   mycgo = cgo_cyl(toshow.start, toshow.end, toshow.radius, col=toshow.color)
+
+   if addtocgo is None:
+
+      pymol.cmd.load_cgo(mycgo, 'cyl%i' % state._nsymops)
+      pymol.cmd.set_view(v)
+   else:
+      addtocgo.extend(mycgo)
+
+   if make_cgo_only:
+      return mycgo
+
+   pymol.cmd.load_cgo(mycgo, 'cyl%i' % state._nsymops)
+   pymol.cmd.set_view(v)
+   return None
 
 @pymol_load.register(RelXformInfo)
 def _(
@@ -52,8 +78,8 @@ def _(
    addtocgo=None,
    **kw,
 ):
-   global _nsymops
-   _nsymops += 1
+
+   state._nsymops += 1
    v = pymol.cmd.get_view()
 
    ang = toshow.ang
@@ -106,7 +132,7 @@ def _(
                        startpoint=cen1)
 
    if addtocgo is None:
-      pymol.cmd.load_cgo(mycgo, 'symops%i' % _nsymops)
+      pymol.cmd.load_cgo(mycgo, 'symops%i' % state._nsymops)
       pymol.cmd.set_view(v)
    else:
       addtocgo.extend(mycgo)
@@ -139,9 +165,14 @@ def _(
    name=None,
    **kw,
 ):
+   mycgo = list()
+   v = pymol.cmd.get_view()
    for t in toshow:
       print('    ##############', type(t), '################')
-      pymol_load(t, state, **kw)
+      mycgo.extend(pymol_load(t, state, addtocgo=mycgo, make_cgo_only=True, **kw))
+   pymol.cmd.set_view(v)
+   name = name or 'list'
+   pymol.cmd.load_cgo(mycgo, name)
 
 @pymol_load.register(np.ndarray)
 def _(

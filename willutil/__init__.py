@@ -1,4 +1,7 @@
 from deferred_import import deferred_import
+import icecream
+
+icecream.install()
 
 from willutil.bunch import Bunch, bunchify, unbunchify
 from willutil.timer import Timer

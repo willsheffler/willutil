@@ -32,13 +32,17 @@ class Bunch(dict):
          return dflt
 
    def __str__(self):
-      s = 'Bunch(' + os.linesep
-      if len(self) == 0:
-         return 'Bunch()'
-      w = int(min(40, max(len(str(k)) for k in self)))
-      for k, v in self.items():
-         s += f'  {k:{f"{w}"}} = {v}' + os.linesep
+      s = 'Bunch('
+      ', '.join(f'{k}={v}' for k, v in self.items())
       s += ')'
+      if len(s) > 120:
+         s = 'Bunch(' + os.linesep
+         if len(self) == 0:
+            return 'Bunch()'
+         w = int(min(40, max(len(str(k)) for k in self)))
+         for k, v in self.items():
+            s += f'  {k:{f"{w}"}} = {v}' + os.linesep
+         s += ')'
       return s
 
    def reduce(self, func, strict=True):

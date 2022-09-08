@@ -1,6 +1,7 @@
 try:
    from willutil.viz import pymol_cgo
    from willutil.viz import pymol_viz
+   from willutil.viz.primitives import *
    from willutil.viz.pymol_viz import *
 except ImportError:
    printed_warning = False
