@@ -6,8 +6,11 @@ import willutil.homog as hm
 
 def main():
 
-   test_th_intersect_planes()
    test_th_axis_angle_cen_hel()
+
+   assert 0
+
+   test_th_intersect_planes()
    test_th_axis_angle_hel()
    test_th_axis_angle()
    test_torch_rmsfit()
@@ -119,6 +122,12 @@ def test_th_intersect_planes():
    assert status == 0
    assert np.allclose(abs(norm.detach()), hnormalized([1, 1, 1, 0]))
 
+   p1 = np.array([[0.39263901, 0.57934885, -0.7693232, 1.],
+                  [-0.80966465, -0.18557869, 0.55677976, 0.]]).T
+   p2 = np.array([[0.14790894, -1.333329, 0.45396509, 1.],
+                  [-0.92436319, -0.0221499, 0.38087016, 0.]]).T
+   isct2, sts = intersect_planes(p1, p2)
+   isct2, norm2 = isct2.T
    p1 = torch.tensor([0.39263901, 0.57934885, -0.7693232, 1.])
    n1 = torch.tensor([-0.80966465, -0.18557869, 0.55677976, 0.])
    p2 = torch.tensor([0.14790894, -1.333329, 0.45396509, 1.])
@@ -127,6 +136,8 @@ def test_th_intersect_planes():
    assert sts == 0
    assert torch.all(th_ray_in_plane(p1, n1, isct, norm))
    assert torch.all(th_ray_in_plane(p2, n2, isct, norm))
+   assert np.allclose(isct.detach(), isct2)
+   assert np.allclose(norm.detach(), norm2)
 
    p1 = torch.tensor([2., 0, 0, 1], requires_grad=True)
    n1 = torch.tensor([1., 0, 0, 0], requires_grad=True)
@@ -153,14 +164,12 @@ def test_th_axis_angle_cen_hel():
    x = th_rot(axis0, ang0, cen0, h0)
    axis, ang, cen, hel = th_axis_angle_cen_hel(x)
    ax2, an2, cen2 = axis_ang_cen_of(x.detach().numpy())
-   ic(cen)
-   ic(cen2)
-
    assert np.allclose(ax2, axis.detach())
    assert np.allclose(an2, ang.detach())
+
    assert np.allclose(cen2, cen.detach())
    hel.backward()
-   assert np.allclose(ang0.grad, 0)
+   assert np.allclose(ang0.grad, 0, atol=1e-5)
    hg = h0.detach().numpy() * np.sqrt(3) / 3
    assert np.allclose(axis0.grad, [hg, hg, hg, 0])
 

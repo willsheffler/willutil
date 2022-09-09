@@ -9,11 +9,41 @@ Ux = np.array([1, 0, 0, 0])
 Uy = np.array([0, 1, 0, 0])
 Uz = np.array([0, 0, 1, 0])
 
-def th_axis_ang_cen(xforms):
+def th_axis_ang_cen(xforms, ident_match_tol=1e-8):
+
+   origshape = xforms.shape[:-2]
+   xforms = xforms.reshape(-1, 4, 4)
    axis, angle = th_axis_angle(xforms)
-   ev, cen = torch.linalg.eig(xforms)
-   cen = torch.real(cen[..., 3])
-   cen = cen / cen[..., 3][..., None]
+   not_ident = torch.abs(angle) > ident_match_tol
+   cen = torch.tile(
+      torch.tensor([0, 0, 0, 1]),
+      angle.shape,
+   ).reshape(*angle.shape, 4)
+
+   if torch.any(not_ident):
+      xforms1 = xforms[not_ident]
+      axis1 = axis[not_ident]
+      #  sketchy magic points...
+      p1, p2 = _axis_ang_cen_magic_points_torch
+      tparallel = th_dot(axis, xforms[..., :, 3])[..., None] * axis
+
+      q1 = xforms @ p1 - tparallel
+      q2 = xforms @ p2 - tparallel
+      n1 = th_normalized(q1 - p1).reshape(4)  # TODO: vectorize
+      n2 = th_normalized(q2 - p2).reshape(4)  # TODO: vectorize
+      c1 = ((p1 + q1) / 2.0).squeeze()
+      c2 = ((p2 + q2) / 2.0).squeeze()
+      isect, norm, status = th_intersect_planes(c1, n1, c2, n2)
+      cen1 = isect[..., :]
+
+      if len(cen) == len(cen1):
+         cen = cen1
+      else:
+         cen = torch.where(not_ident, cen1, cen)
+
+   axis = axis.reshape(*origshape, 4)
+   angle = angle.reshape(origshape)
+   cen = cen.reshape(*origshape, 4)
    return axis, angle, cen
 
 def th_rot(axis, angle, center=None, hel=None):
@@ -95,10 +125,10 @@ def th_quat_to_upper_half(quat):
    ineg1 = (quat[..., 0] == 0) * (quat[..., 1] < 0)
    ineg2 = (quat[..., 0] == 0) * (quat[..., 1] == 0) * (quat[..., 2] < 0)
    ineg3 = ((quat[..., 0] == 0) * (quat[..., 1] == 0) * (quat[..., 2] == 0) * (quat[..., 3] < 0))
-   # print(ineg0.shape)
-   # print(ineg1.shape)
-   # print(ineg2.shape)
-   # print(ineg3.shape)
+   # ic(ineg0.shape)
+   # ic(ineg1.shape)
+   # ic(ineg2.shape)
+   # ic(ineg3.shape)
    ineg = ineg0 + ineg1 + ineg2 + ineg3
    quat2 = torch.where(ineg, -quat, quat)
    return th_normalized(quat2)
@@ -142,7 +172,7 @@ def th_quat_to_rot(quat):
          1 - 2 * (qi**2 + qj**2),
       ]])
    ])
-   print(rot.shape)
+   ic(rot.shape)
    return rot
 
 def th_quat_to_xform(quat, dtype='f8'):
@@ -423,27 +453,27 @@ def hdiff(x, y, lever):
    axyz = a[..., :3, :3] * lever + a[..., :3, 3, None]
    bxyz = b[..., :3, :3] * lever + b[..., :3, 3, None]
 
-   # print(axyz[..., :, 0])
-   # print(axyz[..., :, 1])
-   # print(axyz[..., :, 2])
+   # ic(axyz[..., :, 0])
+   # ic(axyz[..., :, 1])
+   # ic(axyz[..., :, 2])
 
-   # print(bxyz[..., :, 0])
-   # print(bxyz[..., :, 1])
-   # print(bxyz[..., :, 2])
+   # ic(bxyz[..., :, 0])
+   # ic(bxyz[..., :, 1])
+   # ic(bxyz[..., :, 2])
 
-   # print(axyz[..., 0, :] - bxyz[..., 0, :])
-   # print(axyz[..., 1, :] - bxyz[..., 1, :])
-   # print(axyz[..., 2, :] - bxyz[..., 2, :])
+   # ic(axyz[..., 0, :] - bxyz[..., 0, :])
+   # ic(axyz[..., 1, :] - bxyz[..., 1, :])
+   # ic(axyz[..., 2, :] - bxyz[..., 2, :])
    diff = np.linalg.norm(axyz - bxyz, axis=-1)
    diff = np.mean(diff, axis=-1)
-   # print(diff)
+   # ic(diff)
    # assert 0
 
    return diff
 
 def hxform(x, stuff, **kw):
    x = np.asarray(x)
-   # print('hxform', x.shape, stuff.shape, outerprod, flat)
+   # ic('hxform', x.shape, stuff.shape, outerprod, flat)
    stuff = np.asarray(stuff)
    return _hxform_impl(x, stuff, **kw)
 
@@ -468,7 +498,7 @@ def _hxform_impl(x, stuff, outerprod=False, flat=False):
       if outerprod:
          shape1 = x.shape[:-2]
          shape2 = stuff.shape[:-2]
-         # print(x.shape, stuff.shape)
+         # ic(x.shape, stuff.shape)
          a = x.reshape(shape1 + (1, ) * len(shape2) + (4, 4))
          b = stuff.reshape((1, ) * len(shape1) + shape2 + (4, 1))
          result = a @ b
@@ -484,7 +514,7 @@ def _hxform_impl(x, stuff, outerprod=False, flat=False):
       # assert 0
    else:
       raise ValueError(f'hxform cant understand shape {stuff.shape}')
-   # print('result', result.shape)
+   # ic('result', result.shape)
    return result
 
 def is_valid_quat_rot(quat):
@@ -496,10 +526,10 @@ def quat_to_upper_half(quat):
    ineg1 = (quat[..., 0] == 0) * (quat[..., 1] < 0)
    ineg2 = (quat[..., 0] == 0) * (quat[..., 1] == 0) * (quat[..., 2] < 0)
    ineg3 = ((quat[..., 0] == 0) * (quat[..., 1] == 0) * (quat[..., 2] == 0) * (quat[..., 3] < 0))
-   # print(ineg0.shape)
-   # print(ineg1.shape)
-   # print(ineg2.shape)
-   # print(ineg3.shape)
+   # ic(ineg0.shape)
+   # ic(ineg1.shape)
+   # ic(ineg2.shape)
+   # ic(ineg3.shape)
    ineg = ineg0 + ineg1 + ineg2 + ineg3
    quat = quat.copy()
    quat[ineg] = -quat[ineg]
@@ -657,20 +687,20 @@ def axis_of(xforms, tol=1e-7, debug=False):
       eigval_is_1 = np.abs(eigval - 1) < 1e-6
       ixform, ieigval = np.where(eigval_is_1)
 
-      # print(ixform)
-      # print(ieigval)
+      # ic(ixform)
+      # ic(ieigval)
       try:
          axs[is180, :3] = eigvec[ixform, :, ieigval]
       except Exception as e:
 
-         # print(is_ident)
-         # print(is180)
-         # print(x180.shape)
+         # ic(is_ident)
+         # ic(is180)
+         # ic(x180.shape)
          for a, b, c in zip(eigval, eigvec, eigval_is_1):
-            print(a)
-            print(b)
-            print(c)
-         print()
+            ic(a)
+            ic(b)
+            ic(c)
+         ic()
          raise e
       # assert 0
 
@@ -1100,11 +1130,9 @@ def axis_ang_cen_of_planes(xforms, debug=False, ident_match_tol=1e-8):
       xforms1 = xforms[not_ident]
       axis1 = axis[not_ident]
       #  sketchy magic points...
-      p1 = (-32.09501046777237, 03.36227004372687, 35.34672781477340, 1)
-      p2 = (21.15113978202345, 12.55664537217840, -37.48294301885574, 1)
-      # p1 = rand_point()
-      # p2 = rand_point()
+      p1, p2 = _axis_ang_cen_magic_points_numpy
       tparallel = hdot(axis, xforms[..., :, 3])[..., None] * axis
+
       q1 = xforms @ p1 - tparallel
       q2 = xforms @ p2 - tparallel
       n1 = hnormalized(q1 - p1)
@@ -1115,6 +1143,7 @@ def axis_ang_cen_of_planes(xforms, debug=False, ident_match_tol=1e-8):
       plane2 = hray(c2, n2)
       isect, status = intersect_planes(plane1, plane2)
       cen1 = isect[..., :, 0]
+      ic(cen1)
 
       if len(cen) == len(cen1):
          cen = cen1
@@ -1147,7 +1176,7 @@ def line_line_distance(ray1, ray2):
 def line_line_closest_points_pa(pt1, ax1, pt2, ax2, verbose=0):
    assert pt1.shape == pt2.shape == ax1.shape == ax2.shape
    # origshape = pt1.shape
-   # print(pt1.shape)
+   # ic(pt1.shape)
    C21 = pt2 - pt1
    M = hcross(ax1, ax2)
    m2 = np.sum(M**2, axis=-1)[..., None]
@@ -1157,14 +1186,14 @@ def line_line_closest_points_pa(pt1, ax1, pt2, ax2, verbose=0):
    Q1 = pt1 - t1 * ax1
    Q2 = pt2 - t2 * ax2
    if verbose:
-      print('C21', C21)
-      print('M', M)
-      print('m2', m2)
-      print('R', R)
-      print('t1', t1)
-      print('t2', t2)
-      print('Q1', Q1)
-      print('Q2', Q2)
+      ic('C21', C21)
+      ic('M', M)
+      ic('m2', m2)
+      ic('R', R)
+      ic('t1', t1)
+      ic('t2', t2)
+      ic('Q1', Q1)
+      ic('Q2', Q2)
    return Q1, Q2
 
 def line_line_closest_points(ray1, ray2, verbose=0):
@@ -1233,15 +1262,15 @@ def rotation_around_dof_for_target_angle(target_angle, dof_angle, fix_to_dof_ang
    l_dof = np.cos(dof_angle)
    h_tgt = np.sin(target_angle)
    l_tgt = np.cos(target_angle)
-   # print('l_dof', l_dof)
-   # print('l_tgt', l_tgt)
+   # ic('l_dof', l_dof)
+   # ic('l_tgt', l_tgt)
    xdof = np.sin(fix_to_dof_angle) * l_dof
    ydof = np.cos(fix_to_dof_angle) * l_dof
    assert np.allclose(np.sqrt(xdof**2 + ydof**2), l_dof)
    ytgt = np.cos(target_angle)
    slope = -np.tan(np.pi / 2 - fix_to_dof_angle)
 
-   # print('ytgt', ytgt, 'xdof', xdof, 'ydof', ydof)
+   # ic('ytgt', ytgt, 'xdof', xdof, 'ydof', ydof)
 
    yhat = ytgt
    xhat = xdof + (ytgt - ydof) * slope
@@ -1259,14 +1288,14 @@ def rotation_around_dof_for_target_angle(target_angle, dof_angle, fix_to_dof_ang
    hhat = np.sqrt(1.0 - lhat**2)
    ahat = np.arcsin(hhat / hdof)
 
-   # print('xhat', xhat, 'yhat', yhat, 'slope', slope, 'lhat', lhat, 'hhat', hhat, 'ahat', ahat)
+   # ic('xhat', xhat, 'yhat', yhat, 'slope', slope, 'lhat', lhat, 'hhat', hhat, 'ahat', ahat)
 
-   # print('ytgt', ytgt)
-   # print('xdof', xdof)
-   # print('ydof', ydof)
-   # print('xhat', xhat)
-   # print('yhat', yhat)
-   # print('ahat', ahat, np.degrees(ahat))
+   # ic('ytgt', ytgt)
+   # ic('xdof', xdof)
+   # ic('ydof', ydof)
+   # ic('xhat', xhat)
+   # ic('yhat', yhat)
+   # ic('ahat', ahat, np.degrees(ahat))
 
    return ahat
 
@@ -1322,23 +1351,23 @@ def align_lines_isect_axis2(pt1, ax1, pt2, ax2, ta1, tp1, ta2, sl2, strict=True)
    else:
       try:
          Xalign = align_vectors(ax1, ax2, ta1, ta2)
-         # print(Xalign @ ax1, ta1)
+         # ic(Xalign @ ax1, ta1)
          # assert np.allclose(Xalign @ ax1, ta1, atol=0.0001)
          # assert np.allclose(Xalign @ ax2, ta2, atol=0.0001)
-         # print(Xalign)
+         # ic(Xalign)
       except AssertionError as e:
-         print("align_vectors error")
-         print("   ", ax1)
-         print("   ", ax2)
-         print("   ", ta1)
-         print("   ", ta2)
+         ic("align_vectors error")
+         ic("   ", ax1)
+         ic("   ", ax2)
+         ic("   ", ta1)
+         ic("   ", ta2)
          raise e
       Xalign[..., :, 3] = -Xalign @ pt1  ## move pt1 to origin
       Xalign[..., 3, 3] = 1
       cen2_0 = Xalign @ pt2  # moving pt2 by Xalign
       D = np.stack([ta1[:3], sl2[:3], ta2[:3]]).T
       A1offset, slide_dist, _ = np.linalg.inv(D) @ cen2_0[:3]
-      # print(A1offset, slide_dist)
+      # ic(A1offset, slide_dist)
       Xalign[..., :, 3] = Xalign[..., :, 3] - (A1offset * ta1)
 
    return Xalign, slide_dist
@@ -1355,11 +1384,11 @@ def scale_translate_lines_isect_lines(pt1, ax1, pt2, ax2, tp1, ta1, tp2, ta2):
 
    if abs(angle(_ax1, _ax2) - angle(_ta1, _ta2)) > 0.00001:
       _ta2 = -_ta2
-   # print(_ax1)
-   # print(_ax2)
-   # print(_ta1, ta1)
-   # print(_ta2)
-   # print(line_angle(_ax1, _ax2), line_angle(_ta1, _ta2))
+   # ic(_ax1)
+   # ic(_ax2)
+   # ic(_ta1, ta1)
+   # ic(_ta2)
+   # ic(line_angle(_ax1, _ax2), line_angle(_ta1, _ta2))
    assert np.allclose(line_angle(_ax1, _ax2), line_angle(_ta1, _ta2))
 
    # scale target frame to match input line separation
@@ -1421,9 +1450,9 @@ def scale_translate_lines_isect_lines(pt1, ax1, pt2, ax2, tp1, ta1, tp2, ta2):
    xalign[3, 3] = 1
 
    if np.any(np.isnan(xalign)):
-      print('=============================')
-      print(xalign)
-      print(delta1, delta2)
+      ic('=============================')
+      ic(xalign)
+      ic(delta1, delta2)
 
    # rays = np.array([
    #    hm.hray(xalign @ pt1, xalign @ ax1),
@@ -1456,8 +1485,8 @@ def hmean(xforms):
    idx = np.dot(q, [13, 7, 3, 1]) < 0
    if np.any(idx):
       q[idx] *= -1
-   # print('hmean')
-   # print(q)
+   # ic('hmean')
+   # ic(q)
    # for i in range(10):
    # qmean = np.mean(q, axis=0)
    # dot = hdot(qmean, q)
@@ -1471,5 +1500,18 @@ def hmean(xforms):
    r = quat_to_rot(q)
    t = np.mean(xforms[..., :3, 3], axis=0)
    x = hconstruct(r, t)
-   # print(x)
+   # ic(x)
    return x
+
+_axis_ang_cen_magic_points_numpy = np.array([[
+   -32.09501046777237,
+   3.36227004372687,
+   35.34672781477340,
+   1.0,
+], [
+   21.15113978202345,
+   12.55664537217840,
+   -37.48294301885574,
+   1.0,
+]])
+_axis_ang_cen_magic_points_torch = torch.from_numpy(_axis_ang_cen_magic_points_numpy)
