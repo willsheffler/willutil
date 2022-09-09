@@ -9,6 +9,100 @@ Ux = np.array([1, 0, 0, 0])
 Uy = np.array([0, 1, 0, 0])
 Uz = np.array([0, 0, 1, 0])
 
+def th_axis_ang_cen(xforms):
+   axis, angle = th_axis_angle(xforms)
+   ev, cen = torch.linalg.eig(xforms)
+   cen = torch.real(cen[..., 3])
+   cen = cen / cen[..., 3][..., None]
+   return axis, angle, cen
+
+def th_rot(axis, angle, center=None, hel=None):
+
+   rot = t_rot(axis, angle, shape=(4, 4))
+   if center is None:
+      center = torch.tensor([0, 0, 0, 1], dtype=torch.float)
+   if hel is None:
+      hel = torch.tensor([0], dtype=torch.float)
+
+   x, y, z = center[..., 0], center[..., 1], center[..., 2]
+   center = torch.stack([
+      x - rot[..., 0, 0] * x - rot[..., 0, 1] * y - rot[..., 0, 2] * z,
+      y - rot[..., 1, 0] * x - rot[..., 1, 1] * y - rot[..., 1, 2] * z,
+      z - rot[..., 2, 0] * x - rot[..., 2, 1] * y - rot[..., 2, 2] * z,
+      torch.tensor(1.0),
+   ])
+   center = center + axis * hel
+   r = torch.cat([rot[:, :3], center[:, None]], axis=1)
+   return r
+
+def th_rand_xform_small(*a, **kw):
+   return torch.from_numpy(rand_xform_small(*a, **kw))
+
+def th_rand_xform(*a, **kw):
+   return torch.from_numpy(rand_xform(*a, **kw))
+
+def th_rand_quat(*a, **kw):
+   return torch.from_numpy(rand_quat(*a, **kw))
+
+def th_rot_to_quat(xform):
+   raise NotImplemented
+   x = np.asarray(xform)
+   t0, t1, t2 = x[..., 0, 0], x[..., 1, 1], x[..., 2, 2]
+   tr = t0 + t1 + t2
+   quat = np.empty(x.shape[:-2] + (4, ))
+
+   case0 = tr > 0
+   S0 = np.sqrt(tr[case0] + 1) * 2
+   quat[case0, 0] = 0.25 * S0
+   quat[case0, 1] = (x[case0, 2, 1] - x[case0, 1, 2]) / S0
+   quat[case0, 2] = (x[case0, 0, 2] - x[case0, 2, 0]) / S0
+   quat[case0, 3] = (x[case0, 1, 0] - x[case0, 0, 1]) / S0
+
+   case1 = ~case0 * (t0 >= t1) * (t0 >= t2)
+   S1 = np.sqrt(1.0 + x[case1, 0, 0] - x[case1, 1, 1] - x[case1, 2, 2]) * 2
+   quat[case1, 0] = (x[case1, 2, 1] - x[case1, 1, 2]) / S1
+   quat[case1, 1] = 0.25 * S1
+   quat[case1, 2] = (x[case1, 0, 1] + x[case1, 1, 0]) / S1
+   quat[case1, 3] = (x[case1, 0, 2] + x[case1, 2, 0]) / S1
+
+   case2 = ~case0 * (t1 > t0) * (t1 >= t2)
+   S2 = np.sqrt(1.0 + x[case2, 1, 1] - x[case2, 0, 0] - x[case2, 2, 2]) * 2
+   quat[case2, 0] = (x[case2, 0, 2] - x[case2, 2, 0]) / S2
+   quat[case2, 1] = (x[case2, 0, 1] + x[case2, 1, 0]) / S2
+   quat[case2, 2] = 0.25 * S2
+   quat[case2, 3] = (x[case2, 1, 2] + x[case2, 2, 1]) / S2
+
+   case3 = ~case0 * (t2 > t0) * (t2 > t1)
+   S3 = np.sqrt(1.0 + x[case3, 2, 2] - x[case3, 0, 0] - x[case3, 1, 1]) * 2
+   quat[case3, 0] = (x[case3, 1, 0] - x[case3, 0, 1]) / S3
+   quat[case3, 1] = (x[case3, 0, 2] + x[case3, 2, 0]) / S3
+   quat[case3, 2] = (x[case3, 1, 2] + x[case3, 2, 1]) / S3
+   quat[case3, 3] = 0.25 * S3
+
+   assert (np.sum(case0) + np.sum(case1) + np.sum(case2) + np.sum(case3) == np.prod(
+      xform.shape[:-2]))
+
+   return quat_to_upper_half(quat)
+
+th_xform_to_quat = th_rot_to_quat
+
+def th_is_valid_quat_rot(quat):
+   assert quat.shape[-1] == 4
+   return np.isclose(1, torch.linalg.norm(quat, axis=-1))
+
+def th_quat_to_upper_half(quat):
+   ineg0 = (quat[..., 0] < 0)
+   ineg1 = (quat[..., 0] == 0) * (quat[..., 1] < 0)
+   ineg2 = (quat[..., 0] == 0) * (quat[..., 1] == 0) * (quat[..., 2] < 0)
+   ineg3 = ((quat[..., 0] == 0) * (quat[..., 1] == 0) * (quat[..., 2] == 0) * (quat[..., 3] < 0))
+   # print(ineg0.shape)
+   # print(ineg1.shape)
+   # print(ineg2.shape)
+   # print(ineg3.shape)
+   ineg = ineg0 + ineg1 + ineg2 + ineg3
+   quat2 = torch.where(ineg, -quat, quat)
+   return th_normalized(quat2)
+
 def th_homog(rot, trans=None, **kw):
    if trans is None:
       trans = torch.as_tensor([0, 0, 0, 0], **kw)
@@ -24,61 +118,67 @@ def th_homog(rot, trans=None, **kw):
    h = torch.cat([rot[:, :3], trans[:, None]], axis=1)
    return h
 
-def th_rot(axis, angle, center=None, dtype=None, requires_grad=False):
-   dtype = dtype or torch.float32
-   rot = t_rot(axis, angle, dtype=dtype, shape=(4, 4), requires_grad=requires_grad)
-   if center is None: center = [0, 0, 0, 1]
-   center = torch.tensor(center, dtype=dtype, requires_grad=requires_grad)
+def th_quat_to_rot(quat):
+   assert quat.shape[-1] == 4
+   qr = quat[..., 0]
+   qi = quat[..., 1]
+   qj = quat[..., 2]
+   qk = quat[..., 3]
 
-   # cen = center.detach().numpy().copy()
-   # x, y, z = cen[..., 0], cen[..., 1], cen[..., 2]
-   # tmp = rot.detach().numpy().copy()
-   # tmp[..., 0, 3] = x - tmp[..., 0, 0] * x - tmp[..., 0, 1] * y - tmp[..., 0, 2] * z
-   # tmp[..., 1, 3] = y - tmp[..., 1, 0] * x - tmp[..., 1, 1] * y - tmp[..., 1, 2] * z
-   # tmp[..., 2, 3] = z - tmp[..., 2, 0] * x - tmp[..., 2, 1] * y - tmp[..., 2, 2] * z
-   # tmp[..., 3, 3] = 1
-   # ic(tmp)
+   rot = torch.cat([
+      torch.tensor([[
+         1 - 2 * (qj**2 + qk**2),
+         2 * (qi * qj - qk * qr),
+         2 * (qi * qk + qj * qr),
+      ]]),
+      torch.tensor([[
+         2 * (qi * qj + qk * qr),
+         1 - 2 * (qi**2 + qk**2),
+         2 * (qj * qk - qi * qr),
+      ]]),
+      torch.tensor([[
+         2 * (qi * qk - qj * qr),
+         2 * (qj * qk + qi * qr),
+         1 - 2 * (qi**2 + qj**2),
+      ]])
+   ])
+   print(rot.shape)
+   return rot
 
-   x, y, z = center[..., 0], center[..., 1], center[..., 2]
-   center = torch.tensor([
-      x - rot[..., 0, 0] * x - rot[..., 0, 1] * y - rot[..., 0, 2] * z,
-      y - rot[..., 1, 0] * x - rot[..., 1, 1] * y - rot[..., 1, 2] * z,
-      z - rot[..., 2, 0] * x - rot[..., 2, 1] * y - rot[..., 2, 2] * z,
-      1.0,
-   ], requires_grad=requires_grad)
-   r = torch.cat([rot[:, :3], center[:, None]], axis=1)
-   # r[0].backward()
-   # assert 0
+def th_quat_to_xform(quat, dtype='f8'):
+   r = th_quat_to_rot(quat, dtype)
+   r = torch.cat([r])
    return r
 
-def t_rot(axis, angle, degrees=False, dtype=None, shape=(3, 3), requires_grad=False):
+def t_rot(axis, angle, shape=(3, 3)):
 
-   dtype = dtype or torch.float32
-   axis = torch.tensor(axis, dtype=dtype, requires_grad=requires_grad)
-   angle = angle * np.pi / 180.0 if degrees else angle
-   angle = torch.tensor(angle, dtype=dtype, requires_grad=requires_grad)
+   # axis = torch.tensor(axis, dtype=dtype, requires_grad=requires_grad)
+   # angle = angle * np.pi / 180.0 if degrees else angle
+   # angle = torch.tensor(angle, dtype=dtype, requires_grad=requires_grad)
+
    if axis.shape and angle.shape and not is_broadcastable(axis.shape[:-1], angle.shape):
       raise ValueError('axis and angle not compatible: ' + str(axis.shape) + ' ' +
                        str(angle.shape))
-   axis = axis / torch.linalg.norm(axis, axis=-1)[..., None]
+   zero = torch.tensor(0)
+   axis = th_normalized(axis)
    a = torch.cos(angle / 2.0)
    tmp = axis * -torch.sin(angle / 2)[..., None]
    b, c, d = tmp[..., 0], tmp[..., 1], tmp[..., 2]
    aa, bb, cc, dd = a * a, b * b, c * c, d * d
    bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
    if shape == (3, 3):
-      rot = torch.tensor([
-         [aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
-         [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
-         [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc],
-      ], requires_grad=requires_grad)
+      rot = torch.stack([
+         torch.stack([aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)]),
+         torch.stack([2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)]),
+         torch.stack([2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]),
+      ])
    elif shape == (4, 4):
-      rot = torch.tensor([
-         [aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac), 0],
-         [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab), 0],
-         [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc, 0],
-         [0, 0, 0, 1],
-      ], requires_grad=requires_grad)
+      rot = torch.stack([
+         torch.stack([aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac), zero]),
+         torch.stack([2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab), zero]),
+         torch.stack([2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc, zero]),
+         torch.stack([zero, zero, zero, zero + 1]),
+      ])
    else:
       raise ValueError(f't_rot shape must be 3,3 or 4,4')
 
@@ -163,13 +263,14 @@ def th_vec(vec):
       raise ValueError('vec must len 3 or 4')
 
 def th_normalized(a):
-   a = torch.as_tensor(a)
-   if (not a.shape and len(a) == 3) or (a.shape and a.shape[-1] == 3):
-      a, tmp = torch.zeros(a.shape[:-1] + (4, ), dtype=a.type), a
-      a[..., :3] = tmp
-   a2 = a[:]
-   a2[..., 3] = 0
-   return a2 / th_norm(a2)[..., None]
+   return torch.nn.functional.normalize(a, dim=-1)
+   # a = torch.as_tensor(a)
+   # if (not a.shape and len(a) == 3) or (a.shape and a.shape[-1] == 3):
+   #    a, tmp = torch.zeros(a.shape[:-1] + (4, ), dtype=a.type), a
+   #    a[..., :3] = tmp
+   # a2 = a[:]
+   # a2[..., 3] = 0
+   # return a2 / th_norm(a2)[..., None]
 
 def th_norm(a):
    a = torch.as_tensor(a)
@@ -179,6 +280,11 @@ def th_axis_angle_hel(xforms):
    axis, angle = th_axis_angle(xforms)
    hel = th_dot(axis, xforms[..., :, 3])
    return axis, angle, hel
+
+def th_axis_angle_cen_hel(xforms):
+   axis, angle, cen = th_axis_ang_cen(xforms)
+   hel = th_dot(axis, xforms[..., :, 3])
+   return axis, angle, cen, hel
 
 def th_axis_angle(xforms):
    axis = th_axis(xforms)
@@ -211,8 +317,6 @@ def th_angle(xforms):
    return angl
 
 def th_dot(a, b, outerprod=False):
-   a = torch.as_tensor(a)
-   b = torch.as_tensor(b)
    if outerprod:
       shape1 = a.shape[:-1]
       shape2 = b.shape[:-1]
@@ -220,7 +324,83 @@ def th_dot(a, b, outerprod=False):
       b = b.reshape(shape2 + (1, ) * len(shape1) + (-1, ))
    return torch.sum(a[..., :3] * b[..., :3], axis=-1)
 
+def th_point_in_plane(point, normal, pt):
+   inplane = torch.abs(th_dot(normal[..., :3], pt[..., :3] - point[..., :3]))
+   return inplane < 0.00001
+
+def th_ray_in_plane(point, normal, p1, n1):
+   inplane1 = th_point_in_plane(point, normal, p1)
+   inplane2 = th_point_in_plane(point, normal, p1 + n1)
+   return inplane1 and inplane2
+
+def th_intersect_planes(p1, n1, p2, n2):
+   """
+   intersect_Planes: find the 3D intersection of two planes
+      Input:  two planes represented (point, normal) as (p1,n1), (p2,n2)
+      Output: L = the intersection line (when it exists)
+      Return: rays shape=(...,4,2), status
+              0 = intersection returned
+              1 = disjoint (no intersection)
+              2 = the two planes coincide
+   """
+   """intersect two planes
+   :param plane1: first plane represented by ray
+   :type plane2: np.array shape=(..., 4, 2) 
+   :param plane1: second planes represented by rays
+   :type plane2: np.array shape=(..., 4, 2) 
+   :return: line: np.array shape=(...,4,2), status: int (0 = intersection returned, 1 = no intersection, 2 = the two planes coincide)
+   """
+   assert p1.shape == (4, )
+   assert n1.shape == (4, )
+   assert p2.shape == (4, )
+   assert n2.shape == (4, )
+   u = torch.cross(n1[:3], n2[:3])
+   abs_u = torch.abs(u)
+   planes_parallel = torch.sum(abs_u, axis=-1) < 0.000001
+   p2_in_plane1 = th_point_in_plane(p1, n1, p2)
+   status = torch.zeros(1)
+   status[planes_parallel] = 1
+   status[planes_parallel * p2_in_plane1] = 2
+   d1 = -th_dot(n1, p1)
+   d2 = -th_dot(n2, p2)
+   amax = torch.argmax(abs_u, axis=-1)
+   sel0, sel1, sel2 = amax == 0, amax == 1, amax == 2
+   n1a, n2a, d1a, d2a, ua = (x[sel0] for x in (n1, n2, d1, d2, u))
+   n1b, n2b, d1b, d2b, ub = (x[sel1] for x in (n1, n2, d1, d2, u))
+   n1c, n2c, d1c, d2c, uc = (x[sel2] for x in (n1, n2, d1, d2, u))
+
+   ay = (d2a * n1a[..., 2] - d1a * n2a[..., 2]) / ua[..., 0]
+   az = (d1a * n2a[..., 1] - d2a * n1a[..., 1]) / ua[..., 0]
+   bz = (d2b * n1b[..., 0] - d1b * n2b[..., 0]) / ub[..., 1]
+   bx = (d1b * n2b[..., 2] - d2b * n1b[..., 2]) / ub[..., 1]
+   cx = (d2c * n1c[..., 1] - d1c * n2c[..., 1]) / uc[..., 2]
+   cy = (d1c * n2c[..., 0] - d2c * n1c[..., 0]) / uc[..., 2]
+   zero = torch.tensor([0.])
+   one = torch.tensor([1.])
+   if sel0:
+      isect_pt = torch.cat([zero, ay, az, one])
+   elif sel1:
+      isect_pt = torch.cat([bx, zero, bz, one])
+   elif sel2:
+      isect_pt = torch.cat([cx, cy, zero, one])
+   else:
+      assert 0
+   # isect_pt = torch.empty(shape[:-2] + (3, ), dtype=plane1.dtype)
+   # isect_pt[sel0, 0] = 0
+   # isect_pt[sel0, 1] = ay
+   # isect_pt[sel0, 2] = az
+   # isect_pt[sel1, 0] = bx
+   # isect_pt[sel1, 1] = 0
+   # isect_pt[sel1, 2] = bz
+   # isect_pt[sel2, 0] = cx
+   # isect_pt[sel2, 1] = cy
+   # isect_pt[sel2, 2] = 0
+   # isect = hray(isect_pt, u)
+   isect_normal = th_normalized(torch.cat([u, zero]))
+   return isect_pt, isect_normal, status
+
 ###############################################################################
+
 def hdist(x, y):
    shape1 = x.shape[:-2]
    shape2 = y.shape[:-2]
@@ -899,19 +1079,13 @@ def intersect_planes(plane1, plane2):
    return isect, status
 
 def axis_ang_cen_of_eig(xforms, debug=False):
-   raise NotImplemented('this is a bad way to get rotation axis')
+   # raise NotImplementedError('this is a bad way to get rotation axis')
    axis, angle = axis_angle_of(xforms)
-   # # seems to numerically unstable
+   # seems to numerically unstable??
    ev, cen = np.linalg.eig(xforms)
-   # print(axis)
-   # print(cen[..., 0])
-   # print(cen[..., 1])
-   # print(cen[..., 2])
-   # axis = np.real(cen[..., 2])
    cen = np.real(cen[..., 3])
-   cen /= cen[..., 3][..., None]
-   # # todo: this is unstable.... fix?
-   # cen = proj_perp(axis, cen)  # move to reasonable position
+   cen = cen / cen[..., 3][..., None]  # normalize homogeneous coord
+   cen = cen - axis * np.sum(axis * cen)
    return axis, angle, cen
 
 def axis_ang_cen_of_planes(xforms, debug=False, ident_match_tol=1e-8):
