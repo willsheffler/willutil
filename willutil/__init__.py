@@ -38,7 +38,7 @@ from willutil.viz import showme
 # figure things in homog starting with h should't pollute namespace too bad
 from willutil.sym import compute_symfit as symfit
 from willutil.homog import (
-   I,
+   # I,
    align_vector as halign,
    align_vector,
    align_vectors as halign2,

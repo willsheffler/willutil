@@ -456,7 +456,7 @@ for icyc in range(2, 33):
    symaxes[sym] = {icyc: np.array([0, 0, 1, 0])}
    angles = 2 * np.pi * np.arange(icyc) / icyc
    # print(angles * 180 / np.pi)
-   sym_frames[sym] = hrot(Uz, angles)
+   sym_frames[sym] = hrot([0, 0, 1, 0], angles)
    sym_point_angles[sym] = {
       icyc: [angles],
    }
