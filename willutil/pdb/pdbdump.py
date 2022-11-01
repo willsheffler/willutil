@@ -36,14 +36,16 @@ def pdb_format_atom(
    return format_str.format(**locals())
 
 def dump_pdb_from_points(fname, pts):
-   os.makedirs(os.path.dirname(fname), exist_ok=True)
+   if os.path.dirname(fname):
+      os.makedirs(os.path.dirname(fname), exist_ok=True)
    with open(fname, "w") as out:
       for i, p in enumerate(pts):
          s = pdb_format_atom(x=p[0], y=p[1], z=p[2], ir=i)
          out.write(s)
 
 def dump_pdb_from_ncac_points(fname, pts, nchain=1):
-   os.makedirs(os.path.dirname(fname), exist_ok=True)
+   if os.path.dirname(fname):
+      os.makedirs(os.path.dirname(fname), exist_ok=True)
    if pts.ndim == 3: pts = pts[np.newaxis]
    # print(pts.shape)
    pts = pts.reshape(nchain * len(pts), -1, 3, 4)

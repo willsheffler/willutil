@@ -212,7 +212,22 @@ def test_expand_xforms_p4132_2_3(trials=10):
       showme=False,
    )
 
+def expand_xforms_radius():
+   radius = 65
+   generators = np.array([
+      hm.hrot([0, 0, 1], 90.0),
+      hm.hrot([0, 0, 1], 180.0, [10, 0, 0]),
+   ])
+
+   x, _ = wu.cpp.geom.expand_xforms_rand(generators, depth=12, radius=radius, trials=100_000)
+   ic(x.shape)
+   wu.showme(x)
+
 if __name__ == '__main__':
+   # expand_xforms_radius()
+   test_expand_xforms_p213_rand()
+   assert 0
+
    t = wu.Timer().start()
    # test_expand_xforms_rand()
    t.checkpoint('start')

@@ -13,7 +13,7 @@ def open_package_data(fname):
    if fname.endswith('.xz'):
       return open_lzma_cached(package_data_path(fname))
    else:
-      raise ValueError('open_package_data cant open fname')
+      return open(package_data_path(fname))
 
 def save_package_data(stuff, fname):
    return save(stuff, package_data_path(fname))

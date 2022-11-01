@@ -185,8 +185,8 @@ def _(
    shape = toshow.shape
    if line_strip:
       return show_ndarray_line_strip(toshow, state, **kw)
-   if shape[-2:] == (3, 4):
-      return show_ndarray_n_ca_c(toshow, state, **kw)
+   if shape[-2:] in [(3, 4), (5, 4)]:
+      return show_ndarray_n_ca_c(toshow[:, :3], state, **kw)
    elif shape[-2:] == (4, 2):
       return show_ndarray_lines(toshow, state, **kw)
    elif len(shape) > 2 and shape[-2:] == (4, 4):
@@ -194,7 +194,8 @@ def _(
    elif shape == (4, ) or len(shape) == 2 and shape[-1] == 4:
       return show_ndarray_point_or_vec(toshow, state, **kw)
    else:
-      raise NotImplementedError(f'cant understand np.ndarray type {type(toshow)}')
+      raise NotImplementedError(
+         f'cant understand np.ndarray type {type(toshow)} shape {toshow.shape}')
 
 _nxforms = 0
 
@@ -438,6 +439,8 @@ def show_ndarray_point_or_vec(
    v = pymol.cmd.get_view()
    state["seenit"][name] += 1
    name += "_%i" % state["seenit"][name]
+   if col in get_color_dict():
+      col = get_color_dict()[col]
    if col == 'rand':
       col = get_different_colors(len(toshow))
    mycgo = list()
@@ -599,3 +602,7 @@ def get_palette(kind='default', rgb=True, blacklist=['white', 'black']):
       raise ValueError(f'unknown palette kind {kind}')
 
    return palette
+
+def get_color_dict():
+   colors = {col: cmd.get_color_tuple(idx) for col, idx in cmd.get_color_indices()}
+   return colors

@@ -6,20 +6,23 @@ from willutil.homog.hgeom import *
 
 def main():
 
-   test_th_misc()
-   test_torch_rmsfit()
+   x = th_rot([0, 0, 1], 0.234)
+   ic(x)
    assert 0
 
+   test_torch_rmsfit()
+   assert 0
+   test_th_misc()
    test_axisangcenhel_roundtrip()
    test_th_intersect_planes()
-   test_th_axis_ang_cen_hel()
+   test_th_axis_angle_cen_hel()
    test_th_rot_single()
    test_th_rot_56789()
    test_th_axis_angle_hel()
    test_th_axis_angle()
 
    test_torch_grad()
-   test_th_axis_ang_cen_rand()
+   test_th_axis_angle_cen_rand()
 
 def test_axisangcenhel_roundtrip():
 
@@ -29,7 +32,7 @@ def test_axisangcenhel_roundtrip():
    cen = torch.tensor([1, 2, 3, 1.], requires_grad=True)
    hel = torch.tensor([1.], requires_grad=True)
    x = th_rot(axis, ang, cen, hel)
-   axis2, ang2, cen2, hel2 = th_axis_ang_cen_hel(x)
+   axis2, ang2, cen2, hel2 = th_axis_angle_cen_hel(x)
 
    ang2.backward()
    assert np.allclose(axis0.grad.detach(), [0, 0, 0, 0])
@@ -43,7 +46,7 @@ def test_axisangcenhel_roundtrip():
    cen = torch.tensor([1, 2, 3, 1.], requires_grad=True)
    hel = torch.tensor([1.], requires_grad=True)
    x = th_rot(axis, ang, cen, hel)
-   axis2, ang2, cen2, hel2 = th_axis_ang_cen_hel(x)
+   axis2, ang2, cen2, hel2 = th_axis_angle_cen_hel(x)
    axis2[0].backward()
    assert np.allclose(axis0.grad.detach(), [0, 0, 0, 0])
    assert np.allclose(ang.grad.detach(), [0])
@@ -56,7 +59,7 @@ def test_axisangcenhel_roundtrip():
    cen = torch.tensor([1, 2, 3, 1.], requires_grad=True)
    hel = torch.tensor([1.], requires_grad=True)
    x = th_rot(axis, ang, cen, hel)
-   axis2, ang2, cen2, hel2 = th_axis_ang_cen_hel(x)
+   axis2, ang2, cen2, hel2 = th_axis_angle_cen_hel(x)
    axis2[1].backward()
    assert np.allclose(axis0.grad.detach(), [0, 1, 0, 0])
    assert np.allclose(ang.grad.detach(), [0])
@@ -69,7 +72,7 @@ def test_axisangcenhel_roundtrip():
    cen = torch.tensor([1, 2, 3, 1.], requires_grad=True)
    hel = torch.tensor([1.], requires_grad=True)
    x = th_rot(axis, ang, cen, hel)
-   axis2, ang2, cen2, hel2 = th_axis_ang_cen_hel(x)
+   axis2, ang2, cen2, hel2 = th_axis_angle_cen_hel(x)
    axis2[2].backward()
    assert np.allclose(axis0.grad.detach(), [0, 0, 1, 0])
    assert np.allclose(ang.grad.detach(), [0])
@@ -82,7 +85,7 @@ def test_axisangcenhel_roundtrip():
    cen = torch.tensor([1, 2, 3, 1.], requires_grad=True)
    hel = torch.tensor([1.], requires_grad=True)
    x = th_rot(axis, ang, cen, hel)
-   axis2, ang2, cen2, hel2 = th_axis_ang_cen_hel(x)
+   axis2, ang2, cen2, hel2 = th_axis_angle_cen_hel(x)
    cen2[1].backward()
    # ic(axis0.grad)
    assert np.allclose(axis0.grad.detach(), [0, -1, 0, 0], atol=1e-4)
@@ -96,7 +99,7 @@ def test_axisangcenhel_roundtrip():
    cen = torch.tensor([1, 2, 3, 1.], requires_grad=True)
    hel = torch.tensor([1.], requires_grad=True)
    x = th_rot(axis, ang, cen, hel)
-   axis2, ang2, cen2, hel2 = th_axis_ang_cen_hel(x)
+   axis2, ang2, cen2, hel2 = th_axis_angle_cen_hel(x)
    hel2.backward()
    assert np.allclose(axis0.grad.detach(), [0, 0, 0, 0], atol=1e-4)
    assert np.allclose(ang.grad.detach(), [0], atol=1e-4)
@@ -154,7 +157,7 @@ def test_th_rot_single():
    s.backward()
    assert axis0.grad is not None
 
-def test_th_axis_ang_cen_rand():
+def test_th_axis_angle_cen_rand():
    torch = pytest.importorskip('torch')
    torch.autograd.set_detect_anomaly(True)
 
@@ -188,7 +191,7 @@ def test_th_axis_ang_cen_rand():
    assert np.allclose(cenhel, cenhat, rtol=1e-4, atol=1e-4)
 
    # ic(rot.shape)
-   axis2, ang2, cen2, hel2 = th_axis_ang_cen_hel(rot)
+   axis2, ang2, cen2, hel2 = th_axis_angle_cen_hel(rot)
    assert np.allclose(axis2.detach(), axis)
    assert np.allclose(ang2.detach(), ang)
    assert np.allclose(cen2.detach(), cen)
@@ -247,10 +250,8 @@ def test_th_intersect_planes():
    assert status == 0
    assert np.allclose(abs(norm.detach()), hnormalized([1, 1, 1, 0]))
 
-   p1 = np.array([[0.39263901, 0.57934885, -0.7693232, 1.],
-                  [-0.80966465, -0.18557869, 0.55677976, 0.]]).T
-   p2 = np.array([[0.14790894, -1.333329, 0.45396509, 1.],
-                  [-0.92436319, -0.0221499, 0.38087016, 0.]]).T
+   p1 = np.array([[0.39263901, 0.57934885, -0.7693232, 1.], [-0.80966465, -0.18557869, 0.55677976, 0.]]).T
+   p2 = np.array([[0.14790894, -1.333329, 0.45396509, 1.], [-0.92436319, -0.0221499, 0.38087016, 0.]]).T
    isct2, sts = intersect_planes(p1, p2)
    isct2, norm2 = isct2.T
    p1 = torch.tensor([0.39263901, 0.57934885, -0.7693232, 1.])
@@ -278,7 +279,7 @@ def test_th_intersect_planes():
    assert torch.all(th_ray_in_plane(p1, n1, isct, norm))
    assert torch.all(th_ray_in_plane(p2, n2, isct, norm))
 
-def test_th_axis_ang_cen_hel():
+def test_th_axis_angle_cen_hel():
    torch = pytest.importorskip('torch')
    torch.autograd.set_detect_anomaly(True)
 
@@ -287,7 +288,7 @@ def test_th_axis_ang_cen_hel():
    cen0 = torch.tensor([1., 2, 3, 1], requires_grad=True)
    h0 = torch.tensor(2.443, requires_grad=True)
    x = th_rot(axis0, ang0, cen0, h0)
-   axis, ang, cen, hel = th_axis_ang_cen_hel(x)
+   axis, ang, cen, hel = th_axis_angle_cen_hel(x)
    ax2, an2, cen2 = axis_ang_cen_of(x.detach().numpy())
    assert np.allclose(ax2, axis.detach())
    assert np.allclose(an2, ang.detach())
@@ -321,6 +322,20 @@ def test_torch_rmsfit():
    torch = pytest.importorskip('torch')
    torch.autograd.set_detect_anomaly(True)
 
+   p = torch.tensor(rand_point(10, std=10))
+   q = torch.tensor(rand_point(10, std=10))
+   # ic(p)
+   rms0 = th_rms(p, q)
+   rms, qhat, xpqhat = th_rmsfit(p, q)
+   assert rms0 > rms
+   ic(float(rms0), float(rms))
+   assert np.allclose(th_rms(qhat, q), rms)
+   for i in range(10):
+      rms2 = th_rms(q, th_xform(th_rand_xform_small(1, 0.01, 0.001), qhat))
+      # print(float(rms), float(rms2))
+      assert rms2 > rms
+
+def test_torch_rmsfit_graaxd():
    ntrials = 1
    n = 100
    std = 4.

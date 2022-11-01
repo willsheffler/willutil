@@ -39,9 +39,9 @@ using namespace Eigen;
 template <typename F>
 py::tuple expand_xforms_rand(std::vector<py::array_t<F>> gen_in, int depth,
                              int ntrials, F radius, V3<F> cen,
-                             F reset_radius_ratio) {
+                             F reset_radius_ratio, bool deterministic = false) {
   std::uniform_int_distribution<> randidx(0, gen_in.size() - 1);
-
+  std::mt19937 deterministic_rng = std::mt19937(0);
   using X = X3<F>;
   std::vector<X> gen;
   for (auto g : gen_in) gen.push_back(xform_py_to_X3(g));
@@ -52,7 +52,11 @@ py::tuple expand_xforms_rand(std::vector<py::array_t<F>> gen_in, int depth,
   for (int idepth = 0; idepth < depth; ++idepth) {
     for (int itrial = 0; itrial < ntrials; ++itrial) {
       // compute new frame
-      X xdelta = gen[randidx(global_rng())];
+      X xdelta;
+      if (deterministic)
+        xdelta = gen[randidx(deterministic_rng)];
+      else
+        xdelta = gen[randidx(global_rng())];
       X& x = frames(idepth, itrial);
       x = idepth == 0 ? xdelta : xdelta * frames(idepth - 1, itrial);
       F dist2cen = (x.translation() - cen).squaredNorm();
@@ -402,7 +406,8 @@ PYBIND11_MODULE(expand_xforms, m) {
 
   m.def("expand_xforms_rand", &expand_xforms_rand<double>, "", "generators"_a,
         "depth"_a = 1000, "trials"_a = 1000, "radius"_a = 9e9,
-        "cen"_a = Vector3d(0, 0, 0), "reset_radius_ratio"_a = 9e9);
+        "cen"_a = Vector3d(0, 0, 0), "reset_radius_ratio"_a = 9e9,
+        "deterministic"_a = true);
 }
 
 }  // namespace geom

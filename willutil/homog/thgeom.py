@@ -5,8 +5,45 @@ np = deferred_import.deferred_import('numpy')
 torch = deferred_import.deferred_import('torch')
 import willutil as wu
 from willutil.homog.hgeom import _hxform_impl
+from willutil.homog.hgeom import rand_xform_small
 
-def th_axis_ang_cen(xforms, ident_match_tol=1e-8):
+def th_mean_along(vecs, along=None):
+   vecs = th_vec(vecs)
+   assert vecs.ndim == 2
+   if not along:
+      along = vecs[0]
+   along = th_vec(along)
+   sign = torch.sign(th_dot(along, vecs))
+   flipped = (vecs.T * sign).T
+   tot = torch.sum(flipped, axis=0)
+   return th_normalized(tot)
+
+def th_com_flat(points):
+   return torch.mean(points, axis=-2)
+
+def th_com(points):
+   points = th_point(points)
+   oshape = points.shape
+   points = points.reshape(-1, oshape[-2], 4)
+   com = th_com_flat(points)
+   com = com.reshape(*oshape[:-2], 4)
+   return com
+
+def th_rog_flat(points):
+   com = th_com_flat(points).reshape(-1, 1, 4)
+   delta = torch.linalg.norm(points - com, dim=2)
+   rg = torch.sqrt(torch.mean(delta**2, dim=1))
+   return rg
+
+def th_rog(points):
+   points = th_point(points)
+   oshape = points.shape
+   points = points.reshape(-1, *oshape[-2:])
+   rog = th_rog_flat(points)
+   rog = rog.reshape(oshape[:-2])
+   return rog
+
+def th_axis_angle_cen(xforms, ident_match_tol=1e-8):
    # ic(xforms.dtype)
    origshape = xforms.shape[:-2]
    xforms = xforms.reshape(-1, 4, 4)
@@ -21,7 +58,7 @@ def th_axis_ang_cen(xforms, ident_match_tol=1e-8):
    xforms1 = xforms[not_ident]
    axis1 = axis[not_ident]
    #  sketchy magic points...
-   p1, p2 = _axis_ang_cen_magic_points_torch
+   p1, p2 = axis_ang_cen_magic_points_torch()
    p1 = p1.to(xforms.dtype)
    p2 = p2.to(xforms.dtype)
    tparallel = th_dot(axis, xforms[..., :, 3])[..., None] * axis
@@ -46,7 +83,9 @@ def th_axis_ang_cen(xforms, ident_match_tol=1e-8):
 
 def th_rot(axis, angle, center=None, hel=None, squeeze=True):
    if center is None: center = torch.tensor([0, 0, 0, 1], dtype=torch.float)
-
+   angle = torch.as_tensor(angle)
+   axis = th_vec(axis)
+   center = th_point(center)
    if hel is None: hel = torch.tensor([0], dtype=torch.float)
    if axis.ndim == 1: axis = axis[None, ]
    if angle.ndim == 0: angle = angle[None, ]
@@ -68,6 +107,12 @@ def th_rot(axis, angle, center=None, hel=None, squeeze=True):
    r = torch.cat([rot[..., :3], center[..., None, ]], axis=-1)
    if r.shape == (1, 4, 4): r = r.reshape(4, 4)
    return r
+
+def th_rand_point(*a, **kw):
+   return torch.from_numpy(rand_point(*a, **kw))
+
+def th_rand_vec(*a, **kw):
+   return torch.from_numpy(rand_vec(*a, **kw))
 
 def th_rand_xform_small(*a, **kw):
    return torch.from_numpy(rand_xform_small(*a, **kw))
@@ -113,8 +158,7 @@ def th_rot_to_quat(xform):
    quat[case3, 2] = (x[case3, 1, 2] + x[case3, 2, 1]) / S3
    quat[case3, 3] = 0.25 * S3
 
-   assert (np.sum(case0) + np.sum(case1) + np.sum(case2) + np.sum(case3) == np.prod(
-      xform.shape[:-2]))
+   assert (np.sum(case0) + np.sum(case1) + np.sum(case2) + np.sum(case3) == np.prod(xform.shape[:-2]))
 
    return quat_to_upper_half(quat)
 
@@ -229,9 +273,15 @@ def th_rms(a, b):
    assert a.shape == b.shape
    return torch.sqrt(torch.sum(torch.square(a - b)) / len(a))
 
-def th_xform(xform, stuff, **kw):
-   xform = xform.to(stuff.dtype)
-   return _hxform_impl(xform, stuff, **kw)
+def th_xform(xform, stuff, homogout='auto', **kw):
+   xform = torch.as_tensor(xform).to(stuff.dtype)
+   nothomog = stuff.shape[-1] == 3
+   if stuff.shape[-1] == 3:
+      stuff = th_point(stuff)
+   result = _hxform_impl(xform, stuff, **kw)
+   if homogout is False or homogout == 'auto' and nothomog:
+      result = result[..., :3]
+   return result
 
 def th_rmsfit(mobile, target):
    '''use kabsch method to get rmsd fit'''
@@ -284,11 +334,17 @@ def th_randunit(shape=(), cen=[0, 0, 0], std=1):
    return v
 
 def th_point(point, **kw):
+   point = torch.as_tensor(point)
    shape = point.shape[:-1]
-   return torch.cat([point[..., :3], torch.ones(shape + (1, ))], axis=-1)
+   points = torch.cat([point[..., :3], torch.ones(shape + (1, ))], axis=-1)
+   if points.dtype not in (torch.float32, torch.float64):
+      points = points.to(torch.float32)
+   return points
 
 def th_vec(vec):
    vec = torch.as_tensor(vec)
+   if (vec.dtype not in (torch.float32, torch.float64)):
+      vec = vec.to(torch.float32)
    if vec.shape[-1] == 4:
       vec[..., 3] = 0
       return vec
@@ -313,13 +369,17 @@ def th_norm(a):
    a = torch.as_tensor(a)
    return torch.sqrt(torch.sum(a[..., :3] * a[..., :3], axis=-1))
 
+def th_norm2(a):
+   a = torch.as_tensor(a)
+   return torch.sum(a[..., :3] * a[..., :3], axis=-1)
+
 def th_axis_angle_hel(xforms):
    axis, angle = th_axis_angle(xforms)
    hel = th_dot(axis, xforms[..., :, 3])
    return axis, angle, hel
 
-def th_axis_ang_cen_hel(xforms):
-   axis, angle, cen = th_axis_ang_cen(xforms)
+def th_axis_angle_cen_hel(xforms):
+   axis, angle, cen = th_axis_angle_cen(xforms)
    hel = th_dot(axis, xforms[..., :, 3])
    return axis, angle, cen, hel
 
@@ -352,6 +412,12 @@ def th_angle(xforms):
    cos = (tr - 1.0) / 2.0
    angl = torch.arccos(torch.clip(cos, -1, 1))
    return angl
+
+def th_point_line_dist2(point, cen, norm):
+   point = point - cen
+   proj = norm * torch.sum(norm * point) / torch.sum(norm * norm)
+   perp = point - proj
+   return torch.sum(perp**2)
 
 def th_dot(a, b, outerprod=False):
    if outerprod:
@@ -461,5 +527,5 @@ def is_broadcastable(shape1, shape2):
          return False
    return True
 
-_axis_ang_cen_magic_points_torch = torch.from_numpy(
-   wu.homog.hgeom._axis_ang_cen_magic_points_numpy).float()
+def axis_ang_cen_magic_points_torch():
+   return torch.from_numpy(wu.homog.hgeom._axis_ang_cen_magic_points_numpy).float()

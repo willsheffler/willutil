@@ -1,6 +1,7 @@
 from willutil import Bunch
 from willutil.homog.hgeom import *
 from willutil.sym.symframes import *
+from willutil.sym.unbounded import frames_unbounded
 from willutil.viz import showme
 
 def frames(
@@ -12,12 +13,19 @@ def frames(
    asym_index=0,
    sortframes=True,
    com=None,
+   symops=None,
+   spacing=None,
 ):
    '''generate symmetrical coordinate frames
     axis aligns Cx or bbaxis or axis0 to this
     bbsym removes redundant building block frames, e.g. TET with c3 bbs has 4 frames 
     asym_of removes redundant frames wrt a point group, e.g. turn TET into C3 and get asym unit of that C3
     '''
+
+   if spacing is not None or symops is not None:
+      return frames_unbounded(sym=sym, axis=axis, axis0=axis0, symops=symops, spacing=spacing,
+                              com=com)
+
    if sym is None or sym.upper() == 'C1':
       return np.eye(4).reshape(1, 4, 4)
    sym = map_sym_abbreviation(sym)
