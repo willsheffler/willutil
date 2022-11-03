@@ -1,8 +1,13 @@
-import itertools as it, functools as ft
+import copy, itertools as it, functools as ft
 import willutil as wu
 import deferred_import
 
 np = deferred_import.deferred_import('numpy')
+
+def hscale(scale):
+   s = np.eye(4) * scale
+   s[3, 3] = 1
+   return s
 
 def hdist(x, y):
    assert x.shape[-2:] == 4, 4
@@ -48,14 +53,48 @@ def hdiff(x, y, lever):
    return diff
 
 def hxform(x, stuff, homogout='auto', **kw):
+   if isinstance(stuff, list) and len(stuff) and not isinstance(stuff[0],
+                                                                (int, float, list, tuple)):
+      return [hxform(x, v) for v in stuff]
+   if isinstance(stuff, dict) and len(stuff) and not isinstance(stuff[0],
+                                                                (int, float, list, tuple)):
+      return {k: hxform(x, v) for k, v in stuff.items()}
+   orig = None
+   if hasattr(stuff, 'coords'):
+      orig = copy.copy(stuff)
+      stuff = stuff.coords
+      assert x.ndim in (2, 3)
+   stuff, origstuff = np.asarray(stuff), stuff
+   if not stuff.dtype in (np.float64, np.float32):
+      stuff = stuff.astype(np.float64)
+      # raise ValueError(f'unknown dtype {stuff.dtype} for type {type(origstuff)}')
    x = np.asarray(x).astype(stuff.dtype)
+
    nothomog = stuff.shape[-1] == 3
-   stuff = np.asarray(stuff)
    if stuff.shape[-1] == 3:
       stuff = hpoint(stuff)
+
+   isray = stuff.shape[-1] == 2
+   if isray: stuff = stuff.swapaxes(-1, -2)
+
    result = _hxform_impl(x, stuff, **kw)
+
+   if isray: result = result.swapaxes(-1, -2)
+
    if homogout is False or homogout == 'auto' and nothomog:
       result = result[..., :3]
+   if orig:
+      # ic(result.shape)
+      if result.ndim > 2:
+         r = list()
+         for x in result:
+            o = copy.copy(orig)
+            o.coords = x
+            r.append(o)
+         result = r
+      else:
+         orig.coords = result
+         result = orig
    return result
 
 def _hxform_impl(x, stuff, outerprod='auto', flat=False, is_points='auto'):
@@ -64,6 +103,8 @@ def _hxform_impl(x, stuff, outerprod='auto', flat=False, is_points='auto'):
       if is_points:
          if stuff.shape[-1] != 4 and stuff.shape[-2:] == (4, 1):
             raise ValueError(f'hxform cant understand shape {stuff.shape}')
+
+   # ic(stuff.shape)
 
    if not is_points:
       if outerprod == 'auto':
@@ -181,7 +222,8 @@ def rot_to_quat(xform):
    quat[case3, 2] = (x[case3, 1, 2] + x[case3, 2, 1]) / S3
    quat[case3, 3] = 0.25 * S3
 
-   assert (np.sum(case0) + np.sum(case1) + np.sum(case2) + np.sum(case3) == np.prod(xform.shape[:-2]))
+   assert (np.sum(case0) + np.sum(case1) + np.sum(case2) + np.sum(case3) == np.prod(
+      xform.shape[:-2]))
 
    return quat_to_upper_half(quat)
 
@@ -369,11 +411,24 @@ def rot(axis, angle, degrees='auto', dtype='f8', shape=(3, 3)):
       rot3[..., 3, 3] = 1.0
    return rot3
 
-def hrot(axis, angle=None, center=None, dtype='f8', nfold=None, **kws):
-   axis = np.array(axis, dtype=dtype)
-   if angle is None: angle = 2 * np.pi / nfold
+def hrot(axis_or_ray, angle=None, center=None, dtype='f8', nfold=None, **kws):
+   axis_or_ray = np.array(axis_or_ray, dtype=dtype)
+   if axis_or_ray.shape[-1] == 2:
+      assert center is None
+      center = axis_or_ray[..., 0]
+      axis = axis_or_ray[..., 1]
+   else:
+      axis = axis_or_ray
+      center = (np.array([0, 0, 0], dtype=dtype) if center is None else np.array(
+         center, dtype=dtype))
+
+   if angle is None:
+      angle = 2 * np.pi / nfold
+   else:
+      assert nfold is None
+
    angle = np.array(angle, dtype=dtype)
-   center = (np.array([0, 0, 0], dtype=dtype) if center is None else np.array(center, dtype=dtype))
+
    r = rot(axis, angle, dtype=dtype, shape=(4, 4), **kws)
    x, y, z = center[..., 0], center[..., 1], center[..., 2]
    r[..., 0, 3] = x - r[..., 0, 0] * x - r[..., 0, 1] * y - r[..., 0, 2] * z
@@ -408,7 +463,7 @@ def hvec(vec):
 
 def hray(origin, direction):
    origin = hpoint(origin)
-   direction = hnormalized(direction)
+   direction = hnormalized(hvec(direction))
    s = np.broadcast(origin, direction).shape
    r = np.empty(s[:-1] + (4, 2))
    r[..., :origin.shape[-1], 0] = origin
@@ -642,7 +697,8 @@ def point_in_plane(plane, pt):
 
 def ray_in_plane(plane, ray):
    assert ray.shape[-2:] == (4, 2)
-   return (point_in_plane(plane, ray[..., :3, 0]) * point_in_plane(plane, ray[..., :3, 0] + ray[..., :3, 1]))
+   return (point_in_plane(plane, ray[..., :3, 0]) *
+           point_in_plane(plane, ray[..., :3, 0] + ray[..., :3, 1]))
 
 def intesect_line_plane(p0, n, l0, l):
    l = hm.hnormalized(l)
@@ -1126,6 +1182,16 @@ def hexpand(
       deterministic=deterministic,
    )
    return x
+
+def hpow(xform, power):
+   if not power % 1 == 0: raise ValueError(f'power {power} is not integer')
+   result = np.tile(np.eye(4), (*xform.shape[:-2], 1, 1))
+   if power < 0:
+      power = -power
+      xform = wu.hinv(xform)
+   for i in range(power):
+      result = wu.hxform(xform, result)
+   return result
 
 def hcom_flat(points):
    return np.mean(points, axis=-2)

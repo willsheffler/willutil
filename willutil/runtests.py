@@ -109,7 +109,8 @@ _overrides = {
 }
 
 _file_mappings = {
-   # 'willutil/viz/pymol.py': ['willutil/tests/homog/test_symfit.py'],
+   'willutil/viz/viz_xtal.py': ['willutil/tests/homog/test_hxtal.py'],
+   'willutil/viz/pymol.py': ['willutil/tests/homog/test_hxtal.py'],
    'willutil/homog/sym.py': ['willutil/tests/homog/test_homog.py'],
    'willutil/homog/quat.py': ['willutil/tests/homog/test_homog.py'],
    'willutil/homog/hgeom.py': ['willutil/tests/homog/test_homog.py'],

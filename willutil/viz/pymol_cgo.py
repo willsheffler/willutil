@@ -206,28 +206,43 @@ def showlineabs(axis, cen, col=(1, 1, 1), lbl=''):
    pymol.cmd.set_view(v)
 
 def cgo_fan(
-      axis,
-      cen,
-      rad,
-      arc,
-      col=(1, 1, 1),
-      col2=None,
-      startpoint=[1, 2, 3, 1],
-      ntri=10,
+   axis,
+   cen,
+   rad,
+   arc,
+   col=(1, 1, 1),
+   col2=None,
+   startpoint=[1, 2, 3, 1],
+   thickness=0.0,
+   showstart=True,
+   randspread=0,
+   ntri=50,
 ):
    if arc > 10: arc = np.radians(arc)
    col2 = col2 or col
    rot = wu.homog.hrot(axis, arc / (ntri + 0), cen)
 
-   dirn = startpoint - cen
-
+   dirn = startpoint
    dirn = wu.homog.proj_perp(axis, dirn)
-   pt1 = cen + wu.homog.hnormalized(dirn) * rad
+   dirn = wu.homog.hnormalized(dirn)
+   pt1 = cen + dirn * rad - thickness * axis * 0.5
+
+   shift = randspread * (np.random.rand() - 0.5) * axis
+   cen += shift
+   pt1 += shift
+
    obj = []
+
+   obj += cgo_sphere(pt1, 0.1, col)
+   obj += cgo_sphere(startpoint, 0.1, col)
+
    for i in range(ntri):
       # yapf: disable
-      # print(pt1)
       pt2 = rot @ pt1
+      if i%2 == 0:
+         pt2 += thickness* axis
+      else:
+         pt2 -= thickness* axis
       obj += [
              cgo.BEGIN,
              cgo.TRIANGLES,
@@ -245,6 +260,7 @@ def cgo_fan(
 
 
       pt1 = pt2
+
       # yapf: enable
    return obj
 
@@ -284,9 +300,14 @@ def cgo_cyl_arrow(c1, c2, r, col=(1, 1, 1), col2=None, arrowlen=4.0):
    CGO.extend(cgo_cyl(c2 - dirn * 3.0, arrow2 - dirn * 3.0, r=r, col=col2))
    return CGO
 
-def showcube(lb=[-10, -10, -10], ub=[10, 10, 10], r=0.1, xform=np.eye(4)):
+def showcube(*args, **kw):
    cmd.delete('CUBE')
    v = cmd.get_view()
+   mycgo = cgo_cube(*args, **kw)
+   cmd.load_cgo(mycgo, "CUBE")
+   cmd.set_view(v)
+
+def cgo_cube(lb=[-10, -10, -10], ub=[10, 10, 10], r=0.1, xform=np.eye(4)):
    a = [
       wu.homog.hxform(xform, [ub[0], ub[1], ub[2]]),
       wu.homog.hxform(xform, [ub[0], ub[1], lb[2]]),
@@ -326,9 +347,8 @@ def showcube(lb=[-10, -10, -10], ub=[10, 10, 10], r=0.1, xform=np.eye(4)):
       cgo.CYLINDER, a[7][0], a[7][1], a[7][2], b[7][0], b[7][1], b[7][2], r, 1, 1, 1, 1, 1, 1,
       cgo.CYLINDER, a[8][0], a[8][1], a[8][2], b[8][0], b[8][1], b[8][2], r, 1, 1, 1, 1, 1, 1,
       cgo.CYLINDER, a[9][0], a[9][1], a[9][2], b[9][0], b[9][1], b[9][2], r, 1, 1, 1, 1, 1, 1,
-      cgo.CYLINDER, a[10][0], a[10][1], a[10][2], b[10][0], b[10][1], b[10][2], r, 1, 1, 1, 1, 1,
-      1, cgo.CYLINDER, a[11][0], a[11][1], a[11][2], b[11][0], b[11][1], b[11][2], r, 1, 1, 1, 1,
-      1, 1
+      cgo.CYLINDER, a[10][0], a[10][1], a[10][2], b[10][0], b[10][1], b[10][2], r, 1, 1, 1, 1, 1, 1,
+      cgo.CYLINDER, a[11][0], a[11][1], a[11][2], b[11][0], b[11][1], b[11][2], r, 1, 1, 1, 1, 1, 1
    ]
    # yapf: disable
    #   l=10#*sqrt(3)
@@ -356,5 +376,4 @@ def showcube(lb=[-10, -10, -10], ub=[10, 10, 10], r=0.1, xform=np.eye(4)):
    #
    #   ]
    # yapf: enable
-   cmd.load_cgo(mycgo, "CUBE")
-   cmd.set_view(v)
+   return mycgo

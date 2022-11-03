@@ -224,8 +224,8 @@ def expand_xforms_radius():
    wu.showme(x)
 
 if __name__ == '__main__':
-   # expand_xforms_radius()
-   test_expand_xforms_p213_rand()
+   expand_xforms_radius()
+   # test_expand_xforms_p213_rand()
    assert 0
 
    t = wu.Timer().start()
