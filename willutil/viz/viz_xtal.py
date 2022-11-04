@@ -1,5 +1,5 @@
 import numpy as np
-from willutil.homog.hxtal import SymElem, Xtal
+from willutil.sym.xtal import SymElem, Xtal
 from willutil.viz.pymol_viz import pymol_load, cgo_cyl, cgo_sphere, cgo_fan, cgo_cube, showcube
 import willutil as wu
 
@@ -11,15 +11,17 @@ def pymol_viz_SymElem(
    name='SymElem',
    center=np.array([0, 0, 0, 1]),
    scalefans=None,
-   fansize=1,
+   fansize=0.001,
+   fanshift=0,
    fancover=1.0,
    make_cgo_only=False,
    cyc_ang_match_tol=0.1,
-   axislen=2,
-   axisrad=0.1,
+   axislen=0.2,
+   axisrad=0.008,
    addtocgo=None,
    scale=1,
    refpoint=[1, 2, 3, 1],
+   symelemscale=1,
    **kw,
 ):
    import pymol
@@ -27,6 +29,12 @@ def pymol_viz_SymElem(
    state["seenit"][name] += 1
 
    v = pymol.cmd.get_view()
+
+   axislen = axislen * scale * symelemscale
+   axisrad = axisrad * scale * symelemscale
+   fanthickness = 0.0 * scale * symelemscale
+   fansize = fansize * scale * symelemscale
+   fanshift = fanshift * scale * symelemscale
 
    ang = toshow.angle
    if np.isclose(ang, np.pi * 4 / 5, atol=1e-4): ang /= 2
@@ -50,10 +58,9 @@ def pymol_viz_SymElem(
    mycgo = list()
    mycgo += cgo_cyl(c1, c2, axisrad, col=col)
    # ic(fansize, ang)
-   fanthickness = 0.0
 
-   mycgo += cgo_fan(axis, cen, fansize, arc=ang * fancover, thickness=fanthickness, col=col,
-                    startpoint=refpoint)
+   mycgo += cgo_fan(axis, cen, fansize, arc=ang * fancover, thickness=fanthickness, col=col, startpoint=refpoint,
+                    fanshift=fanshift)
 
    if addtocgo is None:
       pymol.cmd.load_cgo(mycgo, f'{name}_{state["seenit"][name]}')
@@ -66,15 +73,20 @@ def pymol_viz_SymElem(
 
 @pymol_load.register(Xtal)
 def pymol_viz_Xtal(
-      toshow,
-      state,
-      name='xtal',
-      scale=10,
-      neighbors=1,
-      cellshift=(0, 0, 0),
-      showgenframes=False,
-      splitobjs=False,
-      **kw,
+   toshow,
+   state,
+   name='xtal',
+   scale=10,
+   neighbors=1,
+   cellshift=(0, 0, 0),
+   cells=1,
+   showgenframes=False,
+   splitobjs=False,
+   showpoints=0,
+   fanshift=0,
+   fansize=0.1,
+   showcube=True,
+   **kw,
 ):
    import pymol
    state["seenit"][name] += 1
@@ -87,49 +99,81 @@ def pymol_viz_Xtal(
    # pymol_viz_SymElem(wu.hxform(x, s), scale=scale, **kw)
    for i, elems in enumerate(toshow.unitelems):
       cgo = list()
+      size = fansize[i] if isinstance(fansize, (list, tuple)) else fansize
+      shift = fanshift[i] if isinstance(fanshift, (list, tuple)) else fanshift
       for elem, xelem in elems:
-         refpoint = wu.hxform(xelem, [1, 2, 3, 1])
-         refpoint *= scale
-         refpoint[3] = 1
+         refpoint = wu.hxform(xelem, [0, 1, 0, 1])
+         refpoint = xcellshift @ refpoint
+         refpoint = wu.hscale(scale) @ refpoint
+         # cgo += cgo_sphere(refpoint, 0.5, col=(1, 1, 1))
          elem = wu.hxform(xcellshift, elem)
-         pymol_viz_SymElem(elem, state, scale=scale, addtocgo=cgo, refpoint=refpoint, fansize=0.5,
-                           **kw)
+         pymol_viz_SymElem(elem, state, scale=scale, addtocgo=cgo, refpoint=refpoint, fansize=fansize,
+                           fanshift=fanshift, **kw)
       if splitobjs:
          pymol.cmd.load_cgo(cgo, f'{name}_symelem{i}')
       allcgo += cgo
-
-   cgo = list()
-   for i, frame in enumerate(toshow.unitframes):
-      p1 = [0.18, 0.03, 0.03]
-      p2 = [0.18, 0.09, 0.03]
-      p3 = [0.18, 0.03, 0.08]
-      col = (1, 1, 1)
-      frame = xcellshift @ frame
-      cgo += cgo_sphere(scale * wu.hxform(frame, p1), rad=scale * 0.05, col=col)
-      cgo += cgo_sphere(scale * wu.hxform(frame, p2), rad=scale * 0.03, col=col)
-      cgo += cgo_sphere(scale * wu.hxform(frame, p3), rad=scale * 0.02, col=col)
-   if splitobjs:
-      pymol.cmd.load_cgo(cgo, f'{name}_pts{i}')
-   allcgo += cgo
-
-   if showgenframes:
-      cgo = list()
-      for i, frame in enumerate(toshow.genframes):
-         p1 = [0.18, 0.03, 0.03]
-         p2 = [0.18, 0.09, 0.03]
-         p3 = [0.18, 0.03, 0.08]
-         cgo += cgo_sphere(scale * wu.hxform(frame, p1), rad=scale * 0.05, col=col)
-         cgo += cgo_sphere(scale * wu.hxform(frame, p2), rad=scale * 0.03, col=col)
-         cgo += cgo_sphere(scale * wu.hxform(frame, p3), rad=scale * 0.02, col=col)
-      pymol.cmd.load_cgo(cgo, f'{name}_GENPTS{i}')
-
    xshift2 = xcellshift.copy()
    xshift2[:3, 3] *= scale
-
-   cgo = cgo_cube(wu.hxform(xshift2, [0, 0, 0]), wu.hxform(xshift2, [scale, scale, scale]), r=0.01)
-   if splitobjs:
-      pymol.cmd.load_cgo(cgo, f'{name}_cube')
+   if showcube:
+      cgo = cgo_cube(wu.hxform(xshift2, [0, 0, 0]), wu.hxform(xshift2, [scale, scale, scale]), r=0.03)
+      if splitobjs:
+         pymol.cmd.load_cgo(cgo, f'{name}_cube')
    allcgo += cgo
+
+   # for i, (elem, frame) in enumerate(toshow.unitelems[1]):
+
+   showpts = xtal_show_points(showpoints, **kw)
+   if showpoints:
+      frames = toshow.cellframes(cellsize=1, cells=cells)
+      cgo = cgo_frame_points(frames, scale, showpts)
+      # cgo = list()
+      # for i, frame in enumerate(frames):
+      # for p, r, c in zip(*showpts):
+      # cgo += cgo_sphere(scale * wu.hxform(frame, p), rad=scale * r, col=c)
+      if splitobjs:
+         pymol.cmd.load_cgo(cgo, f'{name}_pts{i}')
+      allcgo += cgo
+
+   if showgenframes:
+      col = (1, 1, 1)
+      cgo = cgo_frame_points(toshow.genframes, scale, showpts)
+      # cgo = list()
+      # for i, frame in enumerate(toshow.genframes):
+      # cgo += cgo_sphere(scale * wu.hxform(frame, showpts[0]), rad=scale * 0.05, col=col)
+      # cgo += cgo_sphere(scale * wu.hxform(frame, showpts[1]), rad=scale * 0.03, col=col)
+      # cgo += cgo_sphere(scale * wu.hxform(frame, showpts[2]), rad=scale * 0.02, col=col)
+      pymol.cmd.load_cgo(cgo, f'{name}_GENPTS{i}')
 
    if not splitobjs:
       pymol.cmd.load_cgo(allcgo, f'{name}_all')
+
+def cgo_frame_points(frames, scale, showpts):
+   cgo = list()
+   for i, frame in enumerate(frames):
+      for p, r, c in zip(*showpts):
+         cgo += cgo_sphere(scale * wu.hxform(frame, p), rad=scale * r, col=c)
+   return cgo
+
+def xtal_show_points(which, pointscale=1, pointshift=(0, 0, 0), **kw):
+   s = pointscale
+   pointshift = np.asarray(pointshift)
+   showpts = [
+      np.empty(shape=(0, 3)),
+      np.array([
+         [0.28, 0.13, 0.13],
+         [0.28, 0.13 + 0.06 * s, 0.13],
+         [0.28, 0.13, 0.13 + 0.05 * s],
+      ]),
+      np.array([
+         [0.18, 0.03, 0.03],
+         [0.18, 0.03 + 0.06 * s, 0.03],
+         [0.18, 0.03, 0.03 + 0.05 * s],
+      ]),
+   ]
+   for p in showpts:
+      p += pointshift
+
+   radius = np.array([[0.05, 0.03, 0.02]] * len(showpts))
+   radius *= pointscale
+   colors = np.array([[(1, 1, 1), (1, 1, 1), (1, 1, 1)]] * len(showpts))
+   return showpts[which], radius[which], colors[which]

@@ -35,10 +35,14 @@ def pdb_format_atom(
 
    return format_str.format(**locals())
 
-def dump_pdb_from_points(fname, pts):
+def dump_pdb_from_points(fname, pts, header=''):
+   pts = np.asarray(pts)
+   if not (pts.ndim == 2 and pts.shape[-1] in (3, 4)):
+      raise ValueError(f'bad shape for points {pts.shape}')
    if os.path.dirname(fname):
       os.makedirs(os.path.dirname(fname), exist_ok=True)
    with open(fname, "w") as out:
+      out.write(header)
       for i, p in enumerate(pts):
          s = pdb_format_atom(x=p[0], y=p[1], z=p[2], ir=i)
          out.write(s)

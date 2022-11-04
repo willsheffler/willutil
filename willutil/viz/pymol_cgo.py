@@ -216,25 +216,26 @@ def cgo_fan(
    thickness=0.0,
    showstart=True,
    randspread=0,
+   fanshift=0.0,
    ntri=50,
 ):
    if arc > 10: arc = np.radians(arc)
    col2 = col2 or col
    rot = wu.homog.hrot(axis, arc / (ntri + 0), cen)
 
-   dirn = startpoint
-   dirn = wu.homog.proj_perp(axis, dirn)
+   # ic(startpoint - cen)
+   dirn = wu.homog.proj_perp(axis, startpoint - cen)
    dirn = wu.homog.hnormalized(dirn)
-   pt1 = cen + dirn * rad - thickness * axis * 0.5
+   cen = cen + fanshift * axis
+   pt1 = cen + dirn * rad  #- thickness * axis * 0.5
 
    shift = randspread * (np.random.rand() - 0.5) * axis
    cen += shift
    pt1 += shift
 
    obj = []
-
-   obj += cgo_sphere(pt1, 0.1, col)
-   obj += cgo_sphere(startpoint, 0.1, col)
+   # obj += cgo_sphere(startpoint, 0.1)
+   # obj += cgo_sphere(pt1, 0.1, col)
 
    for i in range(ntri):
       # yapf: disable
