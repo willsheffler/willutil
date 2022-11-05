@@ -52,7 +52,7 @@ def dump_pdb_from_ncac_points(fname, pts, nchain=1):
       os.makedirs(os.path.dirname(fname), exist_ok=True)
    if pts.ndim == 3: pts = pts[np.newaxis]
    # print(pts.shape)
-   pts = pts.reshape(nchain * len(pts), -1, 3, 4)
+   pts = pts.reshape(nchain * len(pts), -1, 3, pts.shape[-1])
    # print(pts.shape)
    # assert 0
    # if len(pts) > 1:

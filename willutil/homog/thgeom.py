@@ -35,13 +35,26 @@ def th_rog_flat(points):
    rg = torch.sqrt(torch.mean(delta**2, dim=1))
    return rg
 
-def th_rog(points):
+def th_rog(points, aboutaxis=None):
    points = th_point(points)
    oshape = points.shape
    points = points.reshape(-1, *oshape[-2:])
+   if aboutaxis != None:
+      aboutaxis = th_vec(aboutaxis)
+      points = th_projperp(aboutaxis, points)
    rog = th_rog_flat(points)
    rog = rog.reshape(oshape[:-2])
    return rog
+
+def th_proj(u, v):
+   u = th_vec(u)
+   v = th_point(v)
+   return th_dot(u, v)[..., None] / th_norm2(u)[..., None] * u
+
+def th_projperp(u, v):
+   u = th_vec(u)
+   v = th_point(v)
+   return v - th_proj(u, v)
 
 def th_axis_angle_cen(xforms, ident_match_tol=1e-8):
    # ic(xforms.dtype)

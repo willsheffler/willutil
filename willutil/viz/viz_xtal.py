@@ -1,5 +1,6 @@
 import numpy as np
-from willutil.sym.xtal import SymElem, Xtal
+from willutil.sym.xtal import Xtal
+from willutil.sym.xtalinfo import SymElem
 from willutil.viz.pymol_viz import pymol_load, cgo_cyl, cgo_sphere, cgo_fan, cgo_cube, showcube
 import willutil as wu
 
@@ -20,7 +21,7 @@ def pymol_viz_SymElem(
    axisrad=0.008,
    addtocgo=None,
    scale=1,
-   refpoint=[1, 2, 3, 1],
+   fanrefpoint=[1, 2, 3, 1],
    symelemscale=1,
    **kw,
 ):
@@ -59,7 +60,7 @@ def pymol_viz_SymElem(
    mycgo += cgo_cyl(c1, c2, axisrad, col=col)
    # ic(fansize, ang)
 
-   mycgo += cgo_fan(axis, cen, fansize, arc=ang * fancover, thickness=fanthickness, col=col, startpoint=refpoint,
+   mycgo += cgo_fan(axis, cen, fansize, arc=ang * fancover, thickness=fanthickness, col=col, startpoint=fanrefpoint,
                     fanshift=fanshift)
 
    if addtocgo is None:
@@ -102,12 +103,13 @@ def pymol_viz_Xtal(
       size = fansize[i] if isinstance(fansize, (list, tuple)) else fansize
       shift = fanshift[i] if isinstance(fanshift, (list, tuple)) else fanshift
       for elem, xelem in elems:
-         refpoint = wu.hxform(xelem, [0, 1, 0, 1])
-         refpoint = xcellshift @ refpoint
-         refpoint = wu.hscale(scale) @ refpoint
-         # cgo += cgo_sphere(refpoint, 0.5, col=(1, 1, 1))
+         fanrefpoint = get_fanrefpoint(toshow)
+         fanrefpoint = wu.hxform(xelem, fanrefpoint)
+         fanrefpoint = xcellshift @ fanrefpoint
+         fanrefpoint = wu.hscale(scale) @ fanrefpoint
+         # cgo += cgo_sphere(fanrefpoint, 0.5, col=(1, 1, 1))
          elem = wu.hxform(xcellshift, elem)
-         pymol_viz_SymElem(elem, state, scale=scale, addtocgo=cgo, refpoint=refpoint, fansize=fansize,
+         pymol_viz_SymElem(elem, state, scale=scale, addtocgo=cgo, fanrefpoint=fanrefpoint, fansize=fansize,
                            fanshift=fanshift, **kw)
       if splitobjs:
          pymol.cmd.load_cgo(cgo, f'{name}_symelem{i}')
@@ -177,3 +179,12 @@ def xtal_show_points(which, pointscale=1, pointshift=(0, 0, 0), **kw):
    radius *= pointscale
    colors = np.array([[(1, 1, 1), (1, 1, 1), (1, 1, 1)]] * len(showpts))
    return showpts[which], radius[which], colors[which]
+
+def get_fanrefpoint(xtal):
+   pt = [0, 1, 0, 1]
+   # yapf: disable
+   if xtal.name == 'P 2 3' : pt= [0, 1, 0, 1]
+   if xtal.name == 'I 21 3': pt= wu.hxform(wu.hrot([0, 0, 1], -30), [0, 1, 0,1])
+   # yapf: enable
+   # ic(pt)
+   return pt

@@ -5,13 +5,9 @@ from willutil.homog.thgeom import *
 from willutil.homog.hgeom import *
 
 def main():
-
-   x = th_rot([0, 0, 1], 0.234)
-   ic(x)
-   assert 0
-
+   test_th_rog()
+   assert 0, 'DONE'
    test_torch_rmsfit()
-   assert 0
    test_th_misc()
    test_axisangcenhel_roundtrip()
    test_th_intersect_planes()
@@ -23,6 +19,15 @@ def main():
 
    test_torch_grad()
    test_th_axis_angle_cen_rand()
+
+def test_th_rog():
+   points = th_randpoint(10)
+   rg = th_rog(points)
+   rgx = th_rog(points, aboutaxis=[1, 0, 0])
+   assert rg >= rgx
+   points[..., 0] = 0
+   rg = th_rog(points)
+   assert np.allclose(rg, rgx)
 
 def test_axisangcenhel_roundtrip():
 

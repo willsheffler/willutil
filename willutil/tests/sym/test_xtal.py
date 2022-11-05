@@ -3,6 +3,18 @@ import numpy as np
 import pytest
 import willutil as wu
 
+def main():
+   # test_hxtal_viz(spacegroup='I 41 3 2', headless=False)
+   # test_hxtal_viz(spacegroup='I 21 3', headless=False)
+   # test_hxtal_viz(spacegroup='P 2 3', headless=False)
+   test_xtal_cellframes()
+   test_xtal_cryst1_I_21_3(False)  #, dump_pdbs=True)
+   test_xtal_cryst1_P_2_3(False)
+   # test_symelem(headless=False)
+
+   # _test_hxtal_viz_gyroid(headless=False)
+   ic('test_xtal.py DONE')
+
 def test_symelem(headless=True):
    elem1 = wu.sym.SymElem(2, [1, 0, 0], [0, 0, 0])
    elem2 = wu.sym.SymElem(2, [1, 0, 0], [0, 10, 0])
@@ -29,9 +41,21 @@ def test_xtal_cellframes():
    assert len(xtal.cellframes(cellsize=1, cells=4)) == 64 * xtal.nsub
    assert len(xtal.cellframes(cellsize=1, cells=5)) == 125 * xtal.nsub
 
-def test_xtal_cryst1(headless=True):
+def test_xtal_cryst1_P_2_3(*args, **kw):
+   helper_test_xtal_cryst1('P 2 3', *args, **kw)
+
+def test_xtal_cryst1_I_21_3(*args, **kw):
+   helper_test_xtal_cryst1('I 21 3', *args, **kw)
+
+def prune_bbox(coords, lb, ub):
+   inboundslow = np.all(coords >= lb - 0.001, axis=-1)
+   inboundshigh = np.all(coords <= ub + 0.001, axis=-1)
+   inbounds = np.logical_and(inboundslow, inboundshigh)
+   return inbounds
+
+def helper_test_xtal_cryst1(spacegroup, headless=True, dump_pdbs=False):
    pymol = pytest.importorskip('pymol')
-   xtal = wu.sym.Xtal('P 2 3')
+   xtal = wu.sym.Xtal(spacegroup)
 
    # wu.showme(xtal, showgenframes=True)
 
@@ -41,47 +65,38 @@ def test_xtal_cryst1(headless=True):
       [0.28, 0.16, 0.13],
       [0.28, 0.13, 0.15],
    ])
-   # xtal.dump_pdb('test1.pdb', crd, cellsize=cellsize, cells=1)
-   # xtal.dump_pdb('test2.pdb', crd, cellsize=cellsize, cells=None)
-   # assert 0
+
+   if dump_pdbs:
+      xtal.dump_pdb('test1.pdb', crd, cellsize=cellsize, cells=1)
+      xtal.dump_pdb('test2.pdb', crd, cellsize=cellsize, cells=None)
+      assert 0
 
    with tempfile.TemporaryDirectory() as tmpdir:
+      pymol.cmd.delete('all')
       fname = f'{tmpdir}/test.pdb'
       xtal.dump_pdb(fname, crd, cellsize=cellsize)
       pymol.cmd.load(fname)
-      print(pymol.cmd.get_object_list())
       pymol.cmd.symexp('pref', 'test', 'all', 9e9)
-      coords = pymol.cmd.get_coords()
-      coords2 = xtal.symcoords(crd, cellsize=cellsize, cells=5)
-      coords2 = coords2[..., :3].round()
+      coords1 = pymol.cmd.get_coords()
+      pymol.cmd.delete('all')
 
-      ic(np.max(coords % 1))
-      ic(np.max(coords2.round() % 1))
-      coords = coords.round().astype('i')
-      coords2 = coords2.round().astype('i')
-      ic(coords)
-      ic(coords2)
-      ic(np.min(coords), np.min(coords2))
-      ic(np.max(coords), np.max(coords2))
-      tup1 = [tuple(x) for x in coords]
-      tup2 = [tuple(x) for x in coords2]
-      s1 = set(tup1)
-      s2 = set(tup2)
-      ic(len(coords))
-      ic(len(s1.intersection(s2)))
-      ic(len(s1 - s2))
-      ic(len(s2 - s1))
+   coords2 = xtal.symcoords(crd, cellsize=cellsize, cells=(-2, 1))
+   assert len(coords1) == 27 * 3 * xtal.nsub
+   assert len(coords2) == 64 * 3 * xtal.nsub
+   coords1 = coords1.round().astype('i')
+   coords2 = coords2.round().astype('i')[..., :3]
 
-      assert set(tup1) == set(tup2)
-      ncoord = 27 * 3 * xtal.nsub
-      assert len(coords) == ncoord
-      assert len(coords2) == ncoord
+   s1 = set([tuple(x) for x in coords1])
+   s2 = set([tuple(x) for x in coords2])
+   expected_ratio = (4**3 - 3**3) / 3**3
+   assert len(s2 - s1) == (64 - 27) * 3 * xtal.nsub
+   assert len(s1 - s2) == 0, f'canonical frames mismatch {spacegroup}'
+   assert len(s1.intersection(s2)) == len(coords1), f'canonical frames mismatch {spacegroup}'
 
-   ic('test_xtal_cryst1 DONE')
-
-def test_hxtal_viz(headless=True):
+def test_hxtal_viz(headless=True, spacegroup='P 2 3'):
    pymol = pytest.importorskip('pymol')
-   xtal = wu.sym.Xtal('I 21 3')
+   xtal = wu.sym.Xtal(spacegroup)
+   ic(xtal.unitframes.shape)
    wu.showme(
       xtal,
       headless=headless,
@@ -114,14 +129,6 @@ def _test_hxtal_viz_gyroid(headless=True):
    #   # wu.showme(xtal, cellshift=[a, b, c], showgenframes=a == b == c == 0)
    #   wu.showme(xtal, cellshift=[a, b, c], headless=headless, fanshift=[-0.03, 0.05],
    #             fansize=[0.15, 0.12])
-
-def main():
-   # test_xtal_cellframes()
-   test_xtal_cryst1(False)
-   # test_symelem(headless=False)
-   # test_hxtal_viz(headless=False)
-   # _test_hxtal_viz_gyroid(headless=False)
-   ic('test_xtal.py DONE')
 
 if __name__ == '__main__':
    main()

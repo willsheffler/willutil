@@ -4,39 +4,6 @@ import icecream
 icecream.install()
 
 from willutil.bunch import Bunch, bunchify, unbunchify
-from willutil.timer import Timer
-from willutil.ping import PING
-from willutil import chem
-from willutil import storage
-from willutil.storage import load, save, load_package_data, open_package_data, package_data_path
-from willutil.inprocess import InProcessExecutor
-from willutil.cache import Cache, GLOBALCACHE
-from willutil import runtests
-from willutil import pdb
-from willutil import mc
-from willutil import misc
-from willutil import tests
-from willutil import reproducibility
-from willutil import format
-from willutil import homog
-from willutil import sym
-from willutil import viz
-
-from willutil.mc import MonteCarlo
-
-from willutil.sym import compute_symfit
-from willutil.pdb import dump_pdb_from_ncac_points
-
-# deferr import of cpp libs to avoid compilation if unnecessary
-cpp = deferred_import('willutil.cpp')
-# from willutil import cpp
-
-emptybunch = Bunch()
-
-from willutil.viz import showme
-
-# figure things in homog starting with h should't pollute namespace too bad
-from willutil.sym import compute_symfit as symfit
 from willutil.homog import (
    # I,
    align_vector as halign,
@@ -123,3 +90,36 @@ from willutil.homog.thgeom import (
    th_vec,
    th_xform,
 )
+
+from willutil.timer import Timer
+from willutil import chem
+from willutil import storage
+from willutil.storage import load, save, load_package_data, open_package_data, package_data_path
+from willutil.inprocess import InProcessExecutor
+from willutil.cache import Cache, GLOBALCACHE
+from willutil import runtests
+from willutil import pdb
+from willutil import mc
+from willutil import misc
+from willutil import tests
+from willutil import reproducibility
+from willutil import format
+from willutil import homog
+from willutil import sym
+from willutil import viz
+
+from willutil.mc import MonteCarlo
+
+from willutil.sym import compute_symfit
+from willutil.pdb import dump_pdb_from_ncac_points
+
+# deferr import of cpp libs to avoid compilation if unnecessary
+cpp = deferred_import('willutil.cpp')
+# from willutil import cpp
+
+emptybunch = Bunch()
+
+from willutil.viz import showme
+
+# figure things in homog starting with h should't pollute namespace too bad
+from willutil.sym import compute_symfit as symfit

@@ -9,8 +9,11 @@ from functools import singledispatch
 # # pymol = deferred_import('pymol')
 # # cgo = deferred_import('pymol.cgo')
 # # cmd = deferred_import('pymol.cmd')
-import pymol
-from pymol import cgo, cmd
+try:
+   import pymol
+   from pymol import cgo, cmd
+except:
+   pass
 from willutil import homog as hm
 from willutil.viz.pymol_cgo import *
 from willutil.sym.symfit import RelXformInfo
@@ -124,12 +127,10 @@ def _(
       helicalrad = helicalrad or 3 * axisrad
 
       mycgo += cgo_cyl(c1, c2, axisrad, col=col)
-      mycgo += cgo_cyl(cen + axis * toshow.hel / 2, cen - axis * toshow.hel / 2, helicalrad,
-                       col=col)
+      mycgo += cgo_cyl(cen + axis * toshow.hel / 2, cen - axis * toshow.hel / 2, helicalrad, col=col)
       shift = fuzz * (np.random.rand() - 0.5)
-      mycgo += cgo_fan(axis, cen + axis * shift,
-                       fixedfansize if fixedfansize else toshow.rad * scalefans, arc=ang, col=col,
-                       startpoint=cen1)
+      mycgo += cgo_fan(axis, cen + axis * shift, fixedfansize if fixedfansize else toshow.rad * scalefans, arc=ang,
+                       col=col, startpoint=cen1)
 
    if addtocgo is None:
       pymol.cmd.load_cgo(mycgo, 'symops%i' % state._nsymops)
@@ -194,8 +195,7 @@ def _(
    elif shape == (4, ) or len(shape) == 2 and shape[-1] == 4:
       return show_ndarray_point_or_vec(toshow, state, **kw)
    else:
-      raise NotImplementedError(
-         f'cant understand np.ndarray type {type(toshow)} shape {toshow.shape}')
+      raise NotImplementedError(f'cant understand np.ndarray type {type(toshow)} shape {toshow.shape}')
 
 _nxforms = 0
 
@@ -560,9 +560,8 @@ def showme(*args, how="pymol", **kw):
    np.random.set_state(randstate)
    return result
 
-_atom_record_format = (
-   "ATOM  {atomi:5d} {atomn:^4}{idx:^1}{resn:3s} {chain:1}{resi:4d}{insert:1s}   "
-   "{x:8.3f}{y:8.3f}{z:8.3f}{occ:6.2f}{b:6.2f}\n")
+_atom_record_format = ("ATOM  {atomi:5d} {atomn:^4}{idx:^1}{resn:3s} {chain:1}{resi:4d}{insert:1s}   "
+                       "{x:8.3f}{y:8.3f}{z:8.3f}{occ:6.2f}{b:6.2f}\n")
 
 def format_atom(
    atomi=0,
