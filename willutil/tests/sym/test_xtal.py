@@ -3,14 +3,17 @@ import numpy as np
 import pytest
 import willutil as wu
 
+ic.configureOutput(includeContext=True, contextAbsPath=False)
+
 def main():
-   # test_hxtal_viz(spacegroup='I 41 3 2', headless=False)
-   # test_hxtal_viz(spacegroup='I 21 3', headless=False)
-   # test_hxtal_viz(spacegroup='P 2 3', headless=False)
+   noshow = True
+   # test_hxtal_viz(spacegroup='I 41 3 2', headless=noshow)
+   test_hxtal_viz(spacegroup='I 21 3', headless=noshow)
+   test_hxtal_viz(spacegroup='P 2 3', headless=noshow)
    test_xtal_cellframes()
-   test_xtal_cryst1_I_21_3(False)  #, dump_pdbs=True)
-   test_xtal_cryst1_P_2_3(False)
-   # test_symelem(headless=False)
+   test_xtal_cryst1_I_21_3(headless=noshow)  #, dump_pdbs=True)
+   test_xtal_cryst1_P_2_3(headless=noshow)
+   test_symelem(headless=noshow)
 
    # _test_hxtal_viz_gyroid(headless=False)
    ic('test_xtal.py DONE')

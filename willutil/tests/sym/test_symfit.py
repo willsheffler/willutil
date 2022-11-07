@@ -9,6 +9,22 @@ from willutil.sym import symfit_mc_play, setup_test_frames
 def main():
    t = wu.Timer()
 
+   test_extra_cyclic()
+   test_cyclic_sym_err()
+   test_rel_xform_info()
+   test_rel_xform_info_rand()
+   test_symops_cen_perfect()
+   test_symops_cen_imperfect()
+   test_symfit_align_axes()
+   test_disambiguate_axes()
+   test_symfit_dihedral()
+   test_symfit_d2()
+   test_symfit_d2_af2()
+   test_af2_example()
+   test_symfit_d3_nfold_error()
+   test_d4_error()
+   assert 0
+
    for isym in range(1):
       sym = 'd%i' % isym
       # nfail, ntest = 0, 100
@@ -326,8 +342,7 @@ def test_rel_xform_info_rand(nsamp=50):
 
       assert np.allclose(postx @ axs0, xinfo.axs)
       assert np.allclose(ang0, xinfo.ang)
-      assert np.allclose(hm.proj_perp(xinfo.axs, postx @ cen0), hm.proj_perp(
-         xinfo.axs, xinfo.cen))
+      assert np.allclose(hm.proj_perp(xinfo.axs, postx @ cen0), hm.proj_perp(xinfo.axs, xinfo.cen))
       assert np.allclose(hel0, xinfo.hel)
       assert np.allclose(rad0, xinfo.rad)
 
@@ -801,8 +816,7 @@ def test_d4_error():
                       [[0.72021416, 0.3984008, 0.56795103, 4.50082754],
                        [-0.19837333, 0.90274918, -0.38169614, -4.50196276],
                        [-0.66478537, 0.16223663, 0.72920483, -1.66057906], [0, 0, 0, 1]],
-                      [[-0.8942695, 0.4165067, 0.16372, 0.44246407],
-                       [0.43142538, 0.89958473, 0.06796655, -4.28919314],
+                      [[-0.8942695, 0.4165067, 0.16372, 0.44246407], [0.43142538, 0.89958473, 0.06796655, -4.28919314],
                        [-0.11897149, 0.13141337, -0.98416275, 3.76007159], [0, 0, 0, 1]]])
    fit = wu.sym.compute_symfit(sym='d4', frames=frames)
    assert fit

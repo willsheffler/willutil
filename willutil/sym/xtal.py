@@ -57,7 +57,7 @@ class Xtal:
       if flat: frames = frames.reshape(-1, 4, 4)
       return frames
 
-   def generate_candidate_frames(self, depth=50, radius=9e9, trials=100000, **kw):
+   def generate_candidate_frames(self, depth=30, radius=9e9, trials=1000, **kw):
       generators = np.concatenate([s.operators for s in self.symelems])
       x, _ = wu.cpp.geom.expand_xforms_rand(generators, depth=depth, radius=radius, trials=trials)
       testpoint = [0.001, 0.002, 0.003]
@@ -97,7 +97,7 @@ class Xtal:
          inbounds = np.logical_and(inboundslow, inboundshigh)
          frames = candidates[inbounds]
          elems = wu.hxform(frames, symelem)
-         ic(elems)
+         # ic(elems)
          assert len(elems) == len(frames), f'{len(elems)} {len(frames)}'
          coverelems.append(list(zip(elems, frames)))
       return coverelems

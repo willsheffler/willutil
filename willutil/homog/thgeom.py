@@ -18,10 +18,14 @@ def th_mean_along(vecs, along=None):
    tot = torch.sum(flipped, axis=0)
    return th_normalized(tot)
 
-def th_com_flat(points):
+def th_com_flat(points, closeto=None, closefrac=0.5):
+   if closeto != None:
+      dist = th_norm(points - closeto)
+      close = torch.argsort(dist)[:closefrac * len(dist)]
+      points = points[close]
    return torch.mean(points, axis=-2)
 
-def th_com(points):
+def th_com(points, **kw):
    points = th_point(points)
    oshape = points.shape
    points = points.reshape(-1, oshape[-2], 4)
@@ -359,7 +363,8 @@ def th_vec(vec):
    if (vec.dtype not in (torch.float32, torch.float64)):
       vec = vec.to(torch.float32)
    if vec.shape[-1] == 4:
-      vec[..., 3] = 0
+      if torch.any(vec[..., 3]) != 0:
+         vec = torch.cat([vec[..., :3], torch.zeros(*vec.shape[:-1], 1)], dim=-1)
       return vec
    elif vec.shape[-1] == 3:
       r = torch.zeros(vec.shape[:-1] + (4, ), dtype=vec.dtype)

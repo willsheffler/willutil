@@ -37,6 +37,8 @@ from willutil.homog import (
    hrot,
    htrans,
    hvec,
+   hrmsfit,
+   unhomog,
    hpow,
    hray,
    hscale,
@@ -46,6 +48,7 @@ from willutil.homog import (
    line_angle_degrees,
    rand_xform_small as hrand,
    rand_rot_small as hrandrot,
+   rand_point as hrandpoint,
    rot_of,
    trans_of,
    xaxis_of,
@@ -61,6 +64,7 @@ from willutil.homog.thgeom import (
    th_axis_angle,
    th_axis_angle_hel,
    th_com,
+   th_com_flat,
    th_dot,
    th_homog,
    th_intersect_planes,
@@ -76,6 +80,8 @@ from willutil.homog.thgeom import (
    th_quat_to_upper_half,
    th_quat_to_xform,
    th_rand_quat,
+   th_proj,
+   th_projperp,
    th_rand_xform,
    th_rand_xform_small,
    th_randpoint,
@@ -107,11 +113,13 @@ from willutil import format
 from willutil import homog
 from willutil import sym
 from willutil import viz
+from willutil import rigid
 
 from willutil.mc import MonteCarlo
 
 from willutil.sym import compute_symfit
 from willutil.pdb import dump_pdb_from_ncac_points
+from willutil.rigid import RigidBody
 
 # deferr import of cpp libs to avoid compilation if unnecessary
 cpp = deferred_import('willutil.cpp')

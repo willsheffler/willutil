@@ -5,8 +5,9 @@ from willutil.homog.thgeom import *
 from willutil.homog.hgeom import *
 
 def main():
+   test_th_vec()
    test_th_rog()
-   assert 0, 'DONE'
+   # assert 0, 'DONE'
    test_torch_rmsfit()
    test_th_misc()
    test_axisangcenhel_roundtrip()
@@ -19,6 +20,20 @@ def main():
 
    test_torch_grad()
    test_th_axis_angle_cen_rand()
+
+def test_th_vec():
+   v = th_randvec(10)
+   ic(v)
+   v2 = th_vec(v)
+   assert v is v2
+   p = th_randpoint(10)
+   v3 = th_vec(p)
+   assert torch.allclose(p[..., :3], v3[..., :3])
+   assert torch.allclose(v3[..., 3], torch.tensor(0.0))
+
+   v4 = th_vec(p[..., :3])
+   assert torch.allclose(p[..., :3], v4[..., :3])
+   assert torch.allclose(v4[..., 3], torch.tensor(0.0))
 
 def test_th_rog():
    points = th_randpoint(10)
@@ -323,22 +338,23 @@ def test_torch_quat():
       assert q0.is_leaf
       assert np.allclose(q0.grad.detach(), [0, v, v, v])
 
-def test_torch_rmsfit():
-   torch = pytest.importorskip('torch')
-   torch.autograd.set_detect_anomaly(True)
+def test_torch_rmsfit(trials=10):
+   for _ in range(trials):
+      torch = pytest.importorskip('torch')
+      torch.autograd.set_detect_anomaly(True)
 
-   p = torch.tensor(rand_point(10, std=10))
-   q = torch.tensor(rand_point(10, std=10))
-   # ic(p)
-   rms0 = th_rms(p, q)
-   rms, qhat, xpqhat = th_rmsfit(p, q)
-   assert rms0 > rms
-   ic(float(rms0), float(rms))
-   assert np.allclose(th_rms(qhat, q), rms)
-   for i in range(10):
-      rms2 = th_rms(q, th_xform(th_rand_xform_small(1, 0.01, 0.001), qhat))
-      # print(float(rms), float(rms2))
-      assert rms2 > rms
+      p = torch.tensor(rand_point(10, std=10))
+      q = torch.tensor(rand_point(10, std=10))
+      # ic(p)
+      rms0 = th_rms(p, q)
+      rms, qhat, xpqhat = th_rmsfit(p, q)
+      assert rms0 > rms
+      ic(float(rms0), float(rms))
+      assert np.allclose(th_rms(qhat, q), rms)
+      for i in range(10):
+         rms2 = th_rms(q, th_xform(th_rand_xform_small(1, 0.01, 0.001), qhat))
+         # print(float(rms), float(rms2))
+         assert rms2 > rms
 
 def test_torch_rmsfit_graaxd():
    ntrials = 1

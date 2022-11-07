@@ -10,6 +10,8 @@ ic.configureOutput(includeContext=True, contextAbsPath=True)
 
 def main():
 
+   test_hrmsfit()
+
    test_hxform()
    test_hxform_ray()
    test_hpow()
@@ -1379,6 +1381,29 @@ def torque_delta_sanity_check():
 def test_hrot():
    r = rand_vec()
    assert np.allclose(hrot(r, 120), hrot(r, nfold=3))
+
+def test_hrmsfit(trials=10):
+   for _ in range(trials):
+      p = rand_point(10, std=10)
+      p03 = unhomog(p)
+      q = rand_point(10, std=10)
+      # ic(p)
+      rms0 = hrms(p03, q)
+      rms, qhat, xpqhat = hrmsfit(p03, q)
+      assert rms0 > rms
+      # ic(float(rms0), float(rms))
+      assert np.allclose(hrms(qhat, q), rms)
+      for i in range(10):
+         rms2 = hrms(q, hxform(rand_xform_small(1, 0.01, 0.001), qhat))
+         # print(float(rms), float(rms2))
+         assert rms2 > rms
+
+      import willutil as wu
+      import torch
+      rms2, qhat2, xpqhat2 = wu.th_rmsfit(torch.tensor(p), torch.tensor(q))
+      assert np.allclose(rms, rms2)
+      assert np.allclose(qhat, qhat2)
+      assert np.allclose(xpqhat, xpqhat2)
 
 if __name__ == '__main__':
    main()

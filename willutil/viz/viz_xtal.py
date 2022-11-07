@@ -149,6 +149,8 @@ def pymol_viz_Xtal(
    if not splitobjs:
       pymol.cmd.load_cgo(allcgo, f'{name}_all')
 
+   return state
+
 def cgo_frame_points(frames, scale, showpts):
    cgo = list()
    for i, frame in enumerate(frames):

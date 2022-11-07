@@ -53,11 +53,9 @@ def hdiff(x, y, lever):
    return diff
 
 def hxform(x, stuff, homogout='auto', **kw):
-   if isinstance(stuff, list) and len(stuff) and not isinstance(stuff[0],
-                                                                (int, float, list, tuple)):
+   if isinstance(stuff, list) and len(stuff) and not isinstance(stuff[0], (int, float, list, tuple)):
       return [hxform(x, v) for v in stuff]
-   if isinstance(stuff, dict) and len(stuff) and not isinstance(stuff[0],
-                                                                (int, float, list, tuple)):
+   if isinstance(stuff, dict) and len(stuff) and not isinstance(stuff[0], (int, float, list, tuple)):
       return {k: hxform(x, v) for k, v in stuff.items()}
    orig = None
    if hasattr(stuff, 'coords'):
@@ -222,8 +220,7 @@ def rot_to_quat(xform):
    quat[case3, 2] = (x[case3, 1, 2] + x[case3, 2, 1]) / S3
    quat[case3, 3] = 0.25 * S3
 
-   assert (np.sum(case0) + np.sum(case1) + np.sum(case2) + np.sum(case3) == np.prod(
-      xform.shape[:-2]))
+   assert (np.sum(case0) + np.sum(case1) + np.sum(case2) + np.sum(case3) == np.prod(xform.shape[:-2]))
 
    return quat_to_upper_half(quat)
 
@@ -419,8 +416,7 @@ def hrot(axis_or_ray, angle=None, center=None, dtype='f8', nfold=None, **kws):
       axis = axis_or_ray[..., 1]
    else:
       axis = axis_or_ray
-      center = (np.array([0, 0, 0], dtype=dtype) if center is None else np.array(
-         center, dtype=dtype))
+      center = (np.array([0, 0, 0], dtype=dtype) if center is None else np.array(center, dtype=dtype))
 
    if angle is None:
       angle = 2 * np.pi / nfold
@@ -439,7 +435,8 @@ def hrot(axis_or_ray, angle=None, center=None, dtype='f8', nfold=None, **kws):
 
 def hpoint(point):
    point = np.asanyarray(point)
-   if point.shape[-1] == 4: return point
+   if point.shape[-1] == 4:
+      return point
    elif point.shape[-1] == 3:
       r = np.ones(point.shape[:-1] + (4, ))
       r[..., :3] = point
@@ -681,6 +678,49 @@ def rand_rot_small(shape=(), rot_sd=0.001, seed=None):
    if seed is not None: np.random.set_state(randstate)
    return r.squeeze()
 
+def hrms(a, b):
+   a = hpoint(a)
+   b = hpoint(b)
+   assert a.shape == b.shape
+   return np.sqrt(np.sum(np.square(a - b)) / len(a))
+
+def unhomog(stuff):
+   return stuff[..., :3]
+
+def hrmsfit(mobile, target):
+   '''use kabsch method to get rmsd fit'''
+   mobile = hpoint(mobile)
+   target = hpoint(target)
+   assert mobile.shape == target.shape
+   assert mobile.ndim > 1
+
+   mobile_cen = np.mean(mobile, axis=0)
+   target_cen = np.mean(target, axis=0)
+   mobile = mobile - mobile_cen
+   target = target - target_cen
+   # ic(mobile.shape)
+   # ic(target.shape[-1] in (3, 4))
+   covariance = mobile.T[:3] @ target[:, :3]
+   V, S, W = np.linalg.svd(covariance)
+   if 0 > np.linalg.det(V) * np.linalg.det(W):
+      S = np.array([S[0], S[1], -S[2]], dtype=S.dtype)
+      # S[-1] = -S[-1]
+      # ic(S - S1)
+      V = np.concatenate([V[:, :-1], -V[:, -1, None]], axis=1)
+      # V[:, -1] = -V[:, -1]
+      # ic(V - V1)
+      # assert 0
+   rot_m2t = homog(V @ W).T
+   trans_m2t = target_cen - rot_m2t @ mobile_cen
+   xform_mobile_to_target = homog(rot_m2t, trans_m2t)
+
+   mobile = mobile + mobile_cen
+   target = target + target_cen
+   mobile_fit_to_target = hxform(xform_mobile_to_target, mobile)
+   rms = hrms(target, mobile_fit_to_target)
+
+   return rms, mobile_fit_to_target, xform_mobile_to_target
+
 def proj(u, v):
    u = np.asanyarray(u)
    v = np.asanyarray(v)
@@ -697,8 +737,7 @@ def point_in_plane(plane, pt):
 
 def ray_in_plane(plane, ray):
    assert ray.shape[-2:] == (4, 2)
-   return (point_in_plane(plane, ray[..., :3, 0]) *
-           point_in_plane(plane, ray[..., :3, 0] + ray[..., :3, 1]))
+   return (point_in_plane(plane, ray[..., :3, 0]) * point_in_plane(plane, ray[..., :3, 0] + ray[..., :3, 1]))
 
 def intesect_line_plane(p0, n, l0, l):
    l = hm.hnormalized(l)
@@ -1217,6 +1256,21 @@ def hrog(points):
    rog = th_rog_flat(points)
    rog = rog.reshape(oshape[:-2])
    return rog
+
+def homog(rot, trans=None, **kw):
+   if trans is None:
+      trans = np.asarray([0, 0, 0, 0], **kw)
+   trans = np.asarray(trans)
+
+   if rot.shape == (3, 3):
+      rot = np.concatenate([rot, np.array([[0., 0., 0.]])], axis=0)
+      rot = np.concatenate([rot, np.array([[0], [0], [0], [1]])], axis=1)
+
+   assert rot.shape[-2:] == (4, 4)
+   assert trans.shape[-1:] == (4, )
+
+   h = np.concatenate([rot[:, :3], trans[:, None]], axis=1)
+   return h
 
 _axis_ang_cen_magic_points_numpy = np.array([[
    -32.09501046777237,

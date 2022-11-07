@@ -67,6 +67,7 @@ def read_pdb_atoms(fname_or_buf):
          assert not cryst
          cryst = line.strip()
 
+   assert atomlines
    return '\n'.join(atomlines), wu.Bunch(cryst1=cryst)
 
 def parse_pdb_atoms(atomstr):
@@ -124,8 +125,7 @@ def readpdb(fname_or_buf):
    meta.update(code=code, resl=resl)
    return PDBFile(df, meta)
 
-def format_atom(atomi=0, atomn='ATOM', idx=' ', resn='RES', chain='A', resi=0, insert=' ', x=0,
-                y=0, z=0, occ=1, b=0):
+def format_atom(atomi=0, atomn='ATOM', idx=' ', resn='RES', chain='A', resi=0, insert=' ', x=0, y=0, z=0, occ=1, b=0):
    return _atom_record_format.format(**locals())
 
 def atomrecords_to_chainseq(df):

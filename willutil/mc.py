@@ -2,7 +2,7 @@ import numpy as np
 import willutil as wu
 
 class MonteCarlo:
-   def __init__(self, scorefunc=None, temperature=1, debug=False, timer=None):
+   def __init__(self, scorefunc=None, temperature=1, debug=False, timer=None, **kw):
       self.best = 9e9
       self.bestconfig = None
       self.low = 9e9
@@ -32,7 +32,7 @@ class MonteCarlo:
       self.new_best_last = False
       # if self.debug: print(score)
       delta = score - self.low
-      if score > 1000:
+      if score > 10000:
          return self.accepted_last
       if np.exp(max(-99, min(99, -delta / self.temperature))) > np.random.rand():
          self.naccept += 1

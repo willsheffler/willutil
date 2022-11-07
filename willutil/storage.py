@@ -145,6 +145,7 @@ class open_lzma_cached:
       self.file_obj.close()
 
 def is_pdb_fname(fn, maxlen=1000):
+   ic(fn)
    if len(fn) > maxlen:
       return False
    elif len(fn.split()) > 1:

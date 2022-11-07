@@ -168,12 +168,15 @@ def _(
 ):
    mycgo = list()
    v = pymol.cmd.get_view()
+   cmd.set('suspend_updates', 'on')
+
    for t in toshow:
-      print('    ##############', type(t), '################')
+      # print('    ##############', type(t), '################')
       mycgo.extend(pymol_load(t, state, addtocgo=mycgo, make_cgo_only=True, **kw))
    pymol.cmd.set_view(v)
    name = name or 'list'
    pymol.cmd.load_cgo(mycgo, name)
+   cmd.set('suspend_updates', 'off')
 
 @pymol_load.register(np.ndarray)
 def _(

@@ -1,7 +1,8 @@
 from willutil import Bunch
 from willutil.homog.hgeom import *
 from willutil.sym.symframes import *
-from willutil.sym.unbounded import frames_unbounded
+from willutil.sym.unbounded import *
+from willutil.sym.asufit import *
 from willutil.viz import showme
 
 def frames(
@@ -23,8 +24,7 @@ def frames(
     '''
 
    if spacing is not None or symops is not None:
-      return frames_unbounded(sym=sym, axis=axis, axis0=axis0, symops=symops, spacing=spacing,
-                              com=com)
+      return frames_unbounded(sym=sym, axis=axis, axis0=axis0, symops=symops, spacing=spacing, com=com)
 
    if sym is None or sym.upper() == 'C1':
       return np.eye(4).reshape(1, 4, 4)
@@ -160,11 +160,7 @@ tetrahedral_axes = {
    3: hnormalized([1, 1, 1]),
    '3b': hnormalized([1, 1, _])  # other c3
 }
-octahedral_axes = {
-   2: hnormalized([1, 1, 0]),
-   3: hnormalized([1, 1, 1]),
-   4: hnormalized([1, 0, 0])
-}
+octahedral_axes = {2: hnormalized([1, 1, 0]), 3: hnormalized([1, 1, 1]), 4: hnormalized([1, 0, 0])}
 icosahedral_axes = {
    2: hnormalized([1, 0, 0]),
    3: hnormalized([0.934172, 0.000000, 0.356822]),
@@ -172,8 +168,7 @@ icosahedral_axes = {
 }
 
 tetrahedral_axes_all = {
-   2:
-   hnormalized([
+   2: hnormalized([
       [1, 0, 0],
       [0, 1, 0],
       [0, 0, 1],
@@ -181,8 +176,7 @@ tetrahedral_axes_all = {
       # [0, _, 0],
       # [0, 0, _],
    ]),
-   3:
-   hnormalized([
+   3: hnormalized([
       [1, 1, 1],
       [1, _, _],
       [_, _, 1],
@@ -192,8 +186,7 @@ tetrahedral_axes_all = {
       # [1, 1, _],
       # [1, _, 1],
    ]),
-   '3b':
-   hnormalized([
+   '3b': hnormalized([
       [_, 1, 1],
       [1, _, 1],
       [1, 1, _],
