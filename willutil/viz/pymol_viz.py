@@ -1,4 +1,4 @@
-import sys, os, tempfile, numpy as np, time
+import sys, os, tempfile, numpy as np, time, functools
 from collections import defaultdict
 
 from logging import info
@@ -169,10 +169,10 @@ def _(
    mycgo = list()
    v = pymol.cmd.get_view()
    cmd.set('suspend_updates', 'on')
-
-   for t in toshow:
+   col = [tuple(_) for _ in get_different_colors(len(toshow), **kw)]
+   for i, t in enumerate(toshow):
       # print('    ##############', type(t), '################')
-      mycgo.extend(pymol_load(t, state, addtocgo=mycgo, make_cgo_only=True, **kw))
+      mycgo.extend(pymol_load(t, state, addtocgo=mycgo, make_cgo_only=True, col=col[i], **kw))
    pymol.cmd.set_view(v)
    name = name or 'list'
    pymol.cmd.load_cgo(mycgo, name)
@@ -202,16 +202,25 @@ def _(
 
 _nxforms = 0
 
-def get_different_colors(ncol, niter=100):
+@functools.lru_cache
+def get_different_colors(ncol, niter=1000, colorseed=1, **kw):
    rs = np.random.get_state()
-   np.random.seed(2)
+   np.random.seed(colorseed)
    maxmincoldis, best = 0, None
    for i in range(niter):
       colors = np.random.rand(ncol, 3)
+      # ic(np.max(colors[:, ], axis=1))
+      while np.min(np.max(colors[:, ], axis=1)) < 0.8:
+         colors = np.random.rand(ncol, 3)
       cdis2 = np.linalg.norm(colors[None] - colors[:, None], axis=-1)
       np.fill_diagonal(cdis2, 4.0)
       if np.min(cdis2) > maxmincoldis:
          maxmincoldis, best = np.min(cdis2), colors
+
+   best = best[np.argsort(-np.min(best**2, axis=1))]
+   # ic(np.argsort(-np.min(best**2, axis=1)))
+   # ic(best)
+   # assert 0
    np.random.set_state(rs)
    # paranoid sanity cheeck
    newrs = np.random.get_state()
@@ -267,7 +276,7 @@ def pymol_visualize_xforms(
    name = get_cgo_name(name)
    colors = None
    if framecolors == 'rand':
-      colors = get_different_colors(len(xforms) + 1)
+      colors = get_different_colors(len(xforms) + 1, **kw)
 
    # mycgo = [cgo.BEGIN]
    mycgo = list()
@@ -338,7 +347,7 @@ def show_ndarray_lines(
    state["seenit"][name] += 1
    name += "_%i" % state["seenit"][name]
    if col == 'rand':
-      col = get_different_colors(len(toshow))
+      col = get_different_colors(len(toshow), **kw)
    if not isinstance(col[0], (list, np.ndarray, tuple)):
       col = [col] * len(toshow)
 
@@ -380,7 +389,7 @@ def show_ndarray_line_strip(
    name += "_%i" % state["seenit"][name]
 
    if col == 'rand':
-      col = get_different_colors(breaks // breaks_groups)
+      col = get_different_colors(breaks // breaks_groups, **kw)
    if isinstance(col, list) and isinstance(col[0], (int, float)):
       col = [col] * breaks
    if isinstance(col, (tuple, str)):
@@ -445,7 +454,7 @@ def show_ndarray_point_or_vec(
    if col in get_color_dict():
       col = get_color_dict()[col]
    if col == 'rand':
-      col = get_different_colors(len(toshow))
+      col = get_different_colors(len(toshow), **kw)
    mycgo = list()
    assert toshow.shape[-1] == 4
    if toshow.ndim == 1: toshow = [toshow]

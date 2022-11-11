@@ -126,7 +126,7 @@ def th_rot(axis, angle, center=None, hel=None, squeeze=True):
    return r
 
 def th_rand_point(*a, **kw):
-   return torch.from_numpy(rand_point(*a, **kw))
+   return rand_point(*a, **kw)
 
 def th_rand_vec(*a, **kw):
    return torch.from_numpy(rand_vec(*a, **kw))
@@ -305,6 +305,8 @@ def th_rmsfit(mobile, target):
    assert mobile.shape == target.shape
    assert mobile.ndim > 1
    assert mobile.shape[-1] in (3, 4)
+   if mobile.dtype != target.dtype:
+      mobile = mobile.to(target.dtype)
    mobile_cen = torch.mean(mobile, axis=0)
    target_cen = torch.mean(target, axis=0)
    mobile = mobile - mobile_cen
@@ -347,7 +349,7 @@ def th_randvec(shape=(), std=1, dtype=None):
 def th_randunit(shape=(), cen=[0, 0, 0], std=1):
    dtype = dtype or torch.float32
    if isinstance(shape, int): shape = (shape, )
-   v = th_normalized(np.random.randn(*(shape + (3, ))) * std)
+   v = th_normalized(torch.randn(*(shape + (3, ))) * std)
    return v
 
 def th_point(point, **kw):
@@ -363,8 +365,8 @@ def th_vec(vec):
    if (vec.dtype not in (torch.float32, torch.float64)):
       vec = vec.to(torch.float32)
    if vec.shape[-1] == 4:
-      # if torch.any(vec[..., 3]) != 0:
-      # vec = torch.cat([vec[..., :3], torch.zeros(*vec.shape[:-1], 1)], dim=-1)
+      if torch.any(vec[..., 3]) != 0:
+         vec = torch.cat([vec[..., :3], torch.zeros(*vec.shape[:-1], 1)], dim=-1)
       return vec
    elif vec.shape[-1] == 3:
       r = torch.zeros(vec.shape[:-1] + (4, ), dtype=vec.dtype)
@@ -433,8 +435,8 @@ def th_angle(xforms):
 
 def th_point_line_dist2(point, cen, norm):
    point = point - cen
-   proj = norm * torch.sum(norm * point) / torch.sum(norm * norm)
-   perp = point - proj
+   hproj = norm * torch.sum(norm * point) / torch.sum(norm * norm)
+   perp = point - hproj
    return torch.sum(perp**2)
 
 def th_dot(a, b, outerprod=False):

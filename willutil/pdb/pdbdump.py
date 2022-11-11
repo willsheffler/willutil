@@ -6,7 +6,7 @@ all_pymol_chains = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvw
 
 def pdb_format_atom(
    ia=0,
-   an="ATOM",
+   an="CA",
    idx=" ",
    rn="RES",
    c="A",
@@ -35,17 +35,20 @@ def pdb_format_atom(
 
    return format_str.format(**locals())
 
-def dump_pdb_from_points(fname, pts, header=''):
+def dump_pdb_from_points(fname, pts, header='', frames=[np.eye(4)]):
    pts = np.asarray(pts)
+
    if not (pts.ndim == 2 and pts.shape[-1] in (3, 4)):
       raise ValueError(f'bad shape for points {pts.shape}')
    if os.path.dirname(fname):
       os.makedirs(os.path.dirname(fname), exist_ok=True)
    with open(fname, "w") as out:
       out.write(header)
-      for i, p in enumerate(pts):
-         s = pdb_format_atom(x=p[0], y=p[1], z=p[2], ir=i)
-         out.write(s)
+      for ic, f in enumerate(frames):
+         for i, p in enumerate(pts):
+            p = f @ p
+            s = pdb_format_atom(x=p[0], y=p[1], z=p[2], ir=i, c=ic)
+            out.write(s)
 
 def dump_pdb_from_ncac_points(fname, pts, nchain=1):
    if os.path.dirname(fname):

@@ -1,13 +1,14 @@
 import numpy as np
 import willutil as wu
+from willutil.homog import *
 
 class SymElem:
    def __init__(self, nfold, axis, cen=[0, 0, 0]):
       self.nfold = nfold
       self.origaxis = axis
-      self.coords = wu.hray(cen, axis)
-      x = wu.hrot(self.coords, nfold=nfold)
-      self.operators = np.stack([wu.hpow(x, p) for p in range(nfold)])
+      self.coords = wu.homog.hgeom.hray(cen, axis)
+      x = wu.homog.hgeom.hrot(self.coords, nfold=nfold)
+      self.operators = np.stack([wu.homog.hgeom.hpow(x, p) for p in range(nfold)])
 
    @property
    def cen(self):

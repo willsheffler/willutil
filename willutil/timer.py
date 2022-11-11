@@ -142,7 +142,7 @@ class Timer:
       r = os.linesep.join(lines)
       if printme:
          if file is None:
-            print(r)
+            ic(r)
          else:
             with open(file, 'w') as out:
                out.write(r + os.linesep)

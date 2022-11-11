@@ -2,8 +2,18 @@ import numpy as np
 import willutil as wu
 
 class RigidBody:
-   def __init__(self, coords=None, extra=None, position=np.eye(4), parent=None, xfromparent=None, contactdis=8,
-                clashdis=3, **kw):
+   def __init__(
+         self,
+         coords=None,
+         extra=None,
+         position=np.eye(4),
+         parent=None,
+         xfromparent=None,
+         contactdis=8,
+         clashdis=3,
+         usebvh=True,
+         **kw,
+   ):
       self.extra = extra
       self.parent = parent
       self.xfromparent = xfromparent
@@ -12,12 +22,17 @@ class RigidBody:
       self.bvh = None
       if coords is not None:
          self._coords = wu.hpoint(coords)
-         self.bvh = wu.cpp.bvh.BVH(coords[..., :3])
+         self._com = wu.hcom(self._coords)
+         if usebvh:
+            self.bvh = wu.cpp.bvh.BVH(coords[..., :3])
       elif parent is not None:
          self.bvh = parent.bvh
          self._coords = parent._coords
+         self._com = wu.hcom(self._coords)
+
       self.clashdis = clashdis
       self.contactdis = contactdis
+      self.usebvh = usebvh
 
    def __len__(self):
       return len(self._coords)
@@ -27,8 +42,9 @@ class RigidBody:
       if x.ndim == 1:
          x = wu.htrans(x)
       self.position = wu.hxform(x, self.position)
+      assert wu.hvalid(self.position)
 
-   def moveby_com(self, x):
+   def move_about_com(self, x):
       x = np.asarray(x)
       if x.ndim == 1:
          x = wu.htrans(x)
@@ -47,25 +63,34 @@ class RigidBody:
    def position(self, newposition):
       if self.parent != None:
          raise ValueError(f'RigidBody with parent cant have position set')
-      self._position = newposition
+      if newposition.shape[-2:] != (4, 4):
+         raise ValueError(f'RigidBody position is 4,4 matrix (not point)')
+      self._position = newposition.reshape(4, 4)
 
    @property
    def coords(self):
       return wu.hxform(self.position, self._coords)
 
    def com(self):
-      return self.position @ self.bvh.com()
+      return self.position @ self._com
 
    def comdirn(self):
-      return wu.hnormalized(self.bvh.com())
+      return wu.hnormalized(self.com())
 
    def rog(self):
       d = self.coords - self.com()
       return np.sqrt(np.sum(d**2) / len(d))
 
-   def contact_count(self, other, maxdis):
+   def contact_count(self, other, contactdist, usebvh=None):
       assert isinstance(other, RigidBody)
-      return wu.cpp.bvh.bvh_count_pairs(self.bvh, other.bvh, self.position, other.position, maxdis)
+      if usebvh or (usebvh is None and self.usebvh):
+         count = wu.cpp.bvh.bvh_count_pairs(self.bvh, other.bvh, self.position, other.position, contactdist)
+      else:
+         # import scipy.spatial
+         # d = scipy.spatial.distance_matrix(self.coords, other.coords)
+         d = wu.hnorm(self.coords[None] - other.coords[:, None])
+         count = np.sum(d < contactdist)
+      return count
 
    def contacts(self, other):
       return self.contact_count(other, self.contactdis)
@@ -73,15 +98,35 @@ class RigidBody:
    def clashes(self, other):
       return self.contact_count(other, self.clashdis)
 
-   def conntact_pairs(self, other):
-      assert isinstance(other, RigidBody)
+   def point_contact_count(self, other, contactdist=8):
+      p = self.interactions(other, contactdist=contactdist)
+      a = set(p[:, 0])
+      b = set(p[:, 1])
+      # ic(a)
+      # ic(b)
+      return len(a), len(b)
 
-      if pos1 is None: pos1 = self.pos
-      if pos2 is None: pos2 = other.pos
-      if not buf:
-         buf = np.empty((10000, 2), dtype="i4")
-      pairs, overflow = rp.bvh.bvh_collect_pairs(
-         self.bvh_bb_atomno if atomno else (self.bvh_bb if use_bb else self.bvh_cen), other.bvh_bb_atomno if atomno else
-         (other.bvh_bb if use_bb else other.bvh_cen), pos1, pos2, maxdis, buf)
-      assert not overflow
+   def contact_fraction(self, other, contactdist=8):
+
+      # wu.pdb.dump_pdb_from_points('bodyA.pdb', self.coords)
+      # wu.pdb.dump_pdb_from_points('bodyB.pdb', other.coords)
+
+      p = self.interactions(other, contactdist=contactdist)
+      a = set(p[:, 0])
+      b = set(p[:, 1])
+      # ic(len(a), len(self.coords))
+      # ic(len(b), len(other.coords))
+
+      return len(a) / len(self.coords), len(b) / len(self.coords)
+
+   def interactions(self, other, contactdist=8, buf=None, usebvh=None):
+      assert isinstance(other, RigidBody)
+      if usebvh or (usebvh is None and self.usebvh):
+         if not buf: buf = np.empty((100000, 2), dtype="i4")
+         pairs, overflow = wu.cpp.bvh.bvh_collect_pairs(self.bvh, other.bvh, self.position, other.position, contactdist,
+                                                        buf)
+         assert not overflow
+      else:
+         d = wu.hnorm(self.coords[None] - other.coords[:, None])
+         pairs = np.stack(np.where(d <= contactdist), axis=1)
       return pairs

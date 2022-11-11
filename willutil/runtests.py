@@ -89,7 +89,7 @@ def main(**kw):
    print("call:", sys.argv)
    print("cwd:", os.getcwd())
    print("cmd:", cmd)
-   print(f"{' util/runtests.py running cmd in cwd ':=^80}")
+   print(f"{' util/runtests.py running cmd in cwd ':=^60}")
    sys.stdout.flush()
    # if 1cmd.startswith('pytest '):
    os.putenv("NUMBA_OPT", "1")
@@ -98,10 +98,10 @@ def main(**kw):
    # print(cmd)
    os.system(cmd)
 
-   print(f"{' main command done ':=^80}")
+   print(f"{' main command done ':=^60}")
    os.system(post)
    t = perf_counter() - t
-   print(f"{f' runtests.py done, time {t:7.3f} ':=^80}")
+   print(f"{f' runtests.py done, time {t:7.3f} ':=^60}")
 
 _overrides = {
    #    "genrate_motif_scores.py":

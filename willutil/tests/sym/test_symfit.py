@@ -214,7 +214,7 @@ def test_cyclic_sym_err(nsamp=100):
       axs = hm.rand_unit()
       tgtang = np.random.rand() * np.pi
       f1 = np.eye(4)
-      cart = hm.proj_perp(axs, hm.rand_point())
+      cart = hm.hprojperp(axs, hm.hrandpoint())
       rad = np.linalg.norm(cart[:3])
       f1[:, 3] = cart
       rel = hm.hrot(axs, tgtang)
@@ -310,7 +310,7 @@ def test_rel_xform_info_rand(nsamp=50):
       # print(xinfo.cen)
       # print('xinfo.rad', rad0, xinfo.rad, xinfo.rad / rad0)
       # print('xinfo.hel', hel0, xinfo.hel)
-      cen1 = hm.proj_perp(axs0, cen0)
+      cen1 = hm.hprojperp(axs0, cen0)
       assert np.allclose(np.linalg.norm(xinfo.axs, axis=-1), 1.0)
       assert np.allclose(xrel0, xinfo.xrel)
       assert np.allclose(axs0, xinfo.axs)
@@ -342,7 +342,7 @@ def test_rel_xform_info_rand(nsamp=50):
 
       assert np.allclose(postx @ axs0, xinfo.axs)
       assert np.allclose(ang0, xinfo.ang)
-      assert np.allclose(hm.proj_perp(xinfo.axs, postx @ cen0), hm.proj_perp(xinfo.axs, xinfo.cen))
+      assert np.allclose(hm.hprojperp(xinfo.axs, postx @ cen0), hm.hprojperp(xinfo.axs, xinfo.cen))
       assert np.allclose(hel0, xinfo.hel)
       assert np.allclose(rad0, xinfo.rad)
 
@@ -444,7 +444,7 @@ def test_symops_cen_perfect(nframes=9):
             assert np.allclose(op2.xrel @ frame1, frame2, atol=1e-8)
             assert np.allclose(op1.axs, xpost2inv @ op2.axs, atol=1e-4)
             assert np.allclose(op1.ang, op2.ang, atol=1e-4)
-            assert np.allclose(op1.cen, hm.proj_perp(op2.axs, xpost2inv @ op2.cen), atol=1e-3)
+            assert np.allclose(op1.cen, hm.hprojperp(op2.axs, xpost2inv @ op2.cen), atol=1e-3)
             assert np.allclose(op1.rad, op2.rad, atol=1e-3)
             assert np.allclose(op1.hel, op2.hel, atol=1e-4)
             # for k in point_angles:
@@ -465,7 +465,7 @@ def test_symops_cen_perfect(nframes=9):
 
             print('axs', op1.axs)
             print('cen', op1.cen)
-            print('cen', hm.proj_perp(op2.axs, xpost2inv @ op2.cen))
+            print('cen', hm.hprojperp(op2.axs, xpost2inv @ op2.cen))
             print('cen', xpost2inv @ op2.cen)
             print('cen', op2.cen)
 
@@ -482,7 +482,7 @@ def test_symops_cen_perfect(nframes=9):
             print('op1   ', op1.cen)
             print('op2   ', op2.cen)
             print('op2   ', xpost2inv @ op2.cen)
-            print('proj  ', hm.proj_perp(op2.axs, xpost2inv @ op2.cen))
+            print('hproj  ', hm.hprojperp(op2.axs, xpost2inv @ op2.cen))
             # print('op1axs', op1.axs, op1.ang)
             print('op2axs', op2.axs, op2.ang)
             # print(op1.xrel)
@@ -502,7 +502,7 @@ def test_symops_cen_perfect(nframes=9):
          op2 = symops3[k]
          try:
             assert np.allclose(op1.ang, op2.ang, atol=1e-3)
-            assert np.allclose(op1.cen, hm.proj_perp(op1.axs, xpost3inv @ op2.cen), atol=1e-2)
+            assert np.allclose(op1.cen, hm.hprojperp(op1.axs, xpost3inv @ op2.cen), atol=1e-2)
             assert np.allclose(op1.rad, op2.rad, atol=1e-2)
             assert np.allclose(op1.hel, op2.hel, atol=1e-3)
             # for k in point_angles:
@@ -513,17 +513,17 @@ def test_symops_cen_perfect(nframes=9):
                op2axsinv = -op2axsinv
             assert np.allclose(op1.axs, op2axsinv, atol=1e-4)
 
-            # assert np.allclose(op1.cen, xpost3inv @ hm.proj_perp(op2.axs, op2.cen), atol=1e-4)
+            # assert np.allclose(op1.cen, xpost3inv @ hm.hprojperp(op2.axs, op2.cen), atol=1e-4)
          except AssertionError as e:
             print('op1       ', op1.rad)
             print('op1       ', op1.cen)
             print('cen op2   ', op2.cen)
             print('cen op2inv', xpost3inv @ op2.cen)
-            print('proj      ', hm.proj_perp(op1.axs, xpost3inv @ op2.cen))
-            print('proj      ', hm.proj_perp(op2.axs, xpost3inv @ op2.cen))
+            print('hproj      ', hm.hprojperp(op1.axs, xpost3inv @ op2.cen))
+            print('hproj      ', hm.hprojperp(op2.axs, xpost3inv @ op2.cen))
             print(op1.rad, op2.rad)
-            # print('proj  ', hm.proj_perp(op2.axs, op2.cen))
-            # print('proj  ', xpost3inv @ hm.proj_perp(op2.axs, op2.cen))
+            # print('hproj  ', hm.hprojperp(op2.axs, op2.cen))
+            # print('hproj  ', xpost3inv @ hm.hprojperp(op2.axs, op2.cen))
             # print('op1axs', op1.axs, op1.ang)
             # print('op2axs', xpost3inv @ op2.axs, op2.ang)
             # print('op2axs', op2.axs, op2.ang)

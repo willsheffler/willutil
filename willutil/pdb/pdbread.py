@@ -21,7 +21,7 @@ class PDBFile:
    def nchain(self):
       return len(self.chainseq)
 
-   def subfile(self, chain=None, het=None, removeres=None):
+   def subfile(self, chain=None, het=None, removeres=None, atomnames=[], chains=[]):
       import numpy as np
       import pandas as pd
       df = self.df
@@ -39,6 +39,15 @@ class PDBFile:
             res = wu.misc.tobytes(res)
             df = df.loc[df.rn != res]
             df = pd.DataFrame(df.to_dict())
+      if atomnames:
+         atomnames = [a.encode() for a in atomnames]
+         df = df.loc[np.isin(df.an, atomnames)]
+         df = pd.DataFrame(df.to_dict())
+      if chains:
+         if isinstance(chains, str) and len(chains) == 1: chains = [chains]
+         chains = [c.encode() for c in chains]
+         df = df.loc[np.isin(df.ch, chains)]
+         df = pd.DataFrame(df.to_dict())
       return PDBFile(df, meta=self)
 
 def pdb_code(fname):
@@ -115,15 +124,16 @@ def parse_pdb_atoms(atomstr):
 
    return df
 
-def readpdb(fname_or_buf):
+def readpdb(fname_or_buf, indatabase=False):
    pdbatoms, meta = read_pdb_atoms(fname_or_buf)
    df = parse_pdb_atoms(pdbatoms)
-   code = pdb_code(fname_or_buf)
+   code = pdb_code(fname_or_buf) if indatabase else 'none'
    resl = -1.0
    if code != 'none':
       resl = metadb = wu.pdb.pdbmeta.resl[code]
    meta.update(code=code, resl=resl)
-   return PDBFile(df, meta)
+   pdb = PDBFile(df, meta)
+   return pdb
 
 def format_atom(atomi=0, atomn='ATOM', idx=' ', resn='RES', chain='A', resi=0, insert=' ', x=0, y=0, z=0, occ=1, b=0):
    return _atom_record_format.format(**locals())

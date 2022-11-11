@@ -10,6 +10,7 @@ ic.configureOutput(includeContext=True, contextAbsPath=True)
 
 def main():
 
+   test_hdiff()
    test_hrmsfit()
 
    test_hxform()
@@ -44,7 +45,7 @@ def main():
    test_axis_angle_of_rand()
    test_axis_angle_of_3x3_rand()
    test_is_valid_rays()
-   test_rand_ray()
+   test_hrandray()
    test_proj_prep()
    test_point_in_plane()
    test_ray_in_plane()
@@ -59,8 +60,8 @@ def main():
    test_dihedral()
    test_angle()
    test_align_around_axis()
-   test_align_vectors_minangle()
-   test_align_vectors_una_case()
+   test_halign2_minangle()
+   test_halign2_una_case()
    test_calc_dihedral_angle()
    test_align_lines_dof_dihedral_rand_single()
    test_align_lines_dof_dihedral_rand_3D()
@@ -78,8 +79,19 @@ def main():
 
    ic('test_homog.py done')
 
+def test_hdiff():
+   I = np.eye(4)
+   assert hdiff(I, I) == 0
+
+   x = hrand(cart_sd=0.00001, rot_sd=0.00001)
+   assert hdiff(x, x) == 0
+   assert hdiff(x, I) != 0
+
+   assert hdiff(homog(x[:3, :3]), I) != 0
+   assert hdiff(homog(trans=x[:3, 3]), I) != 0
+
 def test_hxform_ray():
-   p = h_rand_points().squeeze()
+   p = hrandpoint().squeeze()
    v = rand_vec()
    r = hray(p, v)
    assert r.shape == (4, 2)
@@ -89,12 +101,14 @@ def test_hxform_ray():
    assert np.allclose(m[..., 0], hxform(x, r[..., 0]))
    assert np.allclose(m[..., 1], hxform(x, r[..., 1]))
    assert np.allclose(m, hxform(x, r))
+   assert wu.hvalid(m)
 
    x = rand_xform(3)
    m = x @ r
    assert m.shape == (3, 4, 2)
    assert np.allclose(m[..., 0], hxform(x, r[..., 0]))
    assert np.allclose(m[..., 1], hxform(x, r[..., 1]))
+   assert wu.hvalid(m)
 
 def test_hxform():
    x = rand_xform()
@@ -154,7 +168,7 @@ def test_homo_rotation_array():
 def test_homo_rotation_angle():
    ang = np.random.rand(1000) * np.pi
    a = rand_unit()
-   u = proj_perp(a, rand_vec())
+   u = hprojperp(a, rand_vec())
    x = hrot(a, ang)
    ang2 = angle(u, x @ u)
    assert np.allclose(ang, ang2, atol=1e-5)
@@ -286,34 +300,36 @@ def test_is_valid_rays():
    assert not is_valid_rays([[0, 0], [0, 3], [0, 0], [1, 0]])
    assert is_valid_rays([[0, 0], [0, 1], [0, 0], [1, 0]])
 
-def test_rand_ray():
-   r = rand_ray()
+def test_hrandray():
+   r = hrandray()
    assert np.all(r[..., 3, :] == (1, 0))
    assert r.shape == (4, 2)
    assert np.allclose(hnorm(r[..., :3, 1]), 1)
 
-   r = rand_ray(shape=(5, 6, 7))
+   r = hrandray(shape=(5, 6, 7))
    assert np.all(r[..., 3, :] == (1, 0))
    assert r.shape == (5, 6, 7, 4, 2)
    assert np.allclose(hnorm(r[..., :3, 1]), 1)
 
 def test_proj_prep():
-   assert np.allclose([2, 3, 0], proj_perp([0, 0, 1], [2, 3, 99]))
-   assert np.allclose([2, 3, 0], proj_perp([0, 0, 2], [2, 3, 99]))
+   assert np.allclose([2, 3, 0, 1], hprojperp([0, 0, 1], [2, 3, 99]))
+   assert np.allclose([2, 3, 0, 1], hprojperp([0, 0, 2], [2, 3, 99]))
    a, b = np.random.randn(2, 5, 6, 7, 3)
-   pp = proj_perp(a, b)
+   pp = hprojperp(a, b)
    assert np.allclose(hdot(a, pp), 0, atol=1e-5)
 
 def test_point_in_plane():
-   plane = rand_ray((5, 6, 7))
+   plane = hrandray((5, 6, 7))
    assert np.all(point_in_plane(plane, plane[..., :3, 0]))
-   pt = proj_perp(plane[..., :3, 1], np.random.randn(3))
-   assert np.all(point_in_plane(plane, plane[..., :3, 0] + pt))
+   pt = hprojperp(plane[..., :3, 1], np.random.randn(3))
+   assert np.all(point_in_plane(plane, plane[..., 0] + pt))
 
 def test_ray_in_plane():
-   plane = rand_ray((5, 6, 7))
-   dirn = proj_perp(plane[..., :3, 1], np.random.randn(5, 6, 7, 3))
-   ray = hray(plane[..., :3, 0] + np.cross(plane[..., :3, 1], dirn) * 7, dirn)
+   plane = hrandray((5, 6, 7))
+   assert plane.shape == (5, 6, 7, 4, 2)
+   dirn = hprojperp(plane[..., :3, 1], np.random.randn(5, 6, 7, 3))
+   assert dirn.shape == (5, 6, 7, 4)
+   ray = hray(plane[..., 0] + hcross(plane[..., 1], dirn) * 7, dirn)
    assert np.all(ray_in_plane(plane, ray))
 
 def test_intersect_planes():
@@ -378,7 +394,7 @@ def test_intersect_planes():
 
 def test_intersect_planes_rand():
    # origin case
-   plane1, plane2 = rand_ray(shape=(2, 1))
+   plane1, plane2 = hrandray(shape=(2, 1))
    plane1[..., :3, 0] = 0
    plane2[..., :3, 0] = 0
    isect, status = intersect_planes(plane1, plane2)
@@ -387,7 +403,7 @@ def test_intersect_planes_rand():
    assert np.all(ray_in_plane(plane2, isect))
 
    # orthogonal case
-   plane1, plane2 = rand_ray(shape=(2, 1))
+   plane1, plane2 = hrandray(shape=(2, 1))
    plane1[..., :, 1] = hnormalized([0, 0, 1])
    plane2[..., :, 1] = hnormalized([0, 1, 0])
    isect, status = intersect_planes(plane1, plane2)
@@ -396,7 +412,7 @@ def test_intersect_planes_rand():
    assert np.all(ray_in_plane(plane2, isect))
 
    # general case
-   plane1, plane2 = rand_ray(shape=(2, 5, 6, 7, 8, 9))
+   plane1, plane2 = hrandray(shape=(2, 5, 6, 7, 8, 9))
    isect, status = intersect_planes(plane1, plane2)
    assert np.all(status == 0)
    assert np.all(ray_in_plane(plane1, isect))
@@ -490,9 +506,9 @@ def test_hinv_rand():
 
 def test_hframe():
    sh = (5, 6, 7, 8, 9)
-   u = h_rand_points(sh)
-   v = h_rand_points(sh)
-   w = h_rand_points(sh)
+   u = hrandpoint(sh)
+   v = hrandpoint(sh)
+   w = hrandpoint(sh)
    s = hframe(u, v, w)
    assert is_homog_xform(s)
 
@@ -530,8 +546,8 @@ def test_line_line_closest_points():
 
    shape = (23, 17, 31)
    ntot = np.prod(shape)
-   r1 = rand_ray(cen=np.random.randn(*shape, 3))
-   r2 = rand_ray(cen=np.random.randn(*shape, 3))
+   r1 = hrandray(cen=np.random.randn(*shape, 3))
+   r2 = hrandray(cen=np.random.randn(*shape, 3))
    p, q = llcp(r1, r2)
    assert p.shape[:-1] == shape and q.shape[:-1] == shape
    lldist0 = hnorm(p - q)
@@ -579,13 +595,13 @@ def test_align_around_axis():
    uprime = align_around_axis(axis, u, v) @ u
    assert np.allclose(angle(v, uprime), 0, atol=1e-5)
 
-def test_align_vectors_minangle():
+def test_halign2_minangle():
 
    tgt1 = [-0.816497, -0.000000, -0.577350, 0]
    tgt2 = [0.000000, 0.000000, 1.000000, 0]
    orig1 = [0.000000, 0.000000, 1.000000, 0]
    orig2 = [-0.723746, 0.377967, -0.577350, 0]
-   x = align_vectors(orig1, orig2, tgt1, tgt2)
+   x = halign2(orig1, orig2, tgt1, tgt2)
    assert np.allclose(tgt1, x @ orig1, atol=1e-5)
    assert np.allclose(tgt2, x @ orig2, atol=1e-5)
 
@@ -593,18 +609,18 @@ def test_align_vectors_minangle():
    ax2 = np.array([0., 0., -1., 0.])
    tax1 = np.array([0.57735027, 0.57735027, 0.57735027, 0.])
    tax2 = np.array([0.70710678, 0.70710678, 0., 0.])
-   x = align_vectors(ax1, ax2, tax1, tax2)
+   x = halign2(ax1, ax2, tax1, tax2)
    assert np.allclose(x @ ax1, tax1, atol=1e-2)
    assert np.allclose(x @ ax2, tax2, atol=1e-2)
 
-def test_align_vectors_una_case():
+def test_halign2_una_case():
    ax1 = np.array([0., 0., -1., 0.])
    ax2 = np.array([0.83822463, -0.43167392, 0.33322229, 0.])
    tax1 = np.array([-0.57735027, 0.57735027, 0.57735027, 0.])
    tax2 = np.array([0.57735027, -0.57735027, 0.57735027, 0.])
    # ic(angle_degrees(ax1, ax2))
    # ic(angle_degrees(tax1, tax2))
-   x = align_vectors(ax1, ax2, tax1, tax2)
+   x = halign2(ax1, ax2, tax1, tax2)
    # ic(tax1)
    # ic(x@ax1)
    # ic(tax2)
@@ -955,9 +971,9 @@ def test_scale_translate_lines_isect_lines_nonorthog():
 def test_scale_translate_lines_isect_lines_arbitrary():
    samps = list()
    for i in range(30):
-      tp1 = hm.rand_point()
+      tp1 = hrandpoint()
       ta1 = hm.rand_unit()
-      tp2 = hm.rand_point()
+      tp2 = hrandpoint()
       ta2 = hm.rand_unit()
       rx = hm.rand_xform()
       pt1 = rx @ tp1
@@ -971,7 +987,7 @@ def test_scale_translate_lines_isect_lines_arbitrary():
          tp1[:3] += np.random.normal() * ta1[:3]
          tp2[:3] += np.random.normal() * ta2[:3]
 
-      # ??? proj_perp(_ta2, _tp2 - _pt2) always 0
+      # ??? hprojperp(_ta2, _tp2 - _pt2) always 0
 
       samps.append((pt1, ax1, pt2, ax2, tp1, ta1, tp2, ta2))
 
@@ -1384,9 +1400,9 @@ def test_hrot():
 
 def test_hrmsfit(trials=10):
    for _ in range(trials):
-      p = rand_point(10, std=10)
+      p = hrandpoint(10, std=10)
       p03 = unhomog(p)
-      q = rand_point(10, std=10)
+      q = hrandpoint(10, std=10)
       # ic(p)
       rms0 = hrms(p03, q)
       rms, qhat, xpqhat = hrmsfit(p03, q)

@@ -20,10 +20,11 @@ def main():
 
    test_torch_grad()
    test_th_axis_angle_cen_rand()
+   test_torch_rmsfit_grad()
 
 def test_th_vec():
    v = th_randvec(10)
-   ic(v)
+   # ic(v)
    v2 = th_vec(v)
    assert v is v2
    p = th_randpoint(10)
@@ -343,20 +344,23 @@ def test_torch_rmsfit(trials=10):
       torch = pytest.importorskip('torch')
       torch.autograd.set_detect_anomaly(True)
 
-      p = torch.tensor(rand_point(10, std=10))
-      q = torch.tensor(rand_point(10, std=10))
+      p = th_randpoint(10, std=10)
+      q = th_randpoint(10, std=10)
       # ic(p)
       rms0 = th_rms(p, q)
       rms, qhat, xpqhat = th_rmsfit(p, q)
       assert rms0 > rms
-      ic(float(rms0), float(rms))
+      # ic(float(rms0), float(rms))
       assert np.allclose(th_rms(qhat, q), rms)
       for i in range(10):
-         rms2 = th_rms(q, th_xform(th_rand_xform_small(1, 0.01, 0.001), qhat))
-         # print(float(rms), float(rms2))
-         assert rms2 > rms
+         qhat2 = th_xform(th_rand_xform_small(1, 0.01, 0.001), qhat)
+         rms2 = th_rms(q, qhat2)
 
-def test_torch_rmsfit_graaxd():
+         if rms2 < rms:
+            print(float(rms), float(rms2))
+         assert rms2 >= rms
+
+def test_torch_rmsfit_grad():
    ntrials = 1
    n = 100
    std = 4.
@@ -364,7 +368,7 @@ def test_torch_rmsfit_graaxd():
    for std in (0.01, 0.1, 1, 10, 100):
       for i in range(ntrials):
          xpq = rand_xform()
-         points1 = rand_point(n) * 10
+         points1 = hrandpoint(n) * 10
          points2 = hxform(xpq, points1) + rand_vec(n) * std
          points2[:, 0] += shift
          points1[:, 3] = 1
@@ -381,8 +385,9 @@ def test_torch_rmsfit_graaxd():
 
             rms, qhat, xpqhat = th_rmsfit(p2, q2)
             rms2 = th_rms(qhat, q)
-            assert np.allclose(qhat.detach(), th_xform(xpqhat, p).detach())
-            assert np.allclose(rms.detach(), rms2.detach())
+            assert torch.allclose(qhat, th_xform(xpqhat, p), atol=0.0001)
+            # ic(rms, rms2)
+            assert torch.allclose(rms, rms2, atol=0.0001)
 
             rms.backward()
             assert np.allclose(p.grad[:, 3].detach(), 0)

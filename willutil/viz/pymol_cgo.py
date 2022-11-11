@@ -228,7 +228,7 @@ def cgo_fan(
    rot = wu.homog.hrot(axis, arc / (ntri + 0), cen)
 
    # ic(startpoint - cen)
-   dirn = wu.homog.proj_perp(axis, startpoint - cen)
+   dirn = wu.homog.hprojperp(axis, startpoint - cen)
    dirn = wu.homog.hnormalized(dirn)
    cen = cen + fanshift * axis
    pt1 = cen + dirn * rad  #- thickness * axis * 0.5

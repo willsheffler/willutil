@@ -206,8 +206,7 @@ class Vec(object):
 
    def __eq__(self, other):
       assert isvec(other)
-      return (abs(self.x - other.x) < EPS and abs(self.y - other.y) < EPS
-              and abs(self.z - other.z) < EPS)
+      return (abs(self.x - other.x) < EPS and abs(self.y - other.y) < EPS and abs(self.z - other.z) < EPS)
 
    def rounded(self, sd):
       return Vec(round(self.x, sd), round(self.y, sd), round(self.z, sd))
@@ -527,15 +526,13 @@ class Mat(object):
       return Mat(v.x + m.xx, m.xy, m.xz, m.yx, v.y + m.yy, m.yz, m.zx, m.zy, v.z + m.zz)
 
    def is_rotation(m):
-      return (m.colx().isnormal() and m.coly().isnormal() and m.colz().isnormal()
-              and m.rowx().isnormal() and m.rowy().isnormal() and m.rowz().isnormal())
+      return (m.colx().isnormal() and m.coly().isnormal() and m.colz().isnormal() and m.rowx().isnormal()
+              and m.rowy().isnormal() and m.rowz().isnormal())
 
    def __eq__(self, other):
-      return (abs(self.xx - other.xx) < EPS and abs(self.xy - other.xy) < EPS
-              and abs(self.xz - other.xz) < EPS and abs(self.yx - other.yx) < EPS
-              and abs(self.yy - other.yy) < EPS and abs(self.yz - other.yz) < EPS
-              and abs(self.zx - other.zx) < EPS and abs(self.zy - other.zy) < EPS
-              and abs(self.zz - other.zz) < EPS)
+      return (abs(self.xx - other.xx) < EPS and abs(self.xy - other.xy) < EPS and abs(self.xz - other.xz) < EPS
+              and abs(self.yx - other.yx) < EPS and abs(self.yy - other.yy) < EPS and abs(self.yz - other.yz) < EPS
+              and abs(self.zx - other.zx) < EPS and abs(self.zy - other.zy) < EPS and abs(self.zz - other.zz) < EPS)
 
    def __neq__(self, odher):
       return not self == other
@@ -549,12 +546,9 @@ class Mat(object):
         """
       cos_theta = sin_cos_range((R.trace() - 1.0) / 2.0)
       if cos_theta > -1.0 + EPS and cos_theta < 1.0 - EPS:
-         x = (1.0 if R.zy > R.yz else -1.0) * sqrt(
-            max(0.0, (R.xx - cos_theta) / (1.0 - cos_theta)))
-         y = (1.0 if R.xz > R.zx else -1.0) * sqrt(
-            max(0.0, (R.yy - cos_theta) / (1.0 - cos_theta)))
-         z = (1.0 if R.yx > R.xy else -1.0) * sqrt(
-            max(0.0, (R.zz - cos_theta) / (1.0 - cos_theta)))
+         x = (1.0 if R.zy > R.yz else -1.0) * sqrt(max(0.0, (R.xx - cos_theta) / (1.0 - cos_theta)))
+         y = (1.0 if R.xz > R.zx else -1.0) * sqrt(max(0.0, (R.yy - cos_theta) / (1.0 - cos_theta)))
+         z = (1.0 if R.yx > R.xy else -1.0) * sqrt(max(0.0, (R.zz - cos_theta) / (1.0 - cos_theta)))
          theta = acos(cos_theta)
          assert abs(x * x + y * y + z * z - 1) <= 0.01
          return Vec(x, y, z), theta
@@ -646,10 +640,10 @@ def projection_matrix(v):
    )
    return m / v.dot(v)
 
-def proj(u, v):
+def hproj(u, v):
    """
     >>> u = Vec(1,0,0); v = Vec(1,1,1)
-    >>> proj(u,v)
+    >>> hproj(u,v)
     Vec( 1.000000, 0.000000, 0.000000 )
     """
    return projection_matrix(u) * v
@@ -660,7 +654,7 @@ def projperp(u, v):
     >>> projperp(u,v)
     Vec( 0.000000, 1.000000, 1.000000 )
     """
-   return v - proj(u, v)
+   return v - hproj(u, v)
 
 def rotation_matrix(axis, angle):
    n = axis.normalized()
@@ -1498,8 +1492,7 @@ def find_identities(G, n=6, c=Vec(1, 3, 10)):
     (2.000000,-2.000000,2.000000)
     """
    for x in expand_xforms(G, n, c):
-      if (abs(x.R.xx - 1.0) < 0.0000001 and abs(x.R.yy - 1.0) < 0.0000001
-          and abs(x.R.zz - 1.0) < 0.0000001):
+      if (abs(x.R.xx - 1.0) < 0.0000001 and abs(x.R.yy - 1.0) < 0.0000001 and abs(x.R.zz - 1.0) < 0.0000001):
          yield x
 
 def get_cell_bounds_orthogonal_only(G, n=6, c=Vec(1, 3, 10)):

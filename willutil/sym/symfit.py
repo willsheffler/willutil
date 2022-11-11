@@ -144,11 +144,11 @@ def rel_xform_info(frame1, frame2, **kw):
 
    framecen = (frame2[:, 3] + frame1[:, 3]) / 2
    framecen = framecen - cen
-   framecen = hm.proj(axs, framecen)
+   framecen = hm.hproj(axs, framecen)
    framecen = framecen + cen
 
-   inplane = hm.proj_perp(axs, cen - frame1[:, 3])
-   # inplane2 = hm.proj_perp(axs, cen - frame2[:, 3])
+   inplane = hm.hprojperp(axs, cen - frame1[:, 3])
+   # inplane2 = hm.hprojperp(axs, cen - frame2[:, 3])
    rad = np.sqrt(np.sum(inplane**2))
    if np.isnan(rad):
       print('isnan rad')
@@ -179,7 +179,7 @@ def xform_update_symop(symop, xform, srad):
       if k not in result:
          result[k] = symop[k]
    scen = xform[:, 3]
-   p = hm.proj(result.axs, -result.cen) + result.cen
+   p = hm.hproj(result.axs, -result.cen) + result.cen
    d = np.linalg.norm(p[:3])
    e = 0
    if d < srad:
@@ -217,8 +217,8 @@ def symops_from_frames(*, sym, frames, **kw):
    xrel = frame2 @ np.linalg.inv(frame1)
    axs, ang, cen = hm.axis_ang_cen_of(xrel)
    framecen = (frame2[:, :, 3] + frame1[:, :, 3]) / 2 - cen
-   framecen = hm.proj(axs, framecen) + cen
-   inplane = hm.proj_perp(axs, cen - frame1[:, :, 3])
+   framecen = hm.hproj(axs, framecen) + cen
+   inplane = hm.hprojperp(axs, cen - frame1[:, :, 3])
    rad = np.sqrt(np.sum(inplane**2, axis=-1))
    hel = np.sum(axs * xrel[:, :, 3], axis=-1)
    assert (len(frame1) == len(frame2) == len(xrel) == len(axs) == len(ang) == len(cen) == len(framecen) == len(rad) ==

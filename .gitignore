@@ -100,3 +100,6 @@ tmp
 *.rendered.*
 *.cppimporthash
 /log
+*.pse
+*.mp4
+*.bk

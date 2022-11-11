@@ -70,7 +70,7 @@ def frames(
       # print(startax)
       # print(axis)
       # showme(f @ htrans(10 * f[0, :, 2]), name='a')
-      f = align_vector(startax, axis) @ f
+      f = halign(startax, axis) @ f
       # showme(f @ htrans(10 * f[0, :, 2]), name='b')
       # assert 0
 
@@ -94,6 +94,12 @@ def map_sym_abbreviation(sym):
    if sym == 'O': return 'oct'
    if sym == 'T': return 'tet'
    return sym
+
+def symaxis_angle(sym, nf1, nf2):
+   return wu.hangle(axes(sym, nf1), axes(sym, nf2))
+
+def symaxis_radbias(sym, nf1, nf2):
+   return 1 / np.arctan(wu.hangle(axes(sym, nf1), axes(sym, nf2)))
 
 def min_symaxis_angle(sym):
    symaxes = axes(sym)
