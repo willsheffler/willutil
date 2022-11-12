@@ -21,6 +21,9 @@ class PDBFile:
    def nchain(self):
       return len(self.chainseq)
 
+   def secstruct(self):
+      return str(self.df['ss'])
+
    def subfile(self, chain=None, het=None, removeres=None, atomnames=[], chains=[]):
       import numpy as np
       import pandas as pd

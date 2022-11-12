@@ -195,8 +195,8 @@ def _(
       return show_ndarray_lines(toshow, state, **kw)
    elif len(shape) > 2 and shape[-2:] == (4, 4):
       return pymol_visualize_xforms(toshow, state, **kw)
-   elif shape == (4, ) or len(shape) == 2 and shape[-1] == 4:
-      return show_ndarray_point_or_vec(toshow, state, **kw)
+   elif shape == (4, ) or len(shape) == 2 and shape[-1] in (3, 4):
+      return show_ndarray_point_or_vec(wu.hpoint(toshow), state, **kw)
    else:
       raise NotImplementedError(f'cant understand np.ndarray type {type(toshow)} shape {toshow.shape}')
 
@@ -456,7 +456,6 @@ def show_ndarray_point_or_vec(
    if col == 'rand':
       col = get_different_colors(len(toshow), **kw)
    mycgo = list()
-   assert toshow.shape[-1] == 4
    if toshow.ndim == 1: toshow = [toshow]
    for i, p_or_v in enumerate(toshow):
       color = (1, 1, 1) if col is None else col

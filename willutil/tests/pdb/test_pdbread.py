@@ -2,6 +2,35 @@ import os, glob
 import numpy as np, pandas as pd
 import willutil as wu
 
+def main():
+   from willutil.tests import fixtures
+   test_ss(fixtures.pdbfname(), fixtures.pdbcontents())
+   assert 0
+   test_pdbread(fixtures.pdbfname(), fixtures.pdbcontents())
+   test_load_pdbs(fixtures.pdbfnames())
+   test_find_pdb_files()
+   test_pdbfile(fixtures.pdbfile())
+
+   # with wu.Timer():
+   #    ps = wu.pdb.load_pdbs('/home/sheffler/data/rcsb/divided/as/*.pdb?.gz', skip_errors=True,
+   #                          maxsize=50_000)
+   #    for fn, pf in ps.items():
+   #       if pf.nres < 2:
+   #          continue
+   #       print(pf.nchain, pf.nres, pf.code)
+
+def test_ss(pdbfname, pdbcontents):
+   print(pdbfname)
+   import os.path
+   import willutil.extern.pross as p
+   from io import StringIO
+
+   pdb = p.PDBFile(StringIO(pdbcontents))
+   chains = pdb.read(as_protein=1)
+   for chain in chains.elements:
+      (a, b, c, sst_list) = p.rc_ss(chain)
+      print(sst_list)
+
 def firstlines(s, num, skip):
    count = 0
    for line in s.splitlines():
@@ -42,8 +71,7 @@ def test_pdbread(pdbfname, pdbcontents):
       'HETATM12345 ATOM RES C 1234   1236.8572215.5813376.721440.50547.32      SEGIPBCH\n' +
       'ATOM1234567 ATOM RES C 1234   1236.8572215.5813376.721440.50547.32      SEGIPBCH\n')
    pdb = wu.pdb.readpdb(foo)
-   assert all(pdb.df.columns ==
-              ['het', 'ai', 'an', 'rn', 'ch', 'ri', 'x', 'y', 'z', 'occ', 'bfac', 'elem'])
+   assert all(pdb.df.columns == ['het', 'ai', 'an', 'rn', 'ch', 'ri', 'x', 'y', 'z', 'occ', 'bfac', 'elem'])
    assert pdb.df.shape == (2, 12)
    assert all(pdb.df.ai == (12345, 1234567))
 
@@ -89,21 +117,6 @@ def test_pdbfile(pdbfile):
    assert a.nres + b.nres == pdbfile.nres
    assert np.all(a.df.ch == b'A')
    assert np.all(b.df.ch == b'B')
-
-def main():
-   from willutil.tests import fixtures
-   test_pdbread(fixtures.pdbfname(), fixtures.pdbcontents())
-   test_load_pdbs(fixtures.pdbfnames())
-   test_find_pdb_files()
-   test_pdbfile(fixtures.pdbfile())
-
-   # with wu.Timer():
-   #    ps = wu.pdb.load_pdbs('/home/sheffler/data/rcsb/divided/as/*.pdb?.gz', skip_errors=True,
-   #                          maxsize=50_000)
-   #    for fn, pf in ps.items():
-   #       if pf.nres < 2:
-   #          continue
-   #       print(pf.nchain, pf.nres, pf.code)
 
 if __name__ == '__main__':
    main()

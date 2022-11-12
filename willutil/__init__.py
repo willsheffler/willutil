@@ -41,6 +41,9 @@ from willutil import homog
 from willutil import sym
 from willutil import viz
 from willutil import rigid
+from willutil import rosetta
+
+from willutil.rosetta import NotPose
 
 # deferr import of cpp libs to avoid compilation if unnecessary
 cpp = deferred_import('willutil.cpp')
