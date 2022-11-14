@@ -42,13 +42,15 @@ def dump_pdb_from_points(fname, pts, header='', frames=[np.eye(4)]):
       raise ValueError(f'bad shape for points {pts.shape}')
    if os.path.dirname(fname):
       os.makedirs(os.path.dirname(fname), exist_ok=True)
+   ia = 1
    with open(fname, "w") as out:
       out.write(header)
       for ic, f in enumerate(frames):
          for i, p in enumerate(pts):
-            p = f @ p
-            s = pdb_format_atom(x=p[0], y=p[1], z=p[2], ir=i, c=ic)
+            p = wu.hxform(f, p)
+            s = pdb_format_atom(ia=ia, x=p[0], y=p[1], z=p[2], ir=i, c=ic)
             out.write(s)
+            ia += 1
 
 def dump_pdb_from_ncac_points(fname, pts, nchain=1):
    if os.path.dirname(fname):
@@ -61,17 +63,48 @@ def dump_pdb_from_ncac_points(fname, pts, nchain=1):
    # if len(pts) > 1:
    # print(pts.shape)
    # assert 0
+   ia = 0
    with open(fname, "w") as out:
       for ic, pc in enumerate(pts):
          chain = all_pymol_chains[ic]
          # print(ic, pc.shape, chain)
          for i, p in enumerate(pc):
-            a = pdb_format_atom(an='N', x=p[0, 0], y=p[0, 1], z=p[0, 2], ir=i, c=chain)
-            b = pdb_format_atom(an='CA', x=p[1, 0], y=p[1, 1], z=p[1, 2], ir=i, c=chain)
-            c = pdb_format_atom(an='C', x=p[2, 0], y=p[2, 1], z=p[2, 2], ir=i, c=chain)
+            a = pdb_format_atom(ia + 0, an='N', x=p[0, 0], y=p[0, 1], z=p[0, 2], ir=i, c=chain)
+            b = pdb_format_atom(ia + 1, an='CA', x=p[1, 0], y=p[1, 1], z=p[1, 2], ir=i, c=chain)
+            c = pdb_format_atom(ia + 2, an='C', x=p[2, 0], y=p[2, 1], z=p[2, 2], ir=i, c=chain)
+            ia += 3
             out.write(a)
             out.write(b)
             out.write(c)
+
+   # assert 0
+
+def dump_pdb_from_ncaco_points(fname, pts, nchain=1):
+   if os.path.dirname(fname):
+      os.makedirs(os.path.dirname(fname), exist_ok=True)
+   if pts.ndim == 3: pts = pts[np.newaxis]
+   # print(pts.shape)
+   pts = pts.reshape(nchain * len(pts), -1, 4, pts.shape[-1])
+   # print(pts.shape)
+   # assert 0
+   # if len(pts) > 1:
+   # print(pts.shape)
+   # assert 0
+   ia = 0
+   with open(fname, "w") as out:
+      for ic, pc in enumerate(pts):
+         chain = all_pymol_chains[ic]
+         # print(ic, pc.shape, chain)
+         for i, p in enumerate(pc):
+            a = pdb_format_atom(ia + 0, rn='GLY', an='N', x=p[0, 0], y=p[0, 1], z=p[0, 2], ir=i, c=chain)
+            b = pdb_format_atom(ia + 1, rn='GLY', an='CA', x=p[1, 0], y=p[1, 1], z=p[1, 2], ir=i, c=chain)
+            c = pdb_format_atom(ia + 2, rn='GLY', an='C', x=p[2, 0], y=p[2, 1], z=p[2, 2], ir=i, c=chain)
+            d = pdb_format_atom(ia + 3, rn='GLY', an='O', x=p[3, 0], y=p[3, 1], z=p[3, 2], ir=i, c=chain)
+            ia += 4
+            out.write(a)
+            out.write(b)
+            out.write(c)
+            out.write(d)
 
    # assert 0
 

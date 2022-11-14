@@ -18,6 +18,10 @@
 			"shell_cmd": "cd $folder; python willutil/tests/rigid/test_rigidbody.py &> log/sublime_build.log"
 		},
 		{
+			"name": "test_dssp.py",
+			"shell_cmd": "cd $folder; python willutil/tests/chem/test_dssp.py &> log/sublime_build.log"
+		},
+		{
 			"name": "test_symfit.py",
 			"shell_cmd": "cd $folder; python willutil/tests/sym/test_symfit.py &> log/sublime_build.log"
 		},

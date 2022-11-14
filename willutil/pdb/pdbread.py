@@ -1,4 +1,5 @@
 import os, gzip, io, glob, collections, logging, tqdm, time
+import numpy as np
 import willutil as wu
 
 log = logging.getLogger(__name__)
@@ -53,6 +54,17 @@ class PDBFile:
          df = pd.DataFrame(df.to_dict())
       return PDBFile(df, meta=self)
 
+   def ncac(self):
+      pdb = self.subfile(het=False, atomnames=['N', 'CA', 'C'])
+      xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']]).T
+      xyz = xyz.reshape(-1, 3, 3)
+      return xyz
+
+   def ncaco(self):
+      pdb = self.subfile(het=False, atomnames=['N', 'CA', 'C', 'O'])
+      xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']]).T.reshape(-1, 4, 3)
+      return xyz
+
 def pdb_code(fname):
    if len(fname) > 100:
       return 'none'
@@ -69,10 +81,13 @@ def read_pdb_atoms(fname_or_buf):
       opener = gzip.open if fname_or_buf.endswith('.gz') else open
       with opener(fname_or_buf) as inp:
          contents = str(inp.read()).replace(r'\n', '\n')
+         # contents = str(inp.read())
    else:
       contents = fname_or_buf
+   if contents.startswith("b'"):
+      contents = contents[2:]
 
-   for line in contents.splitlines():
+   for i, line in enumerate(contents.splitlines()):
       if line.startswith(('ATOM', 'HETATM')):
          atomlines.append(line)
       elif line.startswith('CRYST1 '):

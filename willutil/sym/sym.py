@@ -3,7 +3,7 @@ from willutil.homog.hgeom import *
 from willutil.sym.symframes import *
 from willutil.sym.unbounded import *
 from willutil.sym.asufit import *
-from willutil.viz import showme
+# from willutil.viz import showme
 
 def frames(
    sym,
@@ -112,12 +112,13 @@ def min_symaxis_angle(sym):
    return minaxsang
 
 def axes(sym, nfold=None, all=False):
+   sym = sym.lower()
    if nfold is None:
       return symaxes[sym].copy()
    elif isinstance(nfold, str):
       assert nfold.lower().startswith('c')
       nfold = int(nfold[1:])
-   sym = sym.lower()
+
    if all:
       return symaxes_all[sym][nfold].copy()
    return symaxes[sym][nfold].copy()

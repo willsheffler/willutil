@@ -202,7 +202,7 @@ def _(
 
 _nxforms = 0
 
-@functools.lru_cache
+@functools.lru_cache(10)
 def get_different_colors(ncol, niter=1000, colorseed=1, **kw):
    rs = np.random.get_state()
    np.random.seed(colorseed)

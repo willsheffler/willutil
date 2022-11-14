@@ -32,3 +32,11 @@ def three_PDBFiles():
 @pytest.fixture
 def pdbfile():
    return fixtures.pdbfile()
+
+@pytest.fixture
+def ncac():
+   return fixtures.ncac()
+
+@pytest.fixture
+def ncaco():
+   return fixtures.ncaco()

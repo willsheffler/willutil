@@ -4,8 +4,6 @@ import willutil as wu
 
 def main():
    from willutil.tests import fixtures
-   test_ss(fixtures.pdbfname(), fixtures.pdbcontents())
-   assert 0
    test_pdbread(fixtures.pdbfname(), fixtures.pdbcontents())
    test_load_pdbs(fixtures.pdbfnames())
    test_find_pdb_files()
@@ -18,18 +16,6 @@ def main():
    #       if pf.nres < 2:
    #          continue
    #       print(pf.nchain, pf.nres, pf.code)
-
-def test_ss(pdbfname, pdbcontents):
-   print(pdbfname)
-   import os.path
-   import willutil.extern.pross as p
-   from io import StringIO
-
-   pdb = p.PDBFile(StringIO(pdbcontents))
-   chains = pdb.read(as_protein=1)
-   for chain in chains.elements:
-      (a, b, c, sst_list) = p.rc_ss(chain)
-      print(sst_list)
 
 def firstlines(s, num, skip):
    count = 0

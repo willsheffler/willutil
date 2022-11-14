@@ -1,3 +1,4 @@
+import numpy as np
 import willutil as wu
 from willutil.tests.testdata import load_test_data, test_data_path
 
@@ -23,3 +24,15 @@ def three_PDBFiles():
 
 def pdbfile():
    return load_test_data('pdb/3asl.pdb1.gz.pickle')
+
+def ncac():
+   return wu.pdb.readpdb(pdbfname()).ncac()
+   # pdb = pdb.subfile(atomnames=['N', 'CA', 'C'], chains=['A'])
+   # xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']]).T.reshape(-1, 3, 3)
+   # return xyz
+
+def ncaco():
+   return wu.pdb.readpdb(pdbfname()).ncaco()
+   # pdb = pdb.subfile(het=False, atomnames=['N', 'CA', 'C', 'O'], chains=['A'])
+   # xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']]).T.reshape(-1, 4, 3)
+   # return xyz

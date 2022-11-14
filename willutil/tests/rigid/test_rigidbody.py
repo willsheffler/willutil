@@ -67,7 +67,7 @@ def test_rigidbody_bvh():
 
 def test_rigidbody_parent():
 
-   a = wu.RigidBody()
+   a = wu.RigidBody(wu.hrandpoint(10))
    xform = wu.hrot([1, 0, 0], 180)
    b = wu.RigidBody(parent=a, xfromparent=xform)
    a.position = wu.hrand()
