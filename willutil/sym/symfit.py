@@ -11,6 +11,8 @@ def compute_symfit(
    max_radius=100000.0,
    min_radius=0.0,
    penalize_redundant_cyclic_nth=0,  # nth closest
+   target_sub_com=None,
+   target_sub_com_testpoint=None,
    **kw,
 ):
    kw = wu.Bunch(kw)
@@ -50,9 +52,22 @@ def compute_symfit(
 
    symframes = wu.sym.frames(sym)
    fitframes = wu.hxform(symframes, xfit)
-   diff = np.sum((fitframes - np.eye(4))**2, axis=(1, 2))
+
+   # moveme to func
+
+   if target_sub_com is not None:
+      coms = fitframes @ target_sub_com_testpoint
+      diff = wu.hdot(wu.hnormalized(target_sub_com), wu.hnormalized(coms))
+      ic(diff)
+      ic(np.arccos(diff) * 180 / 3.1416)
+      # assert 0
+   else:
+      diff = np.sum((fitframes - np.eye(4))**2, axis=(1, 2))
+
    ibest = np.argmin(diff)
    xfit = fitframes[ibest]
+
+   # /moveme
 
    assert not lossterms
    loss = dict()

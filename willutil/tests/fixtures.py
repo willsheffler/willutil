@@ -25,6 +25,15 @@ def three_PDBFiles():
 def pdbfile():
    return load_test_data('pdb/3asl.pdb1.gz.pickle')
 
+def pdb1pgx():
+   return load_test_data('pdb/1pgx.pdb1.gz.pickle')
+
+def pdb1coi():
+   return load_test_data('pdb/1coi.pdb1.gz.pickle')
+
+def pdb1qys():
+   return load_test_data('pdb/1qys.pdb1.gz.pickle')
+
 def ncac():
    return wu.pdb.readpdb(pdbfname()).ncac()
    # pdb = pdb.subfile(atomnames=['N', 'CA', 'C'], chains=['A'])

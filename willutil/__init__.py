@@ -9,8 +9,8 @@ __all__ = ('MonteCarlo', 'RigidBody', 'compute_symfit', 'showme', 'halign', 'hal
            'th_homog', 'th_intersect_planes', 'th_is_valid_quat_rot', 'th_mean_along', 'th_norm', 'th_norm2',
            'th_normalized', 'th_point', 'th_point_in_plane', 'th_point_line_dist2', 'th_proj', 'th_projperp',
            'th_quat_to_rot', 'th_quat_to_upper_half', 'th_quat_to_xform', 'th_rand_quat', 'th_rand_xform',
-           'th_rand_xform_small', 'th_randpoint', 'th_randunit', 'th_randvec', 'th_ray_in_plane', 'th_rms', 'th_rmsfit',
-           'th_rog', 'th_rot', 'th_rot_to_quat', 'th_vec', 'th_xform', 'unhomog')
+           'th_rand_xform_small', 'th_randpoint', 'th_randunit', 'th_randvec', 'th_ray_in_plane', 'th_rms', 'dssp',
+           'th_rmsfit', 'th_rog', 'th_rot', 'th_rot_to_quat', 'th_vec', 'th_xform', 'unhomog')
 
 from deferred_import import deferred_import
 import icecream
@@ -43,6 +43,7 @@ from willutil import viz
 from willutil import rigid
 from willutil import rosetta
 
+from willutil.chem import dssp
 from willutil.rosetta import NotPose
 
 # deferr import of cpp libs to avoid compilation if unnecessary

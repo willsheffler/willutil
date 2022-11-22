@@ -2,20 +2,77 @@ import os, glob
 import numpy as np, pandas as pd
 import willutil as wu
 
-def main():
-   from willutil.tests import fixtures
-   test_pdbread(fixtures.pdbfname(), fixtures.pdbcontents())
-   test_load_pdbs(fixtures.pdbfnames())
-   test_find_pdb_files()
-   test_pdbfile(fixtures.pdbfile())
+# ic.configureOutput(includeContext=True, contextAbsPath=False)
 
-   # with wu.Timer():
-   #    ps = wu.pdb.load_pdbs('/home/sheffler/data/rcsb/divided/as/*.pdb?.gz', skip_errors=True,
-   #                          maxsize=50_000)
-   #    for fn, pf in ps.items():
-   #       if pf.nres < 2:
-   #          continue
-   #       print(pf.nchain, pf.nres, pf.code)
+def main():
+   from willutil.tests import fixtures as f
+   test_pdb_renumber(f.pdb1pgx())
+   test_pdb_multimodel(f.pdb1coi())
+   test_pdb_mask(f.pdb1pgx())
+   test_pdb_bbcoords(f.pdb1pgx())
+   # assert 0, 'MAIN'
+   test_pdbread(f.pdbfname(), f.pdbcontents())
+   test_load_pdbs(f.pdbfnames())
+   test_find_pdb_files()
+   test_pdbfile(f.pdbfile())
+   ic('TEST_PDBREAD DONE')
+
+def test_pdb_multimodel(pdb1coi):
+   bb = pdb1coi.bb()
+   bb0 = pdb1coi.subfile(modelidx=0).bb()
+   bb1 = pdb1coi.subfile(modelidx=1).bb()
+   bb2 = pdb1coi.subfile(modelidx=2).bb()
+   assert bb.shape == (87, 5, 3)
+   assert bb0.shape == (29, 5, 3)
+   assert bb1.shape == (29, 5, 3)
+   assert bb2.shape == (29, 5, 3)
+
+def test_pdb_renumber(pdb1pgx):
+   p = pdb1pgx
+   assert p.ri[0] == 8
+   p.renumber_from_0()
+   assert p.ri[0] == 0
+
+def test_pdb_mask(pdb1pgx):
+   pdb = pdb1pgx
+   # print(pdbfile.df)
+   # print(pdbfile.seq)
+   # print(pdbfile.code)
+   camask = pdb.camask()
+   cbmask = pdb.cbmask(aaonly=False)
+   assert np.all(np.logical_and(cbmask, camask) == cbmask)
+   nca = np.sum(pdb.df.an == b'CA')
+   ncb = np.sum(pdb.df.an == b'CB')
+   assert np.sum(pdb.camask()) == nca
+   assert np.sum(pdb.cbmask()) == ncb
+   ngly = np.sum((pdb.df.rn == b'GLY') * (pdb.df.an == b'CA'))
+   assert nca - ncb == ngly
+   assert nca - np.sum(pdb.cbmask()) == ngly
+   p = pdb.subfile(het=False)
+   assert p.sequence() == pdb.sequence().replace('Z', '')
+
+   seq = p.sequence()
+   cbmask = pdb.cbmask(aaonly=True)
+   # ic(len(seq), sum(cbmask))
+   assert len(seq) == np.sum(camask)
+   for s, m in zip(pdb.seq, cbmask):
+      assert m == (s != 'G')
+   # isgly = np.array(list(seq)) == 'G'
+   # wgly = np.where(isgly)[0]
+   # ic(wgly)
+   # ic(cbmask[wgly])
+
+def test_pdb_bbcoords(pdb1pgx):
+   pdb = pdb1pgx
+   bb = pdb.bb()
+   assert np.all(2 > wu.hnorm(bb[:, 0] - bb[:, 1]))
+   assert np.all(2 > wu.hnorm(bb[:, 1] - bb[:, 2]))
+   assert np.all(2 > wu.hnorm(bb[:, 2] - bb[:, 3]))
+   cbdist = wu.hnorm(bb[:, 1] - bb[:, 4])
+   mask = pdb.cbmask()
+   hascb = bb[:, 4, 0] < 9e8
+   assert np.all(hascb == mask)
+   assert np.all(2 > cbdist[hascb])
 
 def firstlines(s, num, skip):
    count = 0
@@ -57,8 +114,8 @@ def test_pdbread(pdbfname, pdbcontents):
       'HETATM12345 ATOM RES C 1234   1236.8572215.5813376.721440.50547.32      SEGIPBCH\n' +
       'ATOM1234567 ATOM RES C 1234   1236.8572215.5813376.721440.50547.32      SEGIPBCH\n')
    pdb = wu.pdb.readpdb(foo)
-   assert all(pdb.df.columns == ['het', 'ai', 'an', 'rn', 'ch', 'ri', 'x', 'y', 'z', 'occ', 'bfac', 'elem'])
-   assert pdb.df.shape == (2, 12)
+   assert all(pdb.df.columns == ['het', 'ai', 'an', 'rn', 'ch', 'ri', 'x', 'y', 'z', 'occ', 'bfac', 'elem', 'mdl'])
+   assert pdb.df.shape == (2, 13)
    assert all(pdb.df.ai == (12345, 1234567))
 
    # num, skip = 1, 0
@@ -86,7 +143,7 @@ def test_load_pdbs(pdbfnames):
    pdbs = wu.pdb.load_pdbs(pdbfnames, cache=False, pbar=False)
    assert set(pdbs.keys()) == set(pdbfnames)
    for i, fname in enumerate(pdbs):
-      assert pdbs[fname].seq == seqs[i]
+      assert pdbs[fname].seqhet == seqs[i]
 
 def test_find_pdb_files():
    pat = os.path.join(wu.tests.test_data_dir, 'pdb/*.pdb1.gz')
@@ -97,7 +154,8 @@ def test_find_pdb_files():
 
 def test_pdbfile(pdbfile):
    # print(pdbfile.df)
-   assert pdbfile.nres == 85
+   # ic(pdbfile.nreshet)
+   assert pdbfile.nreshet == 85
    a = pdbfile.subfile('A')
    b = pdbfile.subfile('B')
    assert a.nres + b.nres == pdbfile.nres

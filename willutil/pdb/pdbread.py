@@ -5,36 +5,105 @@ import willutil as wu
 log = logging.getLogger(__name__)
 
 class PDBFile:
-   def __init__(self, df, meta):
-      df.reset_index(inplace=True, drop=True)
-      self.df = df
+   def __init__(
+      self,
+      df,
+      meta,
+      original_contents,
+      renumber_by_model=True,
+      renumber_from_0=False,
+      remove_het=False,
+   ):
+      self.init(df, meta, original_contents, renumber_by_model, renumber_from_0)
+
+   def init(self, df, meta, original_contents, renumber_by_model=False, renumber_from_0=False, remove_het=False):
+      self.original_contents = original_contents
+      self.meta = meta.copy()
       self.code = meta.code
       self.resl = meta.resl
       self.cryst1 = meta.cryst1
+      df = df.copy()
+      df.reset_index(inplace=True, drop=True)
+      self.df = df
+      if renumber_by_model:
+         self.renumber_by_model()
+      if renumber_from_0:
+         self.renumber_from_0()
+      if remove_het:
+         self.remove_het()
       self.chainseq = atomrecords_to_chainseq(df)
-      self.seq = str.join('', self.chainseq.values())
+      self.seqhet = str.join('', self.chainseq.values())
+      self.seq = self.seqhet.replace('Z', '')
+      # ic(self.seq)
+      self.nres = len(self.seq)
+      self.nreshet = len(self.seqhet)
+      self.nchain = len(self.chainseq)
 
-   @property
-   def nres(self):
-      return len(self.seq)
+   def copy(self, **kw):
+      return PDBFile(self.df, self.meta, self.original_contents, **kw)
 
-   @property
-   def nchain(self):
-      return len(self.chainseq)
+   def __getattr__(self, k):
+      'allow dot access for fields of self.df from self'
+      if k == 'df':
+         raise AttributeError
+      elif k in self.df.columns:
+         return getattr(self.df, k)
+      else:
+         raise AttributeError(k)
 
-   def secstruct(self):
-      return str(self.df['ss'])
+   def renumber_by_model(self):
+      ri_per_model = np.max(self.df.ri) - np.min(self.df.ri) + 1
+      ai_per_model = np.max(self.df.ai) - np.min(self.df.ai) + 1
+      for m in self.models():
+         i = self.modelidx(m)
+         idx = self.df.mdl == m
+         self.df.ri += np.where(idx, i * ri_per_model, 0)
+         self.df.ai += np.where(idx, i * ai_per_model, 0)
 
-   def subfile(self, chain=None, het=None, removeres=None, atomnames=[], chains=[]):
+   def getres(self, ri):
+      r = self.df[self.df.ri == ri].copy()
+      r.reset_index(inplace=True, drop=True)
+      return r
+
+   def xyz(self, ir, ia):
+      assert isinstance(ia, int)
+      r = self.getres(ir)
+      return r.x[ia], r.y[ia], r.z[ia]
+
+   def renumber_from_0(self):
+      assert np.all(self.het == np.sort(self.het))
+      d = {ri: i for i, ri in enumerate(np.unique(self.ri))}
+      self.df['ri'] = [d[ri] for ri in self.df['ri']]
+
+   def remove_het(self):
+      self.subfile(het=False, inplace=True)
+
+   def subfile(
+      self,
+      chain=None,
+      het=None,
+      removeres=None,
+      atomnames=[],
+      chains=[],
+      model=None,
+      modelidx=None,
+      inplace=False,
+   ):
       import numpy as np
       import pandas as pd
       df = self.df
       if chain is not None:
+         if isinstance(chain, int):
+            chain = list(self.chainseq.keys())[chain]
          df = df.loc[df.ch == wu.misc.tobytes(chain)]
          # have no idea why, but dataframe gets corrupted  without this
          df = pd.DataFrame(df.to_dict())
-      if het is not None:
-         df = df.loc[df.het == het]
+         assert len(df) > 0
+      if het is False:
+         df = df.loc[df.het == False]
+         df = pd.DataFrame(df.to_dict())
+      if het is True:
+         df = df.loc[df.het == True]
          df = pd.DataFrame(df.to_dict())
       if removeres is not None:
          if isinstance(removeres, (str, bytes)):
@@ -52,18 +121,92 @@ class PDBFile:
          chains = [c.encode() for c in chains]
          df = df.loc[np.isin(df.ch, chains)]
          df = pd.DataFrame(df.to_dict())
-      return PDBFile(df, meta=self)
+      if model is not None:
+         df = df.loc[df.mdl == model]
+         df = pd.DataFrame(df.to_dict())
+      if modelidx is not None:
+         df = df.loc[df.mdl == self.models()[modelidx]]
+         df = pd.DataFrame(df.to_dict())
+      df.reset_index(inplace=True, drop=True)
+      if inplace:
+         self.init(df, self.meta, original_contents=self.original_contents, renumber_by_model=True)
+         return self
+      else:
+         return PDBFile(df, meta=self.meta, original_contents=self.original_contents)
+
+   def models(self):
+      return list(np.sort(np.unique(self.df.mdl)))
+
+   def modelidx(self, m):
+      models = self.models()
+      return models.index(m)
+
+   def camask(self):
+      return np.array([np.any(g.an == b'CA') for i, g in self.df.groupby(self.df.ri)])
+
+   def cbmask(self, aaonly=True):
+      mask = list()
+      for i, (ri, g) in enumerate(self.df.groupby(self.df.ri)):
+         assert np.sum(g.an == b'CB') <= 1
+         assert np.sum(g.an == b'CB') <= np.sum(g.an == b'CA')
+         hascb = np.sum(g.an == b'CB') > 0
+         mask.append(hascb)
+      mask = np.array(mask)
+      if aaonly:
+         caonly = self.camask()
+         # ic(caonly)
+         mask = mask[caonly]
+      return mask
+
+   def bb(self):
+      ncaco = self.ncaco()
+      cb0 = self.subfile(atomnames=['CB'])
+      camask = self.camask()
+      cbmask = self.cbmask(aaonly=True)
+      assert np.sum(camask) == len(cbmask)
+      seq = self.sequence()
+      # ic(len(seq), len(cbmask), len(camask))
+      # ic(seq)
+      assert len(seq) == len(cbmask)
+
+      wcb = np.where(cbmask)[0]
+      cb = 9e9 * np.ones((len(ncaco), 3))
+      cb[wcb, 0] = cb0.df.x
+      cb[wcb, 1] = cb0.df.y
+      cb[wcb, 2] = cb0.df.z
+
+      # ic(cb.shape)
+      # ic(ncaco.shape)
+      xyz = np.concatenate([ncaco, cb[:, None]], axis=1)
+      # ic(xyz.shape)
+      return xyz
 
    def ncac(self):
       pdb = self.subfile(het=False, atomnames=['N', 'CA', 'C'])
-      xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']]).T
-      xyz = xyz.reshape(-1, 3, 3)
+      xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']]).T.reshape(-1, 3, 3)
       return xyz
 
    def ncaco(self):
       pdb = self.subfile(het=False, atomnames=['N', 'CA', 'C', 'O'])
       xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']]).T.reshape(-1, 4, 3)
       return xyz
+
+   def sequence(self):
+      return self.seq
+
+   def chain(self, ires):
+      ires = ires - 1
+      for i, (ch, seq) in enumerate(self.chainseq.items()):
+         if ires >= len(seq):
+            ires -= len(seq)
+         else:
+            return i + 1
+      else:
+         return None
+      return self
+
+   def num_chains(self):
+      return len(self.chainseq)
 
 def pdb_code(fname):
    if len(fname) > 100:
@@ -75,7 +218,7 @@ def pdb_code(fname):
       return 'none'
 
 def read_pdb_atoms(fname_or_buf):
-   atomlines, cryst, expdata = list(), None, None
+   atomlines, cryst, expdata = dict(), None, None
 
    if wu.storage.is_pdb_fname(fname_or_buf):
       opener = gzip.open if fname_or_buf.endswith('.gz') else open
@@ -87,15 +230,22 @@ def read_pdb_atoms(fname_or_buf):
    if contents.startswith("b'"):
       contents = contents[2:]
 
+   modelnum = 0
+   atomlines[0] = list()
    for i, line in enumerate(contents.splitlines()):
+
       if line.startswith(('ATOM', 'HETATM')):
-         atomlines.append(line)
+         atomlines[modelnum].append(line)
+      elif line.startswith('MODEL '):
+         modelnum = int(line[6:])
+         atomlines[modelnum] = list()
       elif line.startswith('CRYST1 '):
          assert not cryst
          cryst = line.strip()
 
+   # ic(len(atomlines))
    assert atomlines
-   return '\n'.join(atomlines), wu.Bunch(cryst1=cryst)
+   return {k: '\n'.join(v) for k, v in atomlines.items()}, wu.Bunch(cryst1=cryst), contents
 
 def parse_pdb_atoms(atomstr):
    import pandas as pd
@@ -114,43 +264,53 @@ def parse_pdb_atoms(atomstr):
       ai=lambda x: np.int32(x[4:]) if x.startswith('ATOM') else np.int32(x[6:]),
    )
 
-   df = pd.read_fwf(
-      io.StringIO(atomstr),
-      names=pdbcolnames,
-      colspecs=cr,
-      header=None,
-      dtype=dt,
-      converters=converters,
-      na_filter=False,
-   )
+   mdf = dict()
+   for m in atomstr.keys():
+      df = pd.read_fwf(
+         io.StringIO(atomstr[m]),
+         names=pdbcolnames,
+         colspecs=cr,
+         header=None,
+         dtype=dt,
+         converters=converters,
+         na_filter=False,
+      )
+      # don't understand why pandas doesn't respect the str dtypes from "dt"
+      df.an = df.an.astype('a4')
+      df.al = df.al.astype('a1')
+      df.ch = df.ch.astype('a1')
+      df.rn = df.rn.astype('a3')
+      # df.rins = df.rins.astype('a1')
+      # df.seg = df.seg.astype('a4')
+      df.elem = df.elem.astype('a2')
+      # df.charge = df.charge.astype('a2')
+      # print(df.dtypesb)
+      # print(df.memory_usage())
 
-   # don't understand why pandas doesn't respect the str dtypes from "dt"
-   df.an = df.an.astype('a4')
-   df.al = df.al.astype('a1')
-   df.ch = df.ch.astype('a1')
-   df.rn = df.rn.astype('a3')
-   # df.rins = df.rins.astype('a1')
-   # df.seg = df.seg.astype('a4')
-   df.elem = df.elem.astype('a2')
-   # df.charge = df.charge.astype('a2')
-   # print(df.dtypesb)
-   # print(df.memory_usage())
+      notalt = np.logical_or(df.al == b'', df.al == b'A')
+      df = df[notalt]
+      df.drop('al', axis=1, inplace=True)
+      mdf[m] = df
+   return mdf
 
-   notalt = np.logical_or(df.al == b'', df.al == b'A')
-   df = df[notalt]
-   df.drop('al', axis=1, inplace=True)
-
+def concatenate_models(df):
+   import pandas as pd
+   assert isinstance(df, dict)
+   for m, d in df.items():
+      d['mdl'] = m
+   df = pd.concat(df.values())
    return df
 
 def readpdb(fname_or_buf, indatabase=False):
-   pdbatoms, meta = read_pdb_atoms(fname_or_buf)
+   pdbatoms, meta, original_contents = read_pdb_atoms(fname_or_buf)
    df = parse_pdb_atoms(pdbatoms)
    code = pdb_code(fname_or_buf) if indatabase else 'none'
    resl = -1.0
    if code != 'none':
       resl = metadb = wu.pdb.pdbmeta.resl[code]
    meta.update(code=code, resl=resl)
-   pdb = PDBFile(df, meta)
+   df = concatenate_models(df)
+   pdb = PDBFile(df, meta, original_contents)
    return pdb
 
 def format_atom(atomi=0, atomn='ATOM', idx=' ', resn='RES', chain='A', resi=0, insert=' ', x=0, y=0, z=0, occ=1, b=0):

@@ -40,3 +40,15 @@ def ncac():
 @pytest.fixture
 def ncaco():
    return fixtures.ncaco()
+
+@pytest.fixture
+def pdb1pgx():
+   return fixtures.pdb1pgx()
+
+@pytest.fixture
+def pdb1coi():
+   return fixtures.pdb1coi()
+
+@pytest.fixture
+def pdb1qys():
+   return fixtures.pdb1qys()

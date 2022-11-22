@@ -2,8 +2,6 @@ import numpy as np
 import tempfile
 import willutil as wu
 
-_OCOORD = np.array([0.63033436, -0.52888702, 0.91491776])
-
 def add_bb_o_guess(coords):
    # pdb = wu.pdb.readpdb('/home/sheffler/src/rpxdock/rpxdock/data/pdb/DHR14.pdb.gz')
    # xyz = pdb.ncaco()
@@ -20,7 +18,7 @@ def add_bb_o_guess(coords):
    # assert np.allclose(ohat, xyz[:-1, 3], atol=0.1)
    # assert 0
    # assert coords.shape[-2:] == (3, 3)
-
+   _OCOORD = np.array([0.63033436, -0.52888702, 0.91491776])
    stubs = wu.hframe(coords[:-1, 2], coords[:-1, 1], coords[1:, 2])
    o = wu.hxform(stubs, _OCOORD, homogout=False)
    lasto = np.array([[0, 0, 0]])
@@ -31,10 +29,11 @@ def add_bb_o_guess(coords):
    return newcoords
 
 def dssp(coords):
-   if coords.shape[-2:] == (3, 3):
+   if coords.shape[-2] == 3:
       coords = add_bb_o_guess(coords)
    import mdtraj
    with tempfile.TemporaryDirectory() as d:
+      # ic(coords.shape)
       wu.pdb.dump_pdb_from_ncaco_points(d + '/tmp.pdb', coords)
       t = mdtraj.load(d + '/tmp.pdb')
       ss = ''.join(mdtraj.compute_dssp(t)[0]).replace('C', 'L')

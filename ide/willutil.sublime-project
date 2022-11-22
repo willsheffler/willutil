@@ -22,6 +22,14 @@
 			"shell_cmd": "cd $folder; python willutil/tests/chem/test_dssp.py &> log/sublime_build.log"
 		},
 		{
+			"name": "test_readpdb.py",
+			"shell_cmd": "cd $folder; python willutil/tests/pdb/test_pdbread.py &> log/sublime_build.log"
+		},
+		{
+			"name": "test_notpose.py",
+			"shell_cmd": "cd $folder; python willutil/tests/rosetta/test_notpose.py &> log/sublime_build.log"
+		},
+		{
 			"name": "test_symfit.py",
 			"shell_cmd": "cd $folder; python willutil/tests/sym/test_symfit.py &> log/sublime_build.log"
 		},

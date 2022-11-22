@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 import willutil as wu
 
@@ -8,6 +9,7 @@ def main():
    # test_asufit_icos()
    ic('TEST asufit DONE')
 
+@pytest.mark.xfail()
 def test_asufit_oct():
    sym = 'oct'
    symaxes = [3, 2]
@@ -58,6 +60,7 @@ def test_asufit_oct():
                 [3.84974658e-02, 2.40054213e-01, 9.69995835e-01, 1.16772927e+01],
                 [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]))
 
+@pytest.mark.xfail()
 def test_asufit_icos():
    fname = wu.tests.testdata.test_data_path('pdb/x012.pdb')
    pdb = wu.pdb.readpdb(fname)

@@ -10,6 +10,7 @@ def main():
       wu.tests.fixtures.ncac(),
       wu.tests.fixtures.ncaco(),
    )
+   ic('TEST_DSSP MAIN DONE')
 
 def test_add_bb_o(ncac, ncaco):
    test = wu.chem.add_bb_o_guess(ncac)
