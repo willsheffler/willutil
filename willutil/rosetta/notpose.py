@@ -7,7 +7,7 @@ class NotPose:
          assert isinstance(fname, str)
          pdb = wu.pdb.readpdb(fname)
       if chain is not None:
-         pdb = self.pdb.subfile(chain=chain)
+         pdb = pdb.subfile(chain=chain)
       self.pdb = pdb.subfile(het=False)
       self.pdbhet = pdb.subfile(het=True)
       self.bbcoords = wu.hpoint(self.pdb.bb())
@@ -76,26 +76,46 @@ class NotResidue:
    def __init__(self, nopo, ir):
       self.nopo = nopo
       self.ir = ir - 1
+      self.rdf = nopo.pdb.getres(self.ir)
 
    def xyz(self, ia):
-      return NotXYZ(self.nopo.pdb.xyz(self.ir, ia - 1))
+      if isinstance(ia, int):
+         ia -= 1
+      if isinstance(ia, int):
+         xyz = self.rdf.x[ia], self.rdf.y[ia], self.rdf.z[ia]
+      if isinstance(ia, str):
+         ia = ia.encode()
+      if isinstance(ia, bytes):
+         xyz = (
+            float(self.rdf.x[self.rdf.an == ia]),
+            float(self.rdf.y[self.rdf.an == ia]),
+            float(self.rdf.z[self.rdf.an == ia]),
+         )
+      return NotXYZ(xyz)
+      raise ValueError(ia)
+
+   def has(self, aname):
+      # could be more efficient
+      if isinstance(aname, str):
+         aname = aname.encode()
+      return aname in set(self.rdf.an)
 
    def is_protein(self):
       return self.nopo.camask[self.ir]
 
    def natoms(self):
-      return len(self.nopo.pdb.getres(self.ir))
+      return self.nheavyatoms()
 
    def nheavyatoms(self):
-      return len(self.nopo.pdb.getres(self.ir))
+      return len(self.rdf)
 
    def atom_name(self, ia):
-      r = self.nopo.pdb.getres(self.ir)
+      r = self.rdf
       aname = r.an[ia - 1]
       return aname.decode()
 
    def name(self):
-      r = self.nopo.pdb.getres(self.ir).rn[0]
+      r = self.rdf.rn[0]
       return r.decode()
 
 class NotXYZ(list):
@@ -110,4 +130,4 @@ class NotPDBInfo:
       self.nopo = nopo
 
    def name(self):
-      return self.nopo.pdb.fname
+      return self.nopo.pdb.meta.fname

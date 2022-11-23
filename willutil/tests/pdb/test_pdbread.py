@@ -6,6 +6,7 @@ import willutil as wu
 
 def main():
    from willutil.tests import fixtures as f
+   test_pdb_xyz(f.pdb1pgx())
    test_pdb_renumber(f.pdb1pgx())
    test_pdb_multimodel(f.pdb1coi())
    test_pdb_mask(f.pdb1pgx())
@@ -16,6 +17,14 @@ def main():
    test_find_pdb_files()
    test_pdbfile(f.pdbfile())
    ic('TEST_PDBREAD DONE')
+
+def test_pdb_xyz(pdb1pgx):
+   p = pdb1pgx.subfile(het=False).renumber_from_0()
+   assert np.allclose(p.xyz(7, 1), p.xyz(7, 'CA'))
+   assert np.allclose(p.xyz(29, 1), p.xyz(29, 'CA'))
+   assert np.allclose(p.xyz(7, 4), p.xyz(7, 'CB'))
+   assert np.allclose(p.xyz(29, 4), p.xyz(29, 'CB'))
+   assert np.allclose(p.xyz(7, 6), p.xyz(7, 'CG2'))
 
 def test_pdb_multimodel(pdb1coi):
    bb = pdb1coi.bb()
@@ -126,6 +135,7 @@ def test_pdbread(pdbfname, pdbcontents):
    assert all(pdb1.df == pdb2.df)
    assert pdb1.cryst1 == pdb2.cryst1
    assert pdb1.seq == pdb2.seq
+   assert pdb1.fname == pdbfname
 
    assert pdb1.seq == 'ELTPAVTTYKLVINGKTLKGETTTKAVDAETAEKAFKQYANDNGVDGVWTYDDATKTFTVTEMVTEVPVA'
    # print(pdbcontents)

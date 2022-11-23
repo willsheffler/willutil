@@ -5,9 +5,16 @@ import willutil as wu
 # ic.configureOutput(includeContext=True, contextAbsPath=False)
 
 def main():
+   test_notpose_has()
    test_notpose()
    test_notpose_sc_coords()
    ic('test_notpose.py DONE')
+
+def test_notpose_has():
+   fname = wu.tests.testdata.test_data_path('pdb/1pgx.pdb1.gz')
+   nopo = wu.NotPose(fname)
+   assert nopo.residue(4).has('CA')
+   assert nopo.residue(40).has('CB')
 
 def _get_sc_coords(pose, which_resi=None, recenter_input=False, **kw):
    kw = wu.Bunch(kw, _strict=False)

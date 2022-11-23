@@ -38,6 +38,7 @@ class PDBFile:
       self.nres = len(self.seq)
       self.nreshet = len(self.seqhet)
       self.nchain = len(self.chainseq)
+      self.fname = meta.fname
 
    def copy(self, **kw):
       return PDBFile(self.df, self.meta, self.original_contents, **kw)
@@ -59,6 +60,7 @@ class PDBFile:
          idx = self.df.mdl == m
          self.df.ri += np.where(idx, i * ri_per_model, 0)
          self.df.ai += np.where(idx, i * ai_per_model, 0)
+      return self
 
    def getres(self, ri):
       r = self.df[self.df.ri == ri].copy()
@@ -66,17 +68,24 @@ class PDBFile:
       return r
 
    def xyz(self, ir, ia):
-      assert isinstance(ia, int)
       r = self.getres(ir)
-      return r.x[ia], r.y[ia], r.z[ia]
+      if isinstance(ia, int):
+         return r.x[ia], r.y[ia], r.z[ia]
+      if isinstance(ia, str):
+         ia = ia.encode()
+      if isinstance(ia, bytes):
+         return float(r.x[r.an == ia]), float(r.y[r.an == ia]), float(r.z[r.an == ia])
+      raise ValueError(ia)
 
    def renumber_from_0(self):
       assert np.all(self.het == np.sort(self.het))
       d = {ri: i for i, ri in enumerate(np.unique(self.ri))}
       self.df['ri'] = [d[ri] for ri in self.df['ri']]
+      return self
 
    def remove_het(self):
       self.subfile(het=False, inplace=True)
+      return self
 
    def subfile(
       self,
@@ -218,9 +227,10 @@ def pdb_code(fname):
       return 'none'
 
 def read_pdb_atoms(fname_or_buf):
-   atomlines, cryst, expdata = dict(), None, None
+   atomlines, meta = dict(), wu.Bunch(fname=None, cryst1=None)
 
    if wu.storage.is_pdb_fname(fname_or_buf):
+      meta.fname = fname_or_buf
       opener = gzip.open if fname_or_buf.endswith('.gz') else open
       with opener(fname_or_buf) as inp:
          contents = str(inp.read()).replace(r'\n', '\n')
@@ -240,12 +250,13 @@ def read_pdb_atoms(fname_or_buf):
          modelnum = int(line[6:])
          atomlines[modelnum] = list()
       elif line.startswith('CRYST1 '):
-         assert not cryst
-         cryst = line.strip()
+         assert not meta.cryst1
+         meta.cryst1 = line.strip()
 
    # ic(len(atomlines))
    assert atomlines
-   return {k: '\n'.join(v) for k, v in atomlines.items()}, wu.Bunch(cryst1=cryst), contents
+
+   return {k: '\n'.join(v) for k, v in atomlines.items()}, meta, contents
 
 def parse_pdb_atoms(atomstr):
    import pandas as pd

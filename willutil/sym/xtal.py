@@ -1,4 +1,4 @@
-import itertools
+import itertools, os
 import numpy as np
 import willutil as wu
 
@@ -6,14 +6,30 @@ cryst1_pattern = "CRYST1  %7.3f  %7.3f  %7.3f  90.00  90.00  90.00 %s\n"
 
 class Xtal:
    def __init__(self, name='xtal', symelems=None, **kw):
-      self.name = name
-      if symelems is None:
-         self.name, symelems, nsub = wu.sym.xtalinfo(name)
+      self.info = None
       self.symelems = symelems
+      if symelems is None:
+         self.name, self.info = wu.sym.xtalinfo(name)
+         self.symelems = self.info.symelems
+         self.sub = self.info.nsub
+      self.compute_frames(**kw)
+      # self.symelems_to_unitcell()
+
+   def symelems_to_unitcell(self):
+      for s in self.symelems:
+         if s.cen[0] < 0: s.cen[0] += 1
+         if s.cen[1] < 0: s.cen[1] += 1
+         if s.cen[2] < 0: s.cen[2] += 1
+         if s.cen[0] > 1: s.cen[0] -= 1
+         if s.cen[1] > 1: s.cen[1] -= 1
+         if s.cen[2] > 1: s.cen[2] -= 1
+
+   def compute_frames(self, **kw):
       self.genframes = self.generate_candidate_frames(**kw)  # expensive-ish
       self.unitframes = self.generate_unit_frames(self.genframes)
       self.nsub = len(self.unitframes)
-      assert self.nsub == nsub, f'nsub for "{self.name}" should be {nsub}, not {self.nsub}'
+      if self.info is not None:
+         assert self.nsub == self.info.nsub, f'nsub for "{self.name}" should be {self.info.nsub}, not {self.nsub}'
       self.coverelems = self.generate_cover_symelems(self.genframes)
       self.unitelems = self.generate_unit_symelems(self.genframes)
 
@@ -25,7 +41,7 @@ class Xtal:
       return coords
 
    def dump_pdb(self, fname, asymcoords, cellsize, cells=None):
-      cryst1 = cryst1_pattern % (*(cellsize, ) * 3, self.name.replace('_', ' '))
+      cryst1 = cryst1_pattern % (*(cellsize, ) * 3, self.info.spacegroup)
       asymcoords = np.asarray(asymcoords)
 
       if cells == None:
@@ -57,16 +73,21 @@ class Xtal:
       if flat: frames = frames.reshape(-1, 4, 4)
       return frames
 
-   def generate_candidate_frames(self, depth=30, radius=9e9, trials=1000, **kw):
-      generators = np.concatenate([s.operators for s in self.symelems])
-      x, _ = wu.cpp.geom.expand_xforms_rand(generators, depth=depth, radius=radius, trials=trials)
-      testpoint = [0.001, 0.002, 0.003]
-      cens = wu.hxform(x, testpoint)
-      inboundslow = np.all(cens >= -2.5001, axis=-1)
-      inboundshigh = np.all(cens <= 2.5001, axis=-1)
-      inbounds = np.logical_and(inboundslow, inboundshigh)
-      x = x[inbounds]
-      assert len(x) < 10000
+   def generate_candidate_frames(self, depth=100, radius=9e9, trials=10000, **kw):
+      cachefile = wu.datapath(f'xtal/lotsframes_{self.name.replace(" ","_")}.npy')
+      if not os.path.exists(cachefile):
+         generators = np.concatenate([s.operators for s in self.symelems])
+         x, _ = wu.cpp.geom.expand_xforms_rand(generators, depth=depth, radius=radius, trials=trials)
+         testpoint = [0.001, 0.002, 0.003]
+         cens = wu.hxform(x, testpoint)
+         inboundslow = np.all(cens >= -2.5001, axis=-1)
+         inboundshigh = np.all(cens <= 2.5001, axis=-1)
+         inbounds = np.logical_and(inboundslow, inboundshigh)
+         x = x[inbounds]
+         assert len(x) < 10000
+         np.save(cachefile, x)
+      else:
+         x = np.load(cachefile)
       return x
 
    def generate_unit_frames(self, candidates, bbox=[(0, 0, 0), (1, 1, 1)], testpoint=None):
@@ -82,7 +103,7 @@ class Xtal:
    def generate_unit_symelems(self, candidates, bbox=[(0, 0, 0), (1, 1, 1)]):
       unitelems = list()
       for i, symelem in enumerate(self.symelems):
-         elems = wu.hxform(self.unitframes, symelem)
+         elems = symelem.xformed(self.unitframes)
          unitelems.append(list(zip(elems, self.unitframes)))
       return unitelems
 
@@ -96,7 +117,7 @@ class Xtal:
          inboundshigh = np.all(cens <= bbox[1] + 0.0001, axis=-1)
          inbounds = np.logical_and(inboundslow, inboundshigh)
          frames = candidates[inbounds]
-         elems = wu.hxform(frames, symelem)
+         elems = symelem.xformed(frames)
          # ic(elems)
          assert len(elems) == len(frames), f'{len(elems)} {len(frames)}'
          coverelems.append(list(zip(elems, frames)))

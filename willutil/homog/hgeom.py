@@ -71,6 +71,8 @@ def hxform(x, stuff, homogout='auto', **kw):
       return [hxform(x, v) for v in stuff]
    if isinstance(stuff, dict) and len(stuff) and not isinstance(stuff[0], (int, float, list, tuple)):
       return {k: hxform(x, v) for k, v in stuff.items()}
+   if hasattr(stuff, 'xformed'):
+      return stuff.xformed(x)
    orig = None
    if hasattr(stuff, 'coords'):
       orig = copy.copy(stuff)
@@ -410,7 +412,7 @@ def rot(axis, angle, degrees='auto', dtype='f8', shape=(3, 3)):
       rot3[..., 3, 3] = 1.0
    return rot3
 
-def hrot(axis_or_ray, angle=None, center=None, dtype='f8', nfold=None, **kws):
+def hrot(axis_or_ray, angle=None, center=None, dtype='f8', nfold=None, **kw):
    axis_or_ray = np.array(axis_or_ray, dtype=dtype)
    if axis_or_ray.shape[-1] == 2:
       assert center is None
@@ -427,7 +429,7 @@ def hrot(axis_or_ray, angle=None, center=None, dtype='f8', nfold=None, **kws):
 
    angle = np.array(angle, dtype=dtype)
 
-   r = rot(axis, angle, dtype=dtype, shape=(4, 4), **kws)
+   r = rot(axis, angle, dtype=dtype, shape=(4, 4), **kw)
    x, y, z = center[..., 0], center[..., 1], center[..., 2]
    r[..., 0, 3] = x - r[..., 0, 0] * x - r[..., 0, 1] * y - r[..., 0, 2] * z
    r[..., 1, 3] = y - r[..., 1, 0] * x - r[..., 1, 1] * y - r[..., 1, 2] * z

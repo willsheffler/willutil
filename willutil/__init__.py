@@ -12,10 +12,16 @@ __all__ = ('MonteCarlo', 'RigidBody', 'compute_symfit', 'showme', 'halign', 'hal
            'th_rand_xform_small', 'th_randpoint', 'th_randunit', 'th_randvec', 'th_ray_in_plane', 'th_rms', 'dssp',
            'th_rmsfit', 'th_rog', 'th_rot', 'th_rot_to_quat', 'th_vec', 'th_xform', 'unhomog')
 
+import os
 from deferred_import import deferred_import
 import icecream
 
 icecream.install()
+
+datadir = os.path.join(os.path.dirname(__file__), 'data')
+
+def datapath(f):
+   return os.path.join(datadir, f)
 
 from willutil.bunch import Bunch, bunchify, unbunchify
 from willutil.timer import Timer
