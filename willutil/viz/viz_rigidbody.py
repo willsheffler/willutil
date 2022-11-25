@@ -13,6 +13,7 @@ def pymol_viz_RigidBody(
    showpairswith=None,
    showpairsdist=8,
    showcontactswith=None,
+   sphereradius=6,
    **kw,
 ):
    kw = wu.Bunch(kw)
@@ -23,7 +24,7 @@ def pymol_viz_RigidBody(
    assert 0 == np.sum(np.isnan(body.coords))
 
    cgo = list()
-   wu.showme(body.coords, addtocgo=cgo, sphere=4, **kw)
+   wu.showme(body.coords, addtocgo=cgo, sphere=sphereradius, **kw)
 
    if showcontactswith is not None:
 

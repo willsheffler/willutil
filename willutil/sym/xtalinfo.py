@@ -33,12 +33,12 @@ def _populate_xtal_info_dict():
          C2 ( axis= [ 1,  0,  0 ] , cen= A([ 3, 0, 2 ]) / 8, label='D2_100_0m1_102_8' , vizcol=(0, 1, 0)),
          C2 ( axis= [ 1, -1,  0 ] , cen= A([-2.7, 0.7,-1 ]) / 8, label='D3_111_1m0_mmm_8' , vizcol=(0, 0, 1)),
       ]),
-      # 'I4132_C3222' : wu.Bunch( nsub=48, spacegroup='I 41 3 2', symelems=[
-      # C3 ( axis= [ 1,  1,  1 ] , cen= A([-1,-1,-1 ]) / 8, label='D3_111_1m0_mmm_8' , vizcol=(1, 0, 0)),
-      # C2 ( axis= [ 1, -1,  0 ] , cen= A([ 1, 1, 1 ]) / 8, label='D3_111_1m0_111_8' , vizcol=(0, 1, 0)),
-      # C2 ( axis= [ 1,  0,  0 ] , cen= A([ 1, 0, 2 ]) / 8, label='C2_100_102_8' , vizcol=(0, 1, 1)),
-      # C2 ( axis= [ 1,  0,  0 ] , cen= A([-1, 0,-2 ]) / 8, label='D2_100_0m1_m12m_8', vizcol=(1, 1, 0)),
-      # ]),
+      'L632'   : wu.Bunch( nsub=None , spacegroup=None, dimension=2, symelems=[
+         C3 ( axis= [ 0,  0,  1 ] , cen= A([ 0, 0, 0 ])/2, vizcol=(0.0, 1.0, 1.0) ),
+         C2 ( axis= [ 0,  0,  1 ] , cen= A([ 1, 0, 0 ])/2, vizcol=(0.3, 1, 0.7) ),
+      ]),
+
+
    }
    # yapf: enable
 
@@ -93,7 +93,11 @@ class SymElem:
    def __repr__(self):
       # ax = self.axis / min(self.axis[self.axis != 0])
       ax = self.origaxis
-      return f'SymElem({self.nfold},{ax[:3]},{self.cen[:3]})'
+      ax2 = self.origaxis2
+      if self.origaxis2 is None:
+         return f'SymElem({self.nfold}, ax={ax[:3]}, cen={self.cen[:3]})'
+      else:
+         return f'SymElem({self.nfold}, ax={ax[:3]}, dax{ax2[:3]}, cen={self.cen[:3]})'
 
 def C2(**kw):
    return SymElem(nfold=2, **kw)

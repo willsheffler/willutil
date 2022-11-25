@@ -3,7 +3,7 @@ import numpy as np
 import willutil as wu
 from willutil.homog import *
 
-class RBObjective:
+class RBOverlapObjective:
    def __init__(
       self,
       initial,
@@ -28,7 +28,7 @@ class RBObjective:
       self.initial = initial.position.copy()
       self.initialcom = initial.com().copy()
       self.lever = lever or initial.rog()
-      self.contactfrac = contactfrac
+      self.contactfrac = max(0.001, contactfrac)
       assert 0 <= contactfrac <= 1
       self.scoreframes = scoreframes
       self.clashframes = clashframes

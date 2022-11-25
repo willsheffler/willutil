@@ -9,10 +9,12 @@ class RBSampler:
       cartsd=None,
       rotsd=None,
       lever=None,
-      biasradial=None,
-      biasdir=None,
+      biasradial=1,
+      biasdir=[1, 0, 0],
       center=[0, 0, 0],
       minradius=0,
+      scale=1,
+      scalesd=None,
       **kw,
    ):
       self.cartsd = cartsd
@@ -21,6 +23,7 @@ class RBSampler:
          self.rotsd = cartsd / (lever or 20)
       else:
          assert lever == None, f'if rotsd specified, no lever must be provided'
+      self.scalesd = scalesd
       self.biasdir = hnormalized(biasdir)
       self.biasradial = float(biasradial)
       self.minradius = minradius

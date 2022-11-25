@@ -1,8 +1,8 @@
-import copy, itertools as it, functools as ft
+import copy, itertools as it, functools as ft, sys
 import willutil as wu
 import deferred_import
 
-np = deferred_import.deferred_import('numpy')
+import numpy as np
 
 def hvalid(x):
    if x.shape[-2:] == (4, 4):
@@ -75,9 +75,18 @@ def hxform(x, stuff, homogout='auto', **kw):
       return stuff.xformed(x)
    orig = None
    if hasattr(stuff, 'coords'):
-      orig = copy.copy(stuff)
-      stuff = stuff.coords
-      assert x.ndim in (2, 3)
+      isxarray = False
+      if 'xarray' in sys.modules:
+         import xarray
+         # coords is perhaps poor choice of convention
+         # xarray.DataArry has coords member already...
+         print('WARNING Deprivation of .coords convention in favor of .xformed method')
+         isxarray = isinstance(stuff, xarray.DataArray)
+      if not isxarray:
+         orig = copy.copy(stuff)
+         stuff = stuff.coords
+         assert x.ndim in (2, 3)
+
    stuff, origstuff = np.asarray(stuff), stuff
    if not stuff.dtype in (np.float64, np.float32):
       stuff = stuff.astype(np.float64)
@@ -88,6 +97,7 @@ def hxform(x, stuff, homogout='auto', **kw):
    if stuff.shape[-1] == 3:
       stuff = hpoint(stuff)
 
+   # is this necessary? change ray convention?
    isray = stuff.shape[-1] == 2
    if isray: stuff = stuff.swapaxes(-1, -2)
 
@@ -118,8 +128,6 @@ def _hxform_impl(x, stuff, outerprod='auto', flat=False, is_points='auto'):
          if stuff.shape[-1] != 4 and stuff.shape[-2:] == (4, 1):
             raise ValueError(f'hxform cant understand shape {stuff.shape}')
 
-   # ic(stuff.shape)
-
    if not is_points:
       if outerprod == 'auto':
          outerprod = x.shape[:-2] != stuff.shape[:-2]
@@ -145,6 +153,7 @@ def _hxform_impl(x, stuff, outerprod='auto', flat=False, is_points='auto'):
          shape2 = stuff.shape[:-2]
          # ic(x.shape, stuff.shape, shape1, shape2)
          a = x.reshape(shape1 + (1, ) * len(shape2) + (4, 4))
+
          b = stuff.reshape((1, ) * len(shape1) + shape2 + (4, 1))
          result = a @ b
       else:
@@ -1239,7 +1248,14 @@ def hexpand(
    return x
 
 def hpow(xform, power):
-   if not power % 1 == 0: raise ValueError(f'power {power} is not integer')
+   if power % 1 == 0:
+      return hpow_int(xform, power)
+   else:
+      return hpow_float(xform, power)
+
+def hpow_int(xform, power):
+   if not power % 1 == 0:
+      raise ValueError(f'power {power} is not integer')
    result = np.tile(np.eye(4), (*xform.shape[:-2], 1, 1))
    if power < 0:
       power = -power
@@ -1247,6 +1263,11 @@ def hpow(xform, power):
    for i in range(power):
       result = hxform(xform, result)
    return result
+
+def hpow_float(xform, power):
+   ic('get rot, axis, hel, cen')
+   ic('interp rot/hel around axis/cen')
+   return NotImplemented
 
 def hcom_flat(points):
    return np.mean(points, axis=-2)

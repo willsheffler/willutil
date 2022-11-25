@@ -12,7 +12,7 @@ def pymol_viz_SymElem(
       name='SymElem',
       center=np.array([0, 0, 0, 1]),
       # scalefans=None,
-      fansize=0.001,
+      fansize=0.05,
       fanshift=0,
       fancover=1.0,
       make_cgo_only=False,
@@ -25,6 +25,7 @@ def pymol_viz_SymElem(
       fanrefpoint=[1, 2, 3, 1],
       symelemscale=1,
       symelemtwosided=False,
+      shifttounit=False,
       **kw,
 ):
    import pymol
@@ -55,15 +56,17 @@ def pymol_viz_SymElem(
       col = toshow.vizcol
 
    cen = wu.hscale(scale) @ toshow.cen
-   if cen[0] < 0: cen[0] += scale
-   if cen[1] < 0: cen[1] += scale
-   if cen[2] < 0: cen[2] += scale
-   if cen[0] > scale: cen[0] -= scale
-   if cen[1] > scale: cen[1] -= scale
-   if cen[2] > scale: cen[2] -= scale
+   if shifttounit:
+      if cen[0] < 0: cen[0] += scale
+      if cen[1] < 0: cen[1] += scale
+      if cen[2] < 0: cen[2] += scale
+      if cen[0] > scale: cen[0] -= scale
+      if cen[1] > scale: cen[1] -= scale
+      if cen[2] > scale: cen[2] -= scale
    cen[0] += scale * cellshift[0]
    cen[1] += scale * cellshift[1]
    cen[2] += scale * cellshift[2]
+   fanrefpoint = fanrefpoint.copy()
    fanrefpoint[0] += scale * cellshift[0]
    fanrefpoint[1] += scale * cellshift[1]
    fanrefpoint[2] += scale * cellshift[2]
@@ -76,11 +79,18 @@ def pymol_viz_SymElem(
    mycgo += cgo_cyl(c1, c2, axisrad, col=col)
    # ic(fansize, ang)
 
-   mycgo += cgo_fan(axis, cen, fansize, arc=ang * fancover, thickness=fanthickness, col=col, startpoint=fanrefpoint,
+   arc = min(np.pi * 2, ang * fancover)
+   ic(axis)
+   ic(cen)
+   ic(fansize)
+   ic(fanthickness)
+   ic(fanrefpoint)
+   ic(fanshift)
+   mycgo += cgo_fan(axis, cen, fansize, arc=arc, thickness=fanthickness, col=col, startpoint=fanrefpoint,
                     fanshift=fanshift)
    if symelemtwosided:
       col2 = (1, 1, 1)
-      mycgo += cgo_fan(axis, cen, fansize, arc=ang * fancover, thickness=fanthickness, col=col2, startpoint=fanrefpoint,
+      mycgo += cgo_fan(axis, cen, fansize, arc=arc, thickness=fanthickness, col=col2, startpoint=fanrefpoint,
                        fanshift=fanshift - 0.01)
 
    if addtocgo is None:
@@ -107,7 +117,7 @@ def pymol_viz_Xtal(
    showpoints=None,
    fanshift=0,
    fansize=0.1,
-   showcube=True,
+   showcube=None,
    **kw,
 ):
    import pymol
@@ -136,13 +146,24 @@ def pymol_viz_Xtal(
 
                # cgo += cgo_sphere(fanrefpoint, 0.5, col=(1, 1, 1))
                elem = elem.xformed(xcellshift)
-               pymol_viz_SymElem(elem, state, scale=scale, addtocgo=cgo, fanrefpoint=fanrefpoint, fansize=size,
-                                 fanshift=fanshift, cellshift=cellshift, **kw)
+               pymol_viz_SymElem(
+                  elem,
+                  state,
+                  scale=scale,
+                  addtocgo=cgo,
+                  fanrefpoint=fanrefpoint,
+                  fansize=size,
+                  fanshift=fanshift,
+                  cellshift=cellshift,
+                  shifttounit=toshow.dimension == 3,
+                  **kw,
+               )
       if splitobjs:
          pymol.cmd.load_cgo(cgo, f'{name}_symelem{i}')
       allcgo += cgo
       xshift2 = xcellshift.copy()
       xshift2[:3, 3] *= scale
+      showcube = toshow.dimension == 3 if showcube is None else showcube
       if showcube:
          cgo = cgo_cube(wu.hxform(xshift2, [0, 0, 0]), wu.hxform(xshift2, [scale, scale, scale]), r=0.03)
          if splitobjs:

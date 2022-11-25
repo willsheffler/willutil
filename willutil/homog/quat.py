@@ -1,6 +1,6 @@
 import deferred_import
 
-np = deferred_import.deferred_import('numpy')
+import numpy as np
 
 from willutil.homog.util import jit, guvec, float32, float64
 
@@ -78,8 +78,7 @@ def rot_to_quat(xform):
    quat[case3, 2] = (x[case3, 1, 2] + x[case3, 2, 1]) / S3
    quat[case3, 3] = 0.25 * S3
 
-   assert (np.sum(case0) + np.sum(case1) + np.sum(case2) + np.sum(case3) == np.prod(
-      xform.shape[:-2]))
+   assert (np.sum(case0) + np.sum(case1) + np.sum(case2) + np.sum(case3) == np.prod(xform.shape[:-2]))
 
    return quat_to_upper_half(quat)
 

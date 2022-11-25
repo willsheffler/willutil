@@ -16,6 +16,7 @@ def frames(
    com=None,
    symops=None,
    spacing=None,
+   ontop=[],
 ):
    '''generate symmetrical coordinate frames
     axis aligns Cx or bbaxis or axis0 to this
@@ -86,6 +87,18 @@ def frames(
          f = f[order]
          # print(order)
          # assert 0
+
+   if ontop:
+      frames = list(f)
+      for f0 in ontop:
+         for i, x in enumerate(frames):
+            if wu.hdiff(f0, x) < 0.0001:
+               break
+         else:
+            raise ValueError(f'ontop frame not found: {f0}')
+         del frames[i]
+      assert len(ontop) + len(frames) == len(f)
+      f = np.stack(list(ontop) + frames)
 
    return f
 

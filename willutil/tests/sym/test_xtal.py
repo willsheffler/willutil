@@ -6,31 +6,28 @@ import willutil as wu
 # ic.configureOutput(includeContext=True, contextAbsPath=False)
 
 def main():
-   noshow = False
-   test_hxtal_viz(
-      spacegroup='I4132_C322',
-      headless=noshow,
-      showpoints=3,
-      cells=2,
-      symelemscale=0.3,
-      fansize=np.array([1.7, 1.2, 0.7]) / 3,
-      symelemtwosided=True,
-      showsymelems=True,
-      pointshift=(0.2, 0.2, 0.1),
-      scaleptrad=2,
-   )
+
+   # test_hxtal_viz(
+   #    spacegroup='I4132_C322',
+   #    headless=False,
+   #    showpoints=0,
+   #    cells=2,
+   #    symelemscale=0.3,
+   #    fansize=np.array([1.7, 1.2, 0.7]) / 3,
+   #    fancover=10,
+   #    symelemtwosided=True,
+   #    showsymelems=True,
+   #    pointshift=(0.2, 0.2, 0.1),
+   #    scaleptrad=2,
+   # )
+   # assert 0
    '''
 run /home/sheffler/pymol3/misc/G222.py; gyroid(10,r=11,cen=Vec(5,5,5)); set light, [ -0.3, -0.30, 0.8 ]
    '''
-   assert 0, 'aoisrtnoiarnsiot'
+   # assert 0, 'aoisrtnoiarnsiot'
 
-   test_xtal_cellframes()
-   test_xtal_cryst1_I_21_3(headless=noshow)  #, dump_pdbs=True)
-   test_xtal_cryst1_P_2_3(headless=noshow)  #, dump_pdbs=True)
-   test_xtal_cryst1_P_21_3(headless=noshow)  #, dump_pdbs=True)
-   test_xtal_cryst1_I_41_3_2(headless=noshow)  #, dump_pdbs=True)
-   test_xtal_cryst1_I4132_C322(headless=noshow)  #, dump_pdbs=True)
-   test_symelem(headless=noshow)
+   test_xtal_L632()
+   assert 0
 
    # assert 0, 'stilltest viz'
    noshow = True
@@ -39,9 +36,29 @@ run /home/sheffler/pymol3/misc/G222.py; gyroid(10,r=11,cen=Vec(5,5,5)); set ligh
    test_hxtal_viz(spacegroup='P 21 3', headless=noshow)
    test_hxtal_viz(spacegroup='I 41 3 2', headless=noshow)
    test_hxtal_viz(spacegroup='I4132_C322', headless=noshow)
+   if not noshow: assert 0
+
+   test_xtal_cryst1_I_21_3(dump_pdbs=False)
+   test_xtal_cryst1_P_2_3(dump_pdbs=False)
+   test_xtal_cryst1_P_21_3(dump_pdbs=False)
+   test_xtal_cryst1_I_41_3_2(dump_pdbs=False)
+   test_xtal_cryst1_I4132_C322(dump_pdbs=False)
+   test_xtal_cellframes()
+   test_symelem()
 
    # _test_hxtal_viz_gyroid(headless=False)
    ic('test_xtal.py DONE')
+
+def test_xtal_L632():
+   xtal = wu.sym.Xtal('L632')
+   # ic(xtal.symelems)fresh
+   # ic(xtal.genframes.shape)
+   # ic(len(xtal.coverelems))
+   # ic(len(xtal.coverelems[0]))
+   # ic(len(xtal.coverelems[1]))
+   # wu.showme(xtal.genframes)
+   # wu.showme(xtal.unitframes, name='arstn')
+   # wu.showme(xtal, headless=False, showgenframes=False, symelemscale=1, pointscale=0.8, fresh=True)
 
 def test_symelem(headless=True):
    elem1 = wu.sym.SymElem(2, [1, 0, 0], [0, 0, 0])
@@ -54,8 +71,8 @@ def test_symelem(headless=True):
    # x = wu.hrand()
    # e2 = wu.hxform(x, elem1)
    # assert np.allclose(e2.coords, wu.hxform(x, elem1.coords))
-   wu.showme(elem1, headless=headless)
-   wu.showme(wu.hxform(wu.hrot([0, 1, 0], 120, [0, 0, 1]), elem1), headless=headless)
+   # wu.showme(elem1, headless=headless)
+   # wu.showme(wu.hxform(wu.hrot([0, 1, 0]s, 120, [0, 0, 1]), elem1), headless=headless)
    # wu.showme([elem1], fancover=0.8)
 
 def test_xtal_cellframes():
@@ -89,7 +106,7 @@ def prune_bbox(coords, lb, ub):
    inbounds = np.logical_and(inboundslow, inboundshigh)
    return inbounds
 
-def helper_test_xtal_cryst1(spacegroup, headless=True, dump_pdbs=False):
+def helper_test_xtal_cryst1(spacegroup, dump_pdbs=False):
    pymol = pytest.importorskip('pymol')
    xtal = wu.sym.Xtal(spacegroup)
 
@@ -146,8 +163,9 @@ def helper_test_xtal_cryst1(spacegroup, headless=True, dump_pdbs=False):
    coords2 = coords2[coords2[:, 2] < ub]
    coords2 = coords2[coords2[:, 2] > lb]
 
-   wu.pdb.dump_pdb_from_points(f'test_{spacegroup.replace(" ","_")}_pymol.pdb', coords1)
-   wu.pdb.dump_pdb_from_points(f'test_{spacegroup.replace(" ","_")}_wxtal.pdb', coords2)
+   if dump_pdbs:
+      wu.pdb.dump_pdb_from_points(f'test_{spacegroup.replace(" ","_")}_pymol.pdb', coords1)
+      wu.pdb.dump_pdb_from_points(f'test_{spacegroup.replace(" ","_")}_wxtal.pdb', coords2)
 
    # ic(spacegroup)
    # ic(coords1.shape)
@@ -161,13 +179,14 @@ def helper_test_xtal_cryst1(spacegroup, headless=True, dump_pdbs=False):
 def test_hxtal_viz(headless=True, spacegroup='P 2 3', symelemscale=0.7, **kw):
    pymol = pytest.importorskip('pymol')
    xtal = wu.sym.Xtal(spacegroup)
-   ic(xtal.unitframes.shape)
+   # ic(xtal.unitframes.shape)
    wu.showme(
       xtal,
       headless=headless,
       showgenframes=False,
       symelemscale=symelemscale,
       pointscale=0.8,
+      # fresh=True,
       **kw,
    )
    # sys.path.append('/home/sheffler/src/wills_pymol_crap')

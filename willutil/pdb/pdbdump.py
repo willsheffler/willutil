@@ -1,6 +1,6 @@
 import deferred_import, os, willutil as wu
 
-np = deferred_import.deferred_import('numpy')
+import numpy as np
 
 all_pymol_chains = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz" * 10)
 

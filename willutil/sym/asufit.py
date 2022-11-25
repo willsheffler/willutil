@@ -34,7 +34,7 @@ def asufit(
    if minradius is None: kw.minradius = wu.hnorm(asym.com()) * 0.7
 
    if objfunc is None:
-      objfunc = wu.rigid.RBObjective(
+      objfunc = wu.rigid.RBOverlapObjective(
          asym,
          scoreframes=[(0, 1), (0, 2)],
          clashframes=[(1, 2), (1, 3), (2, 3)],
@@ -55,7 +55,7 @@ def asufit(
    mc.try_this(asym.position)
    initialscore = mc.best
 
-   if showme: wu.showme(bodies, name='start')
+   if showme: wu.showme(bodies, name='start', **kw)
 
    wu.pdb.dump_pdb_from_points('start.pdb', asym.coords)
 
@@ -79,11 +79,13 @@ def asufit(
       else:
          if mc.best < thresh:
             # ic('end', i, objfunc(mc.bestconfig))
+            # if showme: wu.showme(bodies, name='mid%i' % i, **kw)
             return mc
 
          # ic(i, mc.last)
          # if i % 10 == 0:
-         # if showme: wu.showme(bodies, name='mid%i' % i)
+         if showme: wu.showme(bodies, name='mid%i' % i, **kw)
+
    assert mc.bestconfig is not None
    # ic('end', mc.best)
    initscore = objfunc(mc.startconfig, verbose=True)
@@ -100,7 +102,7 @@ def asufit(
    # ic('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
    # ic(bodies[0].contact_fraction(bodies[1]))
    # ic(bodies[0].contact_fraction(bodies[2]))
-   if showme: wu.showme(bodies, name='end')
+   if showme: wu.showme(bodies, name='end', **kw)
    # wu.showme(bodies[0], name='pairs01', showcontactswith=bodies[1], showpairsdist=16, col=(1, 1, 1))
    # wu.showme(bodies[0], name='pairs02', showcontactswith=bodies[2], showpairsdist=16, col=(1, 1, 1))
    # wu.showme(bodies[1], name='pairs10', showcontactswith=bodies[0], showpairsdist=16, col=(1, 0, 0))

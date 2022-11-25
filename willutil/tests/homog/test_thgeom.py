@@ -5,6 +5,7 @@ from willutil.homog.thgeom import *
 from willutil.homog.hgeom import *
 
 def main():
+
    test_th_vec()
    test_th_rog()
    # assert 0, 'DONE'
@@ -22,7 +23,10 @@ def main():
    test_th_axis_angle_cen_rand()
    test_torch_rmsfit_grad()
 
+   ic('test_thgeom.py DONE')
+
 def test_th_vec():
+   torch = pytest.importorskip('torch')
    v = th_randvec(10)
    # ic(v)
    v2 = th_vec(v)
@@ -37,6 +41,7 @@ def test_th_vec():
    assert torch.allclose(v4[..., 3], torch.tensor(0.0))
 
 def test_th_rog():
+   torch = pytest.importorskip('torch')
    points = th_randpoint(10)
    rg = th_rog(points)
    rgx = th_rog(points, aboutaxis=[1, 0, 0])
@@ -46,6 +51,7 @@ def test_th_rog():
    assert np.allclose(rg, rgx)
 
 def test_axisangcenhel_roundtrip():
+   torch = pytest.importorskip('torch')
 
    axis0 = torch.tensor([1., 0, 0, 0], requires_grad=True)
    axis = th_normalized(axis0)
@@ -157,6 +163,7 @@ def test_th_rot_56789():
    assert axis0.grad.shape == (5, 6, 7, 8, 9, 4)
 
 def test_th_rot_single():
+   torch = pytest.importorskip('torch')
 
    axis0 = wu.hnormalized(np.random.randn(3))
    ang0 = np.random.random() * (np.pi - 0.1) + 0.1
@@ -183,6 +190,9 @@ def test_th_axis_angle_cen_rand():
    torch.autograd.set_detect_anomaly(True)
 
    shape = (5, 6, 7, 8, 9)
+   if not torch.cuda.is_available():
+      shape = shape[3:]
+
    axis0 = wu.hnormalized(np.random.randn(*shape, 3))
    ang0 = np.random.random(shape) * (np.pi - 0.1) + 0.1
    cen0 = np.random.randn(*shape, 4) * 100.0
@@ -321,6 +331,7 @@ def test_th_axis_angle_cen_hel():
    assert np.allclose(axis0.grad, [hg, hg, hg, 0])
 
 def test_torch_grad():
+   torch = pytest.importorskip('torch')
    x = torch.tensor([2, 3, 4], dtype=torch.float, requires_grad=True)
    s = torch.sum(x)
    s.backward()
@@ -340,10 +351,10 @@ def test_torch_quat():
       assert np.allclose(q0.grad.detach(), [0, v, v, v])
 
 def test_torch_rmsfit(trials=10):
-   for _ in range(trials):
-      torch = pytest.importorskip('torch')
-      torch.autograd.set_detect_anomaly(True)
+   torch = pytest.importorskip('torch')
+   torch.autograd.set_detect_anomaly(True)
 
+   for _ in range(trials):
       p = th_randpoint(10, std=10)
       q = th_randpoint(10, std=10)
       # ic(p)
@@ -356,32 +367,37 @@ def test_torch_rmsfit(trials=10):
          qhat2 = th_xform(th_rand_xform_small(1, 0.01, 0.001), qhat)
          rms2 = th_rms(q, qhat2)
 
-         if rms2 < rms:
+         if rms2 < rms - 0.001:
             print(float(rms), float(rms2))
          assert rms2 >= rms
 
 def test_torch_rmsfit_grad():
+   torch = pytest.importorskip('torch')
+   if not torch.cuda.is_available():
+      wu.tests.force_pytest_skip('CUDA not availble')
+   torch.autograd.set_detect_anomaly(True)
+   # assert 0
    ntrials = 1
-   n = 100
-   std = 4.
+   npts = 50
    shift = 100
+   nstep = 50
    for std in (0.01, 0.1, 1, 10, 100):
       for i in range(ntrials):
          xpq = rand_xform()
-         points1 = hrandpoint(n) * 10
-         points2 = hxform(xpq, points1) + rand_vec(n) * std
+         points1 = hrandpoint(npts) * 10
+         points2 = hxform(xpq, points1) + rand_vec(npts) * std
          points2[:, 0] += shift
          points1[:, 3] = 1
          points2[:, 3] = 1
          # ic(points1)
          # ic(points2)
-         assert points2.shape == (n, 4)
+         assert points2.shape == (npts, 4)
 
-         for i in range(100):
+         for i in range(nstep):
             p = torch.tensor(points1, requires_grad=True)
             q = torch.tensor(points2, requires_grad=True)
             p2, q2 = th_point(p), th_point(q)
-            assert p2.shape == (n, 4)
+            assert p2.shape == (npts, 4)
 
             rms, qhat, xpqhat = th_rmsfit(p2, q2)
             rms2 = th_rms(qhat, q)
@@ -450,6 +466,8 @@ def test_th_axis_angle_hel():
    assert np.allclose(axis0.grad, [hg, hg, hg, 0])
 
 def test_th_misc():
+   torch = pytest.importorskip('torch')
+
    r = torch.randn(2, 4, 5, 3)
    p = th_point(r)
    assert np.allclose(p[..., :3], r)

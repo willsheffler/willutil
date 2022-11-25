@@ -10,12 +10,16 @@ ic.configureOutput(includeContext=True, contextAbsPath=True)
 
 def main():
 
-   test_hdiff()
-   test_hrmsfit()
-
+   test_hxform_stuff_coords()
+   test_hxform_stuff_xformed()
    test_hxform()
    test_hxform_ray()
+
    test_hpow()
+   test_hpow_float()
+
+   test_hdiff()
+   test_hrmsfit()
 
    test_hexpand()
 
@@ -77,7 +81,7 @@ def main():
    test_xform_around_dof_for_vector_target_angle()
    test_axis_angle_180_bug()
 
-   ic('test_homog.py done')
+   ic('test_homog.py DONE')
 
 def test_hdiff():
    I = np.eye(4)
@@ -110,13 +114,59 @@ def test_hxform_ray():
    assert np.allclose(m[..., 1], hxform(x, r[..., 1]))
    assert wu.hvalid(m)
 
+def test_hxform_stuff_coords():
+   class Dummy:
+      def __init__(self, p):
+         self.coords = p
+
+   x = rand_xform()
+   p = hpoint([1, 2, 3])
+   smrt = Dummy(p)  # I am so smart, S, M, R T...
+   q = hxform(x, smrt)
+   r = hxform(x, p)
+   assert np.allclose(smrt.coords, p)
+
+def test_hxform_stuff_xformed():
+   class Dummy:
+      def __init__(self, pos):
+         self.pos = pos
+
+      def xformed(self, x):
+         return Dummy(wu.hxform(x, self.pos))
+
+   x = rand_xform()
+   p = hpoint([1, 2, 3])
+   smrt = Dummy(p)
+   q = hxform(x, smrt)
+   r = hxform(x, p)
+   assert np.allclose(smrt.pos, p)
+
+def test_hxform_list():
+   class Dummy:
+      def __init__(self, p):
+         self.coords = p
+
+   x = rand_xform()
+   p = hpoint([1, 2, 3])
+   stuff = Dummy(p)
+   q = hxform(x, stuff)
+   r = hxform(x, p)
+   assert np.allclose(stuff.coords, p)
+
 def test_hxform():
+   x = rand_xform()
+   y = hxform(x, [1, 2, 3], homogout=True)
+   assert np.allclose(y, x @ hpoint([1, 2, 3]))
+   y = hxform(x, [1, 2, 3])
+   assert np.allclose(y, (x @ hpoint([1, 2, 3]))[:3])
+
+def test_hxform_outer():
    x = rand_xform()
    hxform(x, [1, 2, 3])
 
 def test_hpow():
    with pytest.raises(ValueError):
-      hpow(np.eye(4), 0.5)
+      hpow_int(np.eye(4), 0.5)
 
    x = hrot([0, 0, 1], [1, 2, 3])
    xinv = hrot([0, 0, 1], [-1, -2, -3])
@@ -129,6 +179,12 @@ def test_hpow():
    assert np.allclose(xpow, x @ x @ x @ x @ x)
    xpow = hpow(x, -2)
    assert np.allclose(xpow, xinv @ xinv)
+
+@pytest.mark.xfail
+def test_hpow_float():
+   x = hrot([0, 0, 1], [1, 2, 3])
+   hpow(x, 0.3)
+   ic('test with int powers, maybe other cases')
 
 def test_hmean():
    ang = np.random.normal(100)

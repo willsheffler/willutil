@@ -159,6 +159,14 @@ class Bunch(dict):
             newbunch.__setattr__(k, v)
       return newbunch
 
+   def only(self, keys):
+      newbunch = Bunch()
+      newbunch._special = self._special
+      for k in keys:
+         if k in self:
+            newbunch[k] = self[k]
+      return newbunch
+
    def visit_remove_if(self, func, recurse=True, depth=0):
       toremove = list()
       for k, v in self.__dict__.items():

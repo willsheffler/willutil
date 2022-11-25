@@ -160,19 +160,20 @@ def _(
       pymol.cmd.load_cgo(mycgo, name)
 
 @pymol_load.register(list)
-def _(
+def pymol_viz_list(
    toshow,
    state=_showme_state,
    name=None,
    **kw,
 ):
+   kw = wu.Bunch(kw)
    mycgo = list()
    v = pymol.cmd.get_view()
    cmd.set('suspend_updates', 'on')
-   col = [tuple(_) for _ in get_different_colors(len(toshow), **kw)]
+   colors = get_different_colors(len(toshow), **kw.only('colorseed'))
+   colors = [tuple(_) for _ in colors]
    for i, t in enumerate(toshow):
-      # print('    ##############', type(t), '################')
-      mycgo.extend(pymol_load(t, state, addtocgo=mycgo, make_cgo_only=True, col=col[i], **kw))
+      _ = pymol_load(t, state, addtocgo=mycgo, make_cgo_only=True, col=colors[i], **kw)
    pymol.cmd.set_view(v)
    name = name or 'list'
    pymol.cmd.load_cgo(mycgo, name)
@@ -203,15 +204,20 @@ def _(
 _nxforms = 0
 
 @functools.lru_cache(10)
-def get_different_colors(ncol, niter=1000, colorseed=1, **kw):
+def get_different_colors(ncol, niter=1000, colorseed=1):
    rs = np.random.get_state()
    np.random.seed(colorseed)
    maxmincoldis, best = 0, None
    for i in range(niter):
       colors = np.random.rand(ncol, 3)
       # ic(np.max(colors[:, ], axis=1))
-      while np.min(np.max(colors[:, ], axis=1)) < 0.8:
-         colors = np.random.rand(ncol, 3)
+      b = np.min(np.max(colors[:, ], axis=1))
+      for i in range(100):
+         colors0 = np.random.rand(ncol, 3)
+         score = np.min(np.max(colors0[:, ], axis=1))
+         if score > b:
+            colors = colors0
+      # ic(colors.shape)
       cdis2 = np.linalg.norm(colors[None] - colors[:, None], axis=-1)
       np.fill_diagonal(cdis2, 4.0)
       if np.min(cdis2) > maxmincoldis:
@@ -262,6 +268,7 @@ def pymol_visualize_xforms(
    addtocgo=None,
    **kw,
 ):
+   kw = wu.Bunch(kw)
    if perturb != 0: raise NotImplementedError
 
    xyzlen = [_ * xyzscale for _ in xyzlen]
@@ -276,7 +283,7 @@ def pymol_visualize_xforms(
    name = get_cgo_name(name)
    colors = None
    if framecolors == 'rand':
-      colors = get_different_colors(len(xforms) + 1, **kw)
+      colors = get_different_colors(len(xforms) + 1, **kw.only('colorseed'))
 
    # mycgo = [cgo.BEGIN]
    mycgo = list()
@@ -294,6 +301,7 @@ def pymol_visualize_xforms(
       z0 = rr @ z0
 
    for ix, xform in enumerate(xforms):
+      xform = xform.copy()
       xform[:3, 3] *= scale
       cen = xform @ c0
       x = xform @ x0
@@ -347,7 +355,7 @@ def show_ndarray_lines(
    state["seenit"][name] += 1
    name += "_%i" % state["seenit"][name]
    if col == 'rand':
-      col = get_different_colors(len(toshow), **kw)
+      col = get_different_colors(len(toshow), **kw.only('colorseed'))
    if not isinstance(col[0], (list, np.ndarray, tuple)):
       col = [col] * len(toshow)
 
@@ -389,7 +397,7 @@ def show_ndarray_line_strip(
    name += "_%i" % state["seenit"][name]
 
    if col == 'rand':
-      col = get_different_colors(breaks // breaks_groups, **kw)
+      col = get_different_colors(breaks // breaks_groups, **kw.only('colorseed'))
    if isinstance(col, list) and isinstance(col[0], (int, float)):
       col = [col] * breaks
    if isinstance(col, (tuple, str)):
@@ -454,7 +462,7 @@ def show_ndarray_point_or_vec(
    if col in get_color_dict():
       col = get_color_dict()[col]
    if col == 'rand':
-      col = get_different_colors(len(toshow), **kw)
+      col = get_different_colors(len(toshow), **kw.only('colorseed'))
    mycgo = list()
    if toshow.ndim == 1: toshow = [toshow]
    for i, p_or_v in enumerate(toshow):
@@ -569,6 +577,7 @@ def showme(*args, how="pymol", **kw):
    else:
       result = NotImplemented('showme how="%s" not implemented' % how)
    np.random.set_state(randstate)
+
    return result
 
 _atom_record_format = ("ATOM  {atomi:5d} {atomn:^4}{idx:^1}{resn:3s} {chain:1}{resi:4d}{insert:1s}   "

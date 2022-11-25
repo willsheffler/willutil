@@ -1,7 +1,8 @@
 import itertools as it, functools as ft
 import deferred_import
 
-np = deferred_import.deferred_import('numpy')
+import numpy as np
+
 torch = deferred_import.deferred_import('torch')
 import willutil as wu
 from willutil.homog.hgeom import _hxform_impl
