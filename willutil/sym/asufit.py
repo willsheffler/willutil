@@ -6,7 +6,6 @@ from willutil.homog import *
 def asufit(
    sym,
    coords,
-   symaxes,
    frames=None,
    objfunc=None,
    sampler=None,
@@ -20,6 +19,7 @@ def asufit(
    minradius=None,
    resetinterval=100,
    correctionfactor=2,
+   showme_accepts=False,
    **kw,
 ):
    ic('asufit', sym)
@@ -31,20 +31,23 @@ def asufit(
    kw.biasdir = wu.hnormalized(asym.com())
    if frames is None: frames = wu.sym.frames(sym)
    if lever is None: kw.lever = asym.rog() * 1.5
-   if minradius is None: kw.minradius = wu.hnorm(asym.com()) * 0.7
+   if minradius is None: kw.minradius = wu.hnorm(asym.com()) * 0.5
+
+   ObjFuncDefault = wu.rigid.LatticeOverlapObjective
+   SamplerDefault = wu.search.LatticeRBSampler
 
    if objfunc is None:
-      objfunc = wu.rigid.RBOverlapObjective(
+      objfunc = ObjFuncDefault(
          asym,
          scoreframes=[(0, 1), (0, 2)],
          clashframes=[(1, 2), (1, 3), (2, 3)],
          bodies=bodies,
          sym=sym,
-         symaxes=symaxes,
          **kw,
       )
+
    if sampler is None:
-      sampler = wu.search.RBSampler(
+      sampler = SamplerDefault(
          cartsd=cartsd,
          center=asym.com(),
          **kw,
@@ -52,7 +55,8 @@ def asufit(
    if mc is None:
       mc = wu.MonteCarlo(objfunc, temperature=temperature, **kw)
 
-   mc.try_this(asym.position)
+   start = asym.state
+   mc.try_this(start)
    initialscore = mc.best
 
    if showme: wu.showme(bodies, name='start', **kw)
@@ -61,9 +65,9 @@ def asufit(
 
    for i in range(iterations):
       if i % 50 == 0 and i > 0:
-         asym.position = mc.bestconfig
+         asym.state = mc.beststate
          if i % 200:
-            asym.position = mc.startconfig
+            asym.state = mc.startstate
          if mc.acceptfrac < 0.1:
             mc.temperature *= correctionfactor / resetinterval * 100
             sampler.cartsd /= correctionfactor / resetinterval * 100
@@ -72,32 +76,32 @@ def asufit(
             sampler.cartsd *= correctionfactor / resetinterval * 100
          # ic(mc.acceptfrac, mc.best)
 
-      pos, prev = sampler(asym.position)
+      pos, prev = sampler(asym.state)
       accept = mc.try_this(pos)
       if not accept:
-         asym.position = prev
+         asym.state = prev
       else:
          if mc.best < thresh:
-            # ic('end', i, objfunc(mc.bestconfig))
+            # ic('end', i, objfunc(mc.beststate))
             # if showme: wu.showme(bodies, name='mid%i' % i, **kw)
             return mc
 
          # ic(i, mc.last)
          # if i % 10 == 0:
-         if showme: wu.showme(bodies, name='mid%i' % i, **kw)
+         if showme and showme_accepts: wu.showme(bodies, name='mid%i' % i, **kw)
 
-   assert mc.bestconfig is not None
+   assert mc.beststate is not None
    # ic('end', mc.best)
-   initscore = objfunc(mc.startconfig, verbose=True)
-   stopscore = objfunc(mc.bestconfig, verbose=True)
+   initscore = objfunc(mc.startstate, verbose=True)
+   stopscore = objfunc(mc.beststate, verbose=True)
    ic('init', initscore)
    ic('stop', stopscore)
-   # ic(mc.bestconfig[:3, :3])
-   # ic(mc.bestconfig[:3, 3])
-   # ic(mc.bestconfig)
-   asym.position = mc.bestconfig
+   # ic(mc.beststate[:3, :3])
+   # ic(mc.beststate[:3, 3])
+   # ic(mc.beststate)
+   asym.state = mc.beststate
    wu.pdb.dump_pdb_from_points('stop.pdb', asym.coords)
-   wu.pdb.dump_pdb_from_points('stopcoords.pdb', wu.hxform(mc.bestconfig, asym._coords))
+   wu.pdb.dump_pdb_from_points('stopcoords.pdb', wu.hxform(mc.beststate.position, asym._coords))
 
    # ic('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
    # ic(bodies[0].contact_fraction(bodies[1]))
@@ -111,6 +115,6 @@ def asufit(
    # ic(coords.shape)
    # wu.showme(hpoint(coords))
    # coords = asym.coords
-   # wu.showme(wu.hxform(mc.bestconfig, coords))
+   # wu.showme(wu.hxform(mc.beststate, coords))
 
    return mc

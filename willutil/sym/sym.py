@@ -1,8 +1,9 @@
 from willutil import Bunch
 from willutil.homog.hgeom import *
 from willutil.sym.symframes import *
-from willutil.sym.unbounded import *
-from willutil.sym.asufit import *
+# from willutil.sym.asufit import *
+from willutil.sym.xtal import *
+from willutil.sym.xtalinfo import *
 # from willutil.viz import showme
 
 def frames(
@@ -15,23 +16,26 @@ def frames(
    sortframes=True,
    com=None,
    symops=None,
-   spacing=None,
    ontop=[],
+   **kw,
 ):
    '''generate symmetrical coordinate frames
     axis aligns Cx or bbaxis or axis0 to this
     bbsym removes redundant building block frames, e.g. TET with c3 bbs has 4 frames 
     asym_of removes redundant frames wrt a point group, e.g. turn TET into C3 and get asym unit of that C3
     '''
-
-   if spacing is not None or symops is not None:
-      return frames_unbounded(sym=sym, axis=axis, axis0=axis0, symops=symops, spacing=spacing, com=com)
-
    if sym is None or sym.upper() == 'C1':
       return np.eye(4).reshape(1, 4, 4)
    sym = map_sym_abbreviation(sym)
    sym = sym.lower()
-   f = sym_frames[sym.lower()].copy()
+
+   try:
+      if wu.sym.is_known_xtal(sym):
+         f = Xtal(sym).frames(**kw).copy()
+      else:
+         f = sym_frames[sym].copy()
+   except (KeyError, ValueError) as e:
+      raise ValueError(f'unknown symmetry {sym}')
 
    if asym_of:
       assert asym_of.startswith('c')
@@ -88,7 +92,7 @@ def frames(
          # print(order)
          # assert 0
 
-   if ontop:
+   if len(ontop) > 0:
       frames = list(f)
       for f0 in ontop:
          for i, x in enumerate(frames):

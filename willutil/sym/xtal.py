@@ -63,7 +63,20 @@ class Xtal:
    def nunit(self):
       return len(self.unitframes)
 
+   def asucen(self):
+      # this is pretty arbitrary...
+      cen0 = np.mean(np.stack([e.cen for e in self.symelems]), axis=0)
+      opcens = [np.mean(wu.hxform(e.operators[1:], cen0), axis=0) for e in self.symelems]
+      cen = np.mean(np.stack(opcens), axis=0)
+      cen = (cen + cen0) / 2
+      return cen
+
+   def frames(self, **kw):
+      return self.cellframes(**kw)
+
    def cellframes(self, cellsize=1, cells=1, flat=True):
+      if self.dimension != 3:
+         return self.unitframes
       if cells == None:
          return np.eye(4)[None]
       if isinstance(cells, int):

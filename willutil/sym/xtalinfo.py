@@ -127,12 +127,19 @@ xtal_info_dict = None
 
 _populate_xtal_info_dict()
 
+def is_known_xtal(name):
+   try:
+      xtalinfo(name)
+      return True
+   except KeyError:
+      return False
+
 def xtalinfo(name):
 
    name = name.upper().strip()
    if not name in xtal_info_dict:
       name = name.replace('_', ' ')
-
+   ic(name)
    return name, xtal_info_dict[name]
 
    raise ValueError(f'unknown xtal "{name}"')

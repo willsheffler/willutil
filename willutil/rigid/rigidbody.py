@@ -12,11 +12,14 @@ class RigidBody:
          contactdis=8,
          clashdis=3,
          usebvh=True,
+         scale=1,
          **kw,
    ):
       self.extra = extra
       self.parent = parent
       self.xfromparent = xfromparent
+      if self.xfromparent is not None:
+         assert wu.hvalid(self.xfromparent)
       self._position = position
       self._coords = None
       self.bvh = None
@@ -33,9 +36,23 @@ class RigidBody:
       self.clashdis = clashdis
       self.contactdis = contactdis
       self.usebvh = usebvh
+      self._scale = scale
 
    def __len__(self):
       return len(self._coords)
+
+   @property
+   def state(self):
+      assert self.parent is None
+      state = wu.Bunch(position=self.position, scale=self.scale())
+      assert isinstance(state.scale, (int, float))
+      return state
+
+   @state.setter
+   def state(self, state):
+      assert self.parent is None
+      self.position = state.position
+      self.set_scale(state.scale)
 
    def moveby(self, x):
       x = np.asarray(x)
@@ -53,11 +70,23 @@ class RigidBody:
       self.position = wu.hxform(x, self.position)
       self.moveby(com)
 
+   def set_scale(self, scale):
+      assert self.parent is None
+      assert isinstance(scale, (int, float))
+      self._scale = scale
+
+   def scale(self):
+      if self.parent is None:
+         return self._scale
+      return self.parent.scale()
+
    @property
    def position(self):
-      if self.parent != None:
-         return self.xfromparent @ self.parent.position
-      return self._position
+      if self.parent is None:
+         return self._position
+      x = self.xfromparent.copy()
+      x[:3, 3] *= self.scale()
+      return x @ self.parent.position
 
    @position.setter
    def position(self, newposition):

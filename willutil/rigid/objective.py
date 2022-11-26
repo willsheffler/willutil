@@ -3,6 +3,16 @@ import numpy as np
 import willutil as wu
 from willutil.homog import *
 
+class LatticeOverlapObjective:
+   def __init__(self, *args, **kw):
+      self.rbojective = RBOverlapObjective(*args, **kw)
+
+   def __call__(self, state, **kw):
+      assert isinstance(state, wu.Bunch)
+      assert isinstance(state.scale, (int, float))
+      self.rbojective.bodies[0].set_scale(state.scale)
+      return self.rbojective(state.position, **kw)
+
 class RBOverlapObjective:
    def __init__(
       self,
@@ -21,7 +31,7 @@ class RBOverlapObjective:
       spreadpenalty=1,
       minradius=0,
       sym=None,
-      symaxes=[],
+      symaxes=None,
       **kw,
    ):
 
@@ -86,20 +96,24 @@ class RBOverlapObjective:
       # ic(max(scores), (self.driftpenalty * xdiff)**2)
 
       # zxang0 = wu.homog.dihedral([0, 0, 1], [0, 0, 0], [1, 0, 0], self.initialcom)
-      ax1 = wu.sym.axes(self.sym)[2]
-      ax2 = wu.sym.axes(self.sym)[3]
-      nf1rot = wu.homog.dihedral(ax2, [0, 0, 0], ax1, asym.com())
-      nf2rot = wu.homog.dihedral(ax1, [0, 0, 0], ax2, asym.com())
-      angokrange = np.pi / 16
-      # angdiff = max(0, abs(zxang0 - zxang) - angokrange)
-      angdiff1 = max(0, abs(nf1rot) - angokrange)
-      angdiff2 = max(0, abs(nf2rot) - angokrange)
-      # axsdist1 = wu.hnorm(wu.hprojperp(ax1, asym.com()))
-      # axsdist2 = wu.hnorm(wu.hprojperp(ax2, asym.com()))
-      # angdiff1 = angdiff1 * axsdist1
-      # angdiff2 = angdiff2 * axsdist2
-      angdiff1 = 10 * angdiff1**2
-      # angdiff2 = 10 * angdiff2**2
+      # ax1 = wu.sym.axes(self.sym)[2]
+      # ax2 = wu.sym.axes(self.sym)[3]
+      angdiff1 = angdiff2 = angdiffcen = 0
+      if self.symaxes is not None:
+         ax1, ax2 = self.symaxes
+         nf1rot = wu.homog.dihedral(ax2, [0, 0, 0], ax1, asym.com())
+         nf2rot = wu.homog.dihedral(ax1, [0, 0, 0], ax2, asym.com())
+         angokrange = np.pi / 16
+         # angdiff = max(0, abs(zxang0 - zxang) - angokrange)
+         angdiff1 = max(0, abs(nf1rot) - angokrange)
+         angdiff2 = max(0, abs(nf2rot) - angokrange)
+         # axsdist1 = wu.hnorm(wu.hprojperp(ax1, asym.com()))
+         # axsdist2 = wu.hnorm(wu.hprojperp(ax2, asym.com()))
+         # angdiff1 = angdiff1 * axsdist1
+         # angdiff2 = angdiff2 * axsdist2
+         angdiff1 = 10 * angdiff1**2
+         # angdiff2 = 10 * angdiff2**2
+         angdiffcen = wu.hnorm(asym.com()) * wu.hangle(asym.com(), ax1 + ax2)
 
       # ic(nf1rot, nf2rot)
       # ic(abs(zxang0 - zxang))
@@ -121,7 +135,7 @@ class RBOverlapObjective:
          (self.angpenalty * angdiff2)**2,
          # 0.1 * (axsdist1 + axsdist2)
          (max(0, self.minradius - wu.hnorm(asym.com())))**2,
-         0.1 * (wu.hnorm(asym.com()) * wu.hangle(asym.com(), ax1 + ax2))**2,
+         0.0 * angdiffcen**2
       ]
       # ic(s)
       return np.sum(s)

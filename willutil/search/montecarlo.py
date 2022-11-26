@@ -11,9 +11,9 @@ class MonteCarlo:
       **kw,
    ):
       self.best = 9e9
-      self.bestconfig = None
+      self.beststate = None
       self.low = 9e9
-      self.lowconfig = None
+      self.lowstate = None
       self.last = 9e9
       self.naccept = 0
       self.ntrials = 0
@@ -21,7 +21,7 @@ class MonteCarlo:
       self.accepted_last = False
       self.new_best_last = False
       self.scorefunc = scorefunc
-      self.startconfig = None
+      self.startstate = None
       self.debug = debug
       self.timer = wu.Timer() if timer is None else timer
 
@@ -31,19 +31,20 @@ class MonteCarlo:
 
    def try_this(
       self,
-      config=None,
+      state=None,
       score=None,
       **kw,
    ):
+      assert isinstance(state, wu.Bunch)
       assert score is not None or self.scorefunc is not None
       self.timer.checkpoint('try_this_begin')
       if score is None:
          self.timer.checkpoint('trythis')
-         score = self.scorefunc(config, **kw)
+         score = self.scorefunc(state, **kw)
          if self.debug: print('trythis trial score', score)
          self.timer.checkpoint('trythis score')
-      if self.startconfig is None:
-         self.startconfig = config
+      if self.startstate is None:
+         self.startstate = state
       self.last = score
       self.accepted_last = False
       self.new_best_last = False
@@ -56,15 +57,15 @@ class MonteCarlo:
          self.naccept += 1
          self.accepted_last = True
          self.low = score
-         self.lowconfig = config
+         self.lowstate = state
          # ic('accept', score - self.best)
 
          if self.debug: print('trythis accept', score)
          if self.low < self.best:
             # ic('!!!!!!!!!!!!!!!!!!!!!!! mc best !!!!!!!!!!!!!!!!!!!!!')
-            # ic(config)
+            # ic(state)
             self.best = score
-            self.bestconfig = config.copy()
+            self.beststate = state.copy()
             self.new_best_last = True
 
             if self.debug: print('trythis new best', score)
