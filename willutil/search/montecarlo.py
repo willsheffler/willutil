@@ -5,6 +5,7 @@ class MonteCarlo:
    def __init__(
       self,
       scorefunc=None,
+      preprocess=lambda x: x,
       temperature=1,
       debug=False,
       timer=None,

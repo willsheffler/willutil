@@ -39,6 +39,7 @@ class PDBFile:
       self.nreshet = len(self.seqhet)
       self.nchain = len(self.chainseq)
       self.fname = meta.fname
+      self.aamask = self.atommask('CA', aaonly=False)
 
    def copy(self, **kw):
       return PDBFile(self.df, self.meta, self.original_contents, **kw)
@@ -84,10 +85,10 @@ class PDBFile:
       return self
 
    def remove_het(self):
-      self.subfile(het=False, inplace=True)
+      self.subset(het=False, inplace=True)
       return self
 
-   def subfile(
+   def subset(
       self,
       chain=None,
       het=None,
@@ -97,6 +98,7 @@ class PDBFile:
       model=None,
       modelidx=None,
       inplace=False,
+      removeatoms=[],
    ):
       import numpy as np
       import pandas as pd
@@ -136,12 +138,30 @@ class PDBFile:
       if modelidx is not None:
          df = df.loc[df.mdl == self.models()[modelidx]]
          df = pd.DataFrame(df.to_dict())
+      if removeatoms:
+         idx = np.isin(df.ai, removeatoms)
+         # ic(df.loc[idx].an)
+         # ic(df.loc[idx].ri)
+         df = df.loc[~idx]
+         df = pd.DataFrame(df.to_dict())
+
       df.reset_index(inplace=True, drop=True)
       if inplace:
-         self.init(df, self.meta, original_contents=self.original_contents, renumber_by_model=True)
+         self.init(
+            df,
+            self.meta,
+            original_contents=self.original_contents,
+            renumber_by_model=True,
+         )
          return self
       else:
          return PDBFile(df, meta=self.meta, original_contents=self.original_contents)
+
+   def isonlyaa(self):
+      return np.sum(self.het) == 0
+
+   def isonlyhet(self):
+      return np.sum(self.het) == len(self.df)
 
    def models(self):
       return list(np.sort(np.unique(self.df.mdl)))
@@ -150,55 +170,84 @@ class PDBFile:
       models = self.models()
       return models.index(m)
 
-   def camask(self):
-      return np.array([np.any(g.an == b'CA') for i, g in self.df.groupby(self.df.ri)])
-
-   def cbmask(self, aaonly=True):
+   def atommask(self, atomname, aaonly=True):
+      if not isinstance(atomname, (str, bytes)):
+         return np.stack([self.atommask(a) for a in atomname]).T
+      an = atomname.encode() if isinstance(atomname, str) else atomname
+      an = an.upper()
       mask = list()
       for i, (ri, g) in enumerate(self.df.groupby(self.df.ri)):
-         assert np.sum(g.an == b'CB') <= 1
-         assert np.sum(g.an == b'CB') <= np.sum(g.an == b'CA')
-         hascb = np.sum(g.an == b'CB') > 0
-         mask.append(hascb)
-      mask = np.array(mask)
+         assert np.sum(g.an == an) <= 1
+         # assert np.sum(g.an == an) <= np.sum(g.an == b'CA') # e.g. O in HOH
+         hasatom = np.sum(g.an == an) > 0
+         mask.append(hasatom)
+      mask = np.array(mask, dtype=bool)
       if aaonly:
-         caonly = self.camask()
-         # ic(caonly)
-         mask = mask[caonly]
+         aaonly = self.aamask
+         mask = mask[aaonly]
       return mask
 
+   def coords(self, atomname=['n', 'ca', 'c', 'o', 'cb'], aaonly=True):
+      if not self.isonlyaa():
+         self = self.subset(het=False)  # sketchy?
+      if not isinstance(atomname, (str, bytes)):
+         coords, masks = zip(*[self.coords(a) for a in atomname])
+         # ic(len(coords))
+         # ic([len(_) for _ in coords])
+         coords = np.stack(coords).swapaxes(0, 1)
+         # ic(coords.shape)
+         masks = np.stack(masks).T
+         return coords, masks
+      an = atomname.encode() if isinstance(atomname, str) else atomname
+      an = an.upper().strip()
+      mask = self.atommask(an)
+      df = self.df
+      idx = self.df.an == an
+      df = df.loc[idx]
+      xyz = np.stack([df['x'], df['y'], df['z']]).T
+      if np.sum(~mask) > 0:
+         coords = 9e9 * np.ones((len(mask), 3))
+         coords[mask] = xyz
+         xyz = coords
+      return xyz, mask
+
+   def camask(self, aaonly=False):
+      return self.atommask('ca', aaonly=aaonly)
+      # return np.array([np.any(g.an == b'CA') for i, g in self.df.groupby(self.df.ri)])
+
+   def cbmask(self, aaonly=True):
+      return self.atommask('cb', aaonly=aaonly)
+      # mask = list()
+      # for i, (ri, g) in enumerate(self.df.groupby(self.df.ri)):
+      #    assert np.sum(g.an == b'CB') <= 1
+      #    assert np.sum(g.an == b'CB') <= np.sum(g.an == b'CA')
+      #    hascb = np.sum(g.an == b'CB') > 0
+      #    mask.append(hascb)
+      # mask = np.array(mask)
+      # if aaonly:
+      #    aaonly = self.aamask
+      #    # ic(aaonly)
+      #    mask = mask[aaonly]
+      # return mask
+
    def bb(self):
-      ncaco = self.ncaco()
-      cb0 = self.subfile(atomnames=['CB'])
-      camask = self.camask()
-      cbmask = self.cbmask(aaonly=True)
-      assert np.sum(camask) == len(cbmask)
-      seq = self.sequence()
-      # ic(len(seq), len(cbmask), len(camask))
-      # ic(seq)
-      assert len(seq) == len(cbmask)
-
-      wcb = np.where(cbmask)[0]
-      cb = 9e9 * np.ones((len(ncaco), 3))
-      cb[wcb, 0] = cb0.df.x
-      cb[wcb, 1] = cb0.df.y
-      cb[wcb, 2] = cb0.df.z
-
-      # ic(cb.shape)
-      # ic(ncaco.shape)
-      xyz = np.concatenate([ncaco, cb[:, None]], axis=1)
-      # ic(xyz.shape)
-      return xyz
+      crd, mask = self.coords('n ca c o cb'.split())
+      return crd
 
    def ncac(self):
-      pdb = self.subfile(het=False, atomnames=['N', 'CA', 'C'])
-      xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']]).T.reshape(-1, 3, 3)
-      return xyz
+      crd, mask = self.coords('n ca c'.split())
+      return crd
+      # pdb = self.subset(het=False, atomnames=['N', 'CA', 'C'])
+      # xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']]).T.reshape(-1, 3, 3)
+      # return xyz
 
    def ncaco(self):
-      pdb = self.subfile(het=False, atomnames=['N', 'CA', 'C', 'O'])
-      xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']]).T.reshape(-1, 4, 3)
-      return xyz
+      crd, mask = self.coords('n ca c o'.split())
+      return crd
+      # pdb = self.subset(het=False, atomnames=['N', 'CA', 'C', 'O'])
+      # xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']])
+      # xyz = xyz.T.reshape(-1, 4, 3)
+      # return xyz
 
    def sequence(self):
       return self.seq

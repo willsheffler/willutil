@@ -163,15 +163,22 @@ def _(
 def pymol_viz_list(
    toshow,
    state=_showme_state,
-   name=None,
+   name='list',
+   topcolors=[],
    **kw,
 ):
    kw = wu.Bunch(kw)
+   name += toshow[0].__class__.__name__
+   state["seenit"][name] += 1
+   name += "_%i" % state["seenit"][name]
    mycgo = list()
    v = pymol.cmd.get_view()
    cmd.set('suspend_updates', 'on')
-   colors = get_different_colors(len(toshow), **kw.only('colorseed'))
+   colors = get_different_colors(len(toshow) - len(topcolors), **kw.only('colorseed'))
+   if len(topcolors) > 0:
+      colors = colors * 0.5
    colors = [tuple(_) for _ in colors]
+   colors = topcolors + colors
    for i, t in enumerate(toshow):
       _ = pymol_load(t, state, addtocgo=mycgo, make_cgo_only=True, col=colors[i], **kw)
    pymol.cmd.set_view(v)
@@ -231,7 +238,7 @@ def get_different_colors(ncol, niter=1000, colorseed=1):
    # paranoid sanity cheeck
    newrs = np.random.get_state()
    assert rs[0] == newrs[0] and np.all(rs[1] == newrs[1]) and rs[2:] == newrs[2:]
-   return best
+   return best.copy()
 
 def get_cgo_name(name):
    names = pymol.cmd.get_names()
@@ -447,6 +454,16 @@ def show_ndarray_line_strip(
    # pymol.cmd.load_cgo(cgoary, name, state=stateno)
    # pymol.cmd.set_view(v)
 
+RAINBOW = [
+   (148 / 255, 0 / 255, 211 / 255),
+   (75 / 255, 0 / 255, 130 / 255),
+   (0 / 255, 0 / 255, 255 / 255),
+   (0 / 255, 255 / 255, 0 / 255),
+   (255 / 255, 255 / 255, 0 / 255),
+   (255 / 255, 127 / 255, 0 / 255),
+   (255 / 255, 0 / 255, 0 / 255),
+]
+
 def show_ndarray_point_or_vec(
    toshow,
    state=_showme_state,
@@ -454,6 +471,7 @@ def show_ndarray_point_or_vec(
    col=None,
    sphere=1.0,
    addtocgo=None,
+   chainbow=False,
    **kw,
 ):
    v = pymol.cmd.get_view()
@@ -469,12 +487,16 @@ def show_ndarray_point_or_vec(
       color = (1, 1, 1) if col is None else col
       if isinstance(color[0], (list, tuple, np.ndarray)):
          color = color[i]
+      if chainbow:
+         color = RAINBOW[(len(RAINBOW) * i) // len(toshow)]
       if p_or_v[3] > 0.999:
          mycgo += cgo_sphere(p_or_v, sphere, col=color)
       elif np.abs(p_or_v[3]) < 0.001:
          mycgo += cgo_vecfrompoint(p_or_v * 20, p_or_v, col=color)
       else:
          raise NotImplementedError
+
+   # assert 0
 
    if addtocgo is None:
       pymol.cmd.load_cgo(mycgo, name)
@@ -517,8 +539,9 @@ def showme_pymol(
    block=False,
    fresh=False,
    png=None,
+   pngi=0,
    pngturn=0,
-   ray=True,
+   ray=False,
    one_png_only=False,
    **kw,
 ):
@@ -532,6 +555,7 @@ def showme_pymol(
    if not _showme_state["launched"]:
 
       pymol.finish_launching()
+      pymol.cmd.set('max_threads', 4)
       # pymol.cmd.viewport(400, 720)
       # v = list(cmd.get_view())
       # v[15] *= 2
@@ -546,6 +570,7 @@ def showme_pymol(
    # print('############## showme_pymol', type(what), '##############')
 
    if fresh:
+      # cmd.disable('all')
       clear_pymol()
 
    # pymol.cmd.full_screen('on')
@@ -553,13 +578,15 @@ def showme_pymol(
    # # pymol.cmd.set('internal_gui_width', '20')
 
    if png:
+      pngfile = f'{png}){pngi:06}.png'
       pymol.cmd.set('ray_opaque_background', 1)
       if os.path.dirname(png):
          os.makedirs(os.path.dirname(png), exist_ok=True)
       pymol.cmd.turn('y', pngturn)
       if ray:
          pymol.cmd.ray()
-      pymol.cmd.png(png)
+      ic('PNG', pngfile)
+      pymol.cmd.png(pngfile)
       if one_png_only:
          assert 0
 

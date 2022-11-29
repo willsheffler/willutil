@@ -110,6 +110,9 @@ def map_sym_abbreviation(sym):
    if sym == 'I': return 'icos'
    if sym == 'O': return 'oct'
    if sym == 'T': return 'tet'
+   if sym in 'I32 I53 I52'.split(): return 'icos'
+   if sym in 'O32 O42 O43'.split(): return 'oct'
+   if sym == 'T32': return 'tet'
    return sym
 
 def symaxis_angle(sym, nf1, nf2):

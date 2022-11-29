@@ -4,24 +4,32 @@ import deferred_import
 
 import numpy as np
 
-def hvalid(x):
-   if x.shape[-2:] == (4, 4):
-      return all(
-         [np.allclose(x[..., 3, 3], 1),
-          np.allclose(x[..., 3, :3], 0),
-          np.allclose(np.linalg.det(x[..., :3, :3]), 1)])
-   if x.shape[-2:] == (4, 2):
-      return is_valid_rays(x)
-   elif x.shape[-1] == 4:
-      return np.allclose(x[..., 3], 0) or np.allclose(x[..., 3], 1)
-   elif x.shape[-1] == 3:
+def hvalid(stuff):
+   if stuff.shape[-2:] == (4, 4):
+      return hvalid44(stuff)
+   if stuff.shape[-2:] == (4, 2):
+      return is_valid_rays(stuff)
+   elif stuff.shape[-1] == 4:
+      return np.allclose(stuff[..., 3], 0) or np.allclose(stuff[..., 3], 1)
+   elif stuff.shape[-1] == 3:
       return True
    return False
 
-def hscale(scale):
-   s = np.eye(4) * scale
-   s[3, 3] = 1
-   return s
+def hvalid44(x):
+   if x.shape[-2:] != (4, 4):
+      return False
+   return all(
+      [np.allclose(x[..., 3, 3], 1),
+       np.allclose(x[..., 3, :3], 0),
+       np.allclose(np.linalg.det(x[..., :3, :3]), 1)])
+
+def hscaled(scale, stuff):
+   stuff = stuff.copy()
+   if hvalid44(stuff):
+      stuff[..., :3, 3] *= scale
+   else:
+      stuff[..., :3] *= scale
+   return stuff
 
 def hdist(x, y):
    assert x.shape[-2:] == 4, 4
@@ -462,6 +470,7 @@ def hpoint(point):
 def hvec(vec):
    vec = np.asanyarray(vec)
    if vec.shape[-1] == 4:
+      vec = vec.copy()
       vec[..., 3] = 0
       return vec
    elif vec.shape[-1] == 3:
@@ -646,14 +655,16 @@ def rand_xform_aac(shape=(), axis=None, ang=None, cen=None, seed=None):
    if seed is not None: np.random.set_state(randstate)
    return hrot(axis, ang, cen)
 
-def hrand(shape=(), cart_sd=0.001, rot_sd=0.001, seed=None):
+def hrand(shape=(), cart_sd=0.001, rot_sd=0.001, centers=None, seed=None):
    if seed is not None:
       randstate = np.random.get_state()
       np.random.seed(seed)
    if isinstance(shape, int): shape = (shape, )
    axis = rand_unit(shape)
    ang = np.random.normal(0, rot_sd, shape) * np.pi
-   x = hrot(axis, ang, [0, 0, 0, 1], degrees=False).squeeze()
+   if centers is None: centers = [0, 0, 0, 1]
+   else: assert centers.shape[:-1] == shape
+   x = hrot(axis, ang, centers, degrees=False).squeeze()
    trans = np.random.normal(0, cart_sd, shape + (3, ))
    x[..., :3, 3] = trans
    if seed is not None: np.random.set_state(randstate)
@@ -940,19 +951,21 @@ def dihedral(p1, p2, p3, p4):
 def align_around_axis(axis, u, v):
    return hrot(axis, -dihedral(u, axis, [0, 0, 0, 0], v))
 
-def halign(a, b):
-   return hrot((hnormalized(a) + hnormalized(b)) / 2, np.pi)
+def halign(a, b, doto=None):
+   # x = hrot((hnormalized(a) + hnormalized(b)) / 2, np.pi)
+   x = align_around_axis(hcross(a, b), a, b)
+   return x if doto is None else wu.hxform(x, doto)
 
-def halign2(a1, a2, b1, b2):
+def halign2(a1, a2, b1, b2, doto=None):
    "minimizes angular error"
    a1, a2, b1, b2 = (hnormalized(v) for v in (a1, a2, b1, b2))
    aaxis = (a1 + a2) / 2.0
    baxis = (b1 + b2) / 2.0
-   Xmiddle = halign(aaxis, baxis)
+   Xmiddle = hrot((aaxis + baxis) / 2, np.pi)
    Xaround = align_around_axis(baxis, Xmiddle @ a1, b1)
    X = Xaround @ Xmiddle
    assert (angle(b1, a1) + angle(b2, a2)) + 0.001 >= (angle(b1, X @ a1) + angle(b2, X @ a2))
-   return X
+   return X if doto is None else wu.hxform(x, doto)
 
 def calc_dihedral_angle(p1, p2, p3, p4):
    p1, p2, p3, p4 = hpoint(p1), hpoint(p2), hpoint(p3), hpoint(p4)

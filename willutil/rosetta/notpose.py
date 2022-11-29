@@ -7,9 +7,9 @@ class NotPose:
          assert isinstance(fname, str)
          pdb = wu.pdb.readpdb(fname)
       if chain is not None:
-         pdb = pdb.subfile(chain=chain)
-      self.pdb = pdb.subfile(het=False)
-      self.pdbhet = pdb.subfile(het=True)
+         pdb = pdb.subset(chain=chain)
+      self.pdb = pdb.subset(het=False)
+      self.pdbhet = pdb.subset(het=True)
       self.bbcoords = wu.hpoint(self.pdb.bb())
       self.ncac = self.bbcoords[:, :3]
       self.camask = self.pdb.camask()

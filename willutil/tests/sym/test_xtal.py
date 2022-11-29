@@ -7,30 +7,30 @@ import willutil as wu
 
 def main():
 
-   # test_hxtal_viz(
-   #    spacegroup='I4132_C322',
-   #    headless=False,
-   #    showpoints=0,
-   #    cells=2,
-   #    symelemscale=0.3,
-   #    fansize=np.array([1.7, 1.2, 0.7]) / 3,
-   #    fancover=10,
-   #    symelemtwosided=True,
-   #    showsymelems=True,
-   #    pointshift=(0.2, 0.2, 0.1),
-   #    scaleptrad=2,
-   # )
-   # assert 0
-   '''
+   if 0:
+      test_hxtal_viz(
+         spacegroup='I4132_C322',
+         headless=False,
+         showpoints=0,
+         cells=2,
+         symelemscale=0.3,
+         fansize=np.array([1.7, 1.2, 0.7]) / 3,
+         fancover=10,
+         symelemtwosided=True,
+         showsymelems=True,
+         pointshift=(0.2, 0.2, 0.1),
+         scaleptrad=2,
+      )
+      '''
 run /home/sheffler/pymol3/misc/G222.py; gyroid(10,r=11,cen=Vec(5,5,5)); set light, [ -0.3, -0.30, 0.8 ]
    '''
-   # assert 0, 'aoisrtnoiarnsiot'
+      assert 0, 'aoisrtnoiarnsiot'
 
-   test_xtal_L632()
-   assert 0
-
-   # assert 0, 'stilltest viz'
    noshow = True
+   test_xtal_L6m322(headless=noshow)
+   test_xtal_L632(headless=noshow)
+   # assert 0, 'stilltest viz'
+
    test_hxtal_viz(spacegroup='I 21 3', headless=noshow)
    test_hxtal_viz(spacegroup='P 2 3', headless=noshow)
    test_hxtal_viz(spacegroup='P 21 3', headless=noshow)
@@ -49,14 +49,26 @@ run /home/sheffler/pymol3/misc/G222.py; gyroid(10,r=11,cen=Vec(5,5,5)); set ligh
    # _test_hxtal_viz_gyroid(headless=False)
    ic('test_xtal.py DONE')
 
-def test_xtal_L632():
+def test_xtal_L6m322(headless=True):
+   xtal = wu.sym.Xtal('L6m322')
+
+   ic(xtal.symelems)
+   ic(xtal.genframes.shape)
+   # ic(len(xtal.coverelems))
+   # ic(len(xtal.coverelems[0]))
+   # ic(len(xtal.coverelems[1]))
+   wu.showme(xtal.genframes, scale=3, headless=headless)
+   # wu.showme(xtal.unitframes, name='arstn', scale=3)
+   wu.showme(xtal, headless=headless, showgenframes=False, symelemscale=1, pointscale=0.8, fresh=True)
+
+def test_xtal_L632(headless=False):
    xtal = wu.sym.Xtal('L632')
    # ic(xtal.symelems)fresh
    # ic(xtal.genframes.shape)
    # ic(len(xtal.coverelems))
    # ic(len(xtal.coverelems[0]))
    # ic(len(xtal.coverelems[1]))
-   # wu.showme(xtal.genframes)
+   wu.showme(xtal.genframes, scale=3, headless=headless)
    # wu.showme(xtal.unitframes, name='arstn')
    # wu.showme(xtal, headless=False, showgenframes=False, symelemscale=1, pointscale=0.8, fresh=True)
 
@@ -109,8 +121,6 @@ def prune_bbox(coords, lb, ub):
 def helper_test_xtal_cryst1(spacegroup, dump_pdbs=False):
    pymol = pytest.importorskip('pymol')
    xtal = wu.sym.Xtal(spacegroup)
-
-   # wu.showme(xtal, showgenframes=True)
 
    cellsize = 99.12345
    crd = cellsize * np.array([

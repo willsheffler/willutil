@@ -3,7 +3,7 @@ __all__ = ('MonteCarlo', 'RigidBody', 'compute_symfit', 'showme', 'halign', 'hal
            'haxis_angle_of', 'hcart', 'hcart3', 'hcoherence', 'hcom', 'hcom_flat', 'hconstruct', 'hcross', 'hdiff',
            'hdist', 'hdot', 'hexpand', 'hinv', 'hline_angle', 'hmean', 'hnorm', 'hnorm2', 'hnormalized', 'hpoint',
            'hframe', 'hpow', 'hproj', 'hprojperp', 'hrand', 'hrandpoint', 'hrandrot', 'hray', 'hrmsfit', 'hrog',
-           'hrog_flat', 'hrot', 'hscale', 'htrans', 'hvalid', 'hvec', 'hxaxis_of', 'hxform', 'hyaxis_of', 'hzaxis_of',
+           'hrog_flat', 'hrot', 'hscaled', 'htrans', 'hvalid', 'hvec', 'hxaxis_of', 'hxform', 'hyaxis_of', 'hzaxis_of',
            'line_angle', 'line_angle_degrees', 'rot_of', 't_rot', 'th_angle', 'th_axis', 'th_axis_angle',
            'th_axis_angle_cen', 'th_axis_angle_cen_hel', 'th_axis_angle_hel', 'th_com', 'th_com_flat', 'th_dot',
            'th_homog', 'th_intersect_planes', 'th_is_valid_quat_rot', 'th_mean_along', 'th_norm', 'th_norm2',
@@ -14,9 +14,9 @@ __all__ = ('MonteCarlo', 'RigidBody', 'compute_symfit', 'showme', 'halign', 'hal
 
 import os
 from deferred_import import deferred_import
-import icecream
+import icecream as ic
 
-icecream.install()
+ic.install()
 
 datadir = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -62,6 +62,8 @@ from willutil.viz import showme
 # figure things in homog starting with h should't pollute namespace too bad
 from willutil.sym.symfit import compute_symfit as symfit
 
+from willutil.pdb import dumppdb, readpdb
+
 from willutil.homog import (
    # I,
    halign,
@@ -103,7 +105,7 @@ from willutil.homog import (
    unhomog,
    hpow,
    hray,
-   hscale,
+   hscaled,
    hxform,
    line_angle as hline_angle,
    line_angle,

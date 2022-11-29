@@ -3,7 +3,7 @@ import numpy as np
 import willutil as wu
 from willutil.homog import *
 
-class LatticeOverlapObjective:
+class RBLatticeOverlapObjective:
    def __init__(self, *args, **kw):
       self.rbojective = RBOverlapObjective(*args, **kw)
 
@@ -25,6 +25,7 @@ class RBOverlapObjective:
       biasradial=None,
       biasdir=None,
       contactdist=None,
+      clashdist=3,
       driftpenalty=1,
       clashpenalty=1,
       angpenalty=1,
@@ -46,6 +47,7 @@ class RBOverlapObjective:
       self.biasdir = hnormalized(biasdir)
       self.biasradial = biasradial
       self.contactdist = contactdist
+      self.clashdist = clashdist
       self.sym = sym
       self.symaxes = symaxes
       self.driftpenalty = driftpenalty
@@ -73,9 +75,13 @@ class RBOverlapObjective:
       clash = 0
       fracs = list()
       # bods = self.bodies[1:] if self.scoreframes is None else [self.bodies[i] for i in self.scoreframes]
+      dists = list()
       for ib, b in enumerate(self.bodies):
          for jb, b2 in enumerate(self.bodies):
             if (ib, jb) in self.scoreframes:
+               d = wu.hnorm(b.com() - b2.com())
+               d = max(0, d - asym.rog() * 3)
+               dists.append(d)
                f1, f2 = b.contact_fraction(b2, contactdist=self.contactdist)
                # if verbose: ic(ib, jb, f1, f2)
                fracs.extend([f1, f2])
@@ -89,8 +95,14 @@ class RBOverlapObjective:
                scores.append((max(diff11, diff12)**2))
                scores.append((max(diff21, diff22)**2))
             elif (ib, jb) in self.clashframes:
-               clash += (self.clashpenalty / 10 * (b.clashes(b2) / len(b)))**2
+               dists = b.clash_distances(b2, self.clashdist)
+               # if len(dists):
+               # ic(dists)
+               # assert 0
+               clash += np.sum((self.clashdist - dists)**2)
+               # clash += (self.clashpenalty / 10 * (b.clashes(b2, self.clashdist) / len(b)))**2
 
+      # ic(dists)
       # ic([int(_) for _ in scores])
       # ic([int(_ * 100) for _ in fracs])
       # ic(max(scores), (self.driftpenalty * xdiff)**2)
@@ -135,7 +147,9 @@ class RBOverlapObjective:
          (self.angpenalty * angdiff2)**2,
          # 0.1 * (axsdist1 + axsdist2)
          (max(0, self.minradius - wu.hnorm(asym.com())))**2,
-         0.0 * angdiffcen**2
+         0.0 * angdiffcen**2,
+         self.clashpenalty * clash,
+         2 * np.sum(np.array(dists)**2),
       ]
       # ic(s)
       return np.sum(s)

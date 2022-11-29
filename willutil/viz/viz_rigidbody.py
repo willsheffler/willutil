@@ -5,16 +5,17 @@ from willutil.rigid.rigidbody import RigidBody
 
 @pymol_load.register(RigidBody)
 def pymol_viz_RigidBody(
-   body,
-   state,
-   name='rigidbody',
-   addtocgo=None,
-   make_cgo_only=False,
-   showpairswith=None,
-   showpairsdist=8,
-   showcontactswith=None,
-   sphereradius=6,
-   **kw,
+      body,
+      state,
+      name='rigidbody',
+      addtocgo=None,
+      make_cgo_only=False,
+      showpairswith=None,
+      showpairsdist=8,
+      showcontactswith=None,
+      sphereradius=6,
+      col=(1, 1, 1),
+      **kw,
 ):
    kw = wu.Bunch(kw)
    import pymol
@@ -24,7 +25,7 @@ def pymol_viz_RigidBody(
    assert 0 == np.sum(np.isnan(body.coords))
 
    cgo = list()
-   wu.showme(body.coords, addtocgo=cgo, sphere=sphereradius, **kw)
+   wu.showme(body.coords, addtocgo=cgo, sphere=sphereradius, col=col, **kw)
 
    if showcontactswith is not None:
 

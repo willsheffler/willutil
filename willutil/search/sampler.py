@@ -3,7 +3,7 @@ import numpy as np
 import willutil as wu
 from willutil.homog import *
 
-class LatticeRBSampler:
+class RBLatticeRBSampler:
    def __init__(self, cartsd, scalesd=0, *args, **kw):
       self.cartsd = cartsd
       self.scalesd = scalesd

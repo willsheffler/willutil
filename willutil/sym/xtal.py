@@ -14,6 +14,7 @@ class Xtal:
             self.info.dimension = 3
          self.symelems = self.info.symelems
          self.dimension = self.info.dimension
+         self.spacegroup = self.info.spacegroup
          self.sub = self.info.nsub
       self.compute_frames(**kw)
       # self.symelems_to_unitcell()
@@ -34,7 +35,7 @@ class Xtal:
          self.unitframes = self.generate_unit_frames(self.genframes)
          self.unitelems = self.generate_unit_symelems(self.genframes)
       else:
-         self.genframes = self.generate_candidate_frames(bound=3, **kw)  # expensive-ish
+         self.genframes = self.generate_candidate_frames(bound=1.5, **kw)  # expensive-ish
          self.coverelems = self.generate_cover_symelems(self.genframes, bbox=None)
          self.unitframes = self.genframes
          self.unitelems = self.coverelems
@@ -63,29 +64,68 @@ class Xtal:
    def nunit(self):
       return len(self.unitframes)
 
-   def asucen(self):
-      # this is pretty arbitrary...
-      cen0 = np.mean(np.stack([e.cen for e in self.symelems]), axis=0)
-      opcens = [np.mean(wu.hxform(e.operators[1:], cen0), axis=0) for e in self.symelems]
-      cen = np.mean(np.stack(opcens), axis=0)
-      cen = (cen + cen0) / 2
-      return cen
+   def asucen(self, cellsize=1, use_olig_nbrs=False, olig_nbr_wt=0.75, **kw):
+      elems = self.symelems
+      # ic([e.cen for e in elems])
+      cen0 = np.mean(np.stack([e.cen for e in elems]), axis=0)
+      if use_olig_nbrs:
+         opcens = [np.mean(wu.hxform(e.operators[1:], cen0), axis=0) for e in self.symelems]
+         cen = np.mean(np.stack(opcens), axis=0)
+         # this is arbitrary
+         cen = olig_nbr_wt * cen + (1 - olig_nbr_wt) * cen0
+      else:
+         cen = cen0
+      return wu.hscaled(cellsize, cen)
 
-   def frames(self, **kw):
-      return self.cellframes(**kw)
+   def central_symelems(self, cells=3, target=None):
+      assert 0, 'WARNING central_symelems is buggy, axis direction wrong!?!'
+      # assert 0
+      # _targets = {'I 41 3 2': [0.3, 0.4, 0.5]}
+      # if target is None:
+      # if self.spacegroup in _targets:
+      # target = _targets[self.spacegroup]
+      # else:
+      # target = [0.3, 0.4, 0.5]
+      target = wu.hpoint(target)
+      cenelems = list()
+      cells = interp_xtal_cell_list(cells)
+      for i, elems in enumerate(self.coverelems):
+         best = 9e9, None
+         for cellshift in cells:
+            xcellshift = wu.htrans(cellshift)
+            for j, elem in enumerate(elems):
+               elem = elem.xformed(xcellshift)
+               # ic(i, j, elem.cen)
+               d = wu.hnorm(elem.cen - target)
+               if d < best[0]:
+                  best = d, elem
+         cenelems.append(best[1])
+      return cenelems
 
-   def cellframes(self, cellsize=1, cells=1, flat=True):
+   def frames(self, cells=3, **kw):
+      return self.cellframes(cells=cells, **kw)
+
+   def cellframes(self, cellsize=1, cells=1, flat=True, center=None, asucen=None, radius=None):
       if self.dimension != 3:
          return self.unitframes
       if cells == None:
          return np.eye(4)[None]
-      if isinstance(cells, int):
+      if isinstance(cells, (int, float)):
          ub = cells // 2
          lb = ub - cells + 1
          cells = [(a, b, c) for a, b, c in itertools.product(*[range(lb, ub + 1)] * 3)]
-      else:
+      elif len(cells) == 2:
          lb, ub = cells
          cells = [(a, b, c) for a, b, c in itertools.product(*[range(lb, ub + 1)] * 3)]
+      elif len(cells) == 3:
+         cells = [(a, b, c) for a, b, c in itertools.product(
+            range(cells[0][0], cells[0][1] + 1),
+            range(cells[1][0], cells[1][1] + 1),
+            range(cells[2][0], cells[2][1] + 1),
+         )]
+      else:
+         raise ValueError(f'bad cells {cells}')
+
       cells = wu.hpoint(cells)
       cells = cells.reshape(-1, 4)
       xcellshift = wu.htrans(cells)
@@ -93,11 +133,43 @@ class Xtal:
       frames = wu.hxform(xcellshift, frames)
       frames[..., :3, 3] *= cellsize
       if flat: frames = frames.reshape(-1, 4, 4)
+      # ic(frames.shape)
+      # ic(frames[:10, :3, 3])
+      if center is not None:
+         if asucen is None: asucen = center
+         if radius is None: radius = 0.5 * cellsize
+         center = wu.hpoint(center)
+         asucen = wu.hpoint(asucen)
+         # ic(asucen)
+         pos = wu.hxform(frames, asucen)
+         # ic(pos.shape)
+         # ic(pos[:10, 3])
+         # wu.showme(center, sphere=30)
+         # wu.showme(pos, name='pos', sphere=10)
+         # assert 0
+         dis = wu.hnorm(pos - center)
+         # ic(center)
+         # ic(dis)
+         ic(frames.shape)
+         frames = frames[dis <= radius]
+         # ic(radius)
+         # ic(center)
+         # ic(asucen)
+         # ic(frames.shape)
+         # assert 0
       return frames
 
-   def generate_candidate_frames(self, depth=100, bound=2.5, genradius=9e9, trials=10000, **kw):
-      cachefile = wu.datapath(f'xtal/lotsframes_{self.name.replace(" ","_")}.npy')
-      if self.dimension == 2 or not os.path.exists(cachefile):
+   def generate_candidate_frames(
+      self,
+      depth=100,
+      bound=2.5,
+      genradius=9e9,
+      trials=10000,
+      cache=True,
+      **kw,
+   ):
+      cachefile = wu.datapath(f'xtal/lots_of_frames_{self.name.replace(" ","_")}.npy')
+      if self.dimension == 2 or not os.path.exists(cachefile) or not cache:
          generators = np.concatenate([s.operators for s in self.symelems])
          x, _ = wu.cpp.geom.expand_xforms_rand(generators, depth=depth, radius=genradius, trials=trials)
          testpoint = [0.001, 0.002, 0.003]
@@ -107,7 +179,7 @@ class Xtal:
          inbounds = np.logical_and(inboundslow, inboundshigh)
          x = x[inbounds]
          assert len(x) < 10000
-         if self.dimension == 3:
+         if self.dimension == 3 and cache:
             np.save(cachefile, x)
       else:
          x = np.load(cachefile)
@@ -127,7 +199,9 @@ class Xtal:
       unitelems = list()
       for i, symelem in enumerate(self.symelems):
          elems = symelem.xformed(self.unitframes)
-         unitelems.append(list(zip(elems, self.unitframes)))
+         for e, f in zip(elems, self.unitframes):
+            e.origin = f
+         unitelems.append(elems)
       return unitelems
 
    def generate_cover_symelems(self, candidates, bbox=[(0, 0, 0), (1, 1, 1)]):
@@ -145,5 +219,28 @@ class Xtal:
          elems = symelem.xformed(frames)
          # ic(len(elems))
          assert len(elems) == len(frames), f'{len(elems)} {len(frames)}'
-         coverelems.append(list(zip(elems, frames)))
+         for e, f in zip(elems, frames):
+            assert np.allclose(np.eye(4), e.origin)
+            e.origin = f
+         coverelems.append(elems)
       return coverelems
+
+def interp_xtal_cell_list(cells):
+   if cells == None:
+      return np.eye(4)[None]
+   if isinstance(cells, (int, float)):
+      ub = cells // 2
+      lb = ub - cells + 1
+      cells = [(a, b, c) for a, b, c in itertools.product(*[range(lb, ub + 1)] * 3)]
+   elif len(cells) == 2:
+      lb, ub = cells
+      cells = [(a, b, c) for a, b, c in itertools.product(*[range(lb, ub + 1)] * 3)]
+   elif len(cells) == 3:
+      cells = [(a, b, c) for a, b, c in itertools.product(
+         range(cells[0][0], cells[0][1] + 1),
+         range(cells[1][0], cells[1][1] + 1),
+         range(cells[2][0], cells[2][1] + 1),
+      )]
+   else:
+      raise ValueError(f'bad cells {cells}')
+   return cells

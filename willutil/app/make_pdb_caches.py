@@ -20,7 +20,7 @@ def extract_het_pdbfiles(files_or_pattern):
          skip_errors=True,
    ):
       # print('extract_het_pdbfiles', fname)
-      h = pdb.subfile(het=True, removeres=['HOH'])
+      h = pdb.subset(het=True, removeres=['HOH'])
       print('save', fname + '.het.pickle')
       wu.save(h, fname.replace('.pickle', '') + '.het.pickle')
 

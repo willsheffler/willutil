@@ -1,32 +1,34 @@
 import numpy as np
-from willutil.sym.xtal import Xtal
+from willutil.sym.xtal import Xtal, interp_xtal_cell_list
 from willutil.sym.xtalinfo import SymElem
 from willutil.viz.pymol_viz import pymol_load, cgo_cyl, cgo_sphere, cgo_fan, cgo_cube, showcube
 import willutil as wu
 
 @pymol_load.register(SymElem)
 def pymol_viz_SymElem(
-      toshow,
-      state,
-      col='bycx',
-      name='SymElem',
-      center=np.array([0, 0, 0, 1]),
-      # scalefans=None,
-      fansize=0.05,
-      fanshift=0,
-      fancover=1.0,
-      make_cgo_only=False,
-      cyc_ang_match_tol=0.1,
-      axislen=0.2,
-      axisrad=0.008,
-      addtocgo=None,
-      scale=1,
-      cellshift=(0, 0, 0),
-      fanrefpoint=[1, 2, 3, 1],
-      symelemscale=1,
-      symelemtwosided=False,
-      shifttounit=False,
-      **kw,
+   toshow,
+   state,
+   col='bycx',
+   name='SymElem',
+   center=np.array([0, 0, 0, 1]),
+   # scalefans=None,
+   fansize=0.05,
+   fanshift=0,
+   fancover=1.0,
+   make_cgo_only=False,
+   cyc_ang_match_tol=0.1,
+   axislen=0.2,
+   axisrad=0.008,
+   addtocgo=None,
+   scale=1,
+   cellshift=(0, 0, 0),
+   fanrefpoint=[1, 2, 3, 1],
+   symelemscale=1,
+   symelemtwosided=False,
+   shifttounit=False,
+   symelemradiuscut=9e9,
+   symelemcentercut=[0, 0, 0],
+   **kw,
 ):
    import pymol
 
@@ -39,6 +41,20 @@ def pymol_viz_SymElem(
    fanthickness = 0.0 * scale * symelemscale
    fansize = fansize * scale * symelemscale
    fanshift = fanshift * scale * symelemscale
+
+   cen = wu.hscaled(scale, toshow.cen)
+   if shifttounit:
+      if cen[0] < 0: cen[0] += scale
+      if cen[1] < 0: cen[1] += scale
+      if cen[2] < 0: cen[2] += scale
+      if cen[0] > scale: cen[0] -= scale
+      if cen[1] > scale: cen[1] -= scale
+      if cen[2] > scale: cen[2] -= scale
+   cen[0] += scale * cellshift[0]
+   cen[1] += scale * cellshift[1]
+   cen[2] += scale * cellshift[2]
+   if wu.hnorm(cen - wu.hpoint(symelemcentercut)) > symelemradiuscut:
+      return
 
    ang = toshow.angle
    if np.isclose(ang, np.pi * 4 / 5, atol=1e-4): ang /= 2
@@ -55,17 +71,6 @@ def pymol_viz_SymElem(
    if toshow.vizcol is not None:
       col = toshow.vizcol
 
-   cen = wu.hscale(scale) @ toshow.cen
-   if shifttounit:
-      if cen[0] < 0: cen[0] += scale
-      if cen[1] < 0: cen[1] += scale
-      if cen[2] < 0: cen[2] += scale
-      if cen[0] > scale: cen[0] -= scale
-      if cen[1] > scale: cen[1] -= scale
-      if cen[2] > scale: cen[2] -= scale
-   cen[0] += scale * cellshift[0]
-   cen[1] += scale * cellshift[1]
-   cen[2] += scale * cellshift[2]
    fanrefpoint = fanrefpoint.copy()
    fanrefpoint[0] += scale * cellshift[0]
    fanrefpoint[1] += scale * cellshift[1]
@@ -80,12 +85,12 @@ def pymol_viz_SymElem(
    # ic(fansize, ang)
 
    arc = min(np.pi * 2, ang * fancover)
-   ic(axis)
-   ic(cen)
-   ic(fansize)
-   ic(fanthickness)
-   ic(fanrefpoint)
-   ic(fanshift)
+   # ic(axis)
+   # ic(cen)
+   # ic(fansize)
+   # ic(fanthickness)
+   # ic(fanrefpoint)
+   # ic(fanshift)
    mycgo += cgo_fan(axis, cen, fansize, arc=arc, thickness=fanthickness, col=col, startpoint=fanrefpoint,
                     fanshift=fanshift)
    if symelemtwosided:
@@ -104,48 +109,48 @@ def pymol_viz_SymElem(
 
 @pymol_load.register(Xtal)
 def pymol_viz_Xtal(
-   toshow,
-   state,
-   name='xtal',
-   scale=10,
-   # neighbors=1,
-   cellshift=(0, 0, 0),
-   cells=1,
-   showsymelems=True,
-   showgenframes=False,
-   splitobjs=False,
-   showpoints=None,
-   fanshift=0,
-   fansize=0.1,
-   showcube=None,
-   **kw,
+      toshow,
+      state,
+      name='xtal',
+      scale=10,
+      # neighbors=1,
+      # cellshift=(0, 0, 0),
+      cells=1,
+      showsymelems=True,
+      showgenframes=False,
+      splitobjs=False,
+      showpoints=None,
+      fanshift=0,
+      fansize=0.1,
+      showcube=None,
+      pointradius=1,
+      pointcol=(0.5, 0.5, 0.5),
+      **kw,
 ):
    import pymol
    state["seenit"][name] += 1
    name = f'{name}_{state["seenit"][name]}'
-   xcellshift = wu.htrans(cellshift)
-
+   # xcellshift = wu.htrans(cellshift)
    allcgo = list()
    # for x in toshow.unitframes:
    # for s in toshow.symelems:
    # pymol_viz_SymElem(wu.hxform(x, s), scale=scale, **kw)
    if showsymelems:
       cgo = list()
-      for cell in range(cells**3):
-         cellshift = np.array((cell // cells**2, cell // cells % cells, cell % cells))
-         cellshift -= (cells - 1) // 2
+      for cellshift in interp_xtal_cell_list(cells):
+         xcellshift = wu.htrans(cellshift)
+         # for cell in range(cells**3):
+         # cellshift = np.array((cell // cells**2, cell // cells % cells, cell % cells))
+         # cellshift -= (cells - 1) // 2
          # continue
          for i, elems in enumerate(toshow.unitelems):
             size = fansize[i] if isinstance(fansize, (list, tuple, np.ndarray)) else fansize
             shift = fanshift[i] if isinstance(fanshift, (list, tuple, np.ndarray)) else fanshift
-            for elem, xelem in elems:
+            for elem in elems:
                fanrefpoint = get_fanrefpoint(toshow)
-               fanrefpoint = wu.hxform(xelem, fanrefpoint)
+               fanrefpoint = wu.hxform(elem.origin, fanrefpoint)
                fanrefpoint = xcellshift @ fanrefpoint
-               fanrefpoint = wu.hscale(scale) @ fanrefpoint
-
-               # cgo += cgo_sphere(fanrefpoint, 0.5, col=(1, 1, 1))
-               elem = elem.xformed(xcellshift)
+               fanrefpoint = wu.hscaled(scale, fanrefpoint)
                pymol_viz_SymElem(
                   elem,
                   state,
@@ -172,7 +177,16 @@ def pymol_viz_Xtal(
 
    # for i, (elem, frame) in enumerate(toshow.unitelems[1]):
 
-   if showpoints not in (None, False, 0):
+   if isinstance(showpoints, np.ndarray):
+      frames = toshow.cellframes(cellsize=scale, cells=cells)
+      px = wu.hxform(frames, showpoints, flat=True)
+      cgo = list()
+      for p in px:
+         cgo += cgo_sphere(p, rad=pointradius, col=pointcol)
+      # ic(px.shape)
+      # assert 0
+      pymol.cmd.load_cgo(cgo, f'{name}_pts{i}')
+   elif showpoints not in (None, False, 0):
       showpts = xtal_show_points(showpoints, **kw)
       frames = toshow.cellframes(cellsize=1, cells=cells)
       cgo = cgo_frame_points(frames, scale, showpts, **kw)

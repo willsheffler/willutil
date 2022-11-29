@@ -35,6 +35,7 @@ class PdbData:
       if isinstance(keep, (int, np.int32, np.int64)):
          if random:
             if seed is not None:
+               assert 0
                np.random.seed(seed)
             keep = np.random.choice(len(self.pdb), keep, replace=False)
          else:

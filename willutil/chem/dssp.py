@@ -33,7 +33,7 @@ def dssp(coords):
       coords = add_bb_o_guess(coords)
    import mdtraj
    with tempfile.TemporaryDirectory() as d:
-      # ic(coords.shape)
+      ic(coords.shape)
       wu.pdb.dump_pdb_from_ncaco_points(d + '/tmp.pdb', coords)
       t = mdtraj.load(d + '/tmp.pdb')
       ss = ''.join(mdtraj.compute_dssp(t)[0]).replace('C', 'L')

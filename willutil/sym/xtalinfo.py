@@ -6,7 +6,12 @@ from willutil.homog import *
 def _populate_xtal_info_dict():
    global xtal_info_dict
    A = np.array
-
+   ########################################################################################
+   ############# IF YOU CHANGE THESE, REMOVE CACHE FILES OR DISABLE FRAME CACHING ############
+   ############# IF YOU CHANGE THESE, REMOVE CACHE FILES OR DISABLE FRAME CACHING ############
+   ############# IF YOU CHANGE THESE, REMOVE CACHE FILES OR DISABLE FRAME CACHING ############
+   ############# IF YOU CHANGE THESE, REMOVE CACHE FILES OR DISABLE FRAME CACHING ############
+   ############################################################################
    # yapf: disable
    xtal_info_dict = {
       'P 2 3'    : wu.Bunch( nsub=12 , spacegroup='P 2 3', symelems=[
@@ -29,13 +34,22 @@ def _populate_xtal_info_dict():
          # D2 ( axis= [ 1,  0,  0 ] , axis2= [ 0, -1,  1 ] , cen= A([-1, 0,-2 ]) / 8, label='D2_100_0m1_m12m_8', vizcol=(1, 1, 0)),
       ]),
       'I4132_C322' : wu.Bunch( nsub=48, spacegroup='I 41 3 2', symelems=[
-         C3 ( axis= [-1, -1, -1 ] , cen= A([ 0, 0, 0 ]) / 8, label='C3_111_1m0_111_8' , vizcol=(1, 0, 0)),
-         C2 ( axis= [ 1,  0,  0 ] , cen= A([ 3, 0, 2 ]) / 8, label='D2_100_0m1_102_8' , vizcol=(0, 1, 0)),
-         C2 ( axis= [ 1, -1,  0 ] , cen= A([-2.7, 0.7,-1 ]) / 8, label='D3_111_1m0_mmm_8' , vizcol=(0, 0, 1)),
+         # C3 ( axis= [ 1,  1,  1 ] , cen= A([ 2, 2, 2 ]) / 8, label='C3_111_1m0_111_8' , vizcol=(1, 0, 0)),
+         # C2 ( axis= [ 1,  0,  0 ] , cen= A([ 3, 0, 2 ]) / 8, label='D2_100_0m1_102_8' , vizcol=(0, 1, 0)),
+         # C2 ( axis= [ 1, -1,  0 ] , cen= A([-2.7, 0.7,-1 ]) / 8, label='D3_111_1m0_mmm_8' , vizcol=(0, 0, 1)),
+         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 8, label='C3_111_1m0_111_8' , vizcol=(1, 0, 0)),
+         C2 ( axis= [ 1,  0,  0 ] , cen= A([-1, 0, 2 ]) / 8, label='D2_100_0m1_102_8' , vizcol=(0, 1, 0)),
+         C2 ( axis= [ 1,  1,  0 ] , cen= [-0.1625,  0.0875,  0.125 ], label='D3_111_1m0_mmm_8' , vizcol=(0, 0, 1)),
+
       ]),
       'L632'   : wu.Bunch( nsub=None , spacegroup=None, dimension=2, symelems=[
          C3 ( axis= [ 0,  0,  1 ] , cen= A([ 0, 0, 0 ])/2, vizcol=(0.0, 1.0, 1.0) ),
          C2 ( axis= [ 0,  0,  1 ] , cen= A([ 1, 0, 0 ])/2, vizcol=(0.3, 1, 0.7) ),
+      ]),
+      'L6M322'   : wu.Bunch( nsub=None , spacegroup=None, dimension=2, symelems=[
+         C3 ( axis= [ 0,  0,  1 ] , cen= A([ 0, 0, 0 ])/2, vizcol=(0.0, 1.0, 1.0) ),
+         C2 ( axis= [ 0,  0,  1 ] , cen= A([ 1, 0, 0 ])/2, vizcol=(0.3, 1, 0.7) ),
+         C2 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 0, 0 ])/2, vizcol=(0.5, 1, 0.8) ),
       ]),
 
 
@@ -54,18 +68,23 @@ class SymElem:
       if self.axis2 is not None:
          self.axis2 = wu.homog.hgeom.hvec(self.axis2)
       self.cen = wu.homog.hgeom.hpoint(cen)
-
+      self.origin = np.eye(4)
       self.label = label
       if self.label is None:
          if axis2 is None: self.label = f'C{self.nfold}'
          else: self.label = f'D{self.nfold}'
 
-      x = wu.homog.hgeom.hrot(self.axis, nfold=nfold, center=cen)
-      ops = [wu.homog.hgeom.hpow(x, p) for p in range(nfold)]
+   @property
+   def operators(self):
+      # ic(self)
+      x = wu.homog.hgeom.hrot(self.axis, nfold=self.nfold, center=self.cen)
+      ops = [wu.homog.hgeom.hpow(x, p) for p in range(self.nfold)]
       if self.axis2 is not None:
-         xd2f = wu.homog.hgeom.hrot(self.axis2, nfold=2, center=cen)
+         xd2f = wu.homog.hgeom.hrot(self.axis2, nfold=2, center=self.cen)
          ops = ops + [xd2f @ x for x in ops]
-      self.operators = np.stack(ops)
+      ops = np.stack(ops)
+      assert wu.homog.hgeom.hvalid(ops)
+      return ops
 
    @property
    def coords(self):
@@ -139,7 +158,7 @@ def xtalinfo(name):
    name = name.upper().strip()
    if not name in xtal_info_dict:
       name = name.replace('_', ' ')
-   ic(name)
+   # ic(name)
    return name, xtal_info_dict[name]
 
    raise ValueError(f'unknown xtal "{name}"')

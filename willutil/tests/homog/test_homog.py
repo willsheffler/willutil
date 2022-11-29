@@ -10,6 +10,8 @@ ic.configureOutput(includeContext=True, contextAbsPath=True)
 
 def main():
 
+   test_halign()
+
    test_hxform_stuff_coords()
    test_hxform_stuff_xformed()
    test_hxform()
@@ -82,6 +84,17 @@ def main():
    test_axis_angle_180_bug()
 
    ic('test_homog.py DONE')
+
+def test_halign():
+   for i in range(10):
+      a, b = rand_unit(2)
+      x = wu.halign(a, b)
+      b2 = wu.hxform(x, a)
+      assert np.allclose(b, b2)
+      ang = wu.hangle(a, b)
+      ang2 = wu.hangle_of(x)
+      # ic(ang, ang2)
+      assert np.allclose(ang, ang2)
 
 def test_hdiff():
    I = np.eye(4)
