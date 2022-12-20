@@ -1,7 +1,29 @@
 import numpy as np
 from willutil.viz.pymol_viz import pymol_load, cgo_cyl, cgo_sphere, cgo_fan, cgo_cube, showcube
 import willutil as wu
-from willutil.rigid.rigidbody import RigidBody
+from willutil.rigid.rigidbody import RigidBody, RigidBodyFollowers
+
+@pymol_load.register(RigidBodyFollowers)
+def pymol_viz_RigidBodyFollowers(bodies, state, name='RigidBodyFollowers', addtocgo=None, **kw):
+
+   wu.showme(bodies.bodies, name=name, **kw)
+   return
+
+   import pymol
+   kw = wu.Bunch(kw)
+   v = pymol.cmd.get_view()
+   state["seenit"][name] += 1
+   cgo = list()
+   # col = get_different_colors
+   pymol_viz_RigidBody(bodies.asym, state, name, addtocgo=cgo)
+   for b in bodies.symbodies:
+      pymol_viz_RigidBody(b, state, name, addtocgo=cgo)
+
+   if addtocgo is None:
+      pymol.cmd.load_cgo(cgo, f'{name}_{state["seenit"][name]}')
+      pymol.cmd.set_view(v)
+   else:
+      addtocgo.extend(cgo)
 
 @pymol_load.register(RigidBody)
 def pymol_viz_RigidBody(
@@ -9,7 +31,6 @@ def pymol_viz_RigidBody(
       state,
       name='rigidbody',
       addtocgo=None,
-      make_cgo_only=False,
       showpairswith=None,
       showpairsdist=8,
       showcontactswith=None,
@@ -51,5 +72,3 @@ def pymol_viz_RigidBody(
       pymol.cmd.set_view(v)
    else:
       addtocgo.extend(cgo)
-   if make_cgo_only:
-      return cgo

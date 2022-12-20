@@ -7,9 +7,12 @@ import willutil as wu
 
 def main():
 
+   # test_asucen()
+   # assert 0
+
    if 0:
       test_hxtal_viz(
-         spacegroup='I4132_C322',
+         spacegroup='I4132_322',
          headless=False,
          showpoints=0,
          cells=2,
@@ -28,26 +31,36 @@ run /home/sheffler/pymol3/misc/G222.py; gyroid(10,r=11,cen=Vec(5,5,5)); set ligh
 
    noshow = True
    test_xtal_L6m322(headless=noshow)
-   test_xtal_L632(headless=noshow)
+   test_xtal_L6_32(headless=noshow)
    # assert 0, 'stilltest viz'
 
    test_hxtal_viz(spacegroup='I 21 3', headless=noshow)
    test_hxtal_viz(spacegroup='P 2 3', headless=noshow)
    test_hxtal_viz(spacegroup='P 21 3', headless=noshow)
    test_hxtal_viz(spacegroup='I 41 3 2', headless=noshow)
-   test_hxtal_viz(spacegroup='I4132_C322', headless=noshow)
+   test_hxtal_viz(spacegroup='I4132_322', headless=noshow)
    if not noshow: assert 0
 
    test_xtal_cryst1_I_21_3(dump_pdbs=False)
    test_xtal_cryst1_P_2_3(dump_pdbs=False)
    test_xtal_cryst1_P_21_3(dump_pdbs=False)
    test_xtal_cryst1_I_41_3_2(dump_pdbs=False)
-   test_xtal_cryst1_I4132_C322(dump_pdbs=False)
+   test_xtal_cryst1_I4132_322(dump_pdbs=False)
    test_xtal_cellframes()
    test_symelem()
 
    # _test_hxtal_viz_gyroid(headless=False)
    ic('test_xtal.py DONE')
+
+def test_asucen(headless=True):
+   csize = 62.144
+   xtal = wu.sym.Xtal('P 21 3')
+   asucen = xtal.asucen(cellsize=csize, method='closest_approach')
+   cellpts = xtal.symcoords(asucen, cellsize=csize)
+   frames = xtal.primary_frames(csize)
+   wu.showme(xtal, scale=csize)
+   wu.showme(asucen, sphere=4)
+   wu.showme(cellpts, sphere=4)
 
 def test_xtal_L6m322(headless=True):
    xtal = wu.sym.Xtal('L6m322')
@@ -61,8 +74,8 @@ def test_xtal_L6m322(headless=True):
    # wu.showme(xtal.unitframes, name='arstn', scale=3)
    wu.showme(xtal, headless=headless, showgenframes=False, symelemscale=1, pointscale=0.8, fresh=True)
 
-def test_xtal_L632(headless=False):
-   xtal = wu.sym.Xtal('L632')
+def test_xtal_L6_32(headless=False):
+   xtal = wu.sym.Xtal('L6_32')
    # ic(xtal.symelems)fresh
    # ic(xtal.genframes.shape)
    # ic(len(xtal.coverelems))
@@ -100,8 +113,8 @@ def test_xtal_cellframes():
 def test_xtal_cryst1_P_2_3(*args, **kw):
    helper_test_xtal_cryst1('P 2 3', *args, **kw)
 
-def test_xtal_cryst1_I4132_C322(*args, **kw):
-   helper_test_xtal_cryst1('I4132_C322', *args, **kw)
+def test_xtal_cryst1_I4132_322(*args, **kw):
+   helper_test_xtal_cryst1('I4132_322', *args, **kw)
 
 def test_xtal_cryst1_I_41_3_2(*args, **kw):
    helper_test_xtal_cryst1('I 41 3 2 ', *args, **kw)

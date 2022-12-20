@@ -1,6 +1,47 @@
 import numpy as np
 import willutil as wu
 
+class RigidBodyFollowers:
+   def __init__(self, bodies=None, coords=None, frames=None, cellsize=1, **kw):
+      if bodies is not None:
+         self.asym = bodies[0]
+         self.symbodies = bodies[1:]
+         self.bodies = bodies
+      elif frames is not None:
+         self.asym = RigidBody(coords, **kw)
+         self.symbodies = [RigidBody(parent=self.asym, xfromparent=x, **kw) for x in frames[1:]]
+         self.bodies = [self.asym] + self.symbodies
+      self.cellsize = cellsize
+
+   def clashes(self, nbrs=None):
+      if isinstance(nbrs, int): nbrs = [nbrs]
+      if nbrs is None:
+         clsh = [self.asym.clashes(b) for b in self.symbodies]
+         return any(clsh)
+      return any(self.asym.clashes(self.bodies[i]) for i in nbrs)
+
+   def scale_frames(self, scalefactor, safe=True):
+      self.cellsize *= scalefactor
+      changed = any([b.scale_frame(scalefactor) for b in self.bodies])
+      if not changed:
+         if safe:
+            raise ValueError(f'no frames could be scaled, scale_frames only valid for unbounded symmetry')
+      return changed
+
+   def get_neighbors_by_axismatch(self, axis, perp=False):
+      nbrs = list()
+      for i in range(1, len(self.bodies)):
+         tonbaxis = wu.haxisof(self.bodies[i].xfromparent)
+         parallel = wu.hangline(tonbaxis, axis) < 0.001
+         if perp != parallel:
+            nbrs.append(i)
+
+   def frames(self):
+      return np.stack([b.xfromparent for b in self.bodies])
+
+   def __len__(self):
+      return len(self.bodies)
+
 class RigidBody:
    def __init__(
       self,
@@ -9,27 +50,45 @@ class RigidBody:
       extra=None,
       position=np.eye(4),
       parent=None,
-      xfromparent=None,
+      xfromparent=np.eye(4),
       contactdis=8,
       clashdis=3,
       usebvh=True,
       scale=1,
       interacting_points=None,
+      recenter=False,
       **kw,
    ):
       self.extra = extra
       self.parent = parent
-      self.xfromparent = xfromparent
-      if self.xfromparent is not None:
-         assert wu.hvalid(self.xfromparent)
+      self.xfromparent = xfromparent.copy()
+      assert wu.hvalid(self.xfromparent)
+
       self._position = position
       self._coords = None
-      if contact_coords is None:
-         contact_coords = coords
       self.bvh = None
       self.contactbvh = None
+      self.clashdis = clashdis
+      self.contactdis = contactdis
+      self.usebvh = usebvh
+      self._scale = scale
+      self.tolocal = np.eye(4)
+      self.toglobal = np.eye(4)
+      assert (parent is None) != (coords is None)
       if coords is not None:
+         coords = coords.copy()
+         if contact_coords is None: contact_coords = coords
+         contact_coords = contact_coords.copy()
+         if recenter:
+            # oldcom =
+            self.tolocal = wu.htrans(-wu.hcom(coords))
+            self.toglobal = wu.hinv(self.tolocal)
+            coords = wu.hxform(self.tolocal, coords)
+            contact_coords = wu.hxform(self.tolocal, contact_coords)
+            # position must be set to move coords back to gloabal frame
+            self.position = self.toglobal.copy()
          self._coords = wu.hpoint(coords)
+         self._contact_coords = wu.hpoint(contact_coords)
          self._com = wu.hcom(self._coords)
          if usebvh:
             self.bvh = wu.cpp.bvh.BVH(coords[..., :3])
@@ -40,15 +99,22 @@ class RigidBody:
          self._coords = parent._coords
          self._com = wu.hcom(self._coords)
          parent.children.append(self)
-      self.children = list()
+         self.clashdis = parent.clashdis
+         self.contactdis = parent.contactdis
+         self.usebvh = parent.usebvh
+         self._scale = parent.scale
 
-      self.clashdis = clashdis
-      self.contactdis = contactdis
-      self.usebvh = usebvh
-      self._scale = scale
+      self.children = list()
 
    def __len__(self):
       return len(self._coords)
+
+   def scale_frame(self, scalefactor):
+      if self.xfromparent is not None:
+         if wu.hnorm(self.xfromparent[:, 3]) > 0.0001:
+            self.xfromparent = wu.hscaled(scalefactor, self.xfromparent)
+            return True
+      return False
 
    @property
    def state(self):
@@ -106,8 +172,20 @@ class RigidBody:
       self._position = newposition.reshape(4, 4)
 
    @property
+   def globalposition(self):
+      assert self.parent is None
+      # self.positions has been set to move local coords into intial global frame
+      # tolocal moves position so identity doesn't move global frame coords
+      # yeah, confusing... self.position 'moves' opposite of intuition
+      return wu.hxform(self.tolocal, self.position)
+
+   @property
    def coords(self):
       return wu.hxform(self.position, self._coords)
+
+   @property
+   def globalcoords(self):
+      return wu.hxform(self.globalposition, self._coords)
 
    @property
    def allcoords(self):
@@ -142,6 +220,7 @@ class RigidBody:
       return self.contact_count(other, self.contactdis)
 
    def clashes(self, other, clashdis=None):
+      # ic(self.clashdis)
       clashdis = clashdis or self.clashdis
       return self.contact_count(other, self.clashdis)
 

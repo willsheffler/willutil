@@ -366,7 +366,7 @@ def th_vec(vec):
    if (vec.dtype not in (torch.float32, torch.float64)):
       vec = vec.to(torch.float32)
    if vec.shape[-1] == 4:
-      if torch.any(vec[..., 3]) != 0:
+      if torch.any(vec[..., 3] != 0):
          vec = torch.cat([vec[..., :3], torch.zeros(*vec.shape[:-1], 1)], dim=-1)
       return vec
    elif vec.shape[-1] == 3:

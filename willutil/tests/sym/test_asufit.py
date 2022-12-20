@@ -5,28 +5,11 @@ import willutil as wu
 
 # ic.configureOutput(includeContext=True)
 
-def prune_radial_outliers(xyz, nprune=10):
-   npoints = len(xyz) - nprune
-   for i in range(nprune):
-      com = wu.hcom(xyz)
-      r = wu.hnorm(xyz - com)
-      w = np.argsort(r)
-      xyz = xyz[w[:-1]]
-   return xyz
-
-def point_cloud(npoints=100, std=10, outliers=0):
-   xyz = wu.hrandpoint(npoints + outliers, std=10)
-   xyz = prune_radial_outliers(xyz, outliers)
-   assert len(xyz) == npoints
-   xyz = xyz[np.argsort(xyz[:, 0])]
-   xyz -= wu.hvec(wu.hcom(xyz))
-   return xyz
-
 def main():
-   # test_asufit_I4132(showme=True)
+   test_asufit_I4132(showme=True)
    # test_asufit_P213(showme=True)
-   test_asufit_L6m322(showme=True)
-   # test_asufit_L632(showme=True)
+   # test_asufit_L6m322(showme=True)
+   # test_asufit_L6_32(showme=True)
    # test_asufit_oct(showme=True)
    # test_asufit_icos(showme=True)
    ic('TEST asufit DONE')
@@ -68,15 +51,15 @@ def test_asufit_oct(showme=False):
          xyz_contact,
          symaxes=[ax3, ax2],
          frames=frames,
-         showme=True,
-         showme_accepts=True,
+         showme=showme,
+         showme_accepts=showme,
          fresh=True,
          headless=False,
          contactfrac=0.3,
          contactdist=10,
          clashdist=4,
          clashpenalty=0.1,
-         cartsd=2.5,
+         cartsd=1.0,
          temperature=1.0,
          resetinterval=100,
          correctionfactor=1.5,
@@ -90,6 +73,7 @@ def test_asufit_oct(showme=False):
          sphereradius=3,
          scoreframes=[(0, 1), (0, 2)],
          clashframes=[(1, 2), (1, 3), (2, 3)],
+         lever=9e9,
       )
    assert np.allclose(
       mc.beststate.position,
@@ -100,26 +84,27 @@ def test_asufit_oct(showme=False):
 
 @pytest.mark.xfail()
 def test_asufit_I4132(showme=False):
-   sym = 'I4132_C322'
+   sym = 'I4132_322'
    xtal = wu.sym.Xtal(sym)
 
    scale = 140
    asucen = xtal.asucen(cellsize=scale)
    # np.random.seed(2)
-   # asucen = xtal.asucen(cellsize=scale)
-   # xyz = point_cloud(10, std=20, outliers=0)
-   # xyz += wu.hvec(asucen)
-   # xyz[:, 0] += +0.000 * scale
-   # xyz[:, 1] += -0.030 * scale
-   # xyz[:, 2] += -0.020 * scale
+   asucen = xtal.asucen(cellsize=scale)
+   xyz = point_cloud(100, std=20, outliers=40)
+   xyz += wu.hvec(asucen)
+   xyz[:, 0] += +0.000 * scale
+   xyz[:, 1] += -0.030 * scale
+   xyz[:, 2] += -0.020 * scale
+   xyz = xyz[:, :3]
 
-   fname = '/home/sheffler/src/willutil/blob5h.pdb'
-   pdb = wu.pdb.readpdb(fname)
-   # xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']]).T
-   xyz, mask = pdb.coords()
-   xyz = xyz[:, :4].reshape(-1, 3)
-   xyz[:, :3] -= wu.hcom(xyz)[:3]
-   xyz[:, :3] += asucen[:3]
+   # fname = '/home/sheffler/src/willutil/blob5h.pdb'
+   # pdb = wu.pdb.readpdb(fname)
+   # # xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']]).T
+   # xyz, mask = pdb.coords()
+   # xyz = xyz[:, :4].reshape(-1, 3)
+   # xyz[:, :3] -= wu.hcom(xyz)[:3]
+   # xyz[:, :3] += asucen[:3]
 
    cendis = np.argsort(wu.hnorm(xyz - wu.hcom(xyz)[:3])**2)
    w = cendis[:int(len(xyz) * 0.8)]
@@ -144,7 +129,7 @@ def test_asufit_I4132(showme=False):
    # radius=scale * 3)
    # ic(scale)
    frames = wu.sym.frames(sym, ontop=primary_frames, cells=(-1, 1), cellsize=scale, center=asucen, asucen=asucen,
-                          radius=scale / 3)
+                          radius=scale * 0.5)
    # ic(frames.shape)
    # ic(frames)
    # wu.showme(primary_frames, scale=1)
@@ -168,7 +153,7 @@ def test_asufit_I4132(showme=False):
 
       from willutil.tests.sym.test_xtal import test_hxtal_viz
       test_hxtal_viz(
-         spacegroup='I4132_C322',
+         spacegroup='I4132_322',
          headless=False,
          # showpoints=wu.hcom(xyz),
          cells=(-1, 0),
@@ -212,8 +197,8 @@ def test_asufit_I4132(showme=False):
          frames=frames,
          dumppdb=False,
          dumppdbscale=1,
-         showme=False,
-         showme_accepts=True,
+         showme=showme,
+         showme_accepts=showme,
          fresh=True,
          headless=False,
          spacegroup='I 41 3 2',
@@ -222,8 +207,9 @@ def test_asufit_I4132(showme=False):
          contactdist=10,
          clashdist=5,
          clashpenalty=10.1,
-         cartsd=1.5,
-         temperature=0.6,
+         cartsd=0.8,
+         lever=1000,
+         temperature=0.5,
          resetinterval=10000,
          correctionfactor=1.5,
          iterations=1000,
@@ -329,8 +315,8 @@ def test_asufit_P213(showme=False):
          nresatom=4,
          # symaxes=[3, 2],
          frames=frames,
-         showme=True,
-         showme_accepts=True,
+         showme=showme,
+         showme_accepts=showme,
          fresh=True,
          headless=False,
          contactfrac=0.1,
@@ -366,7 +352,7 @@ def test_asufit_P213(showme=False):
 
 @pytest.mark.xfail()
 def test_asufit_L6m322(showme=False):
-   sym = 'L6m322'
+   sym = 'L6m_322'
    xtal = wu.sym.Xtal(sym)
    scale = 70
    # xyz = point_cloud(100, std=30, outliers=20)
@@ -397,7 +383,7 @@ def test_asufit_L6m322(showme=False):
    '''
 
    '''
-   for i in range(10):
+   for i in range(1):
       with wu.Timer():
          ic('symfit')
          # np.random.seed(7)
@@ -408,8 +394,8 @@ def test_asufit_L6m322(showme=False):
             # symaxes=[3, 2],
             dumppdb=f'P6m32_{i:04}.pdb',
             frames=frames,
-            showme=False,
-            showme_accepts=False,
+            showme=showme,
+            showme_accepts=showme,
             fresh=True,
             headless=False,
             contactfrac=0.1,
@@ -441,8 +427,8 @@ def test_asufit_L6m322(showme=False):
                 [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]))
 
 @pytest.mark.xfail()
-def test_asufit_L632(showme=False):
-   sym = 'L632'
+def test_asufit_L6_32(showme=False):
+   sym = 'L6_32'
    xtal = wu.sym.Xtal(sym)
    scale = 100
 
@@ -452,9 +438,10 @@ def test_asufit_L632(showme=False):
    primary_frames = np.stack([np.eye(4), xtal.symelems[0].operators[1], xtal.symelems[1].operators[1]])
    frames = wu.sym.frames(sym, ontop=primary_frames)
    lever = wu.hrog(xyz) * 1.5
-   '''
 
-   '''
+   wu.showme(primary_frames)
+   wu.showme(frames)
+
    with wu.Timer():
       ic('symfit')
       # np.random.seed(7)
@@ -463,8 +450,8 @@ def test_asufit_L632(showme=False):
          xyz,
          # symaxes=[3, 2],
          frames=frames,
-         showme=True,
-         showme_accepts=True,
+         showme=showme,
+         showme_accepts=showme,
          fresh=True,
          headless=False,
          contactfrac=0.3,
@@ -518,7 +505,7 @@ def test_asufit_icos(showme=False):
          symaxes=[ax3, ax2],
          frames=frames,
          showme=showme,
-         showme_accepts=True,
+         showme_accepts=showme,
          fresh=True,
          contactfrac=0.2,
          contactdist=12,

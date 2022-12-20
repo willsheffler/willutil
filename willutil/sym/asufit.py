@@ -87,14 +87,17 @@ def asufit(
 
       pos, prev = sampler(asym.state)
 
-      # # SLIDE
+      # adjust scale
       if i % 20:
          # for slidedir in [asym.com()]:
          # wu.htrans(-wu.hnormalized(slidedir))
          for i in range(10):
-            contact = any([asym.contacts(b) for b in bodies[1:4]])
-            if contact:
-               break
+            contact = any([asym.contacts(b) for b in bodies[1:]])
+            if contact: break
+            pos.scale -= 0.5
+         for i in range(10):
+            contact = any([asym.contacts(b) for b in bodies[1:]])
+            if contact: break
             pos.scale -= 0.5
 
       accept = mc.try_this(pos)
@@ -141,7 +144,8 @@ def asufit(
    if TEST:
       frames = wu.hscaled(mc.beststate.scale, frames)
       xyz = wu.hxform(frames, xyz).reshape(len(frames), -1, 4, 4)
-      wu.dumppdb(dumppdb, xyz, cellsize=cellsize, **kw)
+      if dumppdb:
+         wu.dumppdb(dumppdb, xyz, cellsize=cellsize, **kw)
    # wu.dumppdb(f'debugpdbs/asufit_999999.pdb', xyz, cellsize=cellsize, **kw)
    # wu.showme(bodies[0], name='pairs01', showcontactswith=bodies[1], showpairsdist=16, col=(1, 1, 1))
    # wu.showme(bodies[0], name='pairs02', showcontactswith=bodies[2], showpairsdist=16, col=(1, 1, 1))

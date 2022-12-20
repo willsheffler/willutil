@@ -1,3 +1,4 @@
+import copy
 from willutil import Bunch
 from willutil.homog.hgeom import *
 from willutil.sym.symframes import *
@@ -131,17 +132,28 @@ def min_symaxis_angle(sym):
             # print(i, j, line_angle_degrees(iax, jax))
    return minaxsang
 
-def axes(sym, nfold=None, all=False):
+def axes(sym, nfold=None, all=False, cellsize=1, **kw):
    sym = sym.lower()
-   if nfold is None:
-      return symaxes[sym].copy()
-   elif isinstance(nfold, str):
-      assert nfold.lower().startswith('c')
-      nfold = int(nfold[1:])
 
-   if all:
-      return symaxes_all[sym][nfold].copy()
-   return symaxes[sym][nfold].copy()
+   try:
+      if wu.sym.is_known_xtal(sym):
+         x = Xtal(sym)
+         if all: elems = copy.deepcopy(x.unitelems)
+         else: elems = copy.deepcopy(x.symelems.copy())
+         for e in elems:
+            e.cen = wu.hscaled(cellsize, e.cen)
+         return elems
+      else:
+         if nfold is None:
+            return symaxes[sym].copy()
+         elif isinstance(nfold, str):
+            assert nfold.lower().startswith('c')
+            nfold = int(nfold[1:])
+         if all: return symaxes_all[sym][nfold].copy()
+         else: return symaxes[sym][nfold].copy()
+
+   except (KeyError, ValueError) as e:
+      raise ValueError(f'unknown symmetry {sym}')
 
 def remove_if_same_axis(frames, bbaxes, onesided=True, partial_ok=False):
    assert onesided

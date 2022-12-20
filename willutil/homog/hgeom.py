@@ -712,6 +712,9 @@ def hrms(a, b):
    assert a.shape == b.shape
    return np.sqrt(np.sum(np.square(a - b)) / len(a))
 
+def hparallel(a, b):
+   return angle(a, b) < 0.001
+
 def unhomog(stuff):
    return stuff[..., :3]
 
@@ -774,6 +777,11 @@ def point_in_plane(plane, pt):
 def ray_in_plane(plane, ray):
    assert ray.shape[-2:] == (4, 2)
    return (point_in_plane(plane, ray[..., :3, 0]) * point_in_plane(plane, ray[..., :3, 0] + ray[..., :3, 1]))
+
+def h_point_line_dist(point, cen, norm):
+   point = point - cen
+   perp = hprojperp(norm, point)
+   return hnorm(perp)
 
 def intesect_line_plane(p0, n, l0, l):
    l = hm.hnormalized(l)

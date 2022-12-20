@@ -104,8 +104,7 @@ def _(
    mycgo = list()
 
    if showframes:
-      cgo = pymol_visualize_xforms(toshow.frames, state, make_cgo_only=True, **kw)
-      mycgo += cgo
+      pymol_visualize_xforms(toshow.frames, state, addtocgo=mycgo, **kw)
 
    cen1 = toshow.frames[0, :, 3]
    cen2 = toshow.frames[1, :, 3]
@@ -155,8 +154,7 @@ def _(
    else:
       mycgo = list()
       for k, v in toshow.items():
-         cgo = pymol_load(v, state, name=k, make_cgo_only=True, **kw)
-         mycgo += cgo
+         pymol_load(v, state, name=k, addtocgo=mycgo, **kw)
       pymol.cmd.load_cgo(mycgo, name)
 
 @pymol_load.register(list)
@@ -180,7 +178,7 @@ def pymol_viz_list(
    colors = [tuple(_) for _ in colors]
    colors = topcolors + colors
    for i, t in enumerate(toshow):
-      _ = pymol_load(t, state, addtocgo=mycgo, make_cgo_only=True, col=colors[i], **kw)
+      pymol_load(t, state, addtocgo=mycgo, col=colors[i], **kw)
    pymol.cmd.set_view(v)
    name = name or 'list'
    pymol.cmd.load_cgo(mycgo, name)

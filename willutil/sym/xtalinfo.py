@@ -33,7 +33,7 @@ def _populate_xtal_info_dict():
          D3 ( axis= [ 1,  1,  1 ] , axis2= [ 1, -1,  0 ] , cen= A([-1,-1,-1 ]) / 8, label='D3_111_1m0_mmm_8' , vizcol=(1, 0, 0)),
          # D2 ( axis= [ 1,  0,  0 ] , axis2= [ 0, -1,  1 ] , cen= A([-1, 0,-2 ]) / 8, label='D2_100_0m1_m12m_8', vizcol=(1, 1, 0)),
       ]),
-      'I4132_C322' : wu.Bunch( nsub=48, spacegroup='I 41 3 2', symelems=[
+      'I4132_322' : wu.Bunch( nsub=48, spacegroup='I 41 3 2', symelems=[
          # C3 ( axis= [ 1,  1,  1 ] , cen= A([ 2, 2, 2 ]) / 8, label='C3_111_1m0_111_8' , vizcol=(1, 0, 0)),
          # C2 ( axis= [ 1,  0,  0 ] , cen= A([ 3, 0, 2 ]) / 8, label='D2_100_0m1_102_8' , vizcol=(0, 1, 0)),
          # C2 ( axis= [ 1, -1,  0 ] , cen= A([-2.7, 0.7,-1 ]) / 8, label='D3_111_1m0_mmm_8' , vizcol=(0, 0, 1)),
@@ -42,14 +42,26 @@ def _populate_xtal_info_dict():
          C2 ( axis= [ 1,  1,  0 ] , cen= [-0.1625,  0.0875,  0.125 ], label='D3_111_1m0_mmm_8' , vizcol=(0, 0, 1)),
 
       ]),
-      'L632'   : wu.Bunch( nsub=None , spacegroup=None, dimension=2, symelems=[
+      'L6_32'   : wu.Bunch( nsub=None , spacegroup=None, dimension=2, symelems=[
          C3 ( axis= [ 0,  0,  1 ] , cen= A([ 0, 0, 0 ])/2, vizcol=(0.0, 1.0, 1.0) ),
          C2 ( axis= [ 0,  0,  1 ] , cen= A([ 1, 0, 0 ])/2, vizcol=(0.3, 1, 0.7) ),
       ]),
-      'L6M322'   : wu.Bunch( nsub=None , spacegroup=None, dimension=2, symelems=[
+      'L6M_322'   : wu.Bunch( nsub=None , spacegroup=None, dimension=2, symelems=[
          C3 ( axis= [ 0,  0,  1 ] , cen= A([ 0, 0, 0 ])/2, vizcol=(0.0, 1.0, 1.0) ),
          C2 ( axis= [ 0,  0,  1 ] , cen= A([ 1, 0, 0 ])/2, vizcol=(0.3, 1, 0.7) ),
          C2 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 0, 0 ])/2, vizcol=(0.5, 1, 0.8) ),
+      ]),
+      'L4_44'   : wu.Bunch( nsub=None , spacegroup=None, dimension=2, symelems=[
+         C4 ( axis= [ 0,  0,  1 ] , cen= A([ 0, 0, 0 ])/2, vizcol=(0.0, 1.0, 1.0) ),
+         C4 ( axis= [ 0,  0,  1 ] , cen= A([ 1, 0, 0 ])/2, vizcol=(0.3, 1, 0.7) ),
+      ]),
+      'L4_42'   : wu.Bunch( nsub=None , spacegroup=None, dimension=2, symelems=[
+         C4 ( axis= [ 0,  0,  1 ] , cen= A([ 0, 0, 0 ])/2, vizcol=(0.0, 1.0, 1.0) ),
+         C2 ( axis= [ 0,  0,  1 ] , cen= A([ 1, 0, 0 ])/2, vizcol=(0.3, 1, 0.7) ),
+      ]),
+      'L3_33'   : wu.Bunch( nsub=None , spacegroup=None, dimension=2, symelems=[
+         C3 ( axis= [ 0,  0,  1 ] , cen= A([ 0, 0, 0 ])/2, vizcol=(0.0, 1.0, 1.0) ),
+         C3 ( axis= [ 0,  0,  1 ] , cen= A([ 1, 0, 0 ])/2, vizcol=(0.3, 1, 0.7) ),
       ]),
 
 
@@ -154,8 +166,22 @@ def is_known_xtal(name):
       return False
 
 def xtalinfo(name):
-
    name = name.upper().strip()
+
+   alternate_names = dict(
+      P213='P 21 3',
+      P213_33='P 21 3',
+      I213_32='I 21 3',
+      L6M322='L6M_322',
+      P6_32='L6_32',
+      P4_42='L4_42',
+      P4_44='L4_44',
+      P3_33='L3_33',
+   )
+
+   if not name in xtal_info_dict:
+      if name in alternate_names:
+         name = alternate_names[name]
    if not name in xtal_info_dict:
       name = name.replace('_', ' ')
    # ic(name)
