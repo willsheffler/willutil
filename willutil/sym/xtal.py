@@ -147,7 +147,16 @@ class Xtal:
    def frames(self, cells=3, **kw):
       return self.cellframes(cells=cells, **kw)
 
-   def cellframes(self, cellsize=1, cells=1, flat=True, center=None, asucen=None, radius=None):
+   def cellframes(
+      self,
+      cellsize=1,
+      cells=1,
+      flat=True,
+      center=None,
+      asucen=None,
+      radius=None,
+      **kw,
+   ):
       if self.dimension != 3:
          return wu.hscaled(cellsize, self.unitframes)
       if cells == None:

@@ -20,6 +20,13 @@ class RigidBodyFollowers:
          return any(clsh)
       return any(self.asym.clashes(self.bodies[i]) for i in nbrs)
 
+   def contact_fraction(self, nbrs=None):
+      if isinstance(nbrs, int): nbrs = [nbrs]
+      if nbrs is None:
+         return [self.asym.contact_fraction(b) for b in self.symbodies]
+      else:
+         return [self.asym.contact_fraction(self.bodies[i]) for i in nbrs]
+
    def scale_frames(self, scalefactor, safe=True):
       self.cellsize *= scalefactor
       changed = any([b.scale_frame(scalefactor) for b in self.bodies])
@@ -32,9 +39,11 @@ class RigidBodyFollowers:
       nbrs = list()
       for i in range(1, len(self.bodies)):
          tonbaxis = wu.haxisof(self.bodies[i].xfromparent)
-         parallel = wu.hangline(tonbaxis, axis) < 0.001
-         if perp != parallel:
+         ang = wu.hangline(tonbaxis, axis)
+         # ic(perp, ang, axis, tonbaxis)
+         if (not perp and ang > 0.001) or (perp and abs(ang - np.pi / 2) < 0.001):
             nbrs.append(i)
+      return nbrs
 
    def frames(self):
       return np.stack([b.xfromparent for b in self.bodies])
@@ -232,7 +241,8 @@ class RigidBody:
       # ic(b)
       return len(a), len(b)
 
-   def contact_fraction(self, other, contactdist=8):
+   def contact_fraction(self, other, contactdist=None):
+      contactdist = contactdist or self.contactdis
 
       # wu.pdb.dump_pdb_from_points('bodyA.pdb', self.coords)
       # wu.pdb.dump_pdb_from_points('bodyB.pdb', other.coords)

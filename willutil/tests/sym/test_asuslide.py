@@ -2,6 +2,8 @@ import numpy as np
 import willutil as wu
 from willutil.sym.asuslide import asuslide
 
+# ic.configureOutput(includeContext=True, contextAbsPath=True)
+
 def main():
    # test_asuslide_oct()
    test_asuslide_p213()
@@ -9,12 +11,12 @@ def main():
 def test_asuslide_p213():
    sym = 'P 21 3'
    xtal = wu.sym.Xtal(sym)
-   scale = 100
+   csize = 80
 
-   xyz = wu.tests.point_cloud(300, std=30, outliers=50)
-   asucen = xtal.asucen(use_olig_nbrs=True, cellsize=scale)
+   xyz = wu.tests.point_cloud(100, std=30, outliers=0)
+   asucen = xtal.asucen(use_olig_nbrs=True, cellsize=csize)
    xyz += wu.hvec(asucen)
-   # xyz[:, 2] += 30
+   xyz[:, 1] -= 2
 
    # fname = '/home/sheffler/src/willutil/blob5h.pdb'
    # pdb = wu.pdb.readpdb(fname)
@@ -28,32 +30,50 @@ def test_asuslide_p213():
    # cendis = np.argsort(wu.hnorm(xyz - wu.hcom(xyz)[:3])**2)
    # w = cendis[:int(len(xyz) * 0.6)]
    # xyz_contact = xyz[w]
-   wu.showme(xyz)
+   # wu.showme(xyz)
 
    primary_frames = np.stack([
-      wu.hscaled(scale, np.eye(4)),
+      wu.hscaled(csize, np.eye(4)),
       xtal.symelems[0].operators[1],
-      xtal.symelems[1].operators[1],
       xtal.symelems[0].operators[2],
+      xtal.symelems[1].operators[1],
       xtal.symelems[1].operators[2],
    ])
-   primary_frames = wu.hscaled(scale, primary_frames)
+   primary_frames = wu.hscaled(csize, primary_frames)
 
    # frames = wu.sym.frames(sym, ontop=primary_frames, cells=[(-1, 0), (-1, 0), (-1, 0)])
    # frames = wu.sym.frames(sym, ontop=primary_frames, cells=3, center=
-   frames = wu.sym.frames(
-      sym,
-      ontop=primary_frames,
-      cells=(-1, 1),
-      cellsize=scale,
-      center=asucen,
-      asucen=asucen,
-      radius=scale * 0.8,
-   )
+   # frames = wu.sym.frames(
+   #    sym,
+   #    ontop=primary_frames,
+   #    cells=(-1, 1),
+   #    cellsize=csize,
+   #    center=asucen,
+   #    asucen=asucen,
+   #    radius=csize * 0.8,
+   # )
    frames = primary_frames
 
-   slid = asuslide(sym, xyz, frames, showme=True, maxstep=14, step=3, sphereradius=2, towardaxis=True, alongaxis=True,
-                   checksubsets=True)
+   slid = asuslide(
+      sym,
+      xyz,
+      frames,
+      showme=True,
+      maxstep=30,
+      step=10,
+      iters=10,
+      clashiters=0,
+      clashdis=8,
+      contactdis=16,
+      contactfrac=0.2,
+      sphereradius=2,
+      cellsize=csize,
+      towardaxis=True,
+      alongaxis=False,
+      checksubsets=True,
+      fresh=False,
+   )
+   # wu.showme(slid)
    ic(slid.cellsize)
 
 def test_asuslide_oct():
@@ -76,16 +96,18 @@ def test_asuslide_oct():
 
    # slid1 = asuslide(sym, xyz, frames, axes=axesinfo, showme=True, sphereradius=2)
    # slid2 = asuslide(sym, xyz, frames, alongaxis=True, showme=True, sphereradius=2)
-   slid1 = asuslide(sym, xyz, frames, axes=axesinfo, alongaxis=True)
-   slid2 = asuslide(sym, xyz, frames, alongaxis=True)
+   slid1 = asuslide(sym, xyz, frames, axes=axesinfo, alongaxis=True, clashdis=5)
+   slid2 = asuslide(sym, xyz, frames, alongaxis=True, sphereradius=2, clashdis=5, showme=False)
 
    assert np.all(np.abs(slid1.frames()[:, :3, 3]) < 0.0001)
    assert np.allclose(np.eye(3), slid1.asym.position[:3, :3])
-   assert np.allclose(wu.hcart3(slid1.asym.globalposition), [-21.07033885, -21.07033885, -6.92820323])
+   # ic(wu.hcart3(slid1.asym.globalposition))
+   assert np.allclose(wu.hcart3(slid1.asym.globalposition), [-17.43319968, -17.43319968, -5.58199691])
 
    assert np.all(np.abs(slid2.frames()[:, :3, 3]) < 0.0001)
    assert np.allclose(np.eye(3), slid2.asym.position[:3, :3])
-   assert np.allclose(wu.hcart3(slid2.asym.globalposition), [-21.07033885, -21.07033885, -6.92820323])
+   # ic(wu.hcart3(slid2.asym.globalposition))
+   assert np.allclose(wu.hcart3(slid2.asym.globalposition), [-17.43319968, -17.43319968, -5.58199691])
 
 if __name__ == '__main__':
    main()
