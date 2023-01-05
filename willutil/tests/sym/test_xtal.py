@@ -2,19 +2,17 @@ import itertools, tempfile, sys
 import numpy as np
 import pytest
 import willutil as wu
-
 # ic.configureOutput(includeContext=True, contextAbsPath=False)
 
 def main():
 
-   # test_asucen()
-   # assert 0
+   test_dump_pdb()
+   assert 0
 
    if 0:
       test_hxtal_viz(
          spacegroup='I4132_322',
          headless=False,
-         showpoints=0,
          cells=2,
          symelemscale=0.3,
          fansize=np.array([1.7, 1.2, 0.7]) / 3,
@@ -22,13 +20,14 @@ def main():
          symelemtwosided=True,
          showsymelems=True,
          pointshift=(0.2, 0.2, 0.1),
-         scaleptrad=2,
+         scaleptrad=1,
       )
       '''
 run /home/sheffler/pymol3/misc/G222.py; gyroid(10,r=11,cen=Vec(5,5,5)); set light, [ -0.3, -0.30, 0.8 ]
    '''
       assert 0, 'aoisrtnoiarnsiot'
 
+   test_asucen()
    noshow = True
    test_xtal_L6m322(headless=noshow)
    test_xtal_L6_32(headless=noshow)
@@ -52,11 +51,22 @@ run /home/sheffler/pymol3/misc/G222.py; gyroid(10,r=11,cen=Vec(5,5,5)); set ligh
    # _test_hxtal_viz_gyroid(headless=False)
    ic('test_xtal.py DONE')
 
+def test_dump_pdb():
+   sym = 'I213'
+   xtal = wu.sym.Xtal(sym)
+   csize = 150
+   np.random.seed(7)
+   xyz = wu.tests.point_cloud(100, std=30, outliers=0)
+   asucen = xtal.asucen(use_olig_nbrs=True, cellsize=csize)
+   xyz += wu.hvec(asucen)
+   # xyz[:, 1] -= 2
+   xtal.dump_pdb('test.pdb', xyz, cellsize=csize, cells=(-1, 0), radius=0.5, ontop='primary')
+
 def test_asucen(headless=True):
    csize = 62.144
    xtal = wu.sym.Xtal('P 21 3')
    asucen = xtal.asucen(cellsize=csize, method='closest_approach')
-   cellpts = xtal.symcoords(asucen, cellsize=csize)
+   cellpts = xtal.symcoords(asucen, cellsize=csize, flat=True)
    frames = xtal.primary_frames(csize)
    wu.showme(xtal, scale=csize)
    wu.showme(asucen, sphere=4)
@@ -154,7 +164,7 @@ def helper_test_xtal_cryst1(spacegroup, dump_pdbs=False):
       pymol.cmd.symexp('pref', 'test', 'all', 9e9)
       coords1 = pymol.cmd.get_coords()
       pymol.cmd.delete('all')
-      coords2 = xtal.symcoords(crd, cellsize=cellsize, cells=(-2, 1))
+      coords2 = xtal.symcoords(crd, cellsize=cellsize, cells=(-2, 1), flat=True)
       assert len(coords1) == 27 * 3 * xtal.nsub
       assert len(coords2) == 64 * 3 * xtal.nsub
 
@@ -199,16 +209,24 @@ def helper_test_xtal_cryst1(spacegroup, dump_pdbs=False):
    s2 = set([tuple(x) for x in coords2])
    assert s1 == s2
 
-def test_hxtal_viz(headless=True, spacegroup='P 2 3', symelemscale=0.7, **kw):
+def test_hxtal_viz(headless=True, spacegroup='P 2 3', symelemscale=0.7, cellsize=10, **kw):
    pymol = pytest.importorskip('pymol')
    xtal = wu.sym.Xtal(spacegroup)
    # ic(xtal.unitframes.shape)
+   cen = xtal.asucen(cellsize=cellsize, method='closest_to_cen')
+
+   # wu.showme(xtal.symelems, scale=cellsize)
+   # wu.showme(cen, sphereradius=1)
+
    wu.showme(
       xtal,
       headless=headless,
       showgenframes=False,
       symelemscale=symelemscale,
       pointscale=0.8,
+      scale=cellsize,
+      showpoints=cen[None],
+      pointradius=0.3,
       # fresh=True,
       **kw,
    )

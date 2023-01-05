@@ -11,7 +11,7 @@ __all__ = ('MonteCarlo', 'RigidBody', 'compute_symfit', 'showme', 'halign', 'hal
            'th_quat_to_rot', 'th_quat_to_upper_half', 'th_quat_to_xform', 'th_rand_quat', 'th_rand_xform',
            'th_rand_xform_small', 'th_randpoint', 'th_randunit', 'th_randvec', 'th_ray_in_plane', 'th_rms', 'dssp',
            'th_rmsfit', 'th_rog', 'th_rot', 'th_rot_to_quat', 'th_vec', 'th_xform', 'unhomog', 'hpointlinedis',
-           'haxisof')
+           'haxisof', 'hrandvec', 'hpointlineclose')
 
 import os
 from deferred_import import deferred_import
@@ -52,6 +52,8 @@ from willutil import rosetta
 
 from willutil.chem import dssp
 from willutil.rosetta import NotPose
+
+from willutil.tests import test_data_path
 
 # deferr import of cpp libs to avoid compilation if unnecessary
 cpp = deferred_import('willutil.cpp')
@@ -112,12 +114,14 @@ from willutil.homog import (
    hscaled,
    hxform,
    h_point_line_dist as hpointlinedis,
+   hpointlineclose,
    line_angle as hline_angle,
    line_angle,
    line_angle_degrees,
    hrand,
    hrandrot,
    hrandpoint,
+   rand_vec as hrandvec,
    rot_of,
    trans_of,
    xaxis_of,

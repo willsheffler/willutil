@@ -166,6 +166,14 @@ def pymol_viz_list(
    **kw,
 ):
    kw = wu.Bunch(kw)
+
+   if iscgo(toshow):
+      pymol.cmd.load_cgo(toshow, name)
+      state["seenit"][name] += 1
+      name += "_%i" % state["seenit"][name]
+      ic(name)
+      return
+
    name += toshow[0].__class__.__name__
    state["seenit"][name] += 1
    name += "_%i" % state["seenit"][name]
@@ -338,7 +346,7 @@ def pymol_visualize_xforms(
       pymol.cmd.load_cgo(mycgo, name)
       pymol.cmd.zoom()
    else:
-      addtocgo.extend(cgo)
+      addtocgo.extend(mycgo)
 
    if make_cgo_only:
       return mycgo
@@ -490,7 +498,8 @@ def show_ndarray_point_or_vec(
       if p_or_v[3] > 0.999:
          mycgo += cgo_sphere(p_or_v, sphere, col=color)
       elif np.abs(p_or_v[3]) < 0.001:
-         mycgo += cgo_vecfrompoint(p_or_v * 20, p_or_v, col=color)
+         # mycgo += cgo_vecfrompoint(p_or_v * 20, p_or_v, col=color)
+         mycgo += cgo_vecfrompoint(p_or_v, [0, 0, 0], col=color)
       else:
          raise NotImplementedError
 
@@ -531,6 +540,9 @@ def show_ndarray_n_ca_c(
             out.write(line)
    pymol.cmd.load(fname)
 
+def iscgo(maybecgo):
+   return isinstance(maybecgo[0], float)
+
 def showme_pymol(
    what,
    headless=False,
@@ -541,6 +553,7 @@ def showme_pymol(
    pngturn=0,
    ray=False,
    one_png_only=False,
+   name='noname',
    **kw,
 ):
    global _showme_state
@@ -572,7 +585,7 @@ def showme_pymol(
       clear_pymol()
 
    # pymol.cmd.full_screen('on')
-   result = pymol_load(what, state=_showme_state, **kw)
+   result = pymol_load(what, name=name, state=_showme_state, **kw)
    # # pymol.cmd.set('internal_gui_width', '20')
 
    if png:

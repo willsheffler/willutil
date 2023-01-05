@@ -124,6 +124,7 @@ def pymol_viz_Xtal(
       fansize=0.1,
       showcube=None,
       pointradius=1,
+      addtocgo=None,
       pointcol=(0.5, 0.5, 0.5),
       **kw,
 ):
@@ -131,7 +132,7 @@ def pymol_viz_Xtal(
    state["seenit"][name] += 1
    name = f'{name}_{state["seenit"][name]}'
    # xcellshift = wu.htrans(cellshift)
-   allcgo = list()
+   allcgo = list() if addtocgo is None else addtocgo
    # for x in toshow.unitframes:
    # for s in toshow.symelems:
    # pymol_viz_SymElem(wu.hxform(x, s), scale=scale, **kw)

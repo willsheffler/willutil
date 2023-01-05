@@ -3,6 +3,30 @@ import numpy as np
 import willutil as wu
 from willutil.homog import *
 
+def tooclose_clash(bodies, nbrs=None, **kw):
+   return bodies.clashes(nbrs)
+
+def tooclose_overlap(bodies, nbrs=None, contactfrac=0.1, printme=False, **kw):
+   cfrac = bodies.contact_fraction(nbrs)
+   if printme: ic(cfrac)
+   maxcfrac = max([np.mean(c) for c in cfrac])
+   return maxcfrac > contactfrac
+
+def tooclose_primary_overlap(bodies, nbrs=None, contactfrac=0.1, nprimary=None, printme=False, **kw):
+   assert nprimary is not None
+   for i in range(nprimary):
+      for j in range(nprimary, len(bodies)):
+         hasclash = bodies.bodies[i].hasclash(bodies.bodies[j])
+         if hasclash:
+            'SLIDE EXTRAFRAME CLASH'
+            return True
+   # if nbrs is None:
+   #     nbrs = list(range(nprimary))
+   cfrac = bodies.contact_fraction(nbrs)
+   if printme: ic(cfrac)
+   maxcfrac = max([np.mean(c) for c in cfrac])
+   return maxcfrac > contactfrac
+
 class RBLatticeOverlapObjective:
    def __init__(self, *args, **kw):
       self.rbojective = RBOverlapObjective(*args, **kw)

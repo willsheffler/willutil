@@ -45,8 +45,9 @@ class MonteCarlo:
          if self.debug: print('trythis trial score', score)
          self.timer.checkpoint('trythis score')
       if self.startstate is None:
-         self.startstate = state
-      self.last = score
+         self.startstate = state.copy()
+      self.prev = score
+      # self.prevstate = state.copy()
       self.accepted_last = False
       self.new_best_last = False
       self.ntrials += 1
@@ -58,7 +59,7 @@ class MonteCarlo:
          self.naccept += 1
          self.accepted_last = True
          self.low = score
-         self.lowstate = state
+         self.lowstate = state.copy()
          # ic('accept', score - self.best)
 
          if self.debug: print('trythis accept', score)

@@ -63,6 +63,9 @@ class PDBFile:
          self.df.ai += np.where(idx, i * ai_per_model, 0)
       return self
 
+   def natom(self):
+      return len(self.df)
+
    def getres(self, ri):
       r = self.df[self.df.ri == ri].copy()
       r.reset_index(inplace=True, drop=True)
@@ -176,7 +179,7 @@ class PDBFile:
       an = atomname.encode() if isinstance(atomname, str) else atomname
       an = an.upper()
       mask = list()
-      for i, (ri, g) in enumerate(self.df.groupby(self.df.ri)):
+      for i, (ri, g) in enumerate(self.df.groupby(['ri', 'ch'])):
          assert np.sum(g.an == an) <= 1
          # assert np.sum(g.an == an) <= np.sum(g.an == b'CA') # e.g. O in HOH
          hasatom = np.sum(g.an == an) > 0
@@ -234,6 +237,10 @@ class PDBFile:
       crd, mask = self.coords('n ca c o cb'.split())
       return crd
 
+   def ca(self):
+      crd, mask = self.coords('ca')
+      return crd
+
    def ncac(self):
       crd, mask = self.coords('n ca c'.split())
       return crd
@@ -286,6 +293,8 @@ def read_pdb_atoms(fname_or_buf):
          # contents = str(inp.read())
    else:
       contents = fname_or_buf
+      if contents.count('ATOM  ') == 0 and contents.count('HETATM') == 0:
+         raise ValueError(f'bad pdb: {contents}')
    if contents.startswith("b'"):
       contents = contents[2:]
 

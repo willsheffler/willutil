@@ -14,6 +14,10 @@
 			"shell_cmd": "cd $folder; python willutil/tests/pdb/test_pdbdump.py &> log/sublime_build.log"
 		},
 		{
+			"name": "test_xtalfit.py",
+			"shell_cmd": "cd $folder; rm -rf debugpdbs/*; python willutil/tests/sym/test_xtalfit.py &> log/sublime_build.log"
+		},
+		{
 			"name": "test_asuslide.py",
 			"shell_cmd": "cd $folder; rm -rf debugpdbs/*; python willutil/tests/sym/test_asuslide.py &> log/sublime_build.log"
 		},

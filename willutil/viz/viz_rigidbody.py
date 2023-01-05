@@ -6,7 +6,7 @@ from willutil.rigid.rigidbody import RigidBody, RigidBodyFollowers
 @pymol_load.register(RigidBodyFollowers)
 def pymol_viz_RigidBodyFollowers(bodies, state, name='RigidBodyFollowers', addtocgo=None, **kw):
 
-   wu.showme(bodies.bodies, name=name, **kw)
+   wu.showme(bodies.bodies, name=name, topcolors=[(1, 1, 1)], **kw)
    return
 
    import pymol

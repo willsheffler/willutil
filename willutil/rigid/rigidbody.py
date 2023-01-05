@@ -45,6 +45,10 @@ class RigidBodyFollowers:
             nbrs.append(i)
       return nbrs
 
+   def dump_pdb(self, fname):
+      coords = self.asym.allcoords.reshape(-1, 3, 4)
+      wu.pdb.dump_pdb_from_ncac_points(fname, coords, nchain=len(self.bodies))
+
    def frames(self):
       return np.stack([b.xfromparent for b in self.bodies])
 
@@ -205,6 +209,12 @@ class RigidBody:
    def com(self):
       return self.position @ self._com
 
+   def setcom(self, newcom):
+      pos = self.position
+      pos[:, 3] = newcom - self._com
+      pos[3, 3] = 1
+      self.position = pos
+
    def comdirn(self):
       return wu.hnormalized(self.com())
 
@@ -232,6 +242,11 @@ class RigidBody:
       # ic(self.clashdis)
       clashdis = clashdis or self.clashdis
       return self.contact_count(other, self.clashdis)
+
+   def hasclash(self, other, clashdis=None):
+      clashdis = clashdis or self.clashdis
+      isect = wu.cpp.bvh.bvh_isect(self.bvh, other.bvh, self.position, other.position, clashdis)
+      return isect
 
    def point_contact_count(self, other, contactdist=8):
       p = self.interactions(other, contactdist=contactdist)

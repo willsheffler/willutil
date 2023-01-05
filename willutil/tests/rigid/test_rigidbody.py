@@ -87,7 +87,7 @@ def test_rigidbody_viz(noshow=True):
    xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']]).T
    body = wu.RigidBody(xyz)
    xform = wu.hrot([1, 0, 0], 180)
-   body2 = wu.RigidBody(xyz, parent=body, xfromparent=xform)
+   body2 = wu.RigidBody(parent=body, xfromparent=xform)
 
    wu.showme([body, body2], headless=noshow)
 

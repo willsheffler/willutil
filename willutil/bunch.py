@@ -33,7 +33,8 @@ class Bunch(dict):
 
    def __str__(self):
       s = 'Bunch('
-      ', '.join(f'{k}={v}' for k, v in self.items())
+      s += ', '.join([f'{k}={v}' for k, v in self.items()])
+
       s += ')'
       if len(s) > 120:
          s = 'Bunch(' + os.linesep

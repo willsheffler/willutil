@@ -590,10 +590,12 @@ def rand_vec(shape=(), seed=None):
    if seed is not None:
       randstate = np.random.get_state()
       np.random.seed(seed)
-
+   if isinstance(shape, int):
+      shape = (shape, )
+   v = hvec(np.random.randn(*(shape + (3, ))))
    if isinstance(shape, int): shape = (shape, )
    if seed is not None: np.random.set_state(randstate)
-   return hvec(np.random.randn(*(shape + (3, ))))
+   return v
 
 def rand_unit(shape=(), seed=None):
    if seed is not None:
@@ -778,10 +780,21 @@ def ray_in_plane(plane, ray):
    assert ray.shape[-2:] == (4, 2)
    return (point_in_plane(plane, ray[..., :3, 0]) * point_in_plane(plane, ray[..., :3, 0] + ray[..., :3, 1]))
 
-def h_point_line_dist(point, cen, norm):
+def hpointlineclose(point, cen, norm):
+   point = hpoint(point)
+   cen = hpoint(cen)
+   norm = hnormalized(norm)
    point = point - cen
    perp = hprojperp(norm, point)
-   return hnorm(perp)
+   return perp + cen
+
+def h_point_line_dist(point, cen, norm):
+   point = hpoint(point)
+   cen = hpoint(cen)
+   norm = hnormalized(norm)
+   point = point - cen
+   perp = hprojperp(norm, point)
+   return wu.hnorm(perp)
 
 def intesect_line_plane(p0, n, l0, l):
    l = hm.hnormalized(l)
