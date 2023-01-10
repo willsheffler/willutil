@@ -218,6 +218,8 @@ _nxforms = 0
 
 @functools.lru_cache(10)
 def get_different_colors(ncol, niter=1000, colorseed=1):
+   if ncol <= 0:
+      return np.array([])
    rs = np.random.get_state()
    np.random.seed(colorseed)
    maxmincoldis, best = 0, None
@@ -390,6 +392,16 @@ def show_ndarray_lines(
       cmd.load_cgo(cgo, name + '_%i' % i)
    else:
       addtocgo.extend(cgo)
+
+def cgo_frame_points(frames, scale, showpts, scaleptrad=1, **kw):
+   cgo = list()
+
+   for i, frame in enumerate(frames):
+      for p, r, c in zip(*showpts):
+         if i == 0: ic(p)
+         cgo += cgo_sphere(scale * wu.hxform(frame, p), rad=scale * scaleptrad * r, col=c)
+
+   return cgo
 
 def show_ndarray_line_strip(
    toshow,

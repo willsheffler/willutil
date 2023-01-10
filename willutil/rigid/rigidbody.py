@@ -2,7 +2,8 @@ import numpy as np
 import willutil as wu
 
 class RigidBodyFollowers:
-   def __init__(self, bodies=None, coords=None, frames=None, cellsize=1, **kw):
+   def __init__(self, bodies=None, coords=None, frames=None, cellsize=1, symtype='NOSYM', **kw):
+      self.symtype = symtype.upper()
       if bodies is not None:
          self.asym = bodies[0]
          self.symbodies = bodies[1:]
@@ -11,14 +12,37 @@ class RigidBodyFollowers:
          self.asym = RigidBody(coords, **kw)
          self.symbodies = [RigidBody(parent=self.asym, xfromparent=x, **kw) for x in frames[1:]]
          self.bodies = [self.asym] + self.symbodies
-      self.cellsize = cellsize
+      cellsize = wu.to_xyz(cellsize)
+      self._cellsize = cellsize.copy()
+      self.orig_cellsize = cellsize.copy()
+      self.is_point_symmetry = np.sum(wu.hnorm(wu.hcart3(self.frames()))) < 0.0001
+      self.rootbody = self.asym
+      if not self.asymexists:
+         # assert 0
+         self.bodies[0] = RigidBody(parent=self.asym, xfromparent=frames[0], **kw)
+         self.asym = self.bodies[0]
+
+   @property
+   def asymexists(self):
+      return not self.symtype.startswith('H')
 
    def clashes(self, nbrs=None):
+      clashes = self.clash_list(nbrs)
+      return len(clashes) > 0
+
+   def clash_coms(self, nbrs=None):
+      clashes = self.clash_list(nbrs)
+      return [self.bodies[i].com() for i in clashes]
+
+   def clash_directions(self, nbrs=None):
+      clashes = self.clash_list(nbrs)
+      return [self.bodies[i].com() - self.asym.com() for i in clashes]
+
+   def clash_list(self, nbrs=None):
       if isinstance(nbrs, int): nbrs = [nbrs]
-      if nbrs is None:
-         clsh = [self.asym.clashes(b) for b in self.symbodies]
-         return any(clsh)
-      return any(self.asym.clashes(self.bodies[i]) for i in nbrs)
+      indices = range(1, len(self.bodies)) if nbrs is None else nbrs
+      clashes = [i for i in indices if self.asym.clashes(self.bodies[i])]
+      return clashes
 
    def contact_fraction(self, nbrs=None):
       if isinstance(nbrs, int): nbrs = [nbrs]
@@ -27,13 +51,49 @@ class RigidBodyFollowers:
       else:
          return [self.asym.contact_fraction(self.bodies[i]) for i in nbrs]
 
+   @property
+   def cellsize(self):
+      return self._cellsize
+      # return self._cellsize * self.asym.scale
+
+   @cellsize.setter
+   def cellsize(self, cellsize):
+      self._cellsize = cellsize
+      # self.asym.scale = cellsize / self._cellsize
+
+   @property
+   def scale(self):
+      return self._cellsize / self.orig_cellsize
+
+   @scale.setter
+   def scale(self, scale):
+      # ic(scale, self.scale, self.cellsize, self._cellsize, self.orig_cellsize)
+      scalefactor = scale / self.scale
+      self.scale_frames(scalefactor)
+
    def scale_frames(self, scalefactor, safe=True):
+      if safe and self.is_point_symmetry:
+         raise ValueError(f'scale_frames only valid for non-point symmetry')
+      scalefactor = wu.to_xyz(scalefactor)
+      if self.symtype.startswith('H'):
+         assert np.allclose(scalefactor[0], scalefactor[1])
+
       self.cellsize *= scalefactor
-      changed = any([b.scale_frame(scalefactor) for b in self.bodies])
-      if not changed:
-         if safe:
-            raise ValueError(f'no frames could be scaled, scale_frames only valid for unbounded symmetry')
-      return changed
+      self.asym.scale = self.asym.scale * scalefactor
+      return True
+      # changed = any([b.scale_frame(scalefactor) for b in self.bodies])
+      # if not changed:
+      #    if safe:
+      #       raise ValueError(f'no frames could be scaled, scale_frames only valid for unbounded symmetry')
+      # return changed
+
+   # def set_scale(self, scale, safe=True):
+   #    self.cellsize *= scalefactor
+   #    changed = any([b.set_frame_scale(scale) for b in self.bodies])
+   #    if not changed:
+   #       if safe:
+   #          raise ValueError(f'no frames could be scaled, scale_frames only valid for unbounded symmetry')
+   #    return changed
 
    def get_neighbors_by_axismatch(self, axis, perp=False):
       nbrs = list()
@@ -51,6 +111,12 @@ class RigidBodyFollowers:
 
    def frames(self):
       return np.stack([b.xfromparent for b in self.bodies])
+
+   def origins(self):
+      return np.stack([wu.hcart3(b.xfromparent) for b in self.bodies])
+
+   def orientations(self):
+      return np.stack([wu.hori3(b.xfromparent) for b in self.bodies])
 
    def __len__(self):
       return len(self.bodies)
@@ -74,8 +140,8 @@ class RigidBody:
    ):
       self.extra = extra
       self.parent = parent
-      self.xfromparent = xfromparent.copy()
-      assert wu.hvalid(self.xfromparent)
+      self._xfromparent = xfromparent.copy()
+      assert wu.hvalid(self._xfromparent)
 
       self._position = position
       self._coords = None
@@ -84,7 +150,6 @@ class RigidBody:
       self.clashdis = clashdis
       self.contactdis = contactdis
       self.usebvh = usebvh
-      self._scale = scale
       self.tolocal = np.eye(4)
       self.toglobal = np.eye(4)
       assert (parent is None) != (coords is None)
@@ -115,25 +180,34 @@ class RigidBody:
          self.clashdis = parent.clashdis
          self.contactdis = parent.contactdis
          self.usebvh = parent.usebvh
-         self._scale = parent.scale
+         self._scale = None
+      if parent is None:
+         scale = wu.to_xyz(scale)
+         self._scale = scale
 
       self.children = list()
 
    def __len__(self):
       return len(self._coords)
 
+   @property
+   def xfromparent(self):
+      return wu.hscaled(self.scale, self._xfromparent)
+
    def scale_frame(self, scalefactor):
-      if self.xfromparent is not None:
-         if wu.hnorm(self.xfromparent[:, 3]) > 0.0001:
-            self.xfromparent = wu.hscaled(scalefactor, self.xfromparent)
-            return True
-      return False
+      self.scale *= scalefactor
+      # return
+      # if self.xfromparent is not None:
+      #    if wu.hnorm(self.xfromparent[:, 3]) > 0.0001:
+      #       self.xfromparent = wu.hscaled(scalefactor, self.xfromparent)
+      #       return True
+      # return False
 
    @property
    def state(self):
       assert self.parent is None
-      state = wu.Bunch(position=self.position, scale=self.scale())
-      assert isinstance(state.scale, (int, float))
+      state = wu.Bunch(position=self.position, scale=self.scale)
+      assert isinstance(state.scale, (int, float, np.ndarray))
       return state
 
    @state.setter
@@ -158,30 +232,35 @@ class RigidBody:
       self.position = wu.hxform(x, self.position)
       self.moveby(com)
 
-   def set_scale(self, scale):
-      assert self.parent is None
-      assert isinstance(scale, (int, float))
-      self._scale = scale
-
+   @property
    def scale(self):
       if self.parent is None:
          return self._scale
-      return self.parent.scale()
+      return self.parent.scale
+
+   @scale.setter
+   def scale(self, scale):
+      # assert self.parent is None
+      if self.parent:
+         self.parent.scale = wu.to_xyz(scale)
+      else:
+         self._scale = scale
 
    @property
    def position(self):
       if self.parent is None:
          return self._position
-      x = self.xfromparent.copy()
-      x[:3, 3] *= self.scale()
-      return x @ self.parent.position
+      # x = self.xfromparent.copy()
+      # x[:3, 3] *= self.scale
+      return self.xfromparent @ self.parent.position
 
    @position.setter
    def position(self, newposition):
-      if self.parent != None:
-         raise ValueError(f'RigidBody with parent cant have position set')
       if newposition.shape[-2:] != (4, 4):
          raise ValueError(f'RigidBody position is 4,4 matrix (not point)')
+      if self.parent != None:
+         # raise ValueError(f'RigidBody with parent cant have position set')
+         self.parent.position = wu.hinv(self.xfromparent) @ newposition
       self._position = newposition.reshape(4, 4)
 
    @property
@@ -307,6 +386,6 @@ class RigidBody:
          crd = self.allcoords
          wu.pdb.dumppdb(fname, crd, nchain=len(self.children) + 1, **kw)
       elif spacegroup is not None:
-         wu.pdb.dumppdb(fname, self.coords, spacegroup=spacegroup, cellsize=self.scale(), **kw)
+         wu.pdb.dumppdb(fname, self.coords, spacegroup=spacegroup, cellsize=self.scale, **kw)
       else:
          wu.pdb.dumppdb(fname, self.coords, **kw)

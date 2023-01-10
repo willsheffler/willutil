@@ -16,8 +16,8 @@ def pymol_viz_RigidBodyFollowers(bodies, state, name='RigidBodyFollowers', addto
    cgo = list()
    # col = get_different_colors
    pymol_viz_RigidBody(bodies.asym, state, name, addtocgo=cgo, **kw)
-   for b in bodies.symbodies:
-      pymol_viz_RigidBody(b, state, name, addtocgo=cgo, **kw)
+   for body in bodies.symbodies:
+      pymol_viz_RigidBody(body, state, name, addtocgo=cgo, **kw)
 
    if addtocgo is None:
       pymol.cmd.load_cgo(cgo, f'{name}_{state["seenit"][name]}')

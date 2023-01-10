@@ -2,20 +2,141 @@ import numpy as np, functools as ft
 import willutil as wu
 from willutil.sym.asuslide import asuslide
 
-# ic.configureOutput(includeContext=True, contextAbsPath=True)
+ic.configureOutput(includeContext=True, contextAbsPath=True)
 
 def main():
-   asuslide_case2()
+   # asuslide_case2()
    # asuslide_case1()
-   # test_asuslide_I4132()
-   assert 0
+   # assert 0
    test_asuslide_L442()
-   test_asuslide_I4132_clashframes()
-   test_asuslide_I4132()
+   # test_asuslide_I4132_clashframes()
+   # test_asuslide_I4132()
    test_asuslide_oct()
    test_asuslide_L632()
-   test_asuslide_p213()
+   # test_asuslide_p213()
    test_asuslide_I213()
+
+   test_asuslide_helix_nfold1()
+   test_asuslide_helix_nfold3()
+   test_asuslide_helix_nfold5()
+
+def helix_slide(
+   helix,
+   coords,
+   cellsize,
+   turns=2,
+   contactfrac=0,
+   step=0.03,
+   maxstep=10,
+   iters=4,
+   breathe=[2.5, 1, 0.5, 0],
+   showme=False,
+   closest=9,
+   **kw,
+):
+   assert np.allclose(cellsize[0], cellsize[1])
+   cellsize = cellsize.copy()
+
+   hframes = helix.frames(maxdist=9e9, radius=cellsize[0], spacing=cellsize[2], turns=turns, closest=closest)
+   rb = wu.RigidBodyFollowers(coords=coords, frames=hframes, symtype='H', cellsize=cellsize, clashdis=8, contactdis=16)
+   hstep = np.array([0.00, 0.00, step])
+   rstep = np.array([step, step, 0.00])
+   sstep = np.array([step, step, step])
+   tooclose = ft.partial(wu.rigid.tooclose_overlap, contactfrac=contactfrac)
+   for i, expand in enumerate(breathe):
+      for j in range(iters):
+         for step in (hstep, rstep):
+            scale = (1 + step * expand)
+            wu.sym.slide_scale(
+               rb,
+               cellsize=1,
+               step=step,
+               tooclosefunc=tooclose,
+               showme=showme,
+               maxstep=maxstep,
+               moveasymunit=False,
+               **kw,
+            )
+            if expand > 0:
+               rb.scale_frames(scale)
+            if showme:
+               wu.showme(rb, **kw)
+   return rb
+
+def test_asuslide_helix_nfold1():
+   showmeopts = wu.Bunch(sphereradius=4)
+
+   np.random.seed(7)
+   xyz = wu.tests.point_cloud(100, std=30, outliers=0)
+
+   h = wu.sym.Helix(turns=15, phase=0.5, nfold=1)
+   spacing = 50
+   rad = h.turns * h.nfold * spacing / 2 / np.pi
+   hgeom = wu.Bunch(radius=rad, spacing=spacing, turns=2)
+   cellsize = [hgeom.radius, hgeom.radius, hgeom.spacing]
+
+   rb = helix_slide(h, xyz, cellsize, iters=0, closest=9)
+   rb2 = helix_slide(h, xyz, cellsize, contactfrac=0.1, closest=9)
+   rb3 = helix_slide(h, xyz, cellsize, contactfrac=0.1, closest=20)
+
+   # ic(rb.)
+
+   # wu.showme(rb, **showmeopts)
+   # wu.showme(rb2, **showmeopts)
+
+   # ic(rb.cellsize)
+   # ic(rb2.cellsize)
+   assert np.allclose(rb.cellsize, [119.36620732, 119.36620732, 50.])
+   assert np.allclose(rb2.cellsize, rb3.cellsize)
+   assert np.allclose(rb2.cellsize, [112.47430976, 112.47430976, 39.59507625])
+
+def test_asuslide_helix_nfold3():
+   showmeopts = wu.Bunch(sphereradius=4)
+
+   np.random.seed(7)
+   xyz = wu.tests.point_cloud(100, std=30, outliers=0)
+
+   h = wu.sym.Helix(turns=6, phase=0.5, nfold=3)
+   spacing = 50
+   rad = h.turns * spacing / 2 / np.pi
+   hgeom = wu.Bunch(radius=rad, spacing=spacing, turns=2)
+   cellsize = [hgeom.radius, hgeom.radius, hgeom.spacing]
+
+   rb = helix_slide(h, xyz, cellsize, iters=0, closest=20)
+   rb2 = helix_slide(h, xyz, cellsize, contactfrac=0.1, closest=20, steps=10, iters=10)
+
+   # wu.showme(rb, **showmeopts)
+   # wu.showme(rb2, **showmeopts)
+   # ic(rb.cellsize)
+   # ic(rb2.cellsize)
+
+   assert np.allclose(rb.cellsize, [47.74648293, 47.74648293, 50.])
+   assert np.allclose(rb2.cellsize, [42.38059534, 42.38059534, 140.10179698])
+
+def test_asuslide_helix_nfold5():
+   showmeopts = wu.Bunch(sphereradius=4)
+
+   np.random.seed(7)
+   xyz = wu.tests.point_cloud(100, std=30, outliers=0)
+
+   h = wu.sym.Helix(turns=4, phase=0.1, nfold=5)
+   spacing = 40
+   rad = h.turns * h.nfold * spacing / 2 / np.pi
+   hgeom = wu.Bunch(radius=rad, spacing=spacing, turns=2)
+   cellsize = [hgeom.radius, hgeom.radius, hgeom.spacing]
+
+   rb = helix_slide(h, xyz, cellsize, iters=0, closest=0)
+   rb2 = helix_slide(h, xyz, cellsize, contactfrac=0.1, closest=9)
+   rb3 = helix_slide(h, xyz, rb2.cellsize, iters=0, closest=0)
+
+   # wu.showme(rb, **showmeopts)
+   # wu.showme(rb2, **showmeopts)
+   # wu.showme(rb3, **showmeopts)
+   # ic(rb.cellsize)
+   # ic(rb2.cellsize)
+
+   assert np.allclose(rb.cellsize, [127.32395447, 127.32395447, 40.])
+   assert np.allclose(rb2.cellsize, [159.68665321, 159.68665321, 38.81661124])
 
 def test_asuslide_L442():
    sym = 'L4_42'
@@ -41,7 +162,7 @@ def test_asuslide_L442():
    primary_frames = wu.hscaled(csize, primary_frames)
    frames = primary_frames
 
-   slid = asuslide(sym, xyz, frames, showme=True, maxstep=30, step=10, iters=10, clashiters=0, clashdis=8,
+   slid = asuslide(sym, xyz, frames, showme=False, maxstep=30, step=10, iters=10, clashiters=0, clashdis=8,
                    contactdis=16, contactfrac=0.2, sphereradius=2, cellsize=csize, towardaxis=True, alongaxis=False,
                    fresh=False, centerasu=False, cellscalelimit=1.2)
    # ic(slid.cellsize)
@@ -69,7 +190,7 @@ def test_asuslide_I4132_clashframes():
 
    primaryframes = wu.hscaled(csize, primaryframes)
    frames = wu.sym.frames(sym, ontop=primaryframes, cells=(-1, 1), cellsize=csize, center=wu.hcom(xyz),
-                          radius=csize * 0.5)
+                          maxdist=csize * 0.5)
    # frames = primaryframes
 
    tooclose = ft.partial(wu.rigid.tooclose_primary_overlap, nprimary=len(primaryframes))
@@ -97,7 +218,7 @@ def asuslide_case2():
    xyz = pdb.ca()
    fracremains = 1.0
    primryframes = xtal.primary_frames(cellsize)
-   # frames = wu.sym.frames(sym, ontop=primryframes, cells=(-1, 1), cellsize=cellsize, center=cen, radius=cellsize * 0.5)
+   # frames = wu.sym.frames(sym, ontop=primryframes, cells=(-1, 1), cellsize=cellsize, center=cen, maxdist=cellsize * 0.5)
    frames = primryframes
    slid = wu.sym.asuslide(
       sym=sym,
@@ -220,7 +341,7 @@ def test_asuslide_I213():
    assert np.allclose(wu.hcart3(slid.asym.globalposition), [73.52211643, 54.76770372, 63.50804849])
 
    # frames = wu.sym.frames(sym, ontop=primary_frames, cells=(-1, 1), cellsize=csize, center=asucen, asucen=asucen,
-   # radius=csize * 0.5)
+   # maxdist=csize * 0.5)
    # slid2 = asuslide(sym, xyz, frames, showme=False, maxstep=50, step=10, iters=10, clashiters=0, clashdis=8,
    # contactdis=16, contactfrac=0.2, sphereradius=2, cellsize=csize, extraframesradius=1.5 * csize,
    # towardaxis=True, alongaxis=False, fresh=False, centerasu=False)
@@ -279,14 +400,14 @@ def test_asuslide_I4132():
    # ic(wu.hcart3(slid.asym.globalposition))
    x = wu.sym.Xtal(sym)
    x.dump_pdb('test.pdb', slid.asym.coords, cellsize=slid.cellsize)
-   print(x)
+
    assert np.allclose(slid.cellsize, 187.67194624000027)
    assert np.allclose(wu.hcart3(slid.asym.globalposition), [2.75203393, -12.89901091, -25.10636146])
 
    # cen = asucen
    cen = wu.hcom(xyz + [0, 0, 0, 0])
    frames = wu.sym.frames(sym, ontop=primary_frames, cells=(-1, 1), cellsize=csize, center=asucen, asucen=cen,
-                          radius=csize * 0.5)
+                          maxdist=csize * 0.5)
    # ic(len(frames))
    # assert 0
 
@@ -336,7 +457,7 @@ def test_asuslide_p213():
    #    cellsize=csize,
    #    center=asucen,
    #    asucen=asucen,
-   #    radius=csize * 0.8,
+   #     maxdist=csize * 0.8,
    # )
    frames = primary_frames
 
@@ -379,4 +500,4 @@ def test_asuslide_oct():
 
 if __name__ == '__main__':
    main()
-   ic('test_aluslide DONE')
+   print('test_aluslide DONE')

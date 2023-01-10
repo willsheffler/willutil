@@ -34,6 +34,7 @@ class RBLatticeOverlapObjective:
    def __call__(self, state, **kw):
       assert isinstance(state, wu.Bunch)
       assert isinstance(state.scale, (int, float))
+      ic(state.scale)
       self.rbojective.bodies[0].set_scale(state.scale)
       return self.rbojective(state.position, **kw)
 

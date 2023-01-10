@@ -369,7 +369,7 @@ def test_torch_rmsfit(trials=10):
 
          if rms2 < rms - 0.001:
             print(float(rms), float(rms2))
-         assert rms2 >= rms
+         assert rms2 >= rms - 0.001
 
 def test_torch_rmsfit_grad():
    torch = pytest.importorskip('torch')

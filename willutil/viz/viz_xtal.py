@@ -190,7 +190,7 @@ def pymol_viz_Xtal(
    elif showpoints not in (None, False, 0):
       showpts = xtal_show_points(showpoints, **kw)
       frames = toshow.cellframes(cellsize=1, cells=cells)
-      cgo = cgo_frame_points(frames, scale, showpts, **kw)
+      cgo = wu.viz.cgo_frame_points(frames, scale, showpts, **kw)
       # cgo = list()
       # for i, frame in enumerate(frames):
       # for p, r, c in zip(*showpts):
@@ -201,7 +201,7 @@ def pymol_viz_Xtal(
 
    if showgenframes:
       col = (1, 1, 1)
-      cgo = cgo_frame_points(toshow.genframes, scale, showpts, **kw)
+      cgo = wu.viz.cgo_frame_points(toshow.genframes, scale, showpts, **kw)
       # cgo = list()
       # for i, frame in enumerate(toshow.genframes):
       # cgo += cgo_sphere(scale * wu.hxform(frame, showpts[0]), rad=scale * 0.05, col=col)
@@ -215,16 +215,6 @@ def pymol_viz_Xtal(
       pymol.cmd.load_cgo(allcgo, f'{name}_all')
 
    return state
-
-def cgo_frame_points(frames, scale, showpts, scaleptrad=1, **kw):
-   cgo = list()
-
-   for i, frame in enumerate(frames):
-      for p, r, c in zip(*showpts):
-         if i == 0: ic(p)
-         cgo += cgo_sphere(scale * wu.hxform(frame, p), rad=scale * scaleptrad * r, col=c)
-
-   return cgo
 
 def xtal_show_points(which, pointscale=1, pointshift=(0, 0, 0), scaleptrad=1, **kw):
    s = pointscale * scaleptrad

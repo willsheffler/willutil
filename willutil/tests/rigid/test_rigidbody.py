@@ -71,9 +71,11 @@ def test_rigidbody_parent():
    xform = wu.hrot([1, 0, 0], 180)
    b = wu.RigidBody(parent=a, xfromparent=xform)
    a.position = wu.hrand()
-   with pytest.raises(ValueError):
-      b.position = np.eye(4)
    assert np.allclose(b.position, xform @ a.position)
+   # with pytest.raises(ValueError):
+   b.position = np.eye(4)
+   assert np.allclose(b.position, np.eye(4))
+   assert np.allclose(a.position, wu.hinv(xform))
 
    a.position = wu.hrand()
    xform2 = wu.hrot([1, 1, 0], 120)

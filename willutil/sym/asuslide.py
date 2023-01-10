@@ -221,9 +221,12 @@ def slide_scale(
    maxstep=100,
    showme=False,
    cellscalelimit=9e9,
+   moveasymunit=True,
    **kw,
 ):
 
+   cellsize = wu.to_xyz(cellsize)
+   step = wu.to_xyz(step)
    cellsize0 = cellsize
 
    iflip, flip = 0, -1.0
@@ -235,7 +238,9 @@ def slide_scale(
       close = tooclosefunc(bodies)
       if iflip + close: break
 
+      # ic(cellsize, flip, step)
       delta = (cellsize + flip * step) / cellsize
+      assert np.min(np.abs(delta)) > 0.0001
       cellsize *= delta
 
       changed = bodies.scale_frames(delta, safe=False)
@@ -245,14 +250,14 @@ def slide_scale(
 
       newpos = bodies.asym.position
       newpos[:3, 3] *= delta
-      bodies.asym.position = newpos
+      if moveasymunit: bodies.asym.position = newpos
       if showme: wu.showme(bodies, name='scale', **kw)
-      if cellsize / cellsize0 > cellscalelimit:
+      if np.all(cellsize / cellsize0 > cellscalelimit):
          # assert 0
          break
 
    else:
-      bodies.asym.position = initpos
+      if moveasymunit: bodies.asym.position = initpos
       bodies.scale_frames(initcell / cellsize)
       if showme: wu.showme(bodies, name='resetscale', **kw)
       return initcell
@@ -262,7 +267,7 @@ def slide_scale(
       bodies.scale_frames(delta, safe=False)
       newpos = bodies.asym.position
       newpos[:3, 3] *= delta
-      bodies.asym.position = newpos
+      if moveasymunit: bodies.asym.position = newpos
       cellsize *= delta
 
       if showme: wu.showme(bodies, 'backoffscale', **kw)

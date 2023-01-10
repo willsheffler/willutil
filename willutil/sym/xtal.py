@@ -112,7 +112,9 @@ class Xtal:
 
    def cryst1(self, cellsize):
       if self.dimension == 3:
-         return cryst1_pattern % (*(cellsize, ) * 3, self.spacegroup)
+         if isinstance(cellsize, (int, float)):
+            cellsize = np.array([cellsize] * 3, dtype=np.float64)
+         return cryst1_pattern % (*cellsize, self.spacegroup)
       else:
          return f'LAYER {self.spacegroup} {cellsize}'
 
@@ -169,10 +171,11 @@ class Xtal:
       flat=True,
       center=None,
       asucen=None,
-      radius=None,
+      maxdist=None,
       ontop=[],
       **kw,
    ):
+      assert not 'radius' in kw
       if self.dimension != 3:
          frames = wu.hscaled(cellsize, self.unitframes)
          if ontop == 'primary':
@@ -208,21 +211,21 @@ class Xtal:
       # frames[..., :3, 3] *= cellsize
       frames = wu.hscaled(cellsize, frames)
       if flat: frames = frames.reshape(-1, 4, 4)
-      ic(frames.shape)
+      # ic(frames.shape)
       # ic(frames[:10, :3, 3])
-      if radius is not None:
-         if radius <= 1: radius = radius * cellsize
+      if maxdist is not None:
+         if maxdist <= 1: maxdist = maxdist * cellsize
          if center is None: center = self.asucen(cellsize)
          if asucen is None: asucen = center
-         if radius is None: radius = 0.5 * cellsize
+         if maxdist is None: maxdist = 0.5 * cellsize
          center = wu.hpoint(center)
          asucen = wu.hpoint(asucen)
          pos = wu.hxform(frames, asucen)
          dis = wu.hnorm(pos - center)
-         ic(dis.shape)
-         ic(radius)
-         ic(center)
-         frames = frames[dis <= radius]
+         # ic(dis.shape)
+         # ic(maxdist)
+         # ic(center)
+         frames = frames[dis <= maxdist]
 
       if ontop == 'primary':
          ontop = self.primary_frames(cellsize)

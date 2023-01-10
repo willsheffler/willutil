@@ -6,6 +6,14 @@
 			"shell_cmd": "cd $folder; python willutil/runtests.py --projname willutil $file &> log/sublime_build.log"
 		},
 		{
+			"name": "test_helix",
+			"shell_cmd": "cd $folder; python willutil/tests/sym/test_helix.py &> log/sublime_build.log"
+		},
+		{
+			"name": "test_xtal",
+			"shell_cmd": "cd $folder; python willutil/tests/sym/test_xtal.py &> log/sublime_build.log"
+		},
+		{
 			"name": "make_pdb_caches.py",
 			"shell_cmd": "cd $folder; python willutil/app/make_pdb_caches.py &> log/sublime_build.log"
 		},
@@ -56,10 +64,6 @@
 		{
 			"name": "test_thgeom",
 			"shell_cmd": "cd $folder; python willutil/tests/homog/test_thgeom.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_xtal",
-			"shell_cmd": "cd $folder; python willutil/tests/sym/test_xtal.py &> log/sublime_build.log"
 		},
 		{
 			"name": "test_align_code",

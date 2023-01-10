@@ -4,6 +4,12 @@ import deferred_import
 
 import numpy as np
 
+def to_xyz(x):
+   if isinstance(x, (int, float)):
+      x = [x] * 3
+   x = np.array(x, dtype=np.float64)
+   return x
+
 def hvalid(stuff):
    if stuff.shape[-2:] == (4, 4):
       return hvalid44(stuff)
@@ -429,7 +435,7 @@ def rot(axis, angle, degrees='auto', dtype='f8', shape=(3, 3)):
       rot3[..., 3, 3] = 1.0
    return rot3
 
-def hrot(axis_or_ray, angle=None, center=None, dtype='f8', nfold=None, **kw):
+def hrot(axis_or_ray, angle=None, center=None, dtype='f8', nfold=None, hel=0.0, **kw):
    axis_or_ray = np.array(axis_or_ray, dtype=dtype)
    if axis_or_ray.shape[-1] == 2:
       assert center is None
@@ -452,6 +458,7 @@ def hrot(axis_or_ray, angle=None, center=None, dtype='f8', nfold=None, **kw):
    r[..., 1, 3] = y - r[..., 1, 0] * x - r[..., 1, 1] * y - r[..., 1, 2] * z
    r[..., 2, 3] = z - r[..., 2, 0] * x - r[..., 2, 1] * y - r[..., 2, 2] * z
    r[..., 3, 3] = 1
+   r[..., :3, 3] += hel * axis[..., :3]
    return r
 
 def hpoint(point):
@@ -766,6 +773,10 @@ def hcart(x):
 def hcart3(x):
    assert x.shape[-2:] == (4, 4)
    return x[..., :3, 3]
+
+def hori3(x):
+   assert x.shape[-2:] == (4, 4)
+   return x[..., :3, :3]
 
 def hprojperp(u, v):
    u = hvec(u)

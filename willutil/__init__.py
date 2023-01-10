@@ -1,17 +1,17 @@
 __all__ = ('MonteCarlo', 'RigidBody', 'compute_symfit', 'showme', 'halign', 'halign2', 'halign_vector', 'hangle',
            'hangle_degrees', 'hangle_of', 'hangle_of_degrees', 'hangline', 'haxis_ang_cen_of', 'haxis_angle_hel_of',
-           'haxis_angle_of', 'hcart', 'hcart3', 'hcoherence', 'hcom', 'hcom_flat', 'hconstruct', 'hcross', 'hdiff',
-           'hdist', 'hdot', 'hexpand', 'hinv', 'hline_angle', 'hmean', 'hnorm', 'hnorm2', 'hnormalized', 'hpoint',
-           'hframe', 'hparallel', 'hpow', 'hproj', 'hprojperp', 'hrand', 'hrandpoint', 'hrandrot', 'hray', 'hrmsfit',
-           'hrog', 'hrog_flat', 'hrot', 'hscaled', 'htrans', 'hvalid', 'hvec', 'hxaxis_of', 'hxform', 'hyaxis_of',
-           'hzaxis_of', 'line_angle', 'line_angle_degrees', 'rot_of', 't_rot', 'th_angle', 'th_axis', 'th_axis_angle',
-           'th_axis_angle_cen', 'th_axis_angle_cen_hel', 'th_axis_angle_hel', 'th_com', 'th_com_flat', 'th_dot',
-           'th_homog', 'th_intersect_planes', 'th_is_valid_quat_rot', 'th_mean_along', 'th_norm', 'th_norm2',
+           'haxis_angle_of', 'hcart', 'hcart3', 'hori3', 'hcoherence', 'hcom', 'hcom_flat', 'hconstruct', 'hcross',
+           'hdiff', 'hdist', 'hdot', 'hexpand', 'hinv', 'hline_angle', 'hmean', 'hnorm', 'hnorm2', 'hnormalized',
+           'hpoint', 'hframe', 'hparallel', 'hpow', 'hproj', 'hprojperp', 'hrand', 'hrandpoint', 'hrandrot', 'hray',
+           'hrmsfit', 'hrog', 'hrog_flat', 'hrot', 'hscaled', 'htrans', 'hvalid', 'hvec', 'hxaxis_of', 'hxform',
+           'hyaxis_of', 'hzaxis_of', 'line_angle', 'line_angle_degrees', 'rot_of', 't_rot', 'th_angle', 'th_axis',
+           'th_axis_angle', 'th_axis_angle_cen', 'th_axis_angle_cen_hel', 'th_axis_angle_hel', 'th_com', 'th_com_flat',
+           'th_dot', 'th_homog', 'th_intersect_planes', 'th_is_valid_quat_rot', 'th_mean_along', 'th_norm', 'th_norm2',
            'th_normalized', 'th_point', 'th_point_in_plane', 'th_point_line_dist2', 'th_proj', 'th_projperp',
            'th_quat_to_rot', 'th_quat_to_upper_half', 'th_quat_to_xform', 'th_rand_quat', 'th_rand_xform',
            'th_rand_xform_small', 'th_randpoint', 'th_randunit', 'th_randvec', 'th_ray_in_plane', 'th_rms', 'dssp',
            'th_rmsfit', 'th_rog', 'th_rot', 'th_rot_to_quat', 'th_vec', 'th_xform', 'unhomog', 'hpointlinedis',
-           'haxisof', 'hrandvec', 'hpointlineclose')
+           'haxisof', 'hrandvec', 'hpointlineclose', 'to_xyz')
 
 import os
 from deferred_import import deferred_import
@@ -27,7 +27,7 @@ def datapath(f):
 from willutil.bunch import Bunch, bunchify, unbunchify
 from willutil.timer import Timer
 from willutil.sym.symfit import compute_symfit
-from willutil.rigid.rigidbody import RigidBody
+from willutil.rigid.rigidbody import RigidBody, RigidBodyFollowers
 from willutil.search.montecarlo import MonteCarlo
 
 from willutil.pdb.pdbdump import dump_pdb_from_ncac_points
@@ -80,6 +80,7 @@ from willutil.homog import (
    axis_angle_of as haxis_angle_of,
    hcart,
    hcart3,
+   hori3,
    hcoherence,
    line_angle as hangline,
    hcom,
@@ -127,6 +128,7 @@ from willutil.homog import (
    xaxis_of,
    yaxis_of,
    zaxis_of,
+   to_xyz,
 )
 from willutil.homog.thgeom import (
    t_rot,

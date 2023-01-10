@@ -1,4 +1,4 @@
-import itertools, tempfile, sys
+import itertools, tempfile, sys, tempfile
 import numpy as np
 import pytest
 import willutil as wu
@@ -7,7 +7,7 @@ import willutil as wu
 def main():
 
    test_dump_pdb()
-   assert 0
+   # assert 0
 
    if 0:
       test_hxtal_viz(
@@ -27,18 +27,21 @@ run /home/sheffler/pymol3/misc/G222.py; gyroid(10,r=11,cen=Vec(5,5,5)); set ligh
    '''
       assert 0, 'aoisrtnoiarnsiot'
 
-   test_asucen()
    noshow = True
+
+   test_asucen(headless=noshow)
+
    test_xtal_L6m322(headless=noshow)
    test_xtal_L6_32(headless=noshow)
    # assert 0, 'stilltest viz'
 
-   test_hxtal_viz(spacegroup='I 21 3', headless=noshow)
-   test_hxtal_viz(spacegroup='P 2 3', headless=noshow)
-   test_hxtal_viz(spacegroup='P 21 3', headless=noshow)
-   test_hxtal_viz(spacegroup='I 41 3 2', headless=noshow)
-   test_hxtal_viz(spacegroup='I4132_322', headless=noshow)
-   if not noshow: assert 0
+   if not noshow:
+      test_hxtal_viz(spacegroup='I 21 3', headless=noshow)
+      test_hxtal_viz(spacegroup='P 2 3', headless=noshow)
+      test_hxtal_viz(spacegroup='P 21 3', headless=noshow)
+      test_hxtal_viz(spacegroup='I 41 3 2', headless=noshow)
+      test_hxtal_viz(spacegroup='I4132_322', headless=noshow)
+      # assert 0
 
    test_xtal_cryst1_I_21_3(dump_pdbs=False)
    test_xtal_cryst1_P_2_3(dump_pdbs=False)
@@ -60,7 +63,8 @@ def test_dump_pdb():
    asucen = xtal.asucen(use_olig_nbrs=True, cellsize=csize)
    xyz += wu.hvec(asucen)
    # xyz[:, 1] -= 2
-   xtal.dump_pdb('test.pdb', xyz, cellsize=csize, cells=(-1, 0), radius=0.5, ontop='primary')
+   with tempfile.TemporaryDirectory() as td:
+      xtal.dump_pdb(f'{td}/test.pdb', xyz, cellsize=csize, cells=(-1, 0), maxdist=0.5, ontop='primary')
 
 def test_asucen(headless=True):
    csize = 62.144
@@ -68,9 +72,9 @@ def test_asucen(headless=True):
    asucen = xtal.asucen(cellsize=csize, method='closest_approach')
    cellpts = xtal.symcoords(asucen, cellsize=csize, flat=True)
    frames = xtal.primary_frames(csize)
-   wu.showme(xtal, scale=csize)
-   wu.showme(asucen, sphere=4)
-   wu.showme(cellpts, sphere=4)
+   wu.showme(xtal, scale=csize, headless=headless)
+   wu.showme(asucen, sphere=4, headless=headless)
+   wu.showme(cellpts, sphere=4, headless=headless)
 
 def test_xtal_L6m322(headless=True):
    xtal = wu.sym.Xtal('L6m322')
