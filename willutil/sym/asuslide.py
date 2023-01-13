@@ -3,6 +3,58 @@ import numpy as np
 import willutil as wu
 from willutil.rigid.objective import tooclose_clash, tooclose_overlap
 
+def helix_slide(
+   helix,
+   coords,
+   cellsize,
+   coils=2,
+   contactfrac=0,
+   step=0.03,
+   maxstep=10,
+   iters=4,
+   breathe=[2.5, 1, 0.5, 0],
+   showme=False,
+   closest=9,
+   scalefirst=False,
+   **kw,
+):
+   assert np.allclose(cellsize[0], cellsize[1])
+   cellsize = cellsize.copy()
+   coords = coords.astype(np.float64)
+
+   hframes = helix.frames(maxdist=9e9, radius=cellsize[0], spacing=cellsize[2], coils=coils, closest=closest)
+   rb = wu.RigidBodyFollowers(coords=coords, frames=hframes, symtype='H', cellsize=cellsize, clashdis=8, contactdis=16)
+   rb.dump_pdb(f'helix_slide____.pdb')
+   hstep = np.array([0.00, 0.00, step])
+   rstep = np.array([step, step, 0.00])
+   sstep = np.array([step, step, step])
+   tooclose = functools.partial(wu.rigid.tooclose_overlap, contactfrac=contactfrac)
+   # steps = [hstep, rstep]
+   steps = [rstep, hstep]
+   if scalefirst:
+      steps = [sstep] + steps
+   for i, expand in enumerate(breathe):
+      for j in range(iters):
+
+         for step in steps:
+            scale = (1 + step * expand)
+            wu.sym.slide_scale(
+               rb,
+               cellsize=1,
+               step=step,
+               tooclosefunc=tooclose,
+               showme=showme,
+               maxstep=maxstep,
+               moveasymunit=False,
+               **kw,
+            )
+            if expand > 0:
+               rb.scale_frames(scale)
+            if showme:
+               wu.showme(rb, **kw)
+            rb.dump_pdb(f'helix_slide_{i}_{j}.pdb')
+   return rb
+
 def asuslide(
    sym,
    coords,
@@ -17,6 +69,7 @@ def asuslide(
    nbrs='auto',
    doscale=True,
    iters=5,
+   subiters=1,
    clashiters=5,
    receniters=2,
    step=10,
@@ -78,28 +131,28 @@ def asuslide(
       cellsize = slide_scale(bodies, cellsize, step=step, **kw)
       if printme: ic(f'scale {cellsize}')
    for i in range(iters):
-      for iax, (axis, axpos) in enumerate(axes):
-         axis = wu.hnormalized(axis)
-         axpos = wu.hscaled(cellsize / cellsize0, wu.hpoint(axpos))
-         if towardaxis:
-            # ic(axpos)
-            partners = axassoc[iax]
-            axisperp = wu.hnormalized(wu.hprojperp(axis, bodies.asym.com() - axpos))  # points away from axis
-            if centerasu and i < receniters:
-               recenter_asu_frames(bodies, partners=partners, method=centerasu, axis=axisperp, **kw)
-               if printme: ic(f'recenter {centerasu}')
-            else:
-               slide = slide_axis(axisperp, bodies, perp=True, nbrs=None, partners=partners, step=step, **kw)
-               if printme: ic(f'slide along {axisperp[:3]} by {slide}')
-         if alongaxis:
-            slide = slide_axis(axis, bodies, nbrs='auto', step=step, **kw)
-            printme: ic(f'slide along {axis[:3]} by {slide}')
-         if doscale and alongaxis: slide = slide_axis(bodies.asym.com(), bodies, nbrs=None, step=step, **kw)
-         elif doscale: cellsize = slide_scale(bodies, cellsize, step=step, **kw)
+      if i >= clashiters: kw.tooclosefunc = userfunc
+      for j in range(subiters):
+         for iax, (axis, axpos) in enumerate(axes):
+            axis = wu.hnormalized(axis)
+            axpos = wu.hscaled(cellsize / cellsize0, wu.hpoint(axpos))
+            if towardaxis:
+               # ic(axpos)
+               partners = axassoc[iax]
+               axisperp = wu.hnormalized(wu.hprojperp(axis, bodies.asym.com() - axpos))  # points away from axis
+               if centerasu and i < receniters:
+                  recenter_asu_frames(bodies, partners=partners, method=centerasu, axis=axisperp, **kw)
+                  if printme: ic(f'recenter {centerasu}')
+               else:
+                  slide = slide_axis(axisperp, bodies, perp=True, nbrs=None, partners=partners, step=step, **kw)
+                  if printme: ic(f'slide along {axisperp[:3]} by {slide}')
+            if alongaxis:
+               slide = slide_axis(axis, bodies, nbrs='auto', step=step, **kw)
+               printme: ic(f'slide along {axis[:3]} by {slide}')
+            if doscale and alongaxis: slide = slide_axis(bodies.asym.com(), bodies, nbrs=None, step=step, **kw)
+            elif doscale: cellsize = slide_scale(bodies, cellsize, step=step, **kw)
 
-      step *= 0.6
-      if i >= clashiters:
-         kw.tooclosefunc = userfunc
+         step *= 0.75
 
    return bodies
 
@@ -224,6 +277,7 @@ def slide_scale(
    moveasymunit=True,
    **kw,
 ):
+   if showme: wu.showme(bodies, name='scaleinput', **kw)
 
    cellsize = wu.to_xyz(cellsize)
    step = wu.to_xyz(step)

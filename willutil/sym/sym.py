@@ -98,16 +98,21 @@ def frames(
 
    return f
 
-def put_frames_on_top(frames, ontop):
+def put_frames_on_top(frames, ontop, strict=True, **kw):
    frames2 = list(frames)
    for f0 in ontop:
       for i, x in enumerate(frames2):
          if wu.hdiff(f0, x) < 0.0001:
             break
       else:
-         raise ValueError(f'ontop frame not found: {f0}')
-      del frames2[i]
-   assert len(ontop) + len(frames2) == len(frames)
+         if strict:
+            raise ValueError(f'ontop frame not found: {f0}')
+         else:
+            i = None
+      if i is not None:
+         del frames2[i]
+   if strict:
+      assert len(ontop) + len(frames2) == len(frames)
    f = np.stack(list(ontop) + frames2)
    return f
 

@@ -435,14 +435,14 @@ def rot(axis, angle, degrees='auto', dtype='f8', shape=(3, 3)):
       rot3[..., 3, 3] = 1.0
    return rot3
 
-def hrot(axis_or_ray, angle=None, center=None, dtype='f8', nfold=None, hel=0.0, **kw):
-   axis_or_ray = np.array(axis_or_ray, dtype=dtype)
-   if axis_or_ray.shape[-1] == 2:
+def hrot(axis, angle=None, center=None, dtype='f8', nfold=None, hel=0.0, **kw):
+   axis = np.array(axis, dtype=dtype)
+   if axis.shape[-1] == 2:
       assert center is None
-      center = axis_or_ray[..., 0]
-      axis = axis_or_ray[..., 1]
+      center = axis[..., 0]
+      axis = axis[..., 1]
    else:
-      axis = axis_or_ray
+      axis = axis
       center = (np.array([0, 0, 0], dtype=dtype) if center is None else np.array(center, dtype=dtype))
 
    if angle is None:
@@ -1318,6 +1318,7 @@ def hcom_flat(points):
    return np.mean(points, axis=-2)
 
 def hcom(points):
+   assert len(points) > 0
    points = hpoint(points)
    oshape = points.shape
    points = points.reshape(-1, oshape[-2], 4)

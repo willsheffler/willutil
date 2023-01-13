@@ -106,7 +106,14 @@ class RigidBodyFollowers:
       return nbrs
 
    def dump_pdb(self, fname):
-      coords = self.asym.allcoords.reshape(-1, 3, 4)
+      asym = self.asym
+      if not self.asym.isroot:
+         asym = self.asym.parent
+      coords = asym.allcoords.copy()
+      if not self.asym.isroot:
+         coords = coords[1:]
+      ic(coords.shape)
+      coords = coords.reshape(-1, 3, 4)
       wu.pdb.dump_pdb_from_ncac_points(fname, coords, nchain=len(self.bodies))
 
    def frames(self):
@@ -389,3 +396,11 @@ class RigidBody:
          wu.pdb.dumppdb(fname, self.coords, spacegroup=spacegroup, cellsize=self.scale, **kw)
       else:
          wu.pdb.dumppdb(fname, self.coords, **kw)
+
+   @property
+   def isroot(self):
+      return self.parent is None
+
+   @property
+   def isleaf(self):
+      return not self.children

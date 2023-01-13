@@ -149,6 +149,8 @@ class PDBFile:
          df = pd.DataFrame(df.to_dict())
 
       df.reset_index(inplace=True, drop=True)
+      assert len(df) > 0
+
       if inplace:
          self.init(
             df,
@@ -190,7 +192,9 @@ class PDBFile:
          mask = mask[aaonly]
       return mask
 
-   def coords(self, atomname=['n', 'ca', 'c', 'o', 'cb'], aaonly=True):
+   def coords(self, atomname=['N', 'CA', 'C', 'O', 'CB'], aaonly=True):
+      if atomname is None:
+         atomname = self.df.an.unique()
       if not self.isonlyaa():
          self = self.subset(het=False)  # sketchy?
       if not isinstance(atomname, (str, bytes)):

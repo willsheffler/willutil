@@ -13,21 +13,27 @@ class Helix:
       if phase < 0 or phase > 1:
          raise ValueError(f'helix phase must be 0-1, if you need beyond this range, adjust nturns')
 
-   def frames(self, radius, spacing, turns=1, maxdist=9e9, start=None, closest=0, **kw):
+   def dump_pdb(self, fname, coords, **kw):
+      frames = self.frames(**kw)
+      symcoords = wu.hxform(frames, coords)
+      wu.pdb.dump_pdb_from_points(fname, symcoords)
+
+   def frames(self, radius, spacing, coils=1, maxdist=9e9, start=None, closest=0, closest_upper_only=False, **kw):
       '''phase is a little artifical here, as really it just changes self.turns
          "central" frame will be ontop. if closest is given, frames will be sorted on dist to cen
          otherwise central frame will be first, then others in order from bottom to top
       '''
+      assert maxdist is not None
       axis = np.array([0, 0, 1, 0])
-      if isinstance(turns, (int, float)):
-         turns = (-turns, turns)
+      if isinstance(coils, (int, float)):
+         coils = (-coils, coils)
       if start is None:
          start = np.eye(4)
          start[0, 3] = radius
       ang = 2 * np.pi / (self.turns + self.phase)
-      lb = turns[0] * self.turns - 1
-      ub = turns[1] * self.turns + 2
-      # ic(turns, self.turns, lb, ub)
+      lb = coils[0] * self.turns - 1
+      ub = coils[1] * self.turns + 2
+      # ic(coils, self.turns, lb, ub)
       frames = list()
       for icyc in range(self.nfold):
          xcyc = wu.hrot(axis, (np.pi * 2) / self.nfold * icyc, degrees=False)
@@ -39,5 +45,14 @@ class Helix:
       frames = frames[np.argsort(dist)]
       frames = frames[dist <= maxdist]
       if closest > 0:
+         if closest_upper_only:
+            closest = 2 * (closest - 1) + 1
          frames = frames[:closest]
+         if closest_upper_only:
+            isupper = wu.hdot(wu.hnormalized([0, 1, 1]), frames[:, :, 3] - frames[0, :, 3]) >= 0
+            isupper[0] = True
+            nframes = len(frames)
+            frames = frames[isupper]
+            ic(frames.shape, nframes)
+            assert len(frames) - 1 == (nframes - 1) // 2
       return frames

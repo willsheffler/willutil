@@ -193,7 +193,7 @@ def test_hpow():
    xpow = hpow(x, -2)
    assert np.allclose(xpow, xinv @ xinv)
 
-@pytest.mark.xfail
+# @pytest.mark.xfail
 def test_hpow_float():
    x = hrot([0, 0, 1], [1, 2, 3])
    hpow(x, 0.3)

@@ -5,6 +5,13 @@ def main():
    test_helix_7_1_1_r80_s30_p20_t1_c7()
    test_helix_scaling()
    test_helix_params()
+   test_helix_upper_neighbors()
+
+def test_helix_upper_neighbors():
+   h = wu.sym.Helix(turns=9, nfold=1, turnsB=1, phase=0)
+   wu.showme(h)
+   wu.showme(h, closest=9)
+   wu.showme(h, closest=5, closest_upper_only=True)
 
 def test_helix_params():
    h = wu.sym.Helix(turns=9, nfold=1, turnsB=1, phase=0.001)
@@ -20,7 +27,7 @@ def test_helix_scaling():
    np.random.seed(7)
    xyz = wu.tests.point_cloud(100, std=30, outliers=0)
 
-   hframes = h.frames(maxdist=9e8, closest=0, radius=100, spacing=40, turns=4)
+   hframes = h.frames(maxdist=9e8, closest=0, radius=100, spacing=40, coils=4)
    rb = wu.RigidBodyFollowers(coords=xyz, frames=hframes, symtype='H')
    origorig = rb.origins()
    origori = rb.orientations()
@@ -47,13 +54,13 @@ def test_helix_scaling():
    #    ic(rb.origins())
 
    h = wu.sym.Helix(turns=9, nfold=1, turnsB=1, phase=0.5)
-   hframes = h.frames(maxdist=9e8, closest=0, radius=90, spacing=40, turns=4)
+   hframes = h.frames(maxdist=9e8, closest=0, radius=90, spacing=40, coils=4)
    rb = wu.RigidBodyFollowers(coords=xyz, frames=hframes, symtype='H')
    assert not np.allclose(rb.orientations(), origori)
 
 def test_helix_9_1_1_r100_s40_p50_t2_d80_c7():
    h = wu.sym.Helix(turns=9, nfold=1, turnsB=1, phase=0.5)
-   hframes = h.frames(maxdist=80, closest=7, radius=100, spacing=40, turns=2)
+   hframes = h.frames(maxdist=80, closest=7, radius=100, spacing=40, coils=2)
    foo = np.array([[[5.46948158e-01, -8.37166478e-01, 0.00000000e+00, 5.46948158e+01],
                     [8.37166478e-01, 5.46948158e-01, 0.00000000e+00, 8.37166478e+01],
                     [0.00000000e+00, 0.00000000e+00, 1.00000000e+00, -3.55555556e+01],
@@ -86,7 +93,7 @@ def test_helix_9_1_1_r100_s40_p50_t2_d80_c7():
 
 def test_helix_7_1_1_r80_s30_p20_t1_c7():
    h = wu.sym.Helix(turns=9, nfold=1, turnsB=1, phase=0.2)
-   hframes = h.frames(closest=9, radius=80, spacing=30, turns=1)
+   hframes = h.frames(closest=9, radius=80, spacing=30, coils=1)
    foo = np.array([[[1., 0., 0., 80.], [0., 1., 0., 0.], [0., 0., 1., 0.], [0., 0., 0., 1.]],
                    [[0.99068595, -0.13616665, 0., 79.25487568], [0.13616665, 0.99068595, 0., 10.89333193],
                     [0., 0., 1., -30.], [0., 0., 0., 1.]],

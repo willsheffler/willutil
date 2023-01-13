@@ -12,10 +12,10 @@ def pymol_viz_Helix(
    spacing=10,
    phase=0,
    points=[],
-   nturns=None,
    splitobjs=False,
    addtocgo=None,
    make_cgo_only=False,
+   coils=2,
    **kw,
 ):
    import pymol
@@ -23,7 +23,7 @@ def pymol_viz_Helix(
    v = pymol.cmd.get_view()
    allcgo = list()
 
-   frames = helix.frames(radius, spacing, phase, **kw)
+   frames = helix.frames(radius, spacing, coils, **kw)
    s = 1
    showpts = np.array([
       [0.28, 0.13, 0.13],
@@ -33,11 +33,10 @@ def pymol_viz_Helix(
    r = [1.0]
    c = [(1, 1, 1)]
    cgo = wu.viz.cgo_frame_points(frames, scale=1, showpts=(showpts, r, c), **kw)
+
    if splitobjs:
       pymol.cmd.load_cgo(cgo, f'{name}_GENPTS{i}')
    allcgo += cgo
-
-   # assert 0
 
    if addtocgo is None:
       pymol.cmd.load_cgo(allcgo, f'{name}_{state["seenit"][name]}')

@@ -27,7 +27,9 @@ def torchscorefunc(xtal, scom, cellsize, cartshift, grad=True):
 def fit_coords_to_xtal(xtal, coords, cellsize=None, domc=True, domin=False, noshift=False, **kw):
    'OK... this is a pretty inefficient way...'
    coms = wu.hcom(coords)
-   cellsize = cellsize if cellsize else 100.0
+   if isinstance(cellsize, np.ndarray):
+      cellsize = cellsize[0]
+   cellsize = cellsize if cellsize is not None else 100.0
    # ic(coms)
 
    scom = list()
@@ -76,9 +78,9 @@ def fit_coords_to_xtal(xtal, coords, cellsize=None, domc=True, domin=False, nosh
             # if mc.acceptfrac > 0.25: step *= 1.01
             # else: step *= 0.99
 
-      print(mc.best)
-      print(mc.beststate)
-      print(mc.acceptfrac)
+      # print(mc.best)
+      # print(mc.beststate)
+      # print(mc.acceptfrac)
 
       return mc.beststate.cellsize, mc.beststate.cartshift
       assert 0

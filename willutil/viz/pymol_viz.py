@@ -622,10 +622,12 @@ def clear_pymol():
 
 def showme(*args, how="pymol", **kw):
    randstate = np.random.get_state()
+   if not 'pymol' in sys.modules:
+      how = 'pdb'
    if how == "pymol":
       result = showme_pymol(*args, **kw)
    else:
-      result = NotImplemented('showme how="%s" not implemented' % how)
+      result = NotImplementedError('showme how="%s" not implemented' % how)
    np.random.set_state(randstate)
 
    return result

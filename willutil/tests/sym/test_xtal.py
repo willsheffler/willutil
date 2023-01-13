@@ -6,6 +6,20 @@ import willutil as wu
 
 def main():
 
+   # test_hxtal_viz(spacegroup='P 4 3 2', headless=False, cells=1)
+   test_xtal_cryst1_P_4_3_2(dump_pdbs=False)
+
+   # test_hxtal_viz(spacegroup='F 4 3 2', headless=False, cells=1)
+   test_xtal_cryst1_F_4_3_2(dump_pdbs=False)
+
+   # test_hxtal_viz(spacegroup='I 4 3 2', headless=False, cells=2)
+   test_xtal_cryst1_I_4_3_2(dump_pdbs=False)
+
+   # test_hxtal_viz(spacegroup='P 41 3 2', headless=False, cells=2)
+   test_xtal_cryst1_P_41_3_2(dump_pdbs=False)
+
+   assert 0
+
    test_dump_pdb()
    # assert 0
 
@@ -19,7 +33,7 @@ def main():
          fancover=10,
          symelemtwosided=True,
          showsymelems=True,
-         pointshift=(0.2, 0.2, 0.1),
+         # pointshift=(0.2, 0.2, 0.1),
          scaleptrad=1,
       )
       '''
@@ -124,6 +138,18 @@ def test_xtal_cellframes():
    assert len(xtal.cellframes(cellsize=1, cells=4)) == 64 * xtal.nsub
    assert len(xtal.cellframes(cellsize=1, cells=5)) == 125 * xtal.nsub
 
+def test_xtal_cryst1_P_4_3_2(*args, **kw):
+   helper_test_xtal_cryst1('P 4 3 2', *args, **kw)
+
+def test_xtal_cryst1_F_4_3_2(*args, **kw):
+   helper_test_xtal_cryst1('F 4 3 2', *args, **kw)
+
+def test_xtal_cryst1_I_4_3_2(*args, **kw):
+   helper_test_xtal_cryst1('I 4 3 2', *args, **kw)
+
+def test_xtal_cryst1_P_41_3_2(*args, **kw):
+   helper_test_xtal_cryst1('P 41 3 2', *args, **kw)
+
 def test_xtal_cryst1_P_2_3(*args, **kw):
    helper_test_xtal_cryst1('P 2 3', *args, **kw)
 
@@ -218,7 +244,8 @@ def test_hxtal_viz(headless=True, spacegroup='P 2 3', symelemscale=0.7, cellsize
    xtal = wu.sym.Xtal(spacegroup)
    # ic(xtal.unitframes.shape)
    cen = xtal.asucen(cellsize=cellsize, method='closest_to_cen')
-
+   # ic(cellsize, cen)
+   # assert 0
    # wu.showme(xtal.symelems, scale=cellsize)
    # wu.showme(cen, sphereradius=1)
 

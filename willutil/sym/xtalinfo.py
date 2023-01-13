@@ -14,6 +14,21 @@ def _populate_xtal_info_dict():
    ############################################################################
    # yapf: disable
    xtal_info_dict = {
+      'P 4 3 2'   : wu.Bunch( nsub=24 , spacegroup='P 4 3 2', symelems=[
+         C4 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 0, 0 ]) / 1 ),
+         C4 ( axis= [ 0,  1,  0 ] , cen= A([ 1, 0, 1 ]) / 2 ),
+
+      ]),
+      'F 4 3 2'   : wu.Bunch( nsub=96 , spacegroup='F 4 3 2', symelems=[
+         C4 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 0, 1 ]) / 2 ),
+         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 4, 1, 1 ]) / 6 ),
+      ]),
+
+      'I 4 3 2'   : wu.Bunch( nsub=48 , spacegroup='I 4 3 2', symelems=[
+         C4 ( axis= [ 0,  0,  1 ] , cen= A([ 0, 0, 0 ]) / 1 ),
+         C2 ( axis= [ 0,  1,  1 ] , cen= A([-1,-1, 1 ]) / 4 ),
+      ]),
+
       'P 2 3'    : wu.Bunch( nsub=12 , spacegroup='P 2 3', symelems=[
          C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 1, label='C3_111_000' ),
          C2 ( axis= [ 0,  0,  1 ] , cen= A([ 0, 0, 0 ]) / 1, label='C2_001_000' ),
@@ -26,6 +41,10 @@ def _populate_xtal_info_dict():
       'I 21 3'   : wu.Bunch( nsub=24 , spacegroup='I 21 3', symelems=[
          C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 1 ),
          C2 ( axis= [ 0,  0,  1 ] , cen= A([ 2, 1, 0 ]) / 4 ),
+      ]),
+      'P 41 3 2'  : wu.Bunch( nsub=24 , spacegroup='P 41 3 2', symelems=[
+         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 1 ),
+         C2 ( axis= [ 1,  0,  1 ] , cen= A([ 2, 1, 0 ]) / 8 ),
       ]),
       'I 41 3 2' : wu.Bunch( nsub=48, spacegroup='I 41 3 2', symelems=[
          # D3 ( axis= [ 1,  1,  1 ] , axis2= [ 1, -1,  0 ] , cen= A([ 1, 1, 1 ]) / 8, label='D3_111_1m0_111_8' , vizcol=(0, 1, 0)),
@@ -40,13 +59,12 @@ def _populate_xtal_info_dict():
          C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 8, label='C3_111_1m0_111_8' , vizcol=(1, 0, 0)),
          C2 ( axis= [ 1,  0,  0 ] , cen= A([-1, 0, 2 ]) / 8, label='D2_100_0m1_102_8' , vizcol=(0, 1, 0)),
          C2 ( axis= [ 1,  1,  0 ] , cen= [-0.1625,  0.0875,  0.125 ], label='D3_111_1m0_mmm_8' , vizcol=(0, 0, 1)),
-
       ]),
       'L6_32'   : wu.Bunch( nsub=None , spacegroup=None, dimension=2, symelems=[
          C3 ( axis= [ 0,  0,  1 ] , cen= A([ 0, 0, 0 ])/2, vizcol=(0.0, 1.0, 1.0) ),
          C2 ( axis= [ 0,  0,  1 ] , cen= A([ 1, 0, 0 ])/2, vizcol=(0.3, 1, 0.7) ),
       ]),
-      'L6M_322'   : wu.Bunch( nsub=None , spacegroup=None, dimension=2, symelems=[
+      'L6M_322' : wu.Bunch( nsub=None , spacegroup=None, dimension=2, symelems=[
          C3 ( axis= [ 0,  0,  1 ] , cen= A([ 0, 0, 0 ])/2, vizcol=(0.0, 1.0, 1.0) ),
          C2 ( axis= [ 0,  0,  1 ] , cen= A([ 1, 0, 0 ])/2, vizcol=(0.3, 1, 0.7) ),
          C2 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 0, 0 ])/2, vizcol=(0.5, 1, 0.8) ),

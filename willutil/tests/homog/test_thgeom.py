@@ -6,6 +6,9 @@ from willutil.homog.hgeom import *
 
 def main():
 
+   test_get_symaxis()
+
+   assert 0
    test_th_vec()
    test_th_rog()
    # assert 0, 'DONE'

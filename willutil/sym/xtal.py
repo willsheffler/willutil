@@ -118,7 +118,7 @@ class Xtal:
       else:
          return f'LAYER {self.spacegroup} {cellsize}'
 
-   def dump_pdb(self, fname, asymcoords, cellsize, cells=None, **kw):
+   def dump_pdb(self, fname, asymcoords, cellsize, cells=None, strict=False, **kw):
       cryst1 = self.cryst1(cellsize)
       asymcoords = wu.hpoint(asymcoords)
       if asymcoords.ndim == 2:
@@ -126,7 +126,7 @@ class Xtal:
       if cells == None:
          wu.pdb.dump_pdb_from_points(fname, asymcoords, header=cryst1)
       else:
-         coords = self.symcoords(asymcoords, cellsize, cells, **kw)
+         coords = self.symcoords(asymcoords, cellsize, cells, strict=strict, **kw)
          # ic(coords.shape)
          assert np.allclose(coords[0], asymcoords)
 
@@ -214,7 +214,7 @@ class Xtal:
       # ic(frames.shape)
       # ic(frames[:10, :3, 3])
       if maxdist is not None:
-         if maxdist <= 1: maxdist = maxdist * cellsize
+         if maxdist <= 1: maxdist = maxdist * np.linalg.norm(np.array(cellsize))
          if center is None: center = self.asucen(cellsize)
          if asucen is None: asucen = center
          if maxdist is None: maxdist = 0.5 * cellsize
@@ -230,17 +230,18 @@ class Xtal:
       if ontop == 'primary':
          ontop = self.primary_frames(cellsize)
       if len(ontop) > 0:
-         frames = wu.sym.put_frames_on_top(frames, ontop)
+         frames = wu.sym.put_frames_on_top(frames, ontop, **kw)
 
       return frames
 
    def generate_candidate_frames(
       self,
-      depth=100,
-      bound=2.5,
+      depth=200,
+      bound=3.0,
       genradius=9e9,
-      trials=10000,
+      trials=20000,
       cache=True,
+      # cache='nosave',
       **kw,
    ):
       cachefile = wu.datapath(f'xtal/lots_of_frames_{self.name.replace(" ","_")}.npy')
@@ -254,7 +255,7 @@ class Xtal:
          inbounds = np.logical_and(inboundslow, inboundshigh)
          x = x[inbounds]
          assert len(x) < 10000
-         if self.dimension == 3 and cache:
+         if self.dimension == 3 and cache and cache != 'nosave':
             np.save(cachefile, x)
       else:
          x = np.load(cachefile)
@@ -270,7 +271,7 @@ class Xtal:
       frames = candidates[inbounds]
       return frames
 
-   def generate_unit_symelems(self, candidates, bbox=[(0, 0, 0), (1, 1, 1)]):
+   def generate_unit_symelems(self, candidates):
       unitelems = list()
       for i, symelem in enumerate(self.symelems):
          elems = symelem.xformed(self.unitframes)
