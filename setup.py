@@ -1,9 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-   name='willutil', version='0.1', url='https://github.com/willsheffler/willutil',
-   author='Will Sheffler', author_email='willsheffler@gmail.com',
-   description='Common utility stuff extracted from various projects',
+   name='willutil', version='0.1', url='https://github.com/willsheffler/willutil', author='Will Sheffler',
+   author_email='willsheffler@gmail.com', description='Common utility stuff extracted from various projects',
    packages=find_packages(include=['willutil', 'willutil.*']), install_requires=[
       'pytest',
       'tqdm',
@@ -142,6 +141,5 @@ setup(
          'tests/testdata/pdb/1qys.pdb1.gz',
          'tests/testdata/pdb/respairdat10.nc',
          'tests/testdata/pdb/respairdat10_plus_xmap_rots.nc',
-         'tests/testdata/pdb/3asl.pdb1.gz.pickle',
       ]
    })

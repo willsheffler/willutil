@@ -20,19 +20,24 @@ def pdbfnames():
    return [test_data_path('pdb/1pgx.pdb1.gz'), test_data_path('pdb/1qys.pdb1.gz')]
 
 def three_PDBFiles():
-   return [load_test_data(f'pdb/{code}.pdb1.gz.pickle') for code in ['3asl', '1pgx', '1coi']]
+   return [wu.pdb.readpdb(test_data_path(f'pdb/{code}.pdb1.gz')) for code in ['3asl', '1pgx', '1coi']]
+   # return [load_test_data(f'pdb/{code}.pdb1.gz.pickle') for code in ['3asl', '1pgx', '1coi']]
 
 def pdbfile():
-   return load_test_data('pdb/3asl.pdb1.gz.pickle')
+   return wu.pdb.readpdb(test_data_path('pdb/3asl.pdb1.gz'))
+   # return load_test_data('pdb/3asl.pdb1.gz.pickle')
 
 def pdb1pgx():
-   return load_test_data('pdb/1pgx.pdb1.gz.pickle')
+   return wu.pdb.readpdb(test_data_path('pdb/1pgx.pdb1.gz'))
+   # return load_test_data('pdb/1pgx.pdb1.gz.pickle')
 
 def pdb1coi():
-   return load_test_data('pdb/1coi.pdb1.gz.pickle')
+   return wu.pdb.readpdb(test_data_path('pdb/1coi.pdb1.gz'))
+   # return load_test_data('pdb/1coi.pdb1.gz.pickle')
 
 def pdb1qys():
-   return load_test_data('pdb/1qys.pdb1.gz.pickle')
+   return wu.pdb.readpdb(test_data_path('pdb/1qys.pdb1.gz'))
+   # return load_test_data('pdb/1qys.pdb1.gz.pickle')
 
 def ncac():
    return wu.pdb.readpdb(pdbfname()).ncac()
