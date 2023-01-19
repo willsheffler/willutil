@@ -252,7 +252,7 @@ def run_yapf(s):
    except (PermissionError, FileNotFoundError):
       if 'pytest' in sys.modules:
          import pytest
-         pytest.importorskip('yapf_not_runnable')
+         wu.tests.force_pytest_skip('yapf not available/runnable')
 
 def process_token(t):
    if t in _tokmap:
