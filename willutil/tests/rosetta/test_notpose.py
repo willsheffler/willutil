@@ -17,6 +17,7 @@ def test_notpose_has():
    assert nopo.residue(40).has('CB')
 
 def _get_sc_coords(pose, which_resi=None, recenter_input=False, **kw):
+   pytest.importorskip('pyrosetta')
    kw = wu.Bunch(kw, _strict=False)
    if which_resi is None:
       which_resi = list(range(1, pose.size() + 1))

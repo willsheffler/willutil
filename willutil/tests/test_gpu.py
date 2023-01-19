@@ -1,9 +1,8 @@
 import pytest
 
-torch = pytest.importorskip('torch')
-
+@pytest.mark.skip
 def test_gpu_util():
-   import torch
+   torch = pytest.importorskip('torch')
 
    print('torch.cuda.is_available()', torch.cuda.is_available())
    print('torch.cuda.current_device()', torch.cuda.current_device())

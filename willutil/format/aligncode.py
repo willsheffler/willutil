@@ -2,8 +2,8 @@ import re, collections, os, subprocess, difflib, random, sys
 from contextlib import suppress
 from io import BytesIO
 
-from tokenize import (tokenize, COMMENT, NAME, NUMBER, tok_name, STRING, NEWLINE, DEDENT, INDENT,
-                      ENDMARKER, ENCODING, OP)
+from tokenize import (tokenize, COMMENT, NAME, NUMBER, tok_name, STRING, NEWLINE, DEDENT, INDENT, ENDMARKER, ENCODING,
+                      OP)
 import willutil as wu
 
 def align_code(
@@ -244,10 +244,15 @@ def run_diff(
 
 def run_yapf(s):
    # TODO: explicitly specify config file for testing
-   with subprocess.Popen('yapf', stdin=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
-      proc.stdin.write(s.encode())
-      outs, errs = proc.communicate()
-   return outs.decode()
+   try:
+      with subprocess.Popen('yapf', stdin=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+         proc.stdin.write(s.encode())
+         outs, errs = proc.communicate()
+      return outs.decode()
+   except (PermissionError, FileNotFoundError):
+      if 'pytest' in sys.modules:
+         import pytest
+         pytest.importorskip('yapf_not_runnable')
 
 def process_token(t):
    if t in _tokmap:

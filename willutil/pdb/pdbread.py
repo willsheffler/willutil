@@ -369,6 +369,7 @@ def parse_pdb_atoms(atomstr):
 def concatenate_models(df):
    import pandas as pd
    assert isinstance(df, dict)
+   df = {k: v for k, v in df.items() if len(v)}
    for m, d in df.items():
       d['mdl'] = m
    df = pd.concat(df.values())

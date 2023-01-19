@@ -1,3 +1,4 @@
+import pytest
 import willutil as wu
 import numpy as np
 
@@ -18,6 +19,7 @@ def test_add_bb_o(ncac, ncaco):
    assert 0.15 > np.mean(wu.hnorm(test[:-1] - ncaco[:-1]))
 
 def test_dssp(ncac, ncaco):
+   pytest.importorskip('mdtraj')
    ss = wu.chem.dssp(ncaco)
    assert len(ss) == len(ncaco)
 
