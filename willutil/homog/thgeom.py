@@ -291,6 +291,9 @@ def th_rms(a, b):
    assert a.shape == b.shape
    return torch.sqrt(torch.sum(torch.square(a - b)) / len(a))
 
+def th_xformpts(xform, stuff, **kw):
+   return th_xform(xform, stuff, is_points=True, **kw)
+
 def th_xform(xform, stuff, homogout='auto', **kw):
    xform = torch.as_tensor(xform).to(stuff.dtype)
    nothomog = stuff.shape[-1] == 3
@@ -299,6 +302,15 @@ def th_xform(xform, stuff, homogout='auto', **kw):
    result = _hxform_impl(xform, stuff, **kw)
    if homogout is False or homogout == 'auto' and nothomog:
       result = result[..., :3]
+
+   if result.shape[-1] == 4 and not wu.hvalid(result.detach().numpy(), **kw):
+      ic(result[:10])
+      # this is a bad copout.. should make this check handle nans correctly
+      if not stuff.shape[-2:] == (4, 1):
+         raise ValueError(
+            f'malformed homogeneous coords with shape {stuff.shape}, if points and shape is (...,4,4) try is_points=True'
+         )
+
    return result
 
 def th_rmsfit(mobile, target):

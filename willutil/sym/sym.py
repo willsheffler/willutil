@@ -45,8 +45,8 @@ def frames(
       arbitrary_step_vector = hnormalized([100, 10, 1, 0])
       arbitrary_delta = np.array([0.0001, 0.0002, 0.0003, 0])
       symx = hrot(dupaxis, 2 * np.pi * asym_index / dupnfold)
-      arbitrary_step_vector = hxform(symx, arbitrary_step_vector)
-      arbitrary_delta = hxform(symx, arbitrary_delta)
+      arbitrary_step_vector = hxformvec(symx, arbitrary_step_vector)
+      arbitrary_delta = hxformvec(symx, arbitrary_delta)
       angs = np.arange(dupnfold) / dupnfold * 2 * np.pi
       dups = hrot(dupaxis, angs)  #.reshape(-1, 4, 4)
       f2 = dups[None, :] @ f[:, None]
@@ -87,7 +87,7 @@ def frames(
          # order = np.argsort(-hdot(axis, hdot(f, axes(sym, csym))))
          # com = None
          ref = axes(sym, csym) if com is None else com
-         order = np.argsort(-hdot(axis, hxform(f, ref)))
+         order = np.argsort(-hdot(axis, hxformvec(f, ref)))
          # print(f.shape, order)
          f = f[order]
          # print(order)
@@ -176,7 +176,7 @@ def symelem_associations(symelems):
 
 def remove_if_same_axis(frames, bbaxes, onesided=True, partial_ok=False):
    assert onesided
-   axes = hxform(frames, bbaxes[0])
+   axes = hxformvec(frames, bbaxes[0])
    dots = hdot(bbaxes, axes, outerprod=True)
 
    uniq = list()

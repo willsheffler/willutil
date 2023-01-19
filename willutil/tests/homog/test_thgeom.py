@@ -6,9 +6,6 @@ from willutil.homog.hgeom import *
 
 def main():
 
-   test_get_symaxis()
-
-   assert 0
    test_th_vec()
    test_th_rog()
    # assert 0, 'DONE'
@@ -387,7 +384,7 @@ def test_torch_rmsfit_grad():
    for std in (0.01, 0.1, 1, 10, 100):
       for i in range(ntrials):
          xpq = rand_xform()
-         points1 = hrandpoint(npts) * 10
+         points1 = hrandpoint(npts, std=10)
          points2 = hxform(xpq, points1) + rand_vec(npts) * std
          points2[:, 0] += shift
          points1[:, 3] = 1
@@ -404,7 +401,7 @@ def test_torch_rmsfit_grad():
 
             rms, qhat, xpqhat = th_rmsfit(p2, q2)
             rms2 = th_rms(qhat, q)
-            assert torch.allclose(qhat, th_xform(xpqhat, p), atol=0.0001)
+            assert torch.allclose(qhat, th_xformpts(xpqhat, p), atol=0.0001)
             # ic(rms, rms2)
             assert torch.allclose(rms, rms2, atol=0.0001)
 

@@ -10,13 +10,15 @@ def to_xyz(x):
    x = np.array(x, dtype=np.float64)
    return x
 
-def hvalid(stuff):
-   if stuff.shape[-2:] == (4, 4):
+def hvalid(stuff, is_points=None, strict=False, **kw):
+   if stuff.shape[-2:] == (4, 4) and not is_points == True:
       return hvalid44(stuff)
-   if stuff.shape[-2:] == (4, 2):
+   if stuff.shape[-2:] == (4, 2) and not is_points == True:
       return is_valid_rays(stuff)
-   elif stuff.shape[-1] == 4:
+   elif stuff.shape[-1] == 4 and strict:
       return np.allclose(stuff[..., 3], 0) or np.allclose(stuff[..., 3], 1)
+   elif stuff.shape[-1] == 4:
+      return np.all(np.logical_or(np.isclose(stuff[..., 3], 0), np.isclose(stuff[..., 3], 1)))
    elif stuff.shape[-1] == 3:
       return True
    return False
@@ -29,7 +31,7 @@ def hvalid44(x):
        np.allclose(x[..., 3, :3], 0),
        np.allclose(np.linalg.det(x[..., :3, :3]), 1)])
 
-def hscaled(scale, stuff):
+def hscaled(scale, stuff, is_points=None):
    stuff = stuff.copy()
    if hvalid44(stuff):
       stuff[..., :3, 3] *= scale
@@ -80,6 +82,18 @@ def hdiff(x, y, lever=10.0):
 
    return diff
 
+def hxformpts(x, stuff, **kw):
+   assert np.allclose(stuff[..., 3], 1)
+   result = hxform(x, stuff, is_points=True, **kw)
+   assert np.allclose(result[..., 3], 1)
+   return result
+
+def hxformvec(x, stuff, **kw):
+   assert np.allclose(stuff[..., 3], 0)
+   result = hxform(x, stuff, is_points=True, **kw)
+   assert np.allclose(result[..., 3], 0)
+   return result
+
 def hxform(x, stuff, homogout='auto', **kw):
    if isinstance(stuff, list) and len(stuff) and not isinstance(stuff[0], (int, float, list, tuple)):
       return [hxform(x, v) for v in stuff]
@@ -121,6 +135,16 @@ def hxform(x, stuff, homogout='auto', **kw):
 
    if homogout is False or homogout == 'auto' and nothomog:
       result = result[..., :3]
+
+   if result.shape[-1] == 4 and not hvalid(result, **kw):
+      ic(x.shape)
+      ic(stuff.shape)
+      ic(result)
+      # this is a bad copout.. should make this check handle nans correctly
+      if not stuff.shape[-2:] == (4, 1):
+         raise ValueError(f'malformed homogeneous coords with shape {stuff.shape}, '
+                          'if passing points, try is_points=True')
+
    if orig:
       # ic(result.shape)
       if result.ndim > 2:
@@ -133,11 +157,12 @@ def hxform(x, stuff, homogout='auto', **kw):
       else:
          orig.coords = result
          result = orig
+
    return result
 
 def _hxform_impl(x, stuff, outerprod='auto', flat=False, is_points='auto'):
    if is_points == 'auto':
-      is_points = stuff.shape[-2:] != (4, 4)
+      is_points = not hvalid44(stuff)
       if is_points:
          if stuff.shape[-1] != 4 and stuff.shape[-2:] == (4, 1):
             raise ValueError(f'hxform cant understand shape {stuff.shape}')
@@ -188,7 +213,9 @@ def _hxform_impl(x, stuff, outerprod='auto', flat=False, is_points='auto'):
          a = x.reshape(newshape1)
          b = stuff.reshape(newshape2)
          result = a @ b
+
       result = result.squeeze(axis=-1)
+
       if flat:
          result = result.reshape(-1, 4)
 

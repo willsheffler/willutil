@@ -78,9 +78,13 @@ def dump_pdb_from_points(
       raise ValueError(f'bad shape for points {pts.shape}')
    if os.path.dirname(fname):
       os.makedirs(os.path.dirname(fname), exist_ok=True)
-   if nresatom == -1 and nres == -1 and pts.ndim > 2:
-      nresatom = pts.shape[-2]
-      # nresatom = len(anames)
+   if nresatom == -1 and nres == -1 and pts.ndim == 3:
+      if pts.shape[-2] < 30:  # assume nres not natom
+         nresatom = pts.shape[-2]
+      else:
+         nresatom = 1
+         pts = np.expand_dims(pts, 2)
+         mask = None if mask is None else np.expand_dims(mask, 2)
    if pts.ndim == 4:
       assert nchain < 0 or pts.shape[0] == nchain
       assert nres < 0 or pts.shape[1] == nres

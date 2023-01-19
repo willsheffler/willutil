@@ -5,22 +5,25 @@ from willutil.sym.asuslide import asuslide
 ic.configureOutput(includeContext=True, contextAbsPath=True)
 
 def main():
+
+   # asuslide_case4()
+   # assert 0
+
    test_asuslide_helix_case1()
-   assert 0
+
    test_asuslide_helix_nfold1()
    test_asuslide_helix_nfold3()
    test_asuslide_helix_nfold5()
 
-   assert 0
+   test_asuslide_I432()
+   test_asuslide_P432()
+   test_asuslide_F432()
+   test_asuslide_P4132()
+
    # asuslide_case3()
 
    # asuslide_case2()
    # asuslide_case1()
-   test_asuslide_I432()
-
-   test_asuslide_F432()
-   test_asuslide_P432()
-   test_asuslide_P4132()
    # assert 0
    test_asuslide_L442()
    test_asuslide_I4132_clashframes()
@@ -31,6 +34,54 @@ def main():
    test_asuslide_I213()
 
    ic('DONE')
+
+def asuslide_case4():
+
+   sym = 'P432'
+   xtal = wu.sym.Xtal(sym)
+   # cellsize = 99.417
+   cellsize = 76.38867528392643
+
+   pdbfile = '/home/sheffler/project/diffusion/unbounded/preslide.pdb'
+   pdb = wu.pdb.readpdb(pdbfile).subset(chain='A')
+   xyz = pdb.ca()
+   fracremains = 1.0
+   primryframes = xtal.primary_frames(cellsize)
+   cen = wu.th_com(xyz.reshape(-1, xyz.shape[-1]))
+   frames = wu.sym.frames(sym, ontop=primryframes, cells=(-1, 1), cellsize=cellsize, center=cen, maxdist=cellsize * 0.9)
+   # frames = primryframes
+   cfracmin = 0.7
+   cfracmax = 0.7
+   cdistmin = 14.0
+   cdistmax = 14.0
+   t = 1
+   slid = wu.sym.asuslide(
+      sym=sym,
+      coords=xyz,
+      frames=frames,
+      # tooclosefunc=tooclose,
+      cellsize=cellsize,
+      maxstep=50,
+      step=4,
+      iters=4,
+      subiters=4,
+      clashiters=0,
+      receniters=0,
+      clashdis=4 * t + 4,
+      contactdis=14,
+      contactfrac=0.1,
+      cellscalelimit=1.5,
+      # sphereradius=2,
+      towardaxis=False,
+      alongaxis=True,
+      # fresh=False,
+      # centerasu=None,
+      centerasu='toward_other',
+      # centerasu='closert',
+      # centerasu_at_start=t > 0.8
+      showme=False,
+   )
+   wu.showme(slid)
 
 def asuslide_case3():
 
@@ -82,33 +133,29 @@ def asuslide_case3():
 def test_asuslide_helix_case1(showme=False):
    showmeopts = wu.Bunch(sphereradius=4)
 
-   pdbfile = '/home/sheffler/project/diffusion/helix/preslide.pdb'
-   pdb = wu.pdb.readpdb(pdbfile).subset(chain='A')
-   xyz, _ = pdb.coords()
-   xyz = xyz.reshape(-1, xyz.shape[-1])
+   np.random.seed(7084203)
+   xyz = wu.tests.point_cloud(100, std=30, outliers=20)
 
    h = wu.sym.Helix(turns=15, phase=0.5, nfold=1)
-   spacing = 40
+   spacing = 50
    rad = 70
    hgeom = wu.Bunch(radius=rad, spacing=spacing, turns=2)
    cellsize = [hgeom.radius, hgeom.radius, hgeom.spacing]
-
-   rb = wu.sym.helix_slide(h, xyz, cellsize, iters=0, closest=9)
+   rb1 = wu.sym.helix_slide(h, xyz, cellsize, iters=0, closest=9)
    rb2 = wu.sym.helix_slide(h, xyz, cellsize, contactfrac=0.1, closest=9)
-   rb3 = wu.sym.helix_slide(h, xyz, cellsize, contactfrac=0.1, closest=0)
-
-   # ic(cellsize, rb.cellsize, rb2.cellsize, rb3.cellsize)
+   # rb3 = wu.sym.helix_slide(h, xyz, cellsize, contactfrac=0.1, closest=20)
+   # ic(cellsize, rb1.cellsize, rb2.cellsize, rb3.cellsize)
    # assert 0
 
-   wu.showme(rb, **showmeopts)
-   wu.showme(rb2, **showmeopts)
+   # wu.showme(rb1, **showmeopts)
+   # wu.showme(rb2, **showmeopts)
    # wu.showme(rb3, **showmeopts)
 
-   # ic(rb.cellsize)
+   # ic(rb1.cellsize)
    # ic(rb2.cellsize)
-   assert np.allclose(rb.cellsize, [133.6901522, 133.6901522, 70.])
-   assert np.allclose(rb2.cellsize, rb3.cellsize)
-   assert np.allclose(rb2.cellsize, [110.10715813, 110.10715813, 39.79093115])
+   assert np.allclose(rb1.cellsize, [70, 70, 50])
+   # assert np.allclose(rb2.cellsize, rb3.cellsize)
+   assert np.allclose(rb2.cellsize, [109.03244384, 109.03244384, 39.78456562])
 
 def test_asuslide_helix_nfold1(showme=False):
    showmeopts = wu.Bunch(sphereradius=4)
@@ -124,13 +171,13 @@ def test_asuslide_helix_nfold1(showme=False):
 
    rb = wu.sym.helix_slide(h, xyz, cellsize, iters=0, closest=9)
    rb2 = wu.sym.helix_slide(h, xyz, cellsize, contactfrac=0.1, closest=9)
-   rb3 = wu.sym.helix_slide(h, xyz, cellsize, contactfrac=0.1, closest=0)
+   rb3 = wu.sym.helix_slide(h, xyz, cellsize, contactfrac=0.1, closest=20)
 
    # ic(cellsize, rb.cellsize, rb2.cellsize, rb3.cellsize)
    # assert 0
 
-   wu.showme(rb, **showmeopts)
-   wu.showme(rb2, **showmeopts)
+   # wu.showme(rb, **showmeopts)
+   # wu.showme(rb2, **showmeopts)
    # wu.showme(rb3, **showmeopts)
 
    # ic(rb.cellsize)
@@ -599,47 +646,6 @@ def test_asuslide_P4132():
    # assert 0
 
    # wu.showme(slid2)
-
-def test_asuslide_P432():
-   sym = 'P_4_3_2'
-   xtal = wu.sym.Xtal(sym)
-   csize = 360
-   np.random.seed(7)
-   xyz = wu.tests.point_cloud(100, std=30, outliers=0)
-   asucen = xtal.asucen(use_olig_nbrs=True, cellsize=csize)
-   xyz += wu.hvec(asucen)
-   xyz[:, 1] -= 2
-
-   primary_frames = np.stack([
-      wu.hscaled(csize, np.eye(4)),
-      xtal.symelems[0].operators[1],
-      xtal.symelems[0].operators[2],
-      xtal.symelems[0].operators[3],
-      xtal.symelems[1].operators[1],
-      xtal.symelems[1].operators[2],
-      xtal.symelems[1].operators[3],
-   ])
-   primary_frames = wu.hscaled(csize, primary_frames)
-   frames = primary_frames
-
-   slid = asuslide(sym, xyz, frames, showme=False, maxstep=30, step=5, iters=10, clashiters=0, clashdis=8,
-                   contactdis=16, contactfrac=0.2, sphereradius=2, cellsize=csize, towardaxis=True, alongaxis=False,
-                   fresh=False, centerasu=False)
-   # wu.showme(slid)
-   # ic(slid.cellsize)
-   # ic(wu.hcart3(slid.asym.globalposition))
-   # x = wu.sym.Xtal(sym)
-   # x.dump_pdb(sym + '.pdb', slid.asym.coords, cellsize=slid.cellsize)
-
-   assert np.allclose(slid.cellsize, 116.32068634)
-   assert np.allclose(wu.hcart3(slid.asym.globalposition), [-119.68572701, 1.93625578, -61.36943859])
-
-   # cen = asucen
-   cen = wu.hcom(xyz + [0, 0, 0, 0])
-   frames = wu.sym.frames(sym, ontop=primary_frames, cells=(-1, 1), cellsize=csize, center=asucen, asucen=cen,
-                          maxdist=csize * 0.7)
-   # ic(len(frames))
-   # assert 0
 
    # wu.showme(slid2)
 def test_asuslide_P432():

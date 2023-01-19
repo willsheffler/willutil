@@ -24,7 +24,7 @@ def helix_slide(
 
    hframes = helix.frames(maxdist=9e9, radius=cellsize[0], spacing=cellsize[2], coils=coils, closest=closest)
    rb = wu.RigidBodyFollowers(coords=coords, frames=hframes, symtype='H', cellsize=cellsize, clashdis=8, contactdis=16)
-   rb.dump_pdb(f'helix_slide____.pdb')
+   if showme: rb.dump_pdb(f'helix_slide____.pdb')
    hstep = np.array([0.00, 0.00, step])
    rstep = np.array([step, step, 0.00])
    sstep = np.array([step, step, step])
@@ -52,7 +52,7 @@ def helix_slide(
                rb.scale_frames(scale)
             if showme:
                wu.showme(rb, **kw)
-            rb.dump_pdb(f'helix_slide_{i}_{j}.pdb')
+               rb.dump_pdb(f'helix_slide_{i}_{j}.pdb')
    return rb
 
 def asuslide(
@@ -76,9 +76,11 @@ def asuslide(
    closestfirst=True,
    centerasu='toward_partner',
    centerasu_at_start=False,
+   showme=False,
    **kw,
 ):
    kw = wu.Bunch(kw)
+   kw.showme = showme
    coords = wu.hpoint(coords).copy()
    coords = coords.reshape(-1, 4)
    axassoc = []
@@ -151,7 +153,7 @@ def asuslide(
                printme: ic(f'slide along {axis[:3]} by {slide}')
             if doscale and alongaxis: slide = slide_axis(bodies.asym.com(), bodies, nbrs=None, step=step, **kw)
             elif doscale: cellsize = slide_scale(bodies, cellsize, step=step, **kw)
-
+            if showme == 'pdb': bodies.dump_pdb(f'slide_i{i}_j{j}_iax{iax}.pdb')
          step *= 0.75
 
    return bodies

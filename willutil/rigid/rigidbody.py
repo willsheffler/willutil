@@ -113,8 +113,7 @@ class RigidBodyFollowers:
       if not self.asym.isroot:
          coords = coords[1:]
       ic(coords.shape)
-      coords = coords.reshape(-1, 3, 4)
-      wu.pdb.dump_pdb_from_ncac_points(fname, coords, nchain=len(self.bodies))
+      wu.dumppdb(fname, coords, nchain=len(self.bodies))
 
    def frames(self):
       return np.stack([b.xfromparent for b in self.bodies])

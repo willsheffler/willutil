@@ -6,19 +6,23 @@ import willutil as wu
 
 def main():
 
-   # test_hxtal_viz(spacegroup='P 4 3 2', headless=False, cells=1)
-   test_xtal_cryst1_P_4_3_2(dump_pdbs=False)
-
-   # test_hxtal_viz(spacegroup='F 4 3 2', headless=False, cells=1)
-   test_xtal_cryst1_F_4_3_2(dump_pdbs=False)
-
-   # test_hxtal_viz(spacegroup='I 4 3 2', headless=False, cells=2)
-   test_xtal_cryst1_I_4_3_2(dump_pdbs=False)
-
-   # test_hxtal_viz(spacegroup='P 41 3 2', headless=False, cells=2)
-   test_xtal_cryst1_P_41_3_2(dump_pdbs=False)
-
+   test_symelem()
    assert 0
+
+   # test_hxtal_viz(spacegroup='P 4 3 2', headless=False, cells=1)
+   # assert 0
+   # test_hxtal_viz(spacegroup='F 4 3 2', headless=False, cells=1)
+   # assert 0
+   # test_hxtal_viz(spacegroup='I 4 3 2', headless=False, cells=1)
+   # assert 0
+   # test_hxtal_viz(spacegroup='P 41 3 2', headless=False, cells=1)
+   # assert 0
+
+   test_xtal_cryst1_P_41_3_2(dump_pdbs=False)
+   test_xtal_cryst1_P_4_3_2(dump_pdbs=False)
+   test_xtal_cryst1_F_4_3_2(dump_pdbs=False)
+   test_xtal_cryst1_I_4_3_2(dump_pdbs=False)
+   # assert 0
 
    test_dump_pdb()
    # assert 0
@@ -93,8 +97,8 @@ def test_asucen(headless=True):
 def test_xtal_L6m322(headless=True):
    xtal = wu.sym.Xtal('L6m322')
 
-   ic(xtal.symelems)
-   ic(xtal.genframes.shape)
+   # ic(xtal.symelems)
+   # ic(xtal.genframes.shape)
    # ic(len(xtal.coverelems))
    # ic(len(xtal.coverelems[0]))
    # ic(len(xtal.coverelems[1]))
@@ -118,7 +122,9 @@ def test_symelem(headless=True):
    elem2 = wu.sym.SymElem(2, [1, 0, 0], [0, 10, 0])
 
    x = wu.hrand()
-   e2 = wu.hxform(x, elem1)
+   e2 = wu.hxform(x, elem1, strict=False)
+   ic(elem1.coords)
+   ic(elem2.coords)
    assert np.allclose(e2.coords, wu.hxform(x, elem1.coords))
 
    # x = wu.hrand()

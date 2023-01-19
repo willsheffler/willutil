@@ -187,6 +187,10 @@ def xtalinfo(name):
    name = name.upper().strip()
 
    alternate_names = dict(
+      P432='P 4 3 2',
+      F432='F 4 3 2',
+      I432='I 4 3 2',
+      P4132='P 41 3 2',
       P213='P 21 3',
       P213_33='P 21 3',
       I213_32='I 21 3',
