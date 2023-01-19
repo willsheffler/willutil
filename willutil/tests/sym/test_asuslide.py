@@ -2,7 +2,7 @@ import numpy as np, functools as ft
 import willutil as wu
 from willutil.sym.asuslide import asuslide
 
-ic.configureOutput(includeContext=True, contextAbsPath=True)
+# ic.configureOutput(includeContext=True, contextAbsPath=True)
 
 def main():
 
