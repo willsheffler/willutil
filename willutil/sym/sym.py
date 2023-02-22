@@ -35,7 +35,7 @@ def frames(
          f = Xtal(sym).frames(**kw).copy()
       else:
          f = sym_frames[sym].copy()
-   except (KeyError, ValueError) as e:
+   except KeyError as e:
       raise ValueError(f'unknown symmetry {sym}')
 
    if asym_of:
@@ -98,14 +98,27 @@ def frames(
 
    return f
 
-def put_frames_on_top(frames, ontop, strict=True, **kw):
+def put_frames_on_top(frames, ontop, strict=True, allowcellshift=False, cellsize=None, **kw):
+   # ic(allowcellshift, cellsize)
    frames2 = list(frames)
+   celldeltas = [0]
+   if allowcellshift:
+      celldeltas = list(itertools.product(*[np.arange(-1, 2) * cellsize] * 3))
+      # ic(celldeltas)
    for f0 in ontop:
       for i, x in enumerate(frames2):
-         if wu.hdiff(f0, x) < 0.0001:
-            break
+         if wu.hdiff(f0, x) < 0.0001: break
+         match = False
+         for delta in celldeltas:
+            tmp = x.copy()
+            tmp[:3, 3] += delta
+            if wu.hdiff(f0, tmp) < 0.0001:
+               match = True
+         if match: break
       else:
          if strict:
+            wu.showme(wu.hscaled(1, frames), name='frames')
+            wu.showme(wu.hscaled(1, ontop), name='ontop')
             raise ValueError(f'ontop frame not found: {f0}')
          else:
             i = None
@@ -114,6 +127,7 @@ def put_frames_on_top(frames, ontop, strict=True, **kw):
    if strict:
       assert len(ontop) + len(frames2) == len(frames)
    f = np.stack(list(ontop) + frames2)
+
    return f
 
 def map_sym_abbreviation(sym):
@@ -528,3 +542,17 @@ def symunit_bounds(cagesym, cycsym):
    if cagesym == 'tet' and cycsym == 'c3':
       fub, fnum = None, 1
    return flb, fub, fnum
+
+def coords_to_asucen(sym, coords, **kw):
+   if wu.sym.is_known_xtal(sym):
+      x = Xtal(sym)
+      return x.coords_to_asucen(coords, **kw)
+   else:
+      raise NotImplementedError
+
+def primary_frames(sym, **kw):
+   if wu.sym.is_known_xtal(sym):
+      x = Xtal(sym)
+      return x.primary_frames(**kw)
+   else:
+      raise NotImplementedError

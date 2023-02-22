@@ -29,12 +29,12 @@ def sort_ncac_coords(coords):
    distnc = np.linalg.norm(newcoords[:-1, 2] - newcoords[1:, 0], axis=-1)
    assert np.all(distnc < 2)
 
-   # wu.showme(coords[:, :2], line_strip=True)
+   # wu.showme(coords[:, :2], islinestrip=True)
    dist2 = np.linalg.norm(newcoords[None, :, 2] - newcoords[:, None, 0], axis=-1)
    np.fill_diagonal(dist2, 9e9)
    nextres2 = np.argmin(dist2, axis=0)[:-1]
    assert np.allclose(nextres2, np.arange(1, len(nextres2) + 1))
 
-   wu.showme(coords[:, :4], line_strip=True)
+   wu.showme(coords[:, :4], islinestrip=True)
 
    return newcoords

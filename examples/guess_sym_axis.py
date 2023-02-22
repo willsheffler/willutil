@@ -39,13 +39,13 @@ def main():
    print('rotation axis vectors:', axisA, axisB, axis_guess, sep='\n   ')
    print('rotation angles', 119, 241, ang_guess * 180 / np.pi)
 
-   # cen guess above probably won'd match original cen, because the center of
+   # cen guess above probably won't match original cen, because the center of
    # rotation is really a line defined by the symmetry axis vector and a 'center'
    # point that can be anywhere along this line.
    # Can check how close our cen_guess is to the actual sym axis:
    dist1 = wu.homog.line_line_distance_pa(cenA, axisA, cen_guess, axis_guess)
    dist2 = wu.homog.line_line_distance_pa(cenA, axisB, cen_guess, axis_guess)
-   print('distances from guess to acutal rotation axis (line)', dist1, dist2)
+   print('distances from guess to actual rotation axis (line)', dist1, dist2)
 
 if __name__ == '__main__':
    main()

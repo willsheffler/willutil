@@ -196,13 +196,19 @@ def pymol_viz_list(
 def _(
    toshow,
    state=_showme_state,
-   line_strip=False,
+   kind=None,
    **kw,
 ):
    # showaxes()
    shape = toshow.shape
-   if line_strip:
-      return show_ndarray_line_strip(toshow, state, **kw)
+   assert kind in (None, *'linestrip ncac line xform point vec'.split())
+
+   if kind == 'linestrip': return show_ndarray_line_strip(toshow, state, **kw)
+   elif kind == 'ncac': return show_ndarray_n_ca_c(toshow[:, :3], state, **kw)
+   elif kind == 'line': return show_ndarray_lines(toshow, state, **kw)
+   elif kind == 'xform': return pymol_visualize_xforms(toshow, state, **kw)
+   elif kind in ('point', 'vec'): return show_ndarray_point_or_vec(toshow, state, kind=kind, **kw)
+
    if shape[-2:] in [(3, 4), (5, 4)]:
       return show_ndarray_n_ca_c(toshow[:, :3], state, **kw)
    elif shape[-2:] == (4, 2):
@@ -490,6 +496,7 @@ def show_ndarray_point_or_vec(
    sphere=1.0,
    addtocgo=None,
    chainbow=False,
+   kind=None,
    **kw,
 ):
    v = pymol.cmd.get_view()
@@ -501,6 +508,8 @@ def show_ndarray_point_or_vec(
       col = get_different_colors(len(toshow), **kw.only('colorseed'))
    mycgo = list()
    if toshow.ndim == 1: toshow = [toshow]
+   if kind == 'vec': toshow = wu.hvec(toshow).reshape(-1, 4)
+   if kind == 'point': toshow = wu.hpoint(toshow).reshape(-1, 4)
    for i, p_or_v in enumerate(toshow):
       color = (1, 1, 1) if col is None else col
       if isinstance(color[0], (list, tuple, np.ndarray)):
@@ -559,7 +568,7 @@ def showme_pymol(
    what,
    headless=False,
    block=False,
-   fresh=False,
+   vizfresh=False,
    png=None,
    pngi=0,
    pngturn=0,
@@ -568,7 +577,9 @@ def showme_pymol(
    name='noname',
    **kw,
 ):
+   # if name != 'noname': ic('SHOWME', name)
    global _showme_state
+
    if "PYTEST_CURRENT_TEST" in os.environ and not headless:
       print("NOT RUNNING PYMOL IN UNIT TEST")
       return
@@ -592,7 +603,7 @@ def showme_pymol(
 
    # print('############## showme_pymol', type(what), '##############')
 
-   if fresh:
+   if vizfresh:
       # cmd.disable('all')
       clear_pymol()
 

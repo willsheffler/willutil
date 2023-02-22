@@ -8,11 +8,19 @@ def tooclose_clash(bodies, nbrs=None, **kw):
 
 def tooclose_overlap(bodies, nbrs=None, contactfrac=0.1, printme=False, **kw):
    cfrac = bodies.contact_fraction(nbrs)
-   if printme: ic(cfrac)
+   # ic(cfrac)
+   # if printme: ic(cfrac)
    maxcfrac = max([np.mean(c) for c in cfrac])
-   return maxcfrac > contactfrac
+   # ic(maxcfrac, contactfrac)
+   # if maxcfrac > 0.999:
+   # wu.showme(bodies)
+   # assert 0
+   # TRUE means sufficient overlap
+   return max(False, maxcfrac - contactfrac)
+   # return maxcfrac > contactfrac
 
 def tooclose_primary_overlap(bodies, nbrs=None, contactfrac=0.1, nprimary=None, printme=False, **kw):
+   # assert 0
    assert nprimary is not None
    for i in range(nprimary):
       for j in range(nprimary, len(bodies)):
@@ -20,12 +28,11 @@ def tooclose_primary_overlap(bodies, nbrs=None, contactfrac=0.1, nprimary=None, 
          if hasclash:
             'SLIDE EXTRAFRAME CLASH'
             return True
-   # if nbrs is None:
-   #     nbrs = list(range(nprimary))
    cfrac = bodies.contact_fraction(nbrs)
-   if printme: ic(cfrac)
    maxcfrac = max([np.mean(c) for c in cfrac])
-   return maxcfrac > contactfrac
+   # ic(maxcfrac, contactfrac)
+   return max(False, maxcfrac - contactfrac)
+   # return maxcfrac > contactfrac
 
 class RBLatticeOverlapObjective:
    def __init__(self, *args, **kw):

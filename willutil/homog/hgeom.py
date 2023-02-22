@@ -56,29 +56,11 @@ def hdiff(x, y, lever=10.0):
    a = x.reshape(shape1 + (1, ) * len(shape1) + (4, 4))
    b = y.reshape((1, ) * len(shape2) + shape2 + (4, 4))
 
-   # xdelta = hinv(a) @ b
-   # dist = np.linalg.norm(xdelta[..., 3], axis=-1)
-   # dist = np.linalg.norm(a[..., 3] - b[..., 3], axis=-1)
-   # ang = angle_of(xdelta) * lever
-
    axyz = a[..., :3, :3] * lever + a[..., :3, 3, None]
    bxyz = b[..., :3, :3] * lever + b[..., :3, 3, None]
 
-   # ic(axyz[..., :, 0])
-   # ic(axyz[..., :, 1])
-   # ic(axyz[..., :, 2])
-
-   # ic(bxyz[..., :, 0])
-   # ic(bxyz[..., :, 1])
-   # ic(bxyz[..., :, 2])
-
-   # ic(axyz[..., 0, :] - bxyz[..., 0, :])
-   # ic(axyz[..., 1, :] - bxyz[..., 1, :])
-   # ic(axyz[..., 2, :] - bxyz[..., 2, :])
    diff = np.linalg.norm(axyz - bxyz, axis=-1)
    diff = np.mean(diff, axis=-1)
-   # ic(diff)
-   # assert 0
 
    return diff
 
@@ -513,6 +495,23 @@ def hvec(vec):
       return r
    else:
       raise ValueError('vec must len 3 or 4')
+
+def hcentered(coords, singlecom=False):
+   origshape = coords.shape[:-1]
+   if singlecom: coords = coords.reshape(-1, coords.shape[-1])
+   coords = hpoint(coords).copy()
+   com = wu.hcom(coords)
+   delta = com[..., None, :3]
+   coords[..., :3] -= delta
+   return coords.reshape(*origshape, 4)
+
+def hcentered3(coords, singlecom=False):
+   origshape = coords.shape[:-1]
+   if singlecom: coords = coords.reshape(-1, coords.shape[-1])
+   com = wu.hcom(coords)
+   delta = com[..., None, :3]
+   coords = coords[..., :3] - delta
+   return coords.reshape(*origshape, 3)
 
 def hray(origin, direction):
    origin = hpoint(origin)
@@ -1344,9 +1343,11 @@ def hpow_float(xform, power):
 def hcom_flat(points):
    return np.mean(points, axis=-2)
 
-def hcom(points):
+def hcom(points, flat=False):
    assert len(points) > 0
    points = hpoint(points)
+   if flat: return np.mean(points.reshape(-1, 4), axis=0)
+   if points.shape == (4, ): points = points.reshape(1, 4)
    oshape = points.shape
    points = points.reshape(-1, oshape[-2], 4)
    com = hcom_flat(points)

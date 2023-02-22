@@ -4,7 +4,7 @@ import willutil as wu
 
 import numpy as np
 
-all_pymol_chains = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz" * 10)
+all_pymol_chains = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz" * 100)
 
 def pdb_format_atom(
    ia=0,
@@ -39,19 +39,44 @@ def pdb_format_atom(
 
 _dumppdb_seenit = defaultdict(lambda: -1)
 
-def dumppdb(fname, stuff, *a, namereset=False, **kw):
+def dumppdb(fname='willutil.pdb', stuff=None, *a, namereset=False, addtimestamp=False, **kw):
    global _dumppdb_seenit
+   if stuff is None:
+      raise ValueError(f'param "stuff" must be specified')
+   if addtimestamp:
+      fname = os.path.join(os.path.dirname(fname), wu.misc.datetimetag() + '_' + os.path.basename(fname))
    if not fname.endswith(('.pdb', '.pdb.gz')) or fname.count('%04i'):
-      if namereset:
-         del _dumppdb_seenit[fname]
-      if not fname.count('%04i'):
-         fname += '_%04i.pdb'
+      if namereset: del _dumppdb_seenit[fname]
+      if not fname.count('%04i'): fname += '_%04i.pdb'
       _dumppdb_seenit[fname] += 1
       fname = fname % _dumppdb_seenit[fname]
-   if hasattr(stuff, 'dumppdb'):
-      return stuff.dumppdb(fname, *a, **kw)
+   if hasattr(stuff, 'dumppdb'): return stuff.dumppdb(fname, *a, **kw)
+   else: return dump_pdb_from_points(fname, stuff, *a, **kw)
+
+def dump_pdb_nchain_nres_natom(shape=[], nchain=-1, nres=-1, nresatom=-1):
+   if len(shape) == 3:
+      return shape
+   elif len(shape) == 2:
+      if nresatom == -1: nresatom = 1
+      if nchain == shape[0] and nresatom > 0: return (shape[0], shape[1] // nresatom, nresatom)
+      if nchain >= 0: return (nchain, shape[0], shape[1])
+      if nres >= 0: return (shape[0], nres, shape[1])
+      if nresatom >= 0: return (shape[0], shape[1], nresatom)
+      return (1, shape[0], shape[1])
+      raise ValueError()
+   elif len(shape) == 1:
+      if nchain > 0 and nres > 0: return (nchain, nres, shape[0])
+      if nchain > 0 and nresatom > 0: return (nchain, shape[0], nresatom)
+      if nres > 0 and nresatom > 0: return (shape[0], nres, nresatom)
+      if nchain > 0: return (nchain, shape[0] // nchain, 1)
+      if nres > 0: return (1, nres, shape[0] // nres)
+      if nresatom > 0: return (1, shape[0] // nresatom, nresatom)
+      return (1, shape[0], 1)
+   elif len(shape) == 0:
+      return nchain, nres, nresatom
    else:
-      return dump_pdb_from_points(fname, stuff, *a, **kw)
+      raise ValueError(f'bad shape for dumppdb coords {shape}')
+   return None
 
 def dump_pdb_from_points(
    fname,
@@ -59,25 +84,31 @@ def dump_pdb_from_points(
    mask=None,
    anames=['N', 'CA', 'C', 'O', 'CB'],
    resnames=[],
+   nchain=-1,
    nres=-1,
    nresatom=-1,
    header='',
    frames=None,
-   nchain=-1,
    dumppdbscale=1,
    spacegroup=None,
    cellsize=None,
    **kw,
 ):
    pts = np.asarray(pts)
+   # ic(pts.shape)
    if frames is not None:
       pts = wu.hxform(frames, pts)
    if mask is None:
       mask = np.ones(pts.shape[:-1], dtype=bool)
    if not (pts.ndim in (2, 3, 4) and pts.shape[-1] in (3, 4)):
       raise ValueError(f'bad shape for points {pts.shape}')
+   shape = dump_pdb_nchain_nres_natom(pts.shape[:-1], nchain, nres, nresatom)
+   assert len(shape) == 3
+   pts = pts.reshape(*shape, pts.shape[-1])
+   mask = mask.reshape(*shape)
    if os.path.dirname(fname):
       os.makedirs(os.path.dirname(fname), exist_ok=True)
+
    if nresatom == -1 and nres == -1 and pts.ndim == 3:
       if pts.shape[-2] < 30:  # assume nres not natom
          nresatom = pts.shape[-2]
@@ -85,25 +116,7 @@ def dump_pdb_from_points(
          nresatom = 1
          pts = np.expand_dims(pts, 2)
          mask = None if mask is None else np.expand_dims(mask, 2)
-   if pts.ndim == 4:
-      assert nchain < 0 or pts.shape[0] == nchain
-      assert nres < 0 or pts.shape[1] == nres
-      assert nresatom < 0 or pts.shape[2] == nresatom
-   elif pts.ndim == 3:
-      nres = len(pts)
-      if nchain > 0:
-         assert not nres % nchain
-         nres = nres // nchain
-      pts = pts.reshape(nchain, nres, nresatom, pts.shape[-1])
-      mask = mask.reshape(nchain, nres, nresatom)
-   elif pts.ndim == 2:
-      nres = len(pts)
-      if nresatom < 0: nresatom = 1
-      nres = nres // nresatom
-      pts = pts.reshape(nchain, nres, nresatom, pts.shape[-1])
-      mask = mask.reshape(nchain, nres, nresatom)
-   else:
-      raise ValueError(f'bad pts shape {pts.shape}')
+
    nchain, nres, nresatom, _ = pts.shape
 
    anames = anames[:nresatom]

@@ -10,6 +10,8 @@ from icecream import ic
 
 def main():
 
+   test_hcentered()
+
    test_halign()
 
    test_hxform_stuff_coords()
@@ -84,6 +86,42 @@ def main():
    test_axis_angle_180_bug()
 
    ic('test_homog.py DONE')
+
+def test_hcentered():
+   coords = hrandpoint((8, 7))
+   coords[..., :3] += [10, 20, 30]
+   cencoord = hcentered(coords)
+   assert cencoord.shape == coords.shape
+   assert np.allclose(hcom(cencoord), [0, 0, 0, 1])
+   assert np.allclose(coords[..., :3], cencoord[..., :3] + wu.hcom(coords)[..., None, :3])
+
+   coords = hrandpoint((8, 7, 2, 1))[..., :3]
+   coords[..., :3] += [30, 20, 10]
+   cencoord = hcentered(coords)
+   assert cencoord.shape[:-1] == coords.shape[:-1]
+   assert np.allclose(hcom(cencoord), [0, 0, 0, 1])
+   assert np.allclose(coords[..., :3], cencoord[..., :3] + wu.hcom(coords)[..., None, :3])
+
+   coords = hrandpoint((1, 8, 3, 7))
+   coords[..., :3] += 20
+   cencoord = hcentered3(coords)
+   assert cencoord.shape[:-1] == coords.shape[:-1]
+   assert np.allclose(hcom(cencoord)[..., :3], [0, 0, 0])
+   assert np.allclose(coords[..., :3], cencoord[..., :3] + wu.hcom(coords)[..., None, :3])
+
+   coords = hrandpoint(7)[..., :3]
+   coords[..., :3] += 30
+   cencoord = hcentered3(coords)
+   assert cencoord.shape == coords.shape
+   assert np.allclose(hcom(cencoord)[..., :3], [0, 0, 0])
+   assert np.allclose(coords[..., :3], cencoord[..., :3] + wu.hcom(coords)[..., None, :3])
+
+   coords = hrandpoint((8, 7))
+   coords[..., :3] += [10, 20, 30]
+   cencoord = hcentered(coords, singlecom=True)
+   assert cencoord.shape == coords.shape
+   assert np.allclose(hcom(cencoord, flat=True), [0, 0, 0, 1])
+   assert np.allclose(coords[..., :3], cencoord[..., :3] + wu.hcom(coords, flat=True)[..., None, :3])
 
 def test_halign():
    for i in range(10):

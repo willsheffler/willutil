@@ -52,6 +52,7 @@ def test_notpose_sc_coords():
 
 def test_notpose():
    pyro = pytest.importorskip('pyrosetta')
+
    pyro.init('-mute all')
    fname = wu.tests.testdata.test_data_path('pdb/1pgx.pdb1.gz')
 

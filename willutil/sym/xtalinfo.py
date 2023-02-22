@@ -3,40 +3,70 @@ import copy
 import willutil as wu
 from willutil.homog import *
 
+_xtal_asucens = {
+   'P 4 3 2': np.array([0.1, 0.2, 0.3, 1]),
+   'P 4 3 2 43': np.array([0.1, 0.2, 0.3, 1]),
+   'P 4 3 2 44': np.array([0.1, 0.2, 0.3, 1]),
+   'I 4 3 2': np.array([0.28, 0.17, 0.08, 1]),
+   'F 4 3 2': np.array([0.769, 0.077, 0.385, 1.0]),
+   # 'I 21 3': np.array([0.615, 0.385, 0.615, 1.0]),
+   'I 21 3': np.array([0.577, 0.385, 0.615, 1.0]),
+}
+
+def all_xtal_names():
+   allxtals = list()
+   for k in xtal_info_dict:
+      if not k.startswith('DEBUG'):
+         allxtals.append(k)
+   return allxtals
+
 def _populate_xtal_info_dict():
    global xtal_info_dict
    A = np.array
-   ########################################################################################
-   ############# IF YOU CHANGE THESE, REMOVE CACHE FILES OR DISABLE FRAME CACHING ############
-   ############# IF YOU CHANGE THESE, REMOVE CACHE FILES OR DISABLE FRAME CACHING ############
-   ############# IF YOU CHANGE THESE, REMOVE CACHE FILES OR DISABLE FRAME CACHING ############
-   ############# IF YOU CHANGE THESE, REMOVE CACHE FILES OR DISABLE FRAME CACHING ############
-   ############################################################################
+   ##################################################################################
+   ######## IF YOU CHANGE THESE, REMOVE CACHE FILES OR DISABLE FRAME CACHING ########
+   ######## IF YOU CHANGE THESE, REMOVE CACHE FILES OR DISABLE FRAME CACHING ########
+   ######## IF YOU CHANGE THESE, REMOVE CACHE FILES OR DISABLE FRAME CACHING ########
+   ######## IF YOU CHANGE THESE, REMOVE CACHE FILES OR DISABLE FRAME CACHING ########
+   ##################################################################################
    # yapf: disable
    xtal_info_dict = {
       'P 4 3 2'   : wu.Bunch( nsub=24 , spacegroup='P 4 3 2', symelems=[
-         C4 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 0, 0 ]) / 1 ),
+         # C4 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 1, 1 ]) / 2 ),
+         C4 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 0, 0 ]) / 2 ),
          C4 ( axis= [ 0,  1,  0 ] , cen= A([ 1, 0, 1 ]) / 2 ),
-
+      ]),
+      'P 4 3 2 443'   : wu.Bunch( nsub=24 , spacegroup='P 4 3 2', symelems=[
+         C4 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 1, 1 ]) / 2 ),
+         C4 ( axis= [ 0,  1,  0 ] , cen= A([ 1, 0, 1 ]) / 2 ),
+         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 2 ),
+      ]),
+      'P 4 3 2 43'   : wu.Bunch( nsub=24 , spacegroup='P 4 3 2', symelems=[
+         C4 ( axis= [ 0,  1,  0 ] , cen= A([ 1, 0, 1 ]) / 2 ),
+         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 2 ),
       ]),
       'F 4 3 2'   : wu.Bunch( nsub=96 , spacegroup='F 4 3 2', symelems=[
          C4 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 0, 1 ]) / 2 ),
          C3 ( axis= [ 1,  1,  1 ] , cen= A([ 4, 1, 1 ]) / 6 ),
+         # C4 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 1, 1 ]) / 2 ),
+         # C3 ( axis= [ 1,  1,  1 ] , cen= A([ 4, 1, 1 ]) / 6 ),
+         # C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 6 ),
       ]),
-
       'I 4 3 2'   : wu.Bunch( nsub=48 , spacegroup='I 4 3 2', symelems=[
          C4 ( axis= [ 0,  0,  1 ] , cen= A([ 0, 0, 0 ]) / 1 ),
          C2 ( axis= [ 0,  1,  1 ] , cen= A([-1,-1, 1 ]) / 4 ),
+         # C4 ( axis= [ 0,  0,  1 ] , cen= A([ 1, 1, 0 ]) / 2 ),
+         # C2 ( axis= [ 0,  1,  1 ] , cen= A([ 1, 1, 1 ]) / 2 ),
       ]),
 
       'P 2 3'    : wu.Bunch( nsub=12 , spacegroup='P 2 3', symelems=[
-         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 1, label='C3_111_000' ),
-         C2 ( axis= [ 0,  0,  1 ] , cen= A([ 0, 0, 0 ]) / 1, label='C2_001_000' ),
-         C2 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 1, 0 ]) / 2, label='C2_100_010' ),
+         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 1, 1, 1 ]) / 2, label='C3_111_000' ),
+         C2 ( axis= [ 0,  0,  1 ] , cen= A([ 1, 1, 0 ]) / 2, label='C2_001_000' ),
+         # C2 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 1, 0 ]) / 2, label='C2_100_010' ),
       ]),
       'P 21 3'   : wu.Bunch( nsub=12 , spacegroup='P 21 3', symelems=[
-         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 2, vizcol=(0.0, 1.0, 1.0) ),
-         C3 ( axis= [ 1,  1, -1 ] , cen= A([ 1, 0, 1 ]) / 2, vizcol=(0.3, 1, 0.7) ),
+         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 2, vizcol=(0.0, 1.0, 1.0), label='A' ),
+         C3 ( axis= [ 1,  1, -1 ] , cen= A([ 1, 0, 1 ]) / 2, vizcol=(0.3, 1, 0.7), label='B' ),
       ]),
       'I 21 3'   : wu.Bunch( nsub=24 , spacegroup='I 21 3', symelems=[
          C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 1 ),
@@ -46,11 +76,25 @@ def _populate_xtal_info_dict():
          C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 1 ),
          C2 ( axis= [ 1,  0,  1 ] , cen= A([ 2, 1, 0 ]) / 8 ),
       ]),
+      # 'I 41 3 2' : wu.Bunch( nsub=48, spacegroup='I 41 3 2', symelems=[
+      # D3 ( axis= [ 1,  1,  1 ] , axis2= [ 1, -1,  0 ] , cen= A([ 1, 1, 1 ]) / 8, label='D3_111_1m0_111_8' , vizcol=(0, 1, 0)),
+      # D2 ( axis= [ 1,  0,  0 ] , axis2= [ 0, -1,  1 ] , cen= A([ 1, 0, 2 ]) / 8, label='D2_100_0m1_102_8' , vizcol=(0, 1, 1)),
+      # D3 ( axis= [ 1,  1,  1 ] , axis2= [ 1, -1,  0 ] , cen= A([-1,-1,-1 ]) / 8, label='D3_111_1m0_mmm_8' , vizcol=(1, 0, 0)),
+      # D2 ( axis= [ 1,  0,  0 ] , axis2= [ 0, -1,  1 ] , cen= A([-1, 0,-2 ]) / 8, label='D2_100_0m1_m12m_8', vizcol=(1, 1, 0)),
+      # ]),
       'I 41 3 2' : wu.Bunch( nsub=48, spacegroup='I 41 3 2', symelems=[
-         # D3 ( axis= [ 1,  1,  1 ] , axis2= [ 1, -1,  0 ] , cen= A([ 1, 1, 1 ]) / 8, label='D3_111_1m0_111_8' , vizcol=(0, 1, 0)),
-         D2 ( axis= [ 1,  0,  0 ] , axis2= [ 0, -1,  1 ] , cen= A([ 1, 0, 2 ]) / 8, label='D2_100_0m1_102_8' , vizcol=(0, 1, 1)),
-         D3 ( axis= [ 1,  1,  1 ] , axis2= [ 1, -1,  0 ] , cen= A([-1,-1,-1 ]) / 8, label='D3_111_1m0_mmm_8' , vizcol=(1, 0, 0)),
-         # D2 ( axis= [ 1,  0,  0 ] , axis2= [ 0, -1,  1 ] , cen= A([-1, 0,-2 ]) / 8, label='D2_100_0m1_m12m_8', vizcol=(1, 1, 0)),
+         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 1, 1, 1 ]) / 8, label='D3_111_1m0_111_8' , vizcol=(0, 1, 0)),
+         C2 ( axis= [ 1, -1,  0 ] , cen= A([ 1, 1, 1 ]) / 8, label='D3_111_1m0_111_8' , vizcol=(0, 1, 0)),
+
+         C2 ( axis= [ 1,  0,  0 ], cen= A([ 1, 0, 2 ]) / 8, label='D2_100_0m1_102_8' , vizcol=(0, 1, 1)),
+         C2 ( axis= [ 0, -1,  1 ] , cen= A([ 1, 0, 2 ]) / 8, label='D2_100_0m1_102_8' , vizcol=(0, 1, 1)),
+
+         C3 ( axis= [ 1,  1,  1 ] , cen= A([-1,-1,-1 ]) / 8, label='D3_111_1m0_mmm_8' , vizcol=(1, 0, 0)),
+         C2 ( axis= [ 1, -1,  0 ] , cen= A([-1,-1,-1 ]) / 8, label='D3_111_1m0_mmm_8' , vizcol=(1, 0, 0)),
+
+         C2 ( axis= [ 1,  0,  0 ] , cen= A([-1, 0,-2 ]) / 8, label='D2_100_0m1_m12m_8', vizcol=(1, 1, 0)),
+         C2 ( axis= [ 0, -1,  1 ] , cen= A([-1, 0,-2 ]) / 8, label='D2_100_0m1_m12m_8', vizcol=(1, 1, 0)),
+
       ]),
       'I4132_322' : wu.Bunch( nsub=48, spacegroup='I 41 3 2', symelems=[
          # C3 ( axis= [ 1,  1,  1 ] , cen= A([ 2, 2, 2 ]) / 8, label='C3_111_1m0_111_8' , vizcol=(1, 0, 0)),

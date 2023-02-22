@@ -1,7 +1,10 @@
+import pytest
 import numpy as np
 import willutil as wu
 
 def main():
+   test_t4()
+   assert 0
    test_frames_asym_of()
    test_frames_asym_remove_sameaxis()
    test_remove_if_same_axis()

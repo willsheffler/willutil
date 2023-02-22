@@ -1,6 +1,5 @@
 import sys, itertools, re, os, inspect, random, functools
-from willutil.sym.pymol_xyzmath import (Vec, Mat, Xform, RAD, projperp, SYMTET, SYMOCT, isvec,
-                                        randnorm, Ux, Uy, Uz)
+from willutil.sym.pymol_xyzmath import (Vec, Mat, Xform, RAD, projperp, SYMTET, SYMOCT, isvec, randnorm, Ux, Uy, Uz)
 
 try:
    from willutil.viz.pymol_cgo import cgo_cyl, cgo_sphere, cgo_segment
@@ -46,8 +45,7 @@ def hacky_xtal_maker(
          if symdef:
             sdef_string = FN[-1].make_symdef(**kw)
             if verbose:
-               print("==================== SYMDEF (dump to " + tag + "_" + str(d) +
-                     ".sym) ====================")
+               print("==================== SYMDEF (dump to " + tag + "_" + str(d) + ".sym) ====================")
                print(sdef_string)
                print("=====================================================================")
             with open(tag + "_" + str(d) + ".sym", "w") as out:
@@ -178,7 +176,7 @@ class SymElem(object):
       self,
       length=20.0,
       radius=0.5,
-      sphereradius=1.5,
+      vizsphereradius=1.5,
       col=None,
       showshape=0,
       **kwargs,
@@ -245,7 +243,7 @@ class SymElem(object):
             # c.x,
             # c.y,
             # c.z,
-            # sphereradius
+            # vizsphereradius
          ])
          if self.kind.startswith("D"):
             for i in range(self.nfold):
@@ -283,7 +281,7 @@ class SymElem(object):
       elif self.kind == "T":
          cen = x * self.cen
          cen.round0()
-         CGO.extend(cgo_sphere(cen, 1.6 * sphereradius, col=(0.5, 0.5, 1)))
+         CGO.extend(cgo_sphere(cen, 1.6 * vizsphereradius, col=(0.5, 0.5, 1)))
          seen2, seen3 = list(), list()
          for f in self.frames:
             c2b = x.R * f.R * (Vec(1, 0, 0).normalized() * length / 2.0)
@@ -302,7 +300,7 @@ class SymElem(object):
       elif self.kind == "O":
          cen = x * self.cen
          cen.round0()
-         CGO.extend(cgo_sphere(cen, 1.6 * sphereradius, col=(0.5, 0.5, 1)))
+         CGO.extend(cgo_sphere(cen, 1.6 * vizsphereradius, col=(0.5, 0.5, 1)))
          seen2, seen3, seen4 = list(), list(), list()
          for f in self.frames:
             c2a = x.R * f.R * (-Vec(1, 1, 0).normalized() * length / 2.0)
@@ -598,8 +596,7 @@ class SymTrieNode(object):
          c.visit(visitor, depth=depth + 1, xform=xform)
 
    def __str__(self):
-      return "elem %2i frame %2i depth %2i nchild %2i" % (self.ielem, self.iframe, self.depth,
-                                                          len(self.children))
+      return "elem %2i frame %2i depth %2i nchild %2i" % (self.ielem, self.iframe, self.depth, len(self.children))
 
 class SymTrieSanityCheckVisitor(object):
    """docstring for SymTrieSanityCheckVisitor"""
@@ -628,8 +625,7 @@ def generate_sym_trie_recurse(
    if depth < 1:
       return
    if verbose:
-      print("GEN SYM TRIE", "depth", depth, "igen", igen, "heads", len(heads), "newheads",
-            len(newheads))
+      print("GEN SYM TRIE", "depth", depth, "igen", igen, "heads", len(heads), "newheads", len(newheads))
    newnewheads = []
    # for ielem, elem in enumerate(generators):
    ielem = igen
@@ -663,8 +659,7 @@ def generate_sym_trie_recurse(
 
    # if verbose: print len(newheads),igen,len(generators)
    if depth > 1:  # and newheads:
-      generate_sym_trie_recurse(generators, depth - 1, opts, body, heads, newheads,
-                                (igen + 1) % len(generators))
+      generate_sym_trie_recurse(generators, depth - 1, opts, body, heads, newheads, (igen + 1) % len(generators))
 
 def generate_sym_trie(generators, depth=10, opts=None, verbose=False):
    raise NotImplementedError('some bug needs to be fixed')
@@ -721,8 +716,7 @@ def makesym(frames0, sele="all", newobj="MAKESYM", depth=None, maxrad=9e9, n=9e9
       tmpname = "TMP_makesym_%i" % i
       cmd.create(tmpname, sele)
       for j, c in enumerate(selechains):
-         cmd.alter(tmpname + " and chain " + c,
-                   "chain='%s'" % ROSETTA_CHAINS[len(selechains) * i + j])
+         cmd.alter(tmpname + " and chain " + c, "chain='%s'" % ROSETTA_CHAINS[len(selechains) * i + j])
       xform(tmpname, x)
    cmd.create(newobj, "TMP_makesym_*")
    cmd.delete("TMP_makesym_*")
@@ -801,10 +795,8 @@ def makedx(sel='all', n=2, name=None):
       cmd.create(dsel2, dsel)
       rot(dsel2, Ux, 180.0)
       for ic, c in enumerate(chains):
-         cmd.alter("((%s) and chain %s )" % (dsel, c),
-                   "chain = '%s'" % ALLCHAIN[len(chains) * (i) + ic])
-         cmd.alter("((%s) and chain %s )" % (dsel2, c),
-                   "chain = '%s'" % ALLCHAIN[len(chains) * (i + n) + ic])
+         cmd.alter("((%s) and chain %s )" % (dsel, c), "chain = '%s'" % ALLCHAIN[len(chains) * (i) + ic])
+         cmd.alter("((%s) and chain %s )" % (dsel2, c), "chain = '%s'" % ALLCHAIN[len(chains) * (i + n) + ic])
    cmd.create(name, "_TMP_D*")
    util.cbc(name)
    cmd.delete("_TMP_D*")
@@ -833,9 +825,7 @@ def makeicos(sel='all', name="ICOS", n=60):
 
 def make_d3oct(d3, cage, cage_trimer_chain="A", depth=4, maxrad=9e9):
    if verbose:
-      print(
-         cmd.super("((" + cage + ") and (chain " + cage_trimer_chain + "))",
-                   "((" + d3 + ") and (chain A))"))
+      print(cmd.super("((" + cage + ") and (chain " + cage_trimer_chain + "))", "((" + d3 + ") and (chain A))"))
    zcagecen = com(cage + " and name ca").z
    if verbose: print(zcagecen)
    # return
@@ -855,9 +845,7 @@ def make_d3oct(d3, cage, cage_trimer_chain="A", depth=4, maxrad=9e9):
 
 def make_d3tet(d3, cage, cage_trimer_chain="A", depth=4, maxrad=9e9):
    if verbose:
-      print(
-         cmd.super("((" + cage + ") and (chain " + cage_trimer_chain + "))",
-                   "((" + d3 + ") and (chain A))"))
+      print(cmd.super("((" + cage + ") and (chain " + cage_trimer_chain + "))", "((" + d3 + ") and (chain A))"))
    zcagecen = com(cage + " and name ca").z
    if verbose: print(zcagecen)
    # return
@@ -928,12 +916,9 @@ class BuildCGO(object):
       self.maxrad = maxrad
       self.origin = origin
       self.bbox = bbox
-      self.bbox[0].x, self.bbox[1].x = min(self.bbox[0].x, self.bbox[1].x), max(
-         self.bbox[0].x, self.bbox[1].x)
-      self.bbox[0].y, self.bbox[1].y = min(self.bbox[0].y, self.bbox[1].y), max(
-         self.bbox[0].y, self.bbox[1].y)
-      self.bbox[0].z, self.bbox[1].z = min(self.bbox[0].z, self.bbox[1].z), max(
-         self.bbox[0].z, self.bbox[1].z)
+      self.bbox[0].x, self.bbox[1].x = min(self.bbox[0].x, self.bbox[1].x), max(self.bbox[0].x, self.bbox[1].x)
+      self.bbox[0].y, self.bbox[1].y = min(self.bbox[0].y, self.bbox[1].y), max(self.bbox[0].y, self.bbox[1].y)
+      self.bbox[0].z, self.bbox[1].z = min(self.bbox[0].z, self.bbox[1].z), max(self.bbox[0].z, self.bbox[1].z)
       self.showlinks = showlinks
       self.showelems = showelems
       self.label = label
@@ -985,12 +970,9 @@ class BuildCGO(object):
                if icen != 0 or node.parent:  # skip node 0 for root
                   self.add_segment(pcen, xcen, icen)
          if self.bounds_check(xcen):
-            self.add_sphere(x * (cen + Vec(0, 0, 0)), 2.0,
-                            text="%s%i" % ("ABCD"[icen], node.depth), icol=icen)
-            self.add_sphere(x * (cen + Vec(2, 0, 0)), 2.0,
-                            text="%s%i" % ("ABCD"[icen], node.depth), icol=icen)
-            self.add_sphere(x * (cen + Vec(0, 2, 0)), 2.0,
-                            text="%s%i" % ("ABCD"[icen], node.depth), icol=icen)
+            self.add_sphere(x * (cen + Vec(0, 0, 0)), 2.0, text="%s%i" % ("ABCD"[icen], node.depth), icol=icen)
+            self.add_sphere(x * (cen + Vec(2, 0, 0)), 2.0, text="%s%i" % ("ABCD"[icen], node.depth), icol=icen)
+            self.add_sphere(x * (cen + Vec(0, 2, 0)), 2.0, text="%s%i" % ("ABCD"[icen], node.depth), icol=icen)
          pcen = xcen
 
       # show symelems
@@ -1018,9 +1000,7 @@ class BuildCGO(object):
       # should add duplicate checks here
       if c1.distance(c2) < 1.0:
          return
-      self.CGO.extend(
-         cgo_cyl_arrow(c1, c2, rad=0.5, col=self.colors[max(0, icol - 1)],
-                       col2=self.colors[icol]))
+      self.CGO.extend(cgo_cyl_arrow(c1, c2, rad=0.5, col=self.colors[max(0, icol - 1)], col2=self.colors[icol]))
 
    def show(self, verbose=False, **kwargs):
       v = cmd.get_view()
@@ -1064,8 +1044,7 @@ class VecDict(object):
 
 class ComponentCenterVisitor(object):
    """docstring for ComponentCenterVisitor"""
-   def __init__(self, symelems, extranodes=[], label="NODES", colors=list(), showlinks=1,
-                **kwargs):
+   def __init__(self, symelems, extranodes=[], label="NODES", colors=list(), showlinks=1, **kwargs):
       super(ComponentCenterVisitor, self).__init__()
       # if len(symelems) > 2:
       #   raise NotImplementedError("num components > 2 not working yet... BFS fails")
@@ -1174,8 +1153,7 @@ class ComponentCenterVisitor(object):
             for stn in STNs:
                assert stn.position * priCC == CC
 
-   def show(self, component_pos=(Vec(0, -4, 4), Vec(0, 3, 3), Vec(11, 9, 3), Vec(9, 3, 11)),
-            showframes=True, **kwargs):
+   def show(self, component_pos=(Vec(0, -4, 4), Vec(0, 3, 3), Vec(11, 9, 3), Vec(9, 3, 11)), showframes=True, **kwargs):
       self.sanity_check()
       if not self.parentmap:
          self.makeCCtree()
@@ -1258,19 +1236,17 @@ class ComponentCenterVisitor(object):
             if True:
                ELEMDIR2 = projperp(ELEMDIR, Vec(1, 2, 3)).normalized()
             if PCC:
-               Sxyz += (XYZ_TEMPLATE % (PCCDofBegName, DIR.x, DIR.y, DIR.z, DIR2.x, DIR2.y,
-                                        DIR2.z, PCC.x * scale, PCC.y * scale, PCC.z * scale))
+               Sxyz += (XYZ_TEMPLATE % (PCCDofBegName, DIR.x, DIR.y, DIR.z, DIR2.x, DIR2.y, DIR2.z, PCC.x * scale,
+                                        PCC.y * scale, PCC.z * scale))
             if PCC:
-               Sxyz += (XYZ_TEMPLATE % (PCCDofEndName, DIR.x, DIR.y, DIR.z, DIR2.x, DIR2.y,
-                                        DIR2.z, CC.x * scale, CC.y * scale, CC.z * scale))
+               Sxyz += (XYZ_TEMPLATE % (PCCDofEndName, DIR.x, DIR.y, DIR.z, DIR2.x, DIR2.y, DIR2.z, CC.x * scale,
+                                        CC.y * scale, CC.z * scale))
             if True:
-               Sxyz += (XYZ_TEMPLATE %
-                        (CCDofBegName, ELEMDIR.x, ELEMDIR.y, ELEMDIR.z, ELEMDIR2.x, ELEMDIR2.y,
-                         ELEMDIR2.z, CC.x * scale, CC.y * scale, CC.z * scale))
+               Sxyz += (XYZ_TEMPLATE % (CCDofBegName, ELEMDIR.x, ELEMDIR.y, ELEMDIR.z, ELEMDIR2.x, ELEMDIR2.y,
+                                        ELEMDIR2.z, CC.x * scale, CC.y * scale, CC.z * scale))
             if True:
-               Sxyz += (XYZ_TEMPLATE %
-                        (CCDofEndName, ELEMDIR.x, ELEMDIR.y, ELEMDIR.z, ELEMDIR2.x, ELEMDIR2.y,
-                         ELEMDIR2.z, CC.x * scale, CC.y * scale, CC.z * scale))
+               Sxyz += (XYZ_TEMPLATE % (CCDofEndName, ELEMDIR.x, ELEMDIR.y, ELEMDIR.z, ELEMDIR2.x, ELEMDIR2.y,
+                                        ELEMDIR2.z, CC.x * scale, CC.y * scale, CC.z * scale))
             if PCC:
                edges.append((PCCName, PCCDofBegName))
             if PCC:
@@ -1295,8 +1271,8 @@ class ComponentCenterVisitor(object):
                SX = stn.position.R * Vec(1, 0, 0)
                SY = stn.position.R * Vec(0, 1, 0)
                SO = stn.position * priCC
-               Sxyz += (XYZ_TEMPLATE % (SUBName, SX.x, SX.y, SX.z, SY.x, SY.y, SY.z, SO.x * scale,
-                                        SO.y * scale, SO.z * scale))
+               Sxyz += (XYZ_TEMPLATE %
+                        (SUBName, SX.x, SX.y, SX.z, SY.x, SY.y, SY.z, SO.x * scale, SO.y * scale, SO.z * scale))
             edges.append((None, None))  # spacer
             Sxyz += "\n"
 
@@ -1305,8 +1281,7 @@ class ComponentCenterVisitor(object):
 
       celldofjumps = sorted(celldofjumps)
 
-      s = "symmetry_name FUBAR\n\nsubunits %i\n\nnumber_of_interfaces %i\n\n" % (len(SUBAs),
-                                                                                 len(SUBAs) - 1)
+      s = "symmetry_name FUBAR\n\nsubunits %i\n\nnumber_of_interfaces %i\n\n" % (len(SUBAs), len(SUBAs) - 1)
       s += "E = 2*%s" % SUBAs[0]
       for suba in SUBAs[1:]:
          s += " + 1*(%s:%s)" % (SUBAs[0], suba)
@@ -1324,8 +1299,7 @@ class ComponentCenterVisitor(object):
       s += "#####################################################################################\n\n"
       for p, c in edges:
          if p and c:
-            s += "connect_virtual %-57s %-25s %-25s\n" % ("JUMP__%s__to__%s" %
-                                                          (p, c.replace(" ", "")), p, c)
+            s += "connect_virtual %-57s %-25s %-25s\n" % ("JUMP__%s__to__%s" % (p, c.replace(" ", "")), p, c)
          else:
             s += "\n"
 

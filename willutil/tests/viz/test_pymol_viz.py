@@ -14,7 +14,7 @@ def test_line_strips(headless=True):
       coord[i * 10:(i + 1) * 10, 0] = 10 * i + np.cumsum(np.random.rand(10))
       coord[i * 10:(i + 1) * 10, 1] = np.cumsum(np.random.rand(10))
       coord[i * 10:(i + 1) * 10, 2] = np.cumsum(np.random.rand(10))
-   wu.viz.showme(coord, line_strip=True, headless=headless, breaks=10)
+   wu.viz.showme(coord, islinestrip=True, headless=headless, breaks=10)
 
 def test_pymol_viz_example(headless=True):
    # pytest.importorskip('pymol')

@@ -2,25 +2,37 @@ import numpy as np
 import willutil as wu
 
 class RigidBodyFollowers:
-   def __init__(self, bodies=None, coords=None, frames=None, cellsize=1, symtype='NOSYM', **kw):
+   def __init__(self, bodies=None, coords=None, frames=None, sym=None, cellsize=1, symtype='NOSYM', **kw):
       self.symtype = symtype.upper()
+      self.kw = kw
+      assert not (frames is None and sym is None)
+      if frames is None:
+         frames = wu.sym.frames(sym, cellsize=cellsize, **kw)
       if bodies is not None:
          self.asym = bodies[0]
          self.symbodies = bodies[1:]
          self.bodies = bodies
       elif frames is not None:
+         if coords is None:
+            raise ValueError(f'if no bodies specified, coords and frames/sym must be provided')
          self.asym = RigidBody(coords, **kw)
          self.symbodies = [RigidBody(parent=self.asym, xfromparent=x, **kw) for x in frames[1:]]
          self.bodies = [self.asym] + self.symbodies
-      cellsize = wu.to_xyz(cellsize)
-      self._cellsize = cellsize.copy()
-      self.orig_cellsize = cellsize.copy()
+      self._cellsize = wu.to_xyz(cellsize)
+      self.orig_cellsize = self._cellsize.copy()
       self.is_point_symmetry = np.sum(wu.hnorm(wu.hcart3(self.frames()))) < 0.0001
       self.rootbody = self.asym
       if not self.asymexists:
          # assert 0
          self.bodies[0] = RigidBody(parent=self.asym, xfromparent=frames[0], **kw)
          self.asym = self.bodies[0]
+      self.scale_com_with_cellsize = False
+
+   def set_asym_coords(self, coords):
+      newbody = wu.RigidBody(coords, **self.kw)
+      self.rootbody = newbody
+      if self.asymexists:
+         self.bodies[0] = newbody
 
    @property
    def asymexists(self):
@@ -53,13 +65,12 @@ class RigidBodyFollowers:
 
    @property
    def cellsize(self):
-      return self._cellsize
+      return self._cellsize.copy()
       # return self._cellsize * self.asym.scale
 
    @cellsize.setter
    def cellsize(self, cellsize):
-      self._cellsize = cellsize
-      # self.asym.scale = cellsize / self._cellsize
+      self.scale_frames(scalefactor=cellsize / self._cellsize, safe=True)
 
    @property
    def scale(self):
@@ -67,20 +78,29 @@ class RigidBodyFollowers:
 
    @scale.setter
    def scale(self, scale):
-      # ic(scale, self.scale, self.cellsize, self._cellsize, self.orig_cellsize)
-      scalefactor = scale / self.scale
-      self.scale_frames(scalefactor)
+      scalefactor = scale / (self._cellsize / self.orig_cellsize)
+      self.scale_frames(scalefactor, scalecoords=True, safe=True)
 
-   def scale_frames(self, scalefactor, safe=True):
+   def scale_frames(self, scalefactor, scalecoords=None, safe=True):
+      # ic('CALL scale_frames', scalefactor, scalecoords)
+      if scalecoords is None:
+         scalecoords = self.scale_com_with_cellsize
       if safe and self.is_point_symmetry:
          raise ValueError(f'scale_frames only valid for non-point symmetry')
+
       scalefactor = wu.to_xyz(scalefactor)
       if self.symtype.startswith('H'):
          assert np.allclose(scalefactor[0], scalefactor[1])
 
-      self.cellsize *= scalefactor
+      self._cellsize *= scalefactor
       self.asym.scale = self.asym.scale * scalefactor
-      return True
+
+      if scalecoords:
+         # ic(self.asym.xfromparent)
+         assert np.allclose(self.asym.xfromparent[:3, :3], np.eye(3))
+         self.asym.moveby(wu.htrans((scalefactor - 1) * self.asym.com()[:3]))
+
+      return self.cellsize
       # changed = any([b.scale_frame(scalefactor) for b in self.bodies])
       # if not changed:
       #    if safe:
@@ -105,15 +125,15 @@ class RigidBodyFollowers:
             nbrs.append(i)
       return nbrs
 
-   def dump_pdb(self, fname):
+   def dump_pdb(self, fname, **kw):
       asym = self.asym
       if not self.asym.isroot:
          asym = self.asym.parent
       coords = asym.allcoords.copy()
       if not self.asym.isroot:
          coords = coords[1:]
-      ic(coords.shape)
-      wu.dumppdb(fname, coords, nchain=len(self.bodies))
+      # ic(coords.shape)
+      wu.dumppdb(fname, coords, nchain=len(self.bodies), **kw)
 
    def frames(self):
       return np.stack([b.xfromparent for b in self.bodies])
@@ -123,6 +143,21 @@ class RigidBodyFollowers:
 
    def orientations(self):
       return np.stack([wu.hori3(b.xfromparent) for b in self.bodies])
+
+   def coms(self):
+      return np.stack([b.com() for b in self.bodies])
+
+   @property
+   def coords(self):
+      return np.stack([b.coords for b in self.bodies])
+
+   @property
+   def bvh_op_count(self):
+      return np.sum([b.bvhopcount for b in self.bodies])
+
+   def bvh_op_count_reset(self):
+      for b in self.bodies:
+         b.bvhopcount = 0
 
    def __len__(self):
       return len(self.bodies)
@@ -192,6 +227,7 @@ class RigidBody:
          self._scale = scale
 
       self.children = list()
+      self.bvhopcount = 0
 
    def __len__(self):
       return len(self._coords)
@@ -308,6 +344,7 @@ class RigidBody:
       return np.sqrt(np.sum(d**2) / len(d))
 
    def contact_count(self, other, contactdist, usebvh=None):
+      self.bvhopcount += 1
       assert isinstance(other, RigidBody)
       if usebvh or (usebvh is None and self.usebvh):
          count = wu.cpp.bvh.bvh_count_pairs(self.contactbvh, other.contactbvh, self.position, other.position,
@@ -321,19 +358,23 @@ class RigidBody:
       return count
 
    def contacts(self, other):
+      self.bvhopcount += 1
       return self.contact_count(other, self.contactdis)
 
    def clashes(self, other, clashdis=None):
+      self.bvhopcount += 1
       # ic(self.clashdis)
       clashdis = clashdis or self.clashdis
       return self.contact_count(other, self.clashdis)
 
    def hasclash(self, other, clashdis=None):
+      self.bvhopcount += 1
       clashdis = clashdis or self.clashdis
       isect = wu.cpp.bvh.bvh_isect(self.bvh, other.bvh, self.position, other.position, clashdis)
       return isect
 
    def point_contact_count(self, other, contactdist=8):
+      self.bvhopcount += 1
       p = self.interactions(other, contactdist=contactdist)
       a = set(p[:, 0])
       b = set(p[:, 1])
@@ -342,6 +383,7 @@ class RigidBody:
       return len(a), len(b)
 
    def contact_fraction(self, other, contactdist=None):
+      self.bvhopcount += 1
       contactdist = contactdist or self.contactdis
 
       # wu.pdb.dump_pdb_from_points('bodyA.pdb', self.coords)
@@ -356,6 +398,7 @@ class RigidBody:
       return len(a) / len(self.coords), len(b) / len(self.coords)
 
    def clash_distances(self, other, maxdis=8):
+      self.bvhopcount += 1
       crd1 = self.coords
       crd2 = other.coords
       interactions = self.clash_interactions(other, maxdis)
@@ -364,6 +407,7 @@ class RigidBody:
       return wu.hnorm(crd1 - crd2)
 
    def interactions(self, other, contactdist=8, buf=None, usebvh=None):
+      self.bvhopcount += 1
       assert isinstance(other, RigidBody)
       if usebvh or (usebvh is None and self.usebvh):
          if not buf: buf = np.empty((100000, 2), dtype="i4")
@@ -376,6 +420,7 @@ class RigidBody:
       return pairs
 
    def clash_interactions(self, other, contactdist=8, buf=None, usebvh=None):
+      self.bvhopcount += 1
       assert isinstance(other, RigidBody)
       if usebvh or (usebvh is None and self.usebvh):
          if not buf: buf = np.empty((100000, 2), dtype="i4")

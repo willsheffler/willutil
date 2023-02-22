@@ -724,7 +724,7 @@ def symfit_mc_play(
       _onlynone=True,
       spheres=0.4,
       showme=showme,
-      fresh=True,
+      vizfresh=True,
       weight=1,
       # xyzlen=[.4, .4, .4],
    )
@@ -812,11 +812,11 @@ def symfit_mc_play(
             col = (isamp / maxiters, 1 - isamp / maxiters, 1)  #######
 
             if showsymdups:
-               fresh = not showfulltraj
-               fresh = True
+               vizfresh = not showfulltraj
+               vizfresh = True
                # symdupframes = wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :]
                symdupframes = frames
-               wu.showme(symdupframes, name='xfitmc%05i' % isamp, col=None, **showme_opts.sub(fresh=fresh))
+               wu.showme(symdupframes, name='xfitmc%05i' % isamp, col=None, **showme_opts.sub(vizfresh=vizfresh))
 
                # os.makedirs('symfit_movie', exist_ok=True)
                # pymol.cmd.png(f'symfit_movie/symdup_{ipng:04}.png', )
@@ -824,14 +824,14 @@ def symfit_mc_play(
             # pymol.cmd.turn('y', 1)
 
             if showsymops:
-               fresh = not showfulltraj and not showsymdups
+               vizfresh = not showfulltraj and not showsymdups
                pairs = wu.sym.stupid_pairs_from_symops(symfit.symops)
                # print(type(pairs))
                # print(pairs)
                # pairs = {(0, 1): pairs[(0, 1)]}
                del pairs[(0, 1)]
                # assert 0
-               wu.showme(pairs, name='pairsstop', col='bycx', center=[0, 0, 0], **showme_opts.sub(fresh=fresh))
+               wu.showme(pairs, name='pairsstop', col='bycx', center=[0, 0, 0], **showme_opts.sub(vizfresh=vizfresh))
                # assert 0
                # os.makedirs('symfit_movie', exist_ok=True)
                # fname = f'symfit_movie/symops_{ipng:04}.png'
@@ -856,7 +856,7 @@ def symfit_mc_play(
 
    # pairs = wu.sym.stupid_pairs_from_symops(symfit.symops)
    # wu.showme(pairs, name='pairsstop', col='bycx', center=[0, 0, 0],
-   # **showme_opts.sub(fresh=fresh))
+   # **showme_opts.sub(vizfresh=vizfresh))
 
    frames, symfit = best
    symdupframes = wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :]
@@ -871,7 +871,7 @@ def symfit_mc_play(
    if False:
       symdupframes = wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :]
       wu.showme(symdupframes, name='xfitmcfinal', col=None, **showme_opts)
-      showme_opts.fresh = False
+      showme_opts.vizfresh = False
       wu.showme(frames, name='xfitmc%05ib' % isamp, col=None, **showme_opts.sub(spheres=0.65, weight=1.5))
       pairs = wu.sym.stupid_pairs_from_symops(symfit.symops, )
       wu.showme(pairs, name='pairsstop', col='bycx', center=[0, 0, 0], **showme_opts)

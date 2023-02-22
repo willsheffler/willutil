@@ -1,6 +1,14 @@
 import numpy as np, willutil as wu, pytest
 
 def main():
+
+   test_helix_scaling()
+   assert 0
+
+   h = wu.sym.Helix(turns=11, nfold=1, turnsB=1, phase=0.5)
+   wu.showme(h, radius=3.8, spacing=1.3, coils=4)
+   assert 0
+
    test_helix_9_1_1_r100_s40_p50_t2_d80_c7()
    test_helix_7_1_1_r80_s30_p20_t1_c7()
    test_helix_scaling()
@@ -27,7 +35,7 @@ def test_helix_scaling():
    np.random.seed(7)
    xyz = wu.tests.point_cloud(100, std=30, outliers=0)
 
-   hframes = h.frames(maxdist=9e8, closest=0, radius=100, spacing=40, coils=4)
+   hframes = h.frames(xtalrad=9e8, closest=0, radius=100, spacing=40, coils=4)
    rb = wu.RigidBodyFollowers(coords=xyz, frames=hframes, symtype='H')
    origorig = rb.origins()
    origori = rb.orientations()
@@ -54,13 +62,13 @@ def test_helix_scaling():
    #    ic(rb.origins())
 
    h = wu.sym.Helix(turns=9, nfold=1, turnsB=1, phase=0.5)
-   hframes = h.frames(maxdist=9e8, closest=0, radius=90, spacing=40, coils=4)
+   hframes = h.frames(xtalrad=9e8, closest=0, radius=90, spacing=40, coils=4)
    rb = wu.RigidBodyFollowers(coords=xyz, frames=hframes, symtype='H')
    assert not np.allclose(rb.orientations(), origori)
 
 def test_helix_9_1_1_r100_s40_p50_t2_d80_c7():
    h = wu.sym.Helix(turns=9, nfold=1, turnsB=1, phase=0.5)
-   hframes = h.frames(maxdist=80, closest=7, radius=100, spacing=40, coils=2)
+   hframes = h.frames(xtalrad=80, closest=7, radius=100, spacing=40, coils=2)
    foo = np.array([[[5.46948158e-01, -8.37166478e-01, 0.00000000e+00, 5.46948158e+01],
                     [8.37166478e-01, 5.46948158e-01, 0.00000000e+00, 8.37166478e+01],
                     [0.00000000e+00, 0.00000000e+00, 1.00000000e+00, -3.55555556e+01],

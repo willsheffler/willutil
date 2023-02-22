@@ -3,11 +3,62 @@ import numpy as np
 import willutil as wu
 
 def main():
+   test_rigidbody_cellsize_scale(False)
    test_rigidbody_contacts()
    test_rigidbody_bvh()
    test_rigidbody_moveby()
    test_rigidbody_parent()
    test_rigidbody_viz()
+
+def test_rigidbody_cellsize_scale(showme=False):
+   fname = wu.tests.testdata.test_data_path('pdb/1coi.pdb1.gz')
+   pdb = wu.pdb.load_pdb(fname)
+   xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']]).T
+
+   body = wu.RigidBodyFollowers(coords=xyz, sym='L6_32', cellsize=80)
+   if showme: wu.showme(body)
+   # print(repr(body.coms()[:, :3]))
+
+   coms0 = np.array(
+      [[1.67999986e+01, 9.69947657e+00, 2.95419880e+01], [-1.67999924e+01, 9.69948730e+00, 2.95419880e+01],
+       [-6.19596624e-06, -1.93989639e+01, 2.95419880e+01], [6.32000014e+01, -9.69947657e+00, 2.95419880e+01],
+       [8.00000062e+01, 1.93989639e+01, 2.95419880e+01], [1.03200008e+02, 7.89815196e+01, 2.95419880e+01],
+       [-5.67999986e+01, -7.89815089e+01, 2.95419880e+01], [-1.03200001e+02, 7.89815089e+01, 2.95419880e+01],
+       [-1.20000006e+02, -8.86809962e+01, 2.95419880e+01], [1.03200008e+02, -5.95825450e+01, 2.95419880e+01],
+       [-2.32000076e+01, -7.89815196e+01, 2.95419880e+01], [-1.20000006e+02, 4.98830684e+01, 2.95419880e+01],
+       [-1.03200001e+02, -5.95825557e+01, 2.95419880e+01], [-5.67999986e+01, 5.95825557e+01, 2.95419880e+01],
+       [-3.99999938e+01, -4.98830684e+01, 2.95419880e+01], [9.67999924e+01, -9.69948730e+00, 2.95419880e+01],
+       [-2.32000076e+01, 5.95825450e+01, 2.95419880e+01], [-3.99999938e+01, 8.86809962e+01, 2.95419880e+01]])
+   assert np.allclose(body.coms()[:, :3], coms0)
+
+   body.cellsize *= 1.2
+   if showme: wu.showme(body)
+   coms1 = np.array(
+      [[1.67999986e+01, 9.69947657e+00, 2.95419880e+01], [-1.67999924e+01, 9.69948730e+00, 2.95419880e+01],
+       [-6.19596624e-06, -1.93989639e+01, 2.95419880e+01], [7.92000014e+01, -9.69947657e+00, 2.95419880e+01],
+       [9.60000062e+01, 1.93989639e+01, 2.95419880e+01], [1.27200008e+02, 9.28379261e+01, 2.95419880e+01],
+       [-6.47999986e+01, -9.28379153e+01, 2.95419880e+01], [-1.27200001e+02, 9.28379153e+01, 2.95419880e+01],
+       [-1.44000006e+02, -1.02537403e+02, 2.95419880e+01], [1.27200008e+02, -7.34389515e+01, 2.95419880e+01],
+       [-3.12000076e+01, -9.28379261e+01, 2.95419880e+01], [-1.44000006e+02, 6.37394749e+01, 2.95419880e+01],
+       [-1.27200001e+02, -7.34389622e+01, 2.95419880e+01], [-6.47999986e+01, 7.34389622e+01, 2.95419880e+01],
+       [-4.79999938e+01, -6.37394749e+01, 2.95419880e+01], [1.12799992e+02, -9.69948730e+00, 2.95419880e+01],
+       [-3.12000076e+01, 7.34389515e+01, 2.95419880e+01], [-4.79999938e+01, 1.02537403e+02, 2.95419880e+01]])
+   # print(repr(body.coms()[:, :3]))
+   if showme: wu.showme(coms1)
+   assert np.allclose(body.coms()[:, :3], coms1)
+
+   body.cellsize /= 1.2
+   if showme: wu.showme(body)
+   assert np.allclose(body.coms()[:, :3], coms0)
+
+   body.scale *= 1.123
+   if showme: wu.showme(body)
+   assert np.allclose(coms0 * 1.123, body.coms()[:, :3])
+
+   body.scale_com_with_cellsize = True
+   body.cellsize = 80
+   if showme: wu.showme(body)
+   assert np.allclose(body.coms()[:, :3], coms0)
 
 def test_rigidbody_contacts():
    fname = wu.tests.testdata.test_data_path('pdb/1coi.pdb1.gz')

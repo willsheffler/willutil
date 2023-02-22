@@ -18,12 +18,12 @@ class Helix:
       symcoords = wu.hxform(frames, coords)
       wu.pdb.dump_pdb_from_points(fname, symcoords)
 
-   def frames(self, radius, spacing, coils=1, maxdist=9e9, start=None, closest=0, closest_upper_only=False, **kw):
+   def frames(self, radius, spacing, coils=1, xtalrad=9e9, start=None, closest=0, closest_upper_only=False, **kw):
       '''phase is a little artifical here, as really it just changes self.turns
          "central" frame will be ontop. if closest is given, frames will be sorted on dist to cen
          otherwise central frame will be first, then others in order from bottom to top
       '''
-      assert maxdist is not None
+      assert xtalrad is not None
       axis = np.array([0, 0, 1, 0])
       if isinstance(coils, (int, float)):
          coils = (-coils, coils)
@@ -43,7 +43,7 @@ class Helix:
       frames = wu.hxform(frames, start)
       dist = wu.hnorm(frames[:, :, 3] - start[:, 3])
       frames = frames[np.argsort(dist)]
-      frames = frames[dist <= maxdist]
+      frames = frames[dist <= xtalrad]
       if closest > 0:
          if closest_upper_only:
             closest = 2 * (closest - 1) + 1
@@ -53,6 +53,6 @@ class Helix:
             isupper[0] = True
             nframes = len(frames)
             frames = frames[isupper]
-            ic(frames.shape, nframes)
+            # ic(frames.shape, nframes)
             assert len(frames) - 1 == (nframes - 1) // 2
       return frames

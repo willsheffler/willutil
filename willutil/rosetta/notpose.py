@@ -13,11 +13,11 @@ class NotPose:
       self.bbcoords = wu.hpoint(self.pdb.bb())
       self.ncac = self.bbcoords[:, :3]
       self.camask = self.pdb.camask()
+      self.seq = self.pdb.sequence()
       try:
          self.ss = wu.dssp(self.bbcoords)
       except ImportError:
-         self.ss = None
-      self.seq = self.pdb.sequence()
+         self.ss = 'L' * len(self.seq)
       self.info = NotPDBInfo(self)
       self.pdb.renumber_from_0()
 
