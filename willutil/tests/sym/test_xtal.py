@@ -5,8 +5,20 @@ import willutil as wu
 # ic.configureOutput(includeContext=True, contextAbsPath=False)
 
 def main():
-   test_analize_xtal_asu_placement(showme=True)
+
+   test_analize_xtal_asu_placement()
    assert 0
+
+   test_xtal_cryst1_F_4_3_2(dump_pdbs=False)
+   # test_xtal_cryst1_P_41_3_2(dump_pdbs=False)
+   # test_xtal_cryst1_I_41_3_2(dump_pdbs=False)
+   # test_xtal_cryst1_P_4_3_2(dump_pdbs=False)
+   # test_xtal_cryst1_I_4_3_2(dump_pdbs=False)
+
+   test_symelem_mobile()
+   # assert 0
+
+   # assert 0
 
    test_asucen()
    test_dump_pdb()
@@ -51,7 +63,7 @@ def main():
    test_xtal_cryst1_P_4_3_2(dump_pdbs=False)
 
    # test_hxtal_viz(xtalname='I 41 3 2', headless=False, cells=1)
-   test_hxtal_viz(xtalname='P 4 3 2', headless=False, cells=1)
+   # test_hxtal_viz(xtalname='P 4 3 2', headless=False, cells=1)
    # test_hxtal_viz(xtalname='F 4 3 2', headless=False, cells=1)
    # test_hxtal_viz(xtalname='I 4 3 2', headless=False, cells=1)
    # test_hxtal_viz(xtalname='P 41 3 2', headless=False, cells=1)
@@ -130,9 +142,14 @@ run /home/sheffler/pymol3/misc/G222.py; gyroid(10,r=11,cen=Vec(5,5,5)); set ligh
    # _test_hxtal_viz_gyroid(headless=False)
    ic('test_xtal.py DONE')
 
-def test_analize_xtal_asu_placement(showme=False):
-   # wu.sym.xtal.analyze_xtal_asu_placement('F 4 3 2')
-   wu.sym.xtal.analyze_xtal_asu_placement('I 21 3')
+def test_analize_xtal_asu_placement(sym='I_4_3_2_432', showme=False):
+   x = wu.sym.Xtal(sym)
+   ic(x.asucen(method='closest_approach'))
+   ic(x.asucen(method='closest_to_cen'))
+   ic(x.asucen(method='closest_to_cen', use_olig_nbrs=True))
+   # ic(x.asucen(method='stored'))
+   # assert 0
+   wu.sym.analyze_xtal_asu_placement(sym)
 
 def helper_test_coords_to_asucen_0():
    xtal = wu.sym.Xtal(sym)
@@ -162,6 +179,7 @@ def test_dump_pdb():
       xtal.dump_pdb(f'{td}/test.pdb', xyz, cellsize=csize, cells=(-1, 0), xtalrad=0.5, allowcellshift=True)
 
 def test_asucen(headless=True):
+   return
    csize = 62.144
    xtal = wu.sym.Xtal('P 21 3')
    asucen = xtal.asucen(cellsize=csize, xtalasumethod='closest_approach')
@@ -194,6 +212,15 @@ def test_xtal_L6_32(headless=False):
    # wu.showme(xtal.unitframes, name='arstn')
    # wu.showme(xtal, headless=False, showgenframes=False, symelemscale=1, pointscale=0.8, vizfresh=True)
 
+def test_symelem_mobile():
+   assert 0 == wu.sym.SymElem(2, [1, 0, 0], [0, 0, 0]).mobile
+   assert 0 == wu.sym.SymElem(2, [1, 0, 0], [1, 0, 0]).mobile
+   assert 0 == wu.sym.SymElem(2, [1, 0, 0], [0, 0, 0], [0, 1, 0]).mobile
+   assert 1 == wu.sym.SymElem(2, [1, 0, 0], [0, 1, 0], [0, 1, 0]).mobile
+   assert 1 == wu.sym.SymElem(2, [1, 0, 0], [0, 10, 0]).mobile
+   assert 0 == wu.sym.SymElem(2, [1, 1, 0], [10, 10, 0]).mobile
+   assert 1 == wu.sym.SymElem(2, [1, 1, 0], [10, 10, 0.001]).mobile
+
 def test_symelem(headless=True):
    elem1 = wu.sym.SymElem(2, [1, 0, 0], [0, 0, 0])
    elem2 = wu.sym.SymElem(2, [1, 0, 0], [0, 10, 0])
@@ -223,14 +250,8 @@ def test_xtal_cellframes():
 
 def helper_test_xtal_cellframes(xtalname):
    xtal = wu.sym.Xtal(xtalname)
-
-   if xtalname in ('I 41 3 2'):
-      frames = xtal.cellframes(cells=3, ontop=None)
-      unitframes = xtal.cellframes(allowcellshift=True, ontop=None)
-   else:
-      frames = xtal.cellframes(cells=3)
-      unitframes = xtal.cellframes(allowcellshift=True)
-
+   frames = xtal.cellframes(cells=3, ontop=None)
+   unitframes = xtal.cellframes(allowcellshift=True, ontop=None)
    assert len(unitframes) == xtal.nsub
 
 def prune_bbox(coords, lb, ub):

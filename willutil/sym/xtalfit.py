@@ -1,6 +1,7 @@
 import functools as ft
 import numpy as np
 import willutil as wu
+from willutil.sym.xtal import Xtal
 
 def npscorefunc(xtal, scom, state):
    dis2 = 0
@@ -138,3 +139,59 @@ def fit_coords_to_xtal(xtal, coords, cellsize=None, domc=True, domin=False, nosh
       ic(besterr, beststate)
 
    assert 0
+
+def analyze_xtal_asu_placement(sym):
+   import scipy.spatial, collections
+   xtal = Xtal(sym)
+   cen = xtal.asucen(xtalasumethod='closest_to_cen', use_olig_nbrs=True)
+   ic(cen)
+   side = np.linspace(0, 1, 13, endpoint=False)
+   samp = np.meshgrid(side, side, side)
+   samp = np.stack(samp, axis=3).reshape(-1, 3)
+   # ic(samp[:10])
+   mindisxtal = collections.defaultdict(list)
+
+   for i, pt in enumerate(samp):
+      if i % 10 == 0: ic(i, len(samp))
+      ptsym = xtal.symcoords(pt, cells=3, ontop=None)
+      # wu.showme(ptsym * 5)
+      # assert 0
+      delta = np.sqrt(np.sum((wu.hpoint(pt) - ptsym)**2, axis=1))
+
+      # ic(delta)
+      # np.fill_diagonal(delta, 9e9)
+      zero = np.abs(delta) < 0.000001
+      if np.sum(zero) != 1: continue
+      delta[zero] = 9e9
+      mindis = np.round(np.min(delta), 3)
+      if mindis > 0.001:
+         mindisxtal[mindis].append(pt)
+   ic(len(samp))
+
+   frames = xtal.cellframes(cells=3)
+
+   ic(list(mindisxtal.keys()))
+   for k in reversed(sorted(mindisxtal.keys())):
+      pts = mindisxtal[k]
+      ptset = set()
+      for i, pt in enumerate(pts):
+         # ic(pt)
+         ptset.add(tuple(np.round(xtal.coords_to_asucen(pt, frames=frames)[0], 3)))
+      ic(k)
+      for pt in ptset:
+         ic(pt, wu.hnorm(pt - cen), wu.hnorm(pt))
+   # assert 0
+
+   keys = sorted(mindisxtal.keys())
+   scale = 8
+   for k in keys:
+      v = mindisxtal[k]
+      ic(k, len(v))
+      ptsym = xtal.symcoords(v[0] * 8, cellsize=8, cells=2, ontop=None)
+      # wu.showme(ptsym, name=f'{k}')
+      ic(v[0])
+
+   for i, v in enumerate(mindisxtal[0.288]):
+      ptsym = xtal.symcoords(v * 8, cellsize=8, cells=2, ontop=None)
+      wu.showme(ptsym, name=f'{i}')
+   # assert 0

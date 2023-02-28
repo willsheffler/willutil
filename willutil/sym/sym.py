@@ -105,28 +105,44 @@ def put_frames_on_top(frames, ontop, strict=True, allowcellshift=False, cellsize
    if allowcellshift:
       celldeltas = list(itertools.product(*[np.arange(-1, 2) * cellsize] * 3))
       # ic(celldeltas)
-   for f0 in ontop:
-      for i, x in enumerate(frames2):
-         if wu.hdiff(f0, x) < 0.0001: break
-         match = False
-         for delta in celldeltas:
-            tmp = x.copy()
-            tmp[:3, 3] += delta
-            if wu.hdiff(f0, tmp) < 0.0001:
-               match = True
-         if match: break
-      else:
-         if strict:
-            wu.showme(wu.hscaled(1, frames), name='frames')
-            wu.showme(wu.hscaled(1, ontop), name='ontop')
-            raise ValueError(f'ontop frame not found: {f0}')
-         else:
-            i = None
-      if i is not None:
-         del frames2[i]
+
+   # ic(np.stack(frames2).shape)
+   diff = wu.hdiff(ontop, np.stack(frames2))
+   # ic(diff.shape)
+   w = np.where(diff < 0.0001)
    if strict:
-      assert len(ontop) + len(frames2) == len(frames)
+      ic(w, ontop.shape)
+      assert len(w) == 2
+      assert set(w[0]) == set(range(len(ontop)))
+
+   for i in reversed(sorted(w[1])):
+      del frames2[i]
+
+   # f*ck this code right in the ear
+   # for f0 in ontop:
+   #    for i, x in enumerate(frames2):
+   #       if wu.hdiff(f0, x) < 0.0001: break
+   #       match = False
+   #       for delta in celldeltas:
+   #          tmp = x.copy()
+   #          tmp[:3, 3] += delta
+   #          if wu.hdiff(f0, tmp) < 0.0001:
+   #             match = True
+   #       if match: break
+   #    else:
+   #       if strict:
+   #          wu.showme(wu.hscaled(1, frames), name='frames')
+   #          wu.showme(wu.hscaled(1, ontop), name='ontop')
+   #          raise ValueError(f'ontop frame not found: {f0}')
+   #       else:
+   #          i = None
+   #    if i is not None:
+   #       del frames2[i]
+
+   # assert wu.hunique(np.stack(frames2))
+
    f = np.stack(list(ontop) + frames2)
+   assert wu.hunique(f)
 
    return f
 
@@ -178,14 +194,17 @@ def axes(sym, nfold=None, all=False, cellsize=1, **kw):
    except (KeyError, ValueError) as e:
       raise ValueError(f'unknown symmetry {sym}')
 
-def symelem_associations(symelems):
+def symelem_associations(sym=None, symelems=None):
+   if not symelems:
+      symelems = axes(sym)
    assoc = list()
    n = 1
    for s in symelems:
-      assoc.append(list())
+      nbrs = list()
       for i in range(1, s.nfold):
-         assoc[-1].append(n)
+         nbrs.append(n)
          n += 1
+      assoc.append(wu.Bunch(nbrs=nbrs, symelem=s))
    return assoc
 
 def remove_if_same_axis(frames, bbaxes, onesided=True, partial_ok=False):

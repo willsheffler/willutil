@@ -8,20 +8,31 @@ _xtal_asucens = {
    'P 4 3 2 43': np.array([0.1, 0.2, 0.3, 1]),
    'P 4 3 2 44': np.array([0.1, 0.2, 0.3, 1]),
    'I 4 3 2': np.array([0.28, 0.17, 0.08, 1]),
+   'I 4 3 2 432': np.array([0.28, 0.17, 0.08, 1]),
    'F 4 3 2': np.array([0.769, 0.077, 0.385, 1.0]),
+   # 'F 4 3 2': np.array([0.714, 0.071, 0.357, 1.0]),
+   'L6_32': np.array([0.2886751345948129, 0, 0]),
+   'L4_42': np.array([0.31, 0, 0]),
+   'L4_44': np.array([0.25, 0, 0]),
+   'L3_33': np.array([0.25, 0, 0]),
+
    # 'I 21 3': np.array([0.615, 0.385, 0.615, 1.0]),
-   'I 21 3': np.array([0.577, 0.385, 0.615, 1.0]),
+   # 'I 21 3': np.array([0.577, 0.385, 0.615, 1.0]),
+   'I 21 3': np.array([0.357, 0.357, 0.643, 1.0]),
+   'P 21 3': np.array([0.429, 0.214, 0.5, 1.0]),
+   #
+   'I4132_322': np.array([-0.08385417, 0.0421875, 0.14791667, 1]),
 }
 
 def all_xtal_names():
    allxtals = list()
-   for k in xtal_info_dict:
+   for k in _xtal_info_dict:
       if not k.startswith('DEBUG'):
          allxtals.append(k)
    return allxtals
 
-def _populate_xtal_info_dict():
-   global xtal_info_dict
+def _populate__xtal_info_dict():
+   global _xtal_info_dict
    A = np.array
    ##################################################################################
    ######## IF YOU CHANGE THESE, REMOVE CACHE FILES OR DISABLE FRAME CACHING ########
@@ -30,7 +41,7 @@ def _populate_xtal_info_dict():
    ######## IF YOU CHANGE THESE, REMOVE CACHE FILES OR DISABLE FRAME CACHING ########
    ##################################################################################
    # yapf: disable
-   xtal_info_dict = {
+   _xtal_info_dict = {
       'P 4 3 2'   : wu.Bunch( nsub=24 , spacegroup='P 4 3 2', symelems=[
          # C4 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 1, 1 ]) / 2 ),
          C4 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 0, 0 ]) / 2 ),
@@ -47,14 +58,15 @@ def _populate_xtal_info_dict():
       ]),
       'F 4 3 2'   : wu.Bunch( nsub=96 , spacegroup='F 4 3 2', symelems=[
          C4 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 0, 1 ]) / 2 ),
-         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 4, 1, 1 ]) / 6 ),
+         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 2,-1,-1 ]) / 6 ),
          # C4 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 1, 1 ]) / 2 ),
          # C3 ( axis= [ 1,  1,  1 ] , cen= A([ 4, 1, 1 ]) / 6 ),
          # C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 6 ),
       ]),
-      'I 4 3 2'   : wu.Bunch( nsub=48 , spacegroup='I 4 3 2', symelems=[
+      'I 4 3 2 432'   : wu.Bunch( nsub=48 , spacegroup='I 4 3 2', symelems=[
          C4 ( axis= [ 0,  0,  1 ] , cen= A([ 0, 0, 0 ]) / 1 ),
-         C2 ( axis= [ 0,  1,  1 ] , cen= A([-1,-1, 1 ]) / 4 ),
+         C3 ( axis= [ 1,  1, -1 ] , cen= A([ 0, 0, 0 ]) / 1 ),
+         C2 ( axis= [ 0,  1,  1 ] , cen= A([ 1, 1,-1 ]) / 4 ),
          # C4 ( axis= [ 0,  0,  1 ] , cen= A([ 1, 1, 0 ]) / 2 ),
          # C2 ( axis= [ 0,  1,  1 ] , cen= A([ 1, 1, 1 ]) / 2 ),
       ]),
@@ -147,6 +159,9 @@ class SymElem:
       if self.label is None:
          if axis2 is None: self.label = f'C{self.nfold}'
          else: self.label = f'D{self.nfold}'
+      self.mobile = False
+      if wu.homog.hgeom.h_point_line_dist([0, 0, 0], cen, axis) > 0.0001: self.mobile = True
+      if axis2 is not None and wu.hpointlinedis([0, 0, 0], cen, axis2) > 0.0001: self.mobile = True
 
    @property
    def operators(self):
@@ -216,9 +231,7 @@ def D4(**kw):
 def D6(**kw):
    return SymElem(nfold=6, **kw)
 
-xtal_info_dict = None
-
-_populate_xtal_info_dict()
+_xtal_info_dict = None
 
 def is_known_xtal(name):
    try:
@@ -228,12 +241,17 @@ def is_known_xtal(name):
       return False
 
 def xtalinfo(name):
+   if _xtal_info_dict is None:
+      _populate__xtal_info_dict()
+
    name = name.upper().strip()
 
    alternate_names = dict(
       P432='P 4 3 2',
+      P432_43='P 4 3 2 43',
       F432='F 4 3 2',
       I432='I 4 3 2',
+      I432_432='I 4 3 2 432',
       P4132='P 41 3 2',
       P213='P 21 3',
       P213_33='P 21 3',
@@ -247,12 +265,12 @@ def xtalinfo(name):
       P3_33='L3_33',
    )
 
-   if not name in xtal_info_dict:
+   if not name in _xtal_info_dict:
       if name in alternate_names:
          name = alternate_names[name]
-   if not name in xtal_info_dict:
+   if not name in _xtal_info_dict:
       name = name.replace('_', ' ')
    # ic(name)
-   return name, xtal_info_dict[name]
+   return name, _xtal_info_dict[name]
 
    raise ValueError(f'unknown xtal "{name}"')

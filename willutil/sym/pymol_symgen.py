@@ -68,8 +68,8 @@ def hacky_xtal_maker(
 
    cmd.set_view(v)
 
-class SymElem(object):
-   """docstring for SymElem"""
+class PymolSymElem(object):
+   """docstring for PymolSymElem"""
    def __init__(
          self,
          kind,
@@ -79,7 +79,7 @@ class SymElem(object):
          col=None,
          input_xform=None,
    ):
-      super(SymElem, self).__init__()
+      super(PymolSymElem, self).__init__()
       self.kind = kind
       self.axis = axis.normalized()
       self.cen = cen
@@ -689,7 +689,7 @@ if not newpath in sys.path:
    sys.path.append(newpath)
 # from xyzMath import Vec, Mat, Xform, RAD, projperp, Ux, Uy, Uz
 # from wills_pymol_crap.pymol_util import cgo_sphere, cgo_segment, cgo_cyl
-#from SymTrie import SymElem, SymTrieNode, generate_sym_trie
+#from SymTrie import PymolSymElem, SymTrieNode, generate_sym_trie
 
 # run /Users/sheffler/pymol/una.py; make_d3oct("test*","o33*",depth=3)
 

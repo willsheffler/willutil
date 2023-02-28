@@ -8,7 +8,6 @@ def tooclose_clash(bodies, nbrs=None, **kw):
 
 def tooclose_overlap(bodies, nbrs=None, contactfrac=0.1, printme=False, **kw):
    cfrac = bodies.contact_fraction(nbrs)
-   # ic(cfrac)
    # if printme: ic(cfrac)
    maxcfrac = max([np.mean(c) for c in cfrac])
    # ic(maxcfrac, contactfrac)
@@ -16,6 +15,7 @@ def tooclose_overlap(bodies, nbrs=None, contactfrac=0.1, printme=False, **kw):
    # wu.showme(bodies)
    # assert 0
    # TRUE means sufficient overlap
+
    return max(False, maxcfrac - contactfrac)
    # return maxcfrac > contactfrac
 

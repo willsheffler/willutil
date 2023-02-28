@@ -12,7 +12,7 @@ __all__ = ('MonteCarlo', 'RigidBody', 'compute_symfit', 'dssp', 'halign', 'halig
            'th_quat_to_rot', 'th_quat_to_upper_half', 'th_quat_to_xform', 'th_rand_quat', 'th_rand_xform',
            'th_rand_xform_small', 'th_randpoint', 'th_randunit', 'th_randvec', 'th_ray_in_plane', 'th_rms', 'th_rmsfit',
            'th_rog', 'th_rot', 'th_rot_to_quat', 'th_vec', 'th_xform', 'th_xformpts', 'to_xyz', 'unhomog', 'hcentered',
-           'hcentered3')
+           'hcentered3', 'hunique')
 
 import os
 from deferred_import import deferred_import
@@ -120,6 +120,7 @@ from willutil.homog import (
    hxform,
    hxformpts,
    h_point_line_dist as hpointlinedis,
+   hunique,
    hpointlineclose,
    line_angle as hline_angle,
    line_angle,

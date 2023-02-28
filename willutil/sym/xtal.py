@@ -1,7 +1,6 @@
 import itertools, os
 import numpy as np
 import willutil as wu
-from .xtalfit import fit_coords_to_xtal
 from .xtalinfo import _xtal_asucens
 
 cryst1_pattern = "CRYST1  %7.3f  %7.3f  %7.3f  90.00  90.00  90.00 %s\n"
@@ -23,7 +22,7 @@ class Xtal:
       self.nprimaryframes = len(self.primary_frames())
 
    def fit_coords(self, coords, **kw):
-      return fit_coords_to_xtal(self, coords, **kw)
+      return wu.sym.xtalfit.fit_coords_to_xtal(self, coords, **kw)
 
    def coords_to_asucen(self, coords, cells=5, frames=None, asucen=None, **kw):
       coords = wu.hpoint(coords)
@@ -68,8 +67,16 @@ class Xtal:
       **kw,
    ):
       'should be a point roughly in the center of the primary sym elems'
+
       if xtalasumethod is None:
-         xtalasumethod = 'stored' if self.name in _xtal_asucens else 'closest_approach'
+         if 'method' in kw:
+            global _warn_asucen_xtalasumethod
+            if _warn_asucen_xtalasumethod:
+               ic('DEPRICATION WARNING Xtal.asucen "method" arg replaced by "xtalasumethod"')
+            _warn_asucen_xtalasumethod = False
+            xtalasumethod = kw['method']
+         else:
+            xtalasumethod = 'stored' if self.name in _xtal_asucens else 'closest_approach'
 
       if xtalasumethod == 'stored':
          if self.name in _xtal_asucens: cen = _xtal_asucens[self.name]
@@ -82,6 +89,8 @@ class Xtal:
          elems = self.symelems
          # ic([e.cen for e in elems])
          cen0 = np.mean(np.stack([e.cen for e in elems]), axis=0)
+         # ic(cen0)
+         # assert 0
       elif xtalasumethod == 'closest_approach':
          cens = list()
          for i1, elem1 in enumerate(self.symelems):
@@ -208,7 +217,7 @@ class Xtal:
          frames = wu.hscaled(cellsize, self.unitframes)
          if ontop == 'primary':
             ontop = self.primary_frames(cellsize)
-         if len(ontop) > 0:
+         if ontop is not None and len(ontop) > 0:
             frames = wu.sym.put_frames_on_top(frames, ontop, cellsize=cellsize, **kw)
          return frames
       if cells == None:
@@ -234,13 +243,16 @@ class Xtal:
       cells = cells.reshape(-1, 4)
       xcellshift = wu.htrans(cells)
       frames = self.unitframes.copy()
+
       # ic(frames[:, :3, 3])
       frames = wu.hxform(xcellshift, frames)
       # frames[..., :3, 3] *= cellsize
       frames = wu.hscaled(cellsize, frames)
+
       if flat: frames = frames.reshape(-1, 4, 4)
       # ic(frames.shape)
       # ic(frames[:10, :3, 3])
+
       if xtalrad is not None:
          if xtalrad <= 3: xtalrad = xtalrad * np.linalg.norm(np.array(cellsize))
          if center is None: center = self.asucen(cellsize)
@@ -260,8 +272,7 @@ class Xtal:
       if ontop is not None and len(ontop) > 0:
          frames = wu.sym.put_frames_on_top(frames, ontop, cellsize=cellsize, **kw)
 
-      # ic(frames[0])
-      # assert np.allclose(frames[0], np.eye(4))
+      assert wu.hunique(frames)
 
       return frames
 
@@ -332,72 +343,6 @@ class Xtal:
          coverelems.append(elems)
       return coverelems
 
-'''
-monday 1pm
-watser testing 212
-nitrates 144
-arsenic 144
-pumbing test lead copper zinc 246
-iron bacteria 212
-sulfer bacteria 212
-water quality turbidity metals 240
-824 flow
-545 well incpection
-monday morning 8-10
-'''
-
-def analyze_xtal_asu_placement(sym):
-   import scipy.spatial, collections
-   xtal = Xtal(sym)
-   cen = xtal.asucen(method='closest')
-   side = np.linspace(0, 1, 13, endpoint=False)
-   samp = np.meshgrid(side, side, side)
-   samp = np.stack(samp, axis=3).reshape(-1, 3)
-   # ic(samp[:10])
-   mindisxtal = collections.defaultdict(list)
-   for pt in samp:
-      ptsym = xtal.symcoords(pt, cells=3, ontop=None)
-      # wu.showme(ptsym * 5)
-      # assert 0
-      delta = np.sqrt(np.sum((wu.hpoint(pt) - ptsym)**2, axis=1))
-      # ic(delta)
-      # np.fill_diagonal(delta, 9e9)
-      zero = np.abs(delta) < 0.000001
-      if np.sum(zero) != 1: continue
-      delta[zero] = 9e9
-      mindis = np.round(np.min(delta), 3)
-      if mindis > 0.001:
-         mindisxtal[mindis].append(pt)
-   ic(len(samp))
-
-   frames = xtal.cellframes(cells=3)
-
-   ic(list(mindisxtal.keys()))
-   for k in reversed(sorted(mindisxtal.keys())):
-      pts = mindisxtal[k]
-      ptset = set()
-      for i, pt in enumerate(pts):
-         # ic(pt)
-         ptset.add(tuple(np.round(xtal.coords_to_asucen(pt, frames=frames)[0], 3)))
-      ic(k)
-      for pt in ptset:
-         ic(pt, wu.hnorm(pt - cen))
-   # assert 0
-
-   keys = sorted(mindisxtal.keys())
-   scale = 8
-   for k in keys:
-      v = mindisxtal[k]
-      ic(k, len(v))
-      ptsym = xtal.symcoords(v[0] * 8, cellsize=8, cells=2, ontop=None)
-      # wu.showme(ptsym, name=f'{k}')
-      ic(v[0])
-
-   for i, v in enumerate(mindisxtal[0.288]):
-      ptsym = xtal.symcoords(v * 8, cellsize=8, cells=2, ontop=None)
-      wu.showme(ptsym, name=f'{i}')
-   # assert 0
-
 def interp_xtal_cell_list(cells):
    if cells == None:
       return np.eye(4)[None]
@@ -417,3 +362,5 @@ def interp_xtal_cell_list(cells):
    else:
       raise ValueError(f'bad cells {cells}')
    return cells
+
+_warn_asucen_xtalasumethod = True

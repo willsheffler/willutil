@@ -17,6 +17,7 @@ def asuslide(
    isxtal=False,
    nbrs='auto',
    doscale=True,
+   doscaleiters=True,
    iters=5,
    subiters=1,
    clashiters=5,
@@ -28,51 +29,48 @@ def asuslide(
    centerasu_at_start=False,
    showme=False,
    scaleslides=1.0,
-   iterstepscale=0.75,
+   iterstepscale=0.5,
    coords_to_asucen=False,
    along_extra_axes=[],
    xtalrad=0.5,
    **kw,
 ):
+   kw = wu.Bunch(kw)
    if isinstance(cellsize, (int, float)): cellsize = [float(cellsize)] * 3
    if not isinstance(cellsize, np.ndarray): cellsize = np.array(cellsize, dtype=np.float64)
    if printme:
       coordstr = repr(coords).replace(' ', '').replace('\n', '').replace('\t', '').replace('float32', 'np.float32')
       framestr = repr(frames).replace(' ', '').replace('\n', '').replace('\t', '')
-      print(f'''kw = {kw}
+      print(f'''      #yapf: disable
+      kw = {kw}
       coords=np.{coordstr}
-      frames=np.{framestr}
-      asuslide(sym='{sym}',coords=coords,frames=frames,axes={axes},existing_olig={existing_olig},alongaxis={alongaxis},towardaxis={towardaxis},printme=False,cellsize={repr(cellsize)},isxtal={isxtal},nbrs={repr(nbrs)},doscale={doscale},iters={iters},subiters={subiters},clashiters={clashiters},receniters={receniters},step={step},scalestep={scalestep},closestfirst={closestfirst},centerasu={repr(centerasu)},centerasu_at_start={centerasu_at_start},showme={showme},scaleslides={scaleslides},iterstepscale={iterstepscale},coords_to_asucen={coords_to_asucen},**kw)'''
-            )
+      # yapf: enable
+      frames={framestr}
+      slid = asuslide(sym='{sym}',coords=coords,frames=frames,axes={axes},existing_olig={existing_olig},alongaxis={alongaxis},towardaxis={towardaxis},printme=False,cellsize={repr(cellsize)},isxtal={isxtal},nbrs={repr(nbrs)},doscale={doscale},iters={iters},subiters={subiters},clashiters={clashiters},receniters={receniters},step={step},scalestep={scalestep},closestfirst={closestfirst},centerasu={repr(centerasu)},centerasu_at_start={centerasu_at_start},showme={showme},scaleslides={scaleslides},iterstepscale={iterstepscale},coords_to_asucen={coords_to_asucen},xtalrad={xtalrad},maxstep={kw.maxstep},**kw,)
+      wu.showme(slid)
+      slid.dump_pdb(f'/home/sheffler/DEBUG_slid_willutil.pdb')
+      ''')
    kw = wu.Bunch(kw)
    kw.showme = showme
    kw.boundscheck = boundscheck
    kw.scaleslides = scaleslides
    coords = wu.hpoint(coords).copy()
    coords = coords.reshape(-1, 4)
-   symelems_siblings = []
    if scalestep is None: scalestep = step
    if axes is None:
       axes0 = wu.sym.axes(sym, cellsize=cellsize)
-      # ic(axes)
       if isinstance(axes0, dict):
          axes = [(ax, wu.hpoint([0, 0, 0])) for ax in axes0.values()]
       else:
          isxtal = True
          axes = [(elem.axis, elem.cen) for elem in axes0]
          doscale = True if doscale is None else doscale
-         symelems_siblings = wu.sym.symelem_associations(axes0)
       com = wu.hcom(coords)
       faxdist = [wu.hpointlinedis(com, ac[1], wu.hscaled(cellsize, ac[0])) for ac in axes]
       faxorder = np.argsort(faxdist)
-      # ic([faxdist(ac) for ac in axes])
       axes = [axes[i] for i in faxorder]
-      if symelems_siblings: symelems_siblings = [symelems_siblings[i] for i in faxorder]
       if not closestfirst:
          axes = list(reversed(axes))
-         symelems_siblings = list(reversed(symelems_siblings))
-   symelems_siblings = symelems_siblings or ['auto'] * len(axes)
-   # ic(symelems_siblings)
 
    # ic(alongaxis, towardaxis)
    if alongaxis is None and towardaxis is None:
@@ -94,21 +92,29 @@ def asuslide(
    # userfunc = functools.partial(kw.get('tooclosefunc', tooclose_overlap), printme=printme, **kw)
    kw.tooclosefunc = functools.partial(kw.get('tooclosefunc', tooclose_overlap), printme=printme, **kw)
 
-   assembly = wu.rigid.RigidBodyFollowers(coords=coords, frames=frames, recenter=True, cellsize=cellsize, **kw)
+   assembly = wu.rigid.RigidBodyFollowers(sym=sym, coords=coords, frames=frames, recenter=True, cellsize=cellsize, **kw)
    if showme: wu.showme(assembly, name='START', **kw)
+   assembly.dump_pdb(f'/home/sheffler/DEBUG_asuslide_start_{wu.misc.datetimetag()}.pdb')
+
    cellsize0 = cellsize
    if centerasu_at_start:
-      recenter_asu_frames(assembly, symelem_siblings=None, method='to_center', axis=axes, **kw)
+      recenter_asu_frames(assembly, method='to_center', axis=axes, **kw)
       if printme: ic(f'recenter {centerasu}')
+      # if printme: ic(f'scale {cellsize}')
    if doscale and not alongaxis:
       cellsize = slide_scale(assembly, cellsize, step=scalestep, **kw)
-      if printme: ic(f'scale {cellsize}')
    for i in range(iters):
       # if i >= clashiters: kw.tooclosefunc = userfunc
       # ic(step)
       for j in range(subiters):
+         ic('asuslide iter', i, j)
+         if doscaleiters and not alongaxis:
+            cellsize = slide_scale(assembly, cellsize, step=scalestep, **kw)
          # cellsize = slide_scale(assembly, cellsize, step=scalestep, **kw)
          for iax, (axis, axpos) in enumerate(axes):
+
+            cellsize = slide_cellsize(assembly, cellsize, step=scalestep, **kw)
+
             axis = wu.hnormalized(axis)
             axpos = wu.hscaled(cellsize / cellsize0, wu.hpoint(axpos))
             if towardaxis:
@@ -116,18 +122,19 @@ def asuslide(
                axisperp = wu.hnormalized(wu.hprojperp(axis, assembly.asym.com() - axpos - wu.hrandvec() / 1000))
                # ic(axis, assembly.asym.com() - axpos, cellsize, axisperp)
                if centerasu and i < receniters:
-                  recenter_asu_frames(assembly, symelem_siblings=symelems_siblings[iax], method=centerasu,
-                                      axis=axisperp, **kw)
+                  recenter_asu_frames(assembly, method=centerasu, axis=axisperp, **kw)
                   if printme: ic(f'recenter {centerasu}')
                else:
-                  slide = slide_axis(axisperp, assembly, perp=True, nbrs=None, symelem_siblings=symelems_siblings[iax],
-                                     step=step, **kw)
+                  # ic(axpos)
+                  slide = slide_axis(axisperp, assembly, perp=True, nbrs=None, step=step, **kw)
                   # if printme: ic(f'slide along {axisperp[:3]} by {slide}')
             if i < alongaxis:
                slide = slide_axis(axis, assembly, nbrs='auto', step=step, **kw)
                # printme: ic(f'slide along {axis[:3]} by {slide}')
-            if doscale and alongaxis: slide = slide_axis(assembly.asym.com(), assembly, nbrs=None, step=step, **kw)
-            elif doscale: cellsize = slide_cellsize(assembly, cellsize, step=scalestep, **kw)
+            if doscale and alongaxis:
+               slide = slide_axis(assembly.asym.com(), assembly, nbrs=None, step=step, **kw)
+            elif doscale:
+               cellsize = slide_cellsize(assembly, cellsize, step=scalestep, **kw)
             if showme == 'pdb': assembly.dump_pdb(f'slide_i{i}_j{j}_iax{iax}.pdb')
          for axis in along_extra_axes:
             slide = slide_axis(axis, assembly, nbrs='auto', step=step, **kw)
@@ -143,18 +150,236 @@ def asuslide(
    if showme: wu.showme(assembly, name='FINISH', **kw)
    return assembly
 
+def tooclose_by_symelem(assembly, tooclosefunc, **kw):
+   if assembly.sym is None:
+      return [tooclosefunc(assembly, **kw)]
+   assoc = wu.sym.symelem_associations(assembly.sym)
+   tooclose = [bool(tooclosefunc(assembly, sa.nbrs, **kw)) for sa in assoc]
+   return np.array(tooclose, dtype=bool)
+
+def slide_axis(
+   axis,
+   assembly,
+   nbrs='auto',
+   tooclosefunc=None,
+   perp=False,
+   step=1.0,
+   maxstep=100,
+   showme=False,
+   # symelemsibs=None,
+   resetonfail=True,
+   scaleslides=1.0,
+   boundscheck=lambda x: True,
+   nobadsteps=False,
+   **kw,
+):
+   axis = wu.hnormalized(axis)
+   origpos = assembly.asym.position
+   if nbrs == 'auto': nbrs = assembly.get_neighbors_by_axismatch(axis, perp)
+   elif nbrs == 'all': nbrs = None
+   # ic(repr(nbrs))
+
+   # origisect = tooclose_by_symelem(assembly, tooclosefunc)
+   # if perp and (np.all(origisect) or np.all(~origisect)):
+   #    # either all overlapping or none, don't do perp axis move
+   #    # better to scale
+   #    return
+
+   iflip, flip = 0, -1.0
+   startsclose = tooclosefunc(assembly, nbrs, **kw)
+   if startsclose:
+      iflip, flip = -1, 1.0
+
+   clashnbrs = None
+   if perp:
+      # collect neighbors to "clash" check -- all not this point sym
+      clashnbrs = []
+      assoc = wu.sym.symelem_associations(assembly.sym)
+      for i, sa in enumerate(assoc):
+         isect = bool(tooclosefunc(assembly, sa.nbrs))
+         axispos = wu.hscaled(assembly.cellsize, sa.symelem.cen)
+         pointtowards = wu.hdot(axis, axispos - assembly.asym.com()) > 0
+         # ic(i, sa.symelem.nfold, axispos[0], isect, pointtowards)
+         # ic(sa.symelem.axis)
+         # ic(abs(wu.hdot(sa.symelem.axis, axis)))
+         notperp = abs(wu.hdot(sa.symelem.axis, axis)) > 0.01
+         if notperp or (isect and pointtowards):
+            clashnbrs.extend(sa.nbrs)
+            # ic(i, clashnbrs)
+      # ic(clashnbrs)
+      nassoc = 1 + sum([len(sa.nbrs) for sa in assoc])
+      for i in range(nassoc, len(assembly)):
+         clashnbrs.append(i)
+
+      assert not clashnbrs or clashnbrs[0] <= nassoc
+      if not clashnbrs or clashnbrs[0] == nassoc and startsclose:
+         # no neighbors to clash check
+         return 0
+
+   # ic(axis[0], flip, nbrs, clashnbrs)
+
+   total = 0.0
+   delta = wu.htrans(flip * step * axis)
+   success = False
+   lastclose = 1.0
+   for i in range(maxstep):
+      assembly.asym.moveby(delta)
+      if not boundscheck(assembly): break
+      total += flip * step
+      if showme: wu.showme(assembly, name='slideaxis%f' % axis[0], **kw)
+      close = tooclosefunc(assembly, nbrs, **kw)
+      if iflip and nobadsteps and close - lastclose > 0.01: break
+      lastclose = close
+      if iflip + bool(close):
+         success = True
+         break
+      if clashnbrs is not None and tooclosefunc(assembly, clashnbrs):
+         break
+   # ic('slideaxis', perp, success)
+   if not success and resetonfail:
+      assembly.asym.position = origpos
+      if showme: wu.showme(assembly, name='resetaxis%f' % axis[0], **kw)
+      return 0
+   if iflip == 0:  # back off so no clash
+      total -= flip * step
+      assembly.asym.moveby(wu.hinv(delta))
+      if showme: wu.showme(assembly, name='backoffaxis%f' % axis[0], **kw)
+
+   if iflip == 0 and abs(total) > 0.01 and scaleslides != 1.0:
+      # if slid into contact, apply scaleslides (-1) is to undo slide
+      # ic(total, total + (scaleslides - 1) * total)
+      scaleslides_delta = wu.htrans((scaleslides - 1) * total * axis)
+      total += (scaleslides - 1) * total
+
+      assembly.asym.moveby(scaleslides_delta)
+
+   return total
+
+def slide_scale(*a, **kw):
+   return slide_cellsize(*a, scalecoords=True, **kw)
+
+def slide_cellsize(
+   assembly,
+   cellsize,
+   symelems=None,
+   tooclosefunc=None,  #tooclose_clash,
+   step=1.0,
+   maxstep=100,
+   showme=False,
+   cellscalelimit=9e9,
+   resetonfail=True,
+   scaleslides=1.0,
+   boundscheck=lambda x: True,
+   scalecoords=None,
+   nobadsteps=False,
+   ignoreimmobile=True,
+   **kw,
+):
+   if showme: wu.showme(assembly, name='scaleinput', **kw)
+   orig_scalecoords = assembly.scale_com_with_cellsize
+   nbrs = None
+   if scalecoords is not None:
+      assembly.scale_com_with_cellsize = scalecoords
+   elif ignoreimmobile and assembly.sym != None:
+      nbrs = []
+      assoc = wu.sym.symelem_associations(assembly.sym)
+      # ic(assoc)
+      for sa in assoc:
+         if sa.symelem.mobile:
+            nbrs.extend(sa.nbrs)
+      nassoc = 1 + sum([len(sa.nbrs) for sa in assoc])
+      for i in range(nassoc, len(assembly)):
+         nbrs.append(i)
+      # ic(nbrs)
+      # assert 0
+
+   step = wu.to_xyz(step)
+   # ic(cellsize, assembly.cellsize)
+
+   assert np.allclose(cellsize, assembly.cellsize)
+   orig_cellsize = assembly.cellsize
+   cellsize = assembly.cellsize
+
+   iflip, flip = 0, -1.0
+   startsclose = bool(tooclosefunc(assembly, nbrs, **kw))
+   if startsclose:
+      # ic('scale cell tooclose')
+      iflip, flip = -1, 1.0
+
+   initpos = assembly.asym.position.copy()
+   success, lastclose = False, 1.0
+   for i in range(maxstep):
+      close = tooclosefunc(assembly, nbrs, **kw)
+      # ic('SLIDE CELLSIZE', i, bool(close), startsclose, nbrs)
+      if iflip + bool(close):
+         success = True
+         break
+      if iflip and nobadsteps and close - lastclose > 0.01: break
+      lastclose = close
+      # ic(cellsize, flip, step)
+      delta = (cellsize + flip * step) / cellsize
+      # ic(delta)
+      # ic(cellsize, flip * step)
+      assert np.min(np.abs(delta)) > 0.0001
+      cellsize *= delta
+      assembly.scale_frames(delta, safe=False)
+      # changed = assembly.scale_frames(delta, safe=False)
+      # if not changed:
+      # assert i == 0
+      # return cellsize
+      if not boundscheck(assembly): break
+      if showme: wu.showme(assembly, name='scale', **kw)
+      if np.all(cellsize / orig_cellsize > cellscalelimit):
+         success = True
+         break
+
+   # assert 0
+
+   if not success:
+      if resetonfail:
+         assembly.scale_frames(orig_cellsize / cellsize)
+      if showme: wu.showme(assembly, name='resetscale', **kw)
+      assembly.scale_com_with_cellsize = orig_scalecoords
+      return orig_cellsize
+
+   if iflip == 0 and success:  # back off
+      delta = 1.0 / delta
+      assembly.scale_frames(delta, safe=False)
+      cellsize *= delta
+
+      if showme: wu.showme(assembly, name='backoffscale', **kw)
+
+   if iflip == 0 and scaleslides != 1.0 and np.sum((cellsize - orig_cellsize)**2) > 0.001:
+      # if slid into contact, apply scaleslides (-1) is to undo slide
+
+      newcellsize = (cellsize - orig_cellsize) * (scaleslides) + orig_cellsize
+      newdelta = newcellsize / cellsize
+      # ic(cellsize, newcellsize)
+      cellsize = newcellsize
+
+      assembly.scale_frames(newdelta, safe=False)
+
+   assembly.scale_com_with_cellsize = orig_scalecoords
+
+   return cellsize
+
+################################# NO ########################
+
 def recenter_asu_frames(
    assembly,
-   symelem_siblings=None,
+   symelemsibs=None,
    method=None,
    axis=None,
    showme=False,
    resetonfail=True,
    **kw,
 ):
-   """symelem_siblings is ???
+   """symelemsibs is ???
    """
-   if symelem_siblings is None:
+
+   assert 0
+
+   if symelemsibs is None:
       assert method == 'to_center'
       assert axis is not None
       newcen = len(axis) * assembly.asym.com()
@@ -168,14 +393,14 @@ def recenter_asu_frames(
    origcom = assembly.asym.com()
    partnercom = assembly.asym.com()
    othercom = assembly.asym.com()
-   for p in symelem_siblings:
+   for p in symelemsibs:
       partnercom += assembly.bodies[p].com()
-   partnercom /= (len(symelem_siblings) + 1)
+   partnercom /= (len(symelemsibs) + 1)
    othercom = assembly.asym.com()
    for i in range(1, len(assembly)):
-      if i not in symelem_siblings:
+      if i not in symelemsibs:
          othercom += assembly.bodies[i].com()
-   othercom /= (len(assembly) - len(symelem_siblings))
+   othercom /= (len(assembly) - len(symelemsibs))
    comdir = wu.hnormalized(othercom - partnercom)
    halfdist = wu.hnorm(othercom - partnercom) / 2
    center = (partnercom + othercom) / 2
@@ -210,147 +435,3 @@ def recenter_asu_frames(
       wu.showme(assembly, name='recenterasu', **kw)
 
    # assert 0
-
-def slide_axis(
-   axis,
-   assembly,
-   nbrs='auto',
-   tooclosefunc=None,
-   perp=False,
-   step=1.0,
-   maxstep=100,
-   showme=False,
-   symelem_siblings=None,
-   resetonfail=True,
-   scaleslides=1.0,
-   boundscheck=lambda x: True,
-   nobadsteps=False,
-   **kw,
-):
-   axis = wu.hnormalized(axis)
-   origpos = assembly.asym.position
-   if nbrs == 'auto': nbrs = assembly.get_neighbors_by_axismatch(axis, perp)
-   elif nbrs == 'all': nbrs = None
-   # ic(repr(nbrs))
-
-   iflip, flip = 0, -1.0
-   if tooclosefunc(assembly, symelem_siblings, **kw):
-      iflip, flip = -1, 1.0
-
-   total = 0.0
-   delta = wu.htrans(flip * step * axis)
-   success = False
-   lastclose = 1.0
-   for i in range(maxstep):
-      assembly.asym.moveby(delta)
-      if not boundscheck(assembly): break
-      total += flip * step
-      if showme: wu.showme(assembly, name='slideaxis%f' % axis[0], **kw)
-      close = tooclosefunc(assembly, nbrs, **kw)
-      if iflip and nobadsteps and close - lastclose > 0.01: break
-      lastclose = close
-      if iflip + bool(close):
-         success = True
-         break
-   if not success and resetonfail:
-      assembly.asym.position = origpos
-      if showme: wu.showme(assembly, name='resetaxis%f' % axis[0], **kw)
-      return 0
-   if iflip == 0:  # back off so no clash
-      total -= flip * step
-      assembly.asym.moveby(wu.hinv(delta))
-      if showme: wu.showme(assembly, name='backoffaxis%f' % axis[0], **kw)
-
-   if iflip == 0 and abs(total) > 0.01 and scaleslides != 1.0:
-      # if slid into contact, apply scaleslides (-1) is to undo slide
-      # ic(total, total + (scaleslides - 1) * total)
-      scaleslides_delta = wu.htrans((scaleslides - 1) * total * axis)
-      total += (scaleslides - 1) * total
-
-      assembly.asym.moveby(scaleslides_delta)
-
-   return total
-
-def slide_scale(*a, **kw):
-   return slide_cellsize(*a, scalecoords=True, **kw)
-
-def slide_cellsize(
-   assembly,
-   cellsize,
-   tooclosefunc=None,  #tooclose_clash,
-   step=1.0,
-   maxstep=100,
-   showme=False,
-   cellscalelimit=9e9,
-   resetonfail=True,
-   scaleslides=1.0,
-   boundscheck=lambda x: True,
-   scalecoords=None,
-   nobadsteps=False,
-   **kw,
-):
-   if showme: wu.showme(assembly, name='scaleinput', **kw)
-   orig_scalecoords = assembly.scale_com_with_cellsize
-   if scalecoords is not None: assembly.scale_com_with_cellsize = scalecoords
-
-   step = wu.to_xyz(step)
-   # ic(cellsize, assembly.cellsize)
-
-   assert np.allclose(cellsize, assembly.cellsize)
-   orig_cellsize = assembly.cellsize
-   cellsize = assembly.cellsize
-
-   iflip, flip = 0, -1.0
-   if tooclosefunc(assembly, **kw): iflip, flip = -1, 1.0
-
-   initpos = assembly.asym.position.copy()
-   success, lastclose = False, 1.0
-   for i in range(maxstep):
-      close = tooclosefunc(assembly, **kw)
-      # ic('SLIDE CELLSIZE', bool(close), close)
-      if iflip + bool(close):
-         success = True
-         break
-      if iflip and nobadsteps and close - lastclose > 0.01: break
-      lastclose = close
-      # ic(cellsize, flip, step)
-      delta = (cellsize + flip * step) / cellsize
-      # ic(cellsize, flip * step)
-      assert np.min(np.abs(delta)) > 0.0001
-      cellsize *= delta
-      assembly.scale_frames(delta, safe=False)
-      # changed = assembly.scale_frames(delta, safe=False)
-      # if not changed:
-      # assert i == 0
-      # return cellsize
-      if not boundscheck(assembly): break
-      if showme: wu.showme(assembly, name='scale', **kw)
-      if np.all(cellsize / orig_cellsize > cellscalelimit):
-         success = True
-         break
-
-   if not success:
-      if resetonfail:
-         assembly.scale_frames(orig_cellsize / cellsize)
-      if showme: wu.showme(assembly, name='resetscale', **kw)
-      return orig_cellsize
-
-   if iflip == 0:  # back off
-      delta = 1.0 / delta
-      assembly.scale_frames(delta, safe=False)
-      cellsize *= delta
-
-      if showme: wu.showme(assembly, name='backoffscale', **kw)
-
-   if iflip == 0 and scaleslides != 1.0 and np.sum((cellsize - orig_cellsize)**2) > 0.001:
-      # if slid into contact, apply scaleslides (-1) is to undo slide
-
-      newcellsize = (cellsize - orig_cellsize) * (scaleslides) + orig_cellsize
-      newdelta = newcellsize / cellsize
-      # ic(cellsize, newcellsize)
-      cellsize = newcellsize
-
-      assembly.scale_frames(newdelta, safe=False)
-
-   assembly.scale_com_with_cellsize = orig_scalecoords
-   return cellsize

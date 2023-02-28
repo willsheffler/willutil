@@ -394,6 +394,12 @@ def is_homog_xform(xforms):
 def hinv(xforms):
    return np.linalg.inv(xforms)
 
+def hunique(xforms):
+   diff = wu.hdiff(xforms, xforms)
+   np.fill_diagonal(diff, 9e9)
+   # ic(diff.shape, np.min(diff))
+   return 0.0001 < np.min(diff)
+
 def axis_angle_of(xforms, debug=False):
    axis = axis_of(xforms, debug=debug)
    angl = angle_of(xforms, debug=debug)

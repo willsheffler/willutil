@@ -2,8 +2,8 @@ import numpy as np
 import willutil as wu
 
 class RigidBodyFollowers:
-   def __init__(self, bodies=None, coords=None, frames=None, sym=None, cellsize=1, symtype='NOSYM', **kw):
-      self.symtype = symtype.upper()
+   def __init__(self, bodies=None, coords=None, frames=None, sym=None, cellsize=1, **kw):
+      self.sym = sym.upper() if sym else None
       self.kw = kw
       assert not (frames is None and sym is None)
       if frames is None:
@@ -15,6 +15,7 @@ class RigidBodyFollowers:
       elif frames is not None:
          if coords is None:
             raise ValueError(f'if no bodies specified, coords and frames/sym must be provided')
+         assert wu.hunique(frames)
          self.asym = RigidBody(coords, **kw)
          self.symbodies = [RigidBody(parent=self.asym, xfromparent=x, **kw) for x in frames[1:]]
          self.bodies = [self.asym] + self.symbodies
@@ -23,10 +24,18 @@ class RigidBodyFollowers:
       self.is_point_symmetry = np.sum(wu.hnorm(wu.hcart3(self.frames()))) < 0.0001
       self.rootbody = self.asym
       if not self.asymexists:
-         # assert 0
          self.bodies[0] = RigidBody(parent=self.asym, xfromparent=frames[0], **kw)
          self.asym = self.bodies[0]
       self.scale_com_with_cellsize = False
+
+      if self.asymexists:
+         for i, b in enumerate(self.bodies):
+            if i > 0 and np.allclose(b.xfromparent, np.eye(4)):
+               ic(i)
+               assert 0
+
+      assert wu.hunique(self.frames())
+      # assert 0
 
    def set_asym_coords(self, coords):
       newbody = wu.RigidBody(coords, **self.kw)
@@ -36,7 +45,7 @@ class RigidBodyFollowers:
 
    @property
    def asymexists(self):
-      return not self.symtype.startswith('H')
+      return self.sym is None or not self.sym.startswith('H')
 
    def clashes(self, nbrs=None):
       clashes = self.clash_list(nbrs)
@@ -89,7 +98,7 @@ class RigidBodyFollowers:
          raise ValueError(f'scale_frames only valid for non-point symmetry')
 
       scalefactor = wu.to_xyz(scalefactor)
-      if self.symtype.startswith('H'):
+      if self.sym is not None and self.sym.startswith('H'):
          assert np.allclose(scalefactor[0], scalefactor[1])
 
       self._cellsize *= scalefactor
@@ -118,9 +127,9 @@ class RigidBodyFollowers:
    def get_neighbors_by_axismatch(self, axis, perp=False):
       nbrs = list()
       for i in range(1, len(self.bodies)):
-         tonbaxis = wu.haxisof(self.bodies[i].xfromparent)
-         ang = wu.hangline(tonbaxis, axis)
-         # ic(perp, ang, axis, tonbaxis)
+         to_nbr_axs = wu.haxisof(self.bodies[i].xfromparent)
+         ang = wu.hangline(to_nbr_axs, axis)
+         # ic(perp, ang, axis, to_nbr_axs)
          if (not perp and ang > 0.001) or (perp and abs(ang - np.pi / 2) < 0.001):
             nbrs.append(i)
       return nbrs
@@ -170,7 +179,7 @@ class RigidBody:
       extra=None,
       position=np.eye(4),
       parent=None,
-      xfromparent=np.eye(4),
+      xfromparent=None,
       contactdis=8,
       clashdis=3,
       usebvh=True,
@@ -179,9 +188,15 @@ class RigidBody:
       recenter=False,
       **kw,
    ):
+
+      assert xfromparent is None or not np.allclose(np.eye(4), xfromparent)
+
       self.extra = extra
       self.parent = parent
-      self._xfromparent = xfromparent.copy()
+      if xfromparent is not None:
+         self._xfromparent = xfromparent.copy()
+      else:
+         self._xfromparent = np.eye(4)
       assert wu.hvalid(self._xfromparent)
 
       self._position = position
@@ -394,8 +409,19 @@ class RigidBody:
       b = set(p[:, 1])
       # ic(len(a), len(self.coords))
       # ic(len(b), len(other.coords))
+      cfrac = len(a) / len(self.coords), len(b) / len(self.coords)
+      assert cfrac[0] <= 1.0 and cfrac[1] <= 1.0
+      if self.parent is not None:
+         if cfrac[0] > 0.999 or cfrac[0] > 0.999:
+            ic(self.xfromparent)
+            ic(self._xfromparent)
+            ic(self.parent)
+            ic(other.xfromparent)
+            ic(other._xfromparent)
+            ic(other.parent)
+            assert 0
 
-      return len(a) / len(self.coords), len(b) / len(self.coords)
+      return cfrac
 
    def clash_distances(self, other, maxdis=8):
       self.bvhopcount += 1
