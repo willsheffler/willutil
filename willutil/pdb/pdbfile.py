@@ -1,6 +1,9 @@
+from difflib import SequenceMatcher
 import collections
 import numpy as np
 import willutil as wu
+
+_default_tol = wu.Bunch(rms=2.0, translation=1.0, angle=np.radians(5.0), seqmatch=0.8)
 
 class PDBFile:
    def __init__(
@@ -306,7 +309,7 @@ class PDBFile:
             return nfold
       assert 0, 'nfold 1 should have matched'
 
-   def guess_chains_sym(self):
+   def assign_chains_sym(self):
       nfold = self.guess_nfold()
       if nfold == 1: return 1
       nres = self.nres // nfold
@@ -335,6 +338,51 @@ class PDBFile:
       self.df.x = coords[:, 0]
       self.df.y = coords[:, 1]
       self.df.z = coords[:, 2]
+
+   def sym_chain_groups(pdb, tolerances=_default_tol, **kw):
+      pdb.assign_chains_sym()
+      chains = pdb.splitchains()
+      groups = list()
+      seenit = set()
+      for ichain, ch0 in enumerate(chains):
+         seq1 = ch0.sequence()
+         for jchain in range(ichain):
+            seq2 = chains[jchain].sequence()
+            matcher = SequenceMatcher(None, seq1, seq2)
+            match = matcher.find_longest_match(0, len(seq1), 0, len(seq2))
+            if tolerances.seqmatch < 2 * match.size / len(seq1 + seq2):
+               groups.append((ichain, jchain, match))
+               if len(seenit.intersection([ichain, jchain])):
+                  raise ValueError(f'looks like more than 2fold symmetry, not yet supported')
+               seenit.update([ichain, jchain])
+      if not groups:
+         raise ValueError(f'No symmetrical chains found by longest common substring {tolerances.seqmatch}')
+      return chains, groups
+
+   def syminfo(self, tolerances=_default_tol, **kw):
+      chains, cgroups = self.sym_chain_groups(tolerances, **kw)
+      chaingroup = sorted(cgroups, key=lambda x: x[2].size)[-1]
+      ichain, jchain, seqmatch = chaingroup
+      ca0 = chains[ichain].ca()[seqmatch.a:seqmatch.a + seqmatch.size]
+      ca1 = chains[jchain].ca()[seqmatch.b:seqmatch.b + seqmatch.size]
+      rms, _, xrmsfit = wu.hrmsfit(ca0, ca1)
+      if rms > tolerances.rms:
+         raise ValueError(f'rmsd {rms:5.3f} between detected symmetric chains is above rms tolerance {tolerances.rms}')
+      axis, ang, cen, hel = wu.haxis_angle_cen_hel_of(xrmsfit)
+      if hel > tolerances.translation:
+         raise ValueError(f'translation along symaxis of {hel:5.3f} between "symmetric"'
+                          ' chains is above translation tolerance {tolerances.translation}')
+      nfold, ang = _get_nfold_angle(ang, tolerances, **kw)
+      assert nfold == 2, f'nfold {nfold} not supported yet'
+      return wu.Bunch(
+         axis=axis,
+         angle=ang,
+         center=cen,
+         hel=hel,
+         nfold=nfold,
+         chaingroups=cgroups,
+         chains=chains,
+      )
 
 def _atomrecords_to_chainseq(df, ignoremissing=True):
    seq = collections.defaultdict(list)
@@ -377,3 +425,12 @@ def join(pdbfiles, chains=None):
          ichain += 1
    df = pd.concat(dfs)
    return PDBFile(df, meta=pdbfiles[0].meta, original_contents=pdbfiles[0].original_contents)
+
+def _get_nfold_angle(ang, tolerances, candidates=[2, 3, 4, 5, 6], **kw):
+   for nfold in candidates:
+      angnf = 2 * np.pi / nfold
+      if angnf - tolerances.angle < ang < angnf + tolerances.angle:
+         return nfold, ang
+   raise ValueError(
+      f'Angle {np.degrees(ang)} deviates from any nfold in {candidates} by more than {np.degrees(tolerances.angle)} degrees'
+   )

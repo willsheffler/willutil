@@ -1,55 +1,56 @@
 import os, argparse
-from difflib import SequenceMatcher
 import numpy as np
 import willutil as wu
 
 def makesym(fname, arch, **kw):
    print('-' * 80)
    print(fname, flush=True)
-
    tgtaxis, nfold, frames = get_tgtaxis_frames(arch, **kw)
-
    pdb = wu.readpdb(fname, removehet=True)
-
-   compinfo = cyclic_pdb_info(pdb, **kw)
-   pdbasu = build_component_asu(compinfo, **kw)
-
-   compaxis = wu.sym.axes(arch[:-1], nfold=compinfo.nfold)
-   pdbaln = align_to_axis(pdbasu, compaxis, compinfo, cenaxis=tgtaxis, **kw)
-
+   componentinfo = pdb.syminfo(**kw)
+   pdbasu = build_component_asu(componentinfo, **kw)
+   compaxis = wu.sym.axes(arch[:-1], nfold=componentinfo.nfold)
+   pdbaln = align_to_axis(pdbasu, compaxis, componentinfo, cenaxis=tgtaxis, **kw)
    tag = os.path.basename(fname)
    dump_transformed_samples(pdbaln, compaxis, frames, tag=tag, arch=arch, **kw)
-
    print('-' * 80, flush=True)
 
 def get_tgtaxis_frames(arch, output_symmetry, **kw):
    nfold, sym = int(arch[-1]), arch[:-1]
    tgtaxis = wu.sym.axes(sym, nfold=nfold)
-   if output_symmetry == 'full':
-      frames = wu.sym.frames(sym)
-   elif output_symmetry == 'cyclic':
-      frames = wu.sym.frames(nfold, axis=tgtaxis)
-   elif output_symmetry == 'asym':
-      frames = np.eye(4).reshape(1, 4, 4)
-   else:
-      raise ValueError(f'unknown output_symmetry {output_symmetry}')
+   if output_symmetry == 'full': frames = wu.sym.frames(sym)
+   elif output_symmetry == 'cyclic': frames = wu.sym.frames(nfold, axis=tgtaxis)
+   elif output_symmetry == 'asym': frames = np.eye(4).reshape(1, 4, 4)
+   else: raise ValueError(f'unknown output_symmetry {output_symmetry}')
    return tgtaxis, nfold, frames
 
-def build_component_asu(compinfo, reconcile_method='longest_chain', **kw):
+def build_component_asu(componentinfo, reconcile_method='longest_chain', **kw):
    if reconcile_method != 'longest_chain':
       raise ValueError(f'only reconcile_method longest_chain is currently supported')
-   chains = compinfo.chains
-   xform = wu.hrot(compinfo.axis, compinfo.ang, compinfo.cen)
+   ci = componentinfo
+   chains = ci.chains
+   xform = wu.hrot(ci.axis, ci.angle, ci.center)
    newchains = list()
-   for chainids in compinfo.chaingroups:
-      i, j, m = chainids
-      newchains.append(chains[i])
-      # newchains.append(wu.hxform(xform, chains[i]))
-   # ic(newchains)
+   for ichain, _, _ in ci.chaingroups:
+      newchains.append(chains[ichain])
    return wu.pdb.join(newchains)
 
+def align_to_axis(pdb, axis, componentinfo, cenaxis=None, autoset_rotational_origin=True, **kw):
+   xalign = wu.htrans(-componentinfo.center)  # move rotation axis to isect origin
+   xalign = wu.halign(componentinfo.axis, axis) @ xalign  # align symaxis
+   com = wu.hcom(pdb.coords)
+   com2 = wu.hproj(axis, xalign @ com)
+   xalign = wu.htrans(-com2) @ xalign  # move along symaxis so com as close as possible to origin
+   if autoset_rotational_origin:
+      assert cenaxis is not None
+      newcom = wu.hxform(xalign, com)
+      towardscom = wu.hprojperp(axis, newcom)
+      towardscen = wu.hprojperp(axis, cenaxis)
+      xalign = wu.halign2(axis, towardscom, axis, towardscen) @ xalign  # rotate asu com around symaxis
+   pdbaln = wu.hxform(xalign, pdb)
+   return pdbaln
+
 def dump_transformed_samples(pdb, compaxis, frames, radius, angle, arch='', output_prefix='', tag='', **kw):
-   # frames = np.eye(4).reshape(1, 4, 4)
    for rad in np.arange(*radius):
       for ang in np.arange(*angle):
          xsamp = wu.hrot(compaxis, ang) @ wu.htrans(rad * compaxis)
@@ -58,78 +59,9 @@ def dump_transformed_samples(pdb, compaxis, frames, radius, angle, arch='', outp
          print('dumping', fname, flush=True)
          newpdb.dump(fname)
 
-         # wu.showme(newpdb)
-         # ic(rad, ang)
-         # assert 0
-
-def align_to_axis(pdb, axis, compinfo, cenaxis=None, autoset_rotational_origin=True, **kw):
-   xalign = wu.halign(compinfo.axis, axis)
-   xalign = xalign @ wu.htrans(-compinfo.cen)
-   com = wu.hcom(pdb.coords)
-   com2 = wu.hproj(axis, xalign @ com)
-   xalign = wu.htrans(-com2) @ xalign
-   if autoset_rotational_origin:
-      assert cenaxis is not None
-      com = wu.hxform(xalign, com)
-      u = wu.hprojperp(axis, com)
-      v = wu.hprojperp(axis, cenaxis)
-      xalign = wu.halign2(axis, u, axis, v) @ xalign
-   pdbaln = wu.hxform(xalign, pdb)
-   # wu.showme(pdbaln)
-   # assert 0
-   return pdbaln
-
-def cyclic_pdb_info(pdb, tolerances, **kw):
-   chains, cgroups = sym_chain_groups(pdb, tolerances, **kw)
-   chaingroup = sorted(cgroups, key=lambda x: x[2].size)[-1]
-
-   i, j, m = chaingroup
-   # ic(m.a, m.b, m.size)
-   ca0 = chains[i].ca()[m.a:m.a + m.size]
-   ca1 = chains[j].ca()[m.b:m.b + m.size]
-   # ic(ca0.shape, ca1.shape)
-   r, f, x = wu.hrmsfit(ca0, ca1)
-   if r > tolerances.rms:
-      raise ValueError(f'rmsd {r:5.3f} between detected symmetric chains is above rms tolerance {tolerances.rms}')
-   axis, ang, cen, hel = wu.haxis_angle_cen_hel_of(x)
-   if hel > tolerances.translation:
-      raise ValueError(
-         f'translation along symaxis of {hel:5.3f} between "symmetric" chains is above rms tolerance {tolerances.rms}')
-   nfold, ang = get_nfold_angle(ang, tolerances, **kw)
-   assert nfold == 2, f'nfold {nfold} not supported yet'
-   return wu.Bunch(axis=axis, ang=ang, cen=cen, hel=hel, nfold=nfold, chaingroups=cgroups, chains=chains)
-
-def get_nfold_angle(ang, tolerances, candidates=[2, 3, 4, 5, 6], **kw):
-   for nfold in candidates:
-      angnf = 2 * np.pi / nfold
-      if angnf - tolerances.angle < ang < angnf + tolerances.angle:
-         return nfold, ang
-   raise ValueError(
-      f'Angle {np.degrees(ang)} deviates from any nfold in {candidates} by more than {np.degrees(tolerances.angle)} degrees'
-   )
-
-def sym_chain_groups(pdb, tolerances, **kw):
-   chain_nfold = pdb.guess_chains_sym()
-   chains = pdb.splitchains()
-   groups = list()
-   for i, ch0 in enumerate(chains):
-      for j in range(i):
-         ch1 = chains[j]
-         s1 = ch0.sequence()
-         s2 = ch1.sequence()
-         matcher = SequenceMatcher(None, s1, s2)
-         match = matcher.find_longest_match(0, len(s1), 0, len(s2))
-         if tolerances.seqmatch < 2 * match.size / len(s1 + s2):
-            groups.append((i, j, match))
-   if not groups:
-      raise ValueError(f'No symmetrical chains found by longest common substring {tolerances.seqmatch}')
-   return chains, groups
-
 def main():
    kw = get_cli_config()
    for fname in kw.inputs:
-      makesym(fname, **kw)
-      continue
       try:
          makesym(fname, **kw)
       except ValueError as e:
@@ -213,7 +145,7 @@ def get_cli_config():
    )
    parser.add_argument(
       '--translation_tolerance',
-      default=0.1,
+      default=0.5,
       type=float,
       help='max allowed shift along sym axis for "symmetric" chains',
    )
@@ -243,6 +175,8 @@ def get_cli_config():
       seqmatch=args.seqmatch_tolerance,
    )
    args.arch = args.architecture
+
+   ic(args.tolerances)
 
    assert not args.template
 

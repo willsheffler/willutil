@@ -431,7 +431,12 @@ def angle_of_degrees(xforms, debug=False):
    angl = np.arccos(np.clip(cos, -1, 1))
    return np.degrees(angl)
 
-def rot(axis, angle, degrees='auto', dtype='f8', shape=(3, 3)):
+def rot(axis, angle=None, nfold=None, degrees='auto', dtype='f8', shape=(3, 3), **kw):
+   '''angle will override nfold'''
+   if angle is None:
+      angle = 2 * np.pi / nfold
+   angle = np.array(angle, dtype=dtype)
+
    axis = np.array(axis, dtype=dtype)
    angle = np.array(angle, dtype=dtype)
    if degrees == 'auto': degrees = guess_is_degrees(angle)
@@ -459,7 +464,13 @@ def rot(axis, angle, degrees='auto', dtype='f8', shape=(3, 3)):
       rot3[..., 3, 3] = 1.0
    return rot3
 
-def hrot(axis, angle=None, center=None, dtype='f8', nfold=None, hel=0.0, **kw):
+def hrot(axis, angle=None, center=None, dtype='f8', hel=0.0, **kw):
+   '''angle will override nfold'''
+   #if isinstance(axis, wu.Bunch):
+   #   bunch = axis
+   #   axis = bunch.axis
+   #   if angle is None: angle = bunch.angle
+   #   return
    axis = np.array(axis, dtype=dtype)
    if axis.shape[-1] == 2:
       assert center is None
@@ -468,13 +479,6 @@ def hrot(axis, angle=None, center=None, dtype='f8', nfold=None, hel=0.0, **kw):
    else:
       axis = axis
       center = (np.array([0, 0, 0], dtype=dtype) if center is None else np.array(center, dtype=dtype))
-
-   if angle is None:
-      angle = 2 * np.pi / nfold
-   else:
-      assert nfold is None
-
-   angle = np.array(angle, dtype=dtype)
 
    r = rot(axis, angle, dtype=dtype, shape=(4, 4), **kw)
    x, y, z = center[..., 0], center[..., 1], center[..., 2]

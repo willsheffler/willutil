@@ -136,7 +136,7 @@ def test_pdb_bbcoords(pdb1pgx):
 def test_pdb_bbcoords_sym(pdb1coi):
    pdb = pdb1coi.subset(het=False)
    assert pdb.bb().shape == (87, 5, 3)
-   pdb.guess_chains_sym()
+   pdb.assign_chains_sym()
    bbs = pdb.bb(splitchains=True)
    # wu.showme(pdb)
    assert len(bbs) == 3
