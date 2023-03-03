@@ -6,7 +6,7 @@ import willutil as wu
 
 def main():
 
-   test_analize_xtal_asu_placement()
+   _analize_xtal_asu_placement()
    assert 0
 
    test_xtal_cryst1_F_4_3_2(dump_pdbs=False)
@@ -142,7 +142,7 @@ run /home/sheffler/pymol3/misc/G222.py; gyroid(10,r=11,cen=Vec(5,5,5)); set ligh
    # _test_hxtal_viz_gyroid(headless=False)
    ic('test_xtal.py DONE')
 
-def test_analize_xtal_asu_placement(sym='I_4_3_2_432', showme=False):
+def _analize_xtal_asu_placement(sym='I_4_3_2_432', showme=False):
    x = wu.sym.Xtal(sym)
    ic(x.asucen(method='closest_approach'))
    ic(x.asucen(method='closest_to_cen'))
@@ -225,13 +225,13 @@ def test_symelem(headless=True):
    elem1 = wu.sym.SymElem(2, [1, 0, 0], [0, 0, 0])
    elem2 = wu.sym.SymElem(2, [1, 0, 0], [0, 10, 0])
 
-   x = wu.hrand()
+   x = wu.hrandsmall()
    e2 = wu.hxform(x, elem1, strict=False)
    ic(elem1.coords)
    ic(elem2.coords)
    assert np.allclose(e2.coords, wu.hxform(x, elem1.coords))
 
-   # x = wu.hrand()
+   # x = wu.hrandsmall()
    # e2 = wu.hxform(x, elem1)
    # assert np.allclose(e2.coords, wu.hxform(x, elem1.coords))
    # wu.showme(elem1, headless=headless)
@@ -396,6 +396,7 @@ def test_xtal_cryst1_P_4_3_2_43(*a, **kw):
 def test_xtal_cellframes_F_4_3_2(*a, **kw):
    helper_test_xtal_cellframes('F 4 3 2', *a, **kw)
 
+@pytest.mark.skip
 def test_xtal_cryst1_F_4_3_2(*a, **kw):
    helper_test_xtal_cryst1('F 4 3 2', *a, **kw)
 

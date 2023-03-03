@@ -1,0 +1,605 @@
+ic| 'DEPRICATION WARNING Xtal.asucen "method" arg replaced by "xtalasumethod"': 'DEPRICATION WARNING Xtal.asucen "method" arg replaced by "xtalasumethod"'
+ic| x.asucen(method='closest_to_cen'): array([0.25, 0.  , 0.25, 1.  ])
+ic| x.asucen(method='closest_to_cen', use_olig_nbrs=True): array([0.328125, 0.09375 , 0.328125, 1.      ])
+ic| cen: array([0.328125, 0.09375 , 0.328125, 1.      ])
+ic| i: 0, len(samp): 2197
+ic| i: 10, len(samp): 2197
+ic| i: 20, len(samp): 2197
+ic| i: 30, len(samp): 2197
+ic| i: 40, len(samp): 2197
+ic| i: 50, len(samp): 2197
+ic| i: 60, len(samp): 2197
+ic| i: 70, len(samp): 2197
+ic| i: 80, len(samp): 2197
+ic| i: 90, len(samp): 2197
+ic| i: 100, len(samp): 2197
+ic| i: 110, len(samp): 2197
+ic| i: 120, len(samp): 2197
+ic| i: 130, len(samp): 2197
+ic| i: 140, len(samp): 2197
+ic| i: 150, len(samp): 2197
+ic| i: 160, len(samp): 2197
+ic| i: 170, len(samp): 2197
+ic| i: 180, len(samp): 2197
+ic| i: 190, len(samp): 2197
+ic| i: 200, len(samp): 2197
+ic| i: 210, len(samp): 2197
+ic| i: 220, len(samp): 2197
+ic| i: 230, len(samp): 2197
+ic| i: 240, len(samp): 2197
+ic| i: 250, len(samp): 2197
+ic| i: 260, len(samp): 2197
+ic| i: 270, len(samp): 2197
+ic| i: 280, len(samp): 2197
+ic| i: 290, len(samp): 2197
+ic| i: 300, len(samp): 2197
+ic| i: 310, len(samp): 2197
+ic| i: 320, len(samp): 2197
+ic| i: 330, len(samp): 2197
+ic| i: 340, len(samp): 2197
+ic| i: 350, len(samp): 2197
+ic| i: 360, len(samp): 2197
+ic| i: 370, len(samp): 2197
+ic| i: 380, len(samp): 2197
+ic| i: 390, len(samp): 2197
+ic| i: 400, len(samp): 2197
+ic| i: 410, len(samp): 2197
+ic| i: 420, len(samp): 2197
+ic| i: 430, len(samp): 2197
+ic| i: 440, len(samp): 2197
+ic| i: 450, len(samp): 2197
+ic| i: 460, len(samp): 2197
+ic| i: 470, len(samp): 2197
+ic| i: 480, len(samp): 2197
+ic| i: 490, len(samp): 2197
+ic| i: 500, len(samp): 2197
+ic| i: 510, len(samp): 2197
+ic| i: 520, len(samp): 2197
+ic| i: 530, len(samp): 2197
+ic| i: 540, len(samp): 2197
+ic| i: 550, len(samp): 2197
+ic| i: 560, len(samp): 2197
+ic| i: 570, len(samp): 2197
+ic| i: 580, len(samp): 2197
+ic| i: 590, len(samp): 2197
+ic| i: 600, len(samp): 2197
+ic| i: 610, len(samp): 2197
+ic| i: 620, len(samp): 2197
+ic| i: 630, len(samp): 2197
+ic| i: 640, len(samp): 2197
+ic| i: 650, len(samp): 2197
+ic| i: 660, len(samp): 2197
+ic| i: 670, len(samp): 2197
+ic| i: 680, len(samp): 2197
+ic| i: 690, len(samp): 2197
+ic| i: 700, len(samp): 2197
+ic| i: 710, len(samp): 2197
+ic| i: 720, len(samp): 2197
+ic| i: 730, len(samp): 2197
+ic| i: 740, len(samp): 2197
+ic| i: 750, len(samp): 2197
+ic| i: 760, len(samp): 2197
+ic| i: 770, len(samp): 2197
+ic| i: 780, len(samp): 2197
+ic| i: 790, len(samp): 2197
+ic| i: 800, len(samp): 2197
+ic| i: 810, len(samp): 2197
+ic| i: 820, len(samp): 2197
+ic| i: 830, len(samp): 2197
+ic| i: 840, len(samp): 2197
+ic| i: 850, len(samp): 2197
+ic| i: 860, len(samp): 2197
+ic| i: 870, len(samp): 2197
+ic| i: 880, len(samp): 2197
+ic| i: 890, len(samp): 2197
+ic| i: 900, len(samp): 2197
+ic| i: 910, len(samp): 2197
+ic| i: 920, len(samp): 2197
+ic| i: 930, len(samp): 2197
+ic| i: 940, len(samp): 2197
+ic| i: 950, len(samp): 2197
+ic| i: 960, len(samp): 2197
+ic| i: 970, len(samp): 2197
+ic| i: 980, len(samp): 2197
+ic| i: 990, len(samp): 2197
+ic| i: 1000, len(samp): 2197
+ic| i: 1010, len(samp): 2197
+ic| i: 1020, len(samp): 2197
+ic| i: 1030, len(samp): 2197
+ic| i: 1040, len(samp): 2197
+ic| i: 1050, len(samp): 2197
+ic| i: 1060, len(samp): 2197
+ic| i: 1070, len(samp): 2197
+ic| i: 1080, len(samp): 2197
+ic| i: 1090, len(samp): 2197
+ic| i: 1100, len(samp): 2197
+ic| i: 1110, len(samp): 2197
+ic| i: 1120, len(samp): 2197
+ic| i: 1130, len(samp): 2197
+ic| i: 1140, len(samp): 2197
+ic| i: 1150, len(samp): 2197
+ic| i: 1160, len(samp): 2197
+ic| i: 1170, len(samp): 2197
+ic| i: 1180, len(samp): 2197
+ic| i: 1190, len(samp): 2197
+ic| i: 1200, len(samp): 2197
+ic| i: 1210, len(samp): 2197
+ic| i: 1220, len(samp): 2197
+ic| i: 1230, len(samp): 2197
+ic| i: 1240, len(samp): 2197
+ic| i: 1250, len(samp): 2197
+ic| i: 1260, len(samp): 2197
+ic| i: 1270, len(samp): 2197
+ic| i: 1280, len(samp): 2197
+ic| i: 1290, len(samp): 2197
+ic| i: 1300, len(samp): 2197
+ic| i: 1310, len(samp): 2197
+ic| i: 1320, len(samp): 2197
+ic| i: 1330, len(samp): 2197
+ic| i: 1340, len(samp): 2197
+ic| i: 1350, len(samp): 2197
+ic| i: 1360, len(samp): 2197
+ic| i: 1370, len(samp): 2197
+ic| i: 1380, len(samp): 2197
+ic| i: 1390, len(samp): 2197
+ic| i: 1400, len(samp): 2197
+ic| i: 1410, len(samp): 2197
+ic| i: 1420, len(samp): 2197
+ic| i: 1430, len(samp): 2197
+ic| i: 1440, len(samp): 2197
+ic| i: 1450, len(samp): 2197
+ic| i: 1460, len(samp): 2197
+ic| i: 1470, len(samp): 2197
+ic| i: 1480, len(samp): 2197
+ic| i: 1490, len(samp): 2197
+ic| i: 1500, len(samp): 2197
+ic| i: 1510, len(samp): 2197
+ic| i: 1520, len(samp): 2197
+ic| i: 1530, len(samp): 2197
+ic| i: 1540, len(samp): 2197
+ic| i: 1550, len(samp): 2197
+ic| i: 1560, len(samp): 2197
+ic| i: 1570, len(samp): 2197
+ic| i: 1580, len(samp): 2197
+ic| i: 1590, len(samp): 2197
+ic| i: 1600, len(samp): 2197
+ic| i: 1610, len(samp): 2197
+ic| i: 1620, len(samp): 2197
+ic| i: 1630, len(samp): 2197
+ic| i: 1640, len(samp): 2197
+ic| i: 1650, len(samp): 2197
+ic| i: 1660, len(samp): 2197
+ic| i: 1670, len(samp): 2197
+ic| i: 1680, len(samp): 2197
+ic| i: 1690, len(samp): 2197
+ic| i: 1700, len(samp): 2197
+ic| i: 1710, len(samp): 2197
+ic| i: 1720, len(samp): 2197
+ic| i: 1730, len(samp): 2197
+ic| i: 1740, len(samp): 2197
+ic| i: 1750, len(samp): 2197
+ic| i: 1760, len(samp): 2197
+ic| i: 1770, len(samp): 2197
+ic| i: 1780, len(samp): 2197
+ic| i: 1790, len(samp): 2197
+ic| i: 1800, len(samp): 2197
+ic| i: 1810, len(samp): 2197
+ic| i: 1820, len(samp): 2197
+ic| i: 1830, len(samp): 2197
+ic| i: 1840, len(samp): 2197
+ic| i: 1850, len(samp): 2197
+ic| i: 1860, len(samp): 2197
+ic| i: 1870, len(samp): 2197
+ic| i: 1880, len(samp): 2197
+ic| i: 1890, len(samp): 2197
+ic| i: 1900, len(samp): 2197
+ic| i: 1910, len(samp): 2197
+ic| i: 1920, len(samp): 2197
+ic| i: 1930, len(samp): 2197
+ic| i: 1940, len(samp): 2197
+ic| i: 1950, len(samp): 2197
+ic| i: 1960, len(samp): 2197
+ic| i: 1970, len(samp): 2197
+ic| i: 1980, len(samp): 2197
+ic| i: 1990, len(samp): 2197
+ic| i: 2000, len(samp): 2197
+ic| i: 2010, len(samp): 2197
+ic| i: 2020, len(samp): 2197
+ic| i: 2030, len(samp): 2197
+ic| i: 2040, len(samp): 2197
+ic| i: 2050, len(samp): 2197
+ic| i: 2060, len(samp): 2197
+ic| i: 2070, len(samp): 2197
+ic| i: 2080, len(samp): 2197
+ic| i: 2090, len(samp): 2197
+ic| i: 2100, len(samp): 2197
+ic| i: 2110, len(samp): 2197
+ic| i: 2120, len(samp): 2197
+ic| i: 2130, len(samp): 2197
+ic| i: 2140, len(samp): 2197
+ic| i: 2150, len(samp): 2197
+ic| i: 2160, len(samp): 2197
+ic| i: 2170, len(samp): 2197
+ic| i: 2180, len(samp): 2197
+ic| i: 2190, len(samp): 2197
+ic| len(samp): 2197
+ic| w: (array([0, 1, 2, 3, 4, 5]), array([312, 333, 335, 314, 315, 313]))
+    ontop.shape: (6, 4, 4)
+ic| list(mindisxtal.keys()): [0.109,
+                              0.077,
+                              0.218,
+                              0.154,
+                              0.188,
+                              0.243,
+                              0.133,
+                              0.266,
+                              0.172,
+                              0.231,
+                              0.255,
+                              0.288]
+ic| k: 0.288
+ic| pt: (0.154, 0.308, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.28188179038384154
+    wu.hnorm(pt): 0.5165317028024514
+ic| pt: (0.154, 0.385, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.3399280714357083
+    wu.hnorm(pt): 0.5165317028024514
+ic| k: 0.266
+ic| pt: (-0.077, 0.231, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.43150735074851276
+    wu.hnorm(pt): 0.45553814329867043
+ic| pt: (0.231, 0.077, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.11379188789188796
+    wu.hnorm(pt): 0.45553814329867043
+ic| pt: (0.077, 0.385, 0.231, 1.0)
+    wu.hnorm(pt - cen): 0.39664038340794294
+    wu.hnorm(pt): 0.45553814329867043
+ic| pt: (0.077, 0.231, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.29178090024879966
+    wu.hnorm(pt): 0.45553814329867043
+ic| k: 0.255
+ic| pt: (0.154, 0.231, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.22889264678010085
+    wu.hnorm(pt): 0.47465987822861117
+ic| pt: (0.231, 0.154, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.12766398767859322
+    wu.hnorm(pt): 0.47465987822861117
+ic| k: 0.243
+ic| pt: (0.154, 0.077, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.17608263330039112
+    wu.hnorm(pt): 0.3528583285115997
+ic| pt: (0.077, 0.154, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.25903444510334916
+    wu.hnorm(pt): 0.3528583285115997
+ic| pt: (0.077, 0.154, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.2644401515466212
+    wu.hnorm(pt): 0.4217463692789779
+ic| pt: (0.154, 0.077, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.18394250120621933
+    wu.hnorm(pt): 0.4217463692789779
+ic| k: 0.231
+ic| pt: (0.154, 0.308, 0.538, 1.0)
+    wu.hnorm(pt - cen): 0.34679978914353454
+    wu.hnorm(pt): 0.6387675633593177
+ic| pt: (0.154, 0.308, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.30683072491196184
+    wu.hnorm(pt): 0.576215237563187
+ic| pt: (0.154, 0.385, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.3440651736953335
+    wu.hnorm(pt): 0.5658321305829142
+ic| pt: (0.308, 0.154, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.1481809493490982
+    wu.hnorm(pt): 0.576215237563187
+ic| pt: (0.154, 0.154, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.1928324240111087
+    wu.hnorm(pt): 0.4423313237834282
+ic| pt: (0.154, 0.462, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.4078389311358101
+    wu.hnorm(pt): 0.576215237563187
+ic| k: 0.218
+ic| pt: (0.154, 0.308, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.27681689570905893
+    wu.hnorm(pt): 0.462
+ic| pt: (-0.0, 0.154, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.33421713563191224
+    wu.hnorm(pt): 0.3443544685349676
+ic| pt: (0.231, 0.231, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.17749815139882444
+    wu.hnorm(pt): 0.5049227663712541
+ic| pt: (0.154, 0.154, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.1853499224440086
+    wu.hnorm(pt): 0.37722142038860945
+ic| pt: (-0.0, 0.154, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.33842405905904505
+    wu.hnorm(pt): 0.41465769014935683
+ic| pt: (-0.0, 0.231, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.3601920928476915
+    wu.hnorm(pt): 0.4489832959030881
+ic| pt: (0.231, 0.385, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.3122412428715976
+    wu.hnorm(pt): 0.5914482225858828
+ic| k: 0.188
+ic| pt: (0.077, 0.154, 0.231, 1.0)
+    wu.hnorm(pt - cen): 0.2759113874960582
+    wu.hnorm(pt): 0.2881076187815935
+ic| pt: (0.154, 0.077, 0.231, 1.0)
+    wu.hnorm(pt - cen): 0.2000833420102733
+    wu.hnorm(pt): 0.2881076187815935
+ic| pt: (0.077, 0.385, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.3850913446833102
+    wu.hnorm(pt): 0.49901703377740525
+ic| pt: (0.154, 0.231, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.22262545620391214
+    wu.hnorm(pt): 0.41465769014935683
+ic| pt: (0.231, 0.154, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.1160531936225798
+    wu.hnorm(pt): 0.41465769014935683
+ic| pt: (0.231, 0.308, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.24201465606446235
+    wu.hnorm(pt): 0.5444722215136416
+ic| pt: (0.077, 0.231, 0.154, 1.0)
+    wu.hnorm(pt - cen): 0.3349937965843547
+    wu.hnorm(pt): 0.2881076187815935
+ic| pt: (0.077, 0.231, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.28689082200377203
+    wu.hnorm(pt): 0.39262450254664444
+ic| pt: (0.077, 0.308, 0.231, 1.0)
+    wu.hnorm(pt - cen): 0.34409314690937975
+    wu.hnorm(pt): 0.39262450254664444
+ic| pt: (0.308, 0.231, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.14992446014576807
+    wu.hnorm(pt): 0.5444722215136416
+ic| pt: (0.231, 0.385, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.30767652453510325
+    wu.hnorm(pt): 0.5444722215136416
+ic| pt: (0.154, 0.308, 0.231, 1.0)
+    wu.hnorm(pt - cen): 0.2926701962106835
+    wu.hnorm(pt): 0.41465769014935683
+ic| pt: (0.077, 0.308, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.3349650634767751
+    wu.hnorm(pt): 0.49901703377740525
+ic| k: 0.172
+ic| pt: (0.231, 0.462, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.38506634980221266
+    wu.hnorm(pt): 0.6442282204312382
+ic| pt: (0.077, 0.385, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.40720123250059054
+    wu.hnorm(pt): 0.6062986062989094
+ic| pt: (0.154, 0.385, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.36478568194215083
+    wu.hnorm(pt): 0.6207938466189884
+ic| pt: (-0.077, 0.231, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.44820346244758086
+    wu.hnorm(pt): 0.5222394087006457
+ic| pt: (0.077, 0.462, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.4461802816687443
+    wu.hnorm(pt): 0.5605684614745999
+ic| pt: (0.077, 0.308, 0.538, 1.0)
+    wu.hnorm(pt - cen): 0.3911704791392111
+    wu.hnorm(pt): 0.624689522883168
+ic| pt: (0.231, 0.077, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.16624182310718325
+    wu.hnorm(pt): 0.5222394087006457
+ic| pt: (0.154, 0.462, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.41129350073882764
+    wu.hnorm(pt): 0.6207938466189884
+ic| pt: (-0.077, 0.308, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.477443026705805
+    wu.hnorm(pt): 0.5605684614745999
+ic| pt: (0.077, 0.462, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.44934017598029224
+    wu.hnorm(pt): 0.6062986062989094
+ic| pt: (0.077, 0.308, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.3562153053281119
+    wu.hnorm(pt): 0.5605684614745999
+ic| pt: (0.231, 0.385, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.33493632790427497
+    wu.hnorm(pt): 0.6442282204312382
+ic| pt: (0.077, 0.231, 0.538, 1.0)
+    wu.hnorm(pt - cen): 0.3548927214666427
+    wu.hnorm(pt): 0.5905370437152948
+ic| pt: (0.077, 0.231, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.3159491157607503
+    wu.hnorm(pt): 0.5222394087006457
+ic| k: 0.154
+ic| pt: (0.077, 0.231, 0.231, 1.0)
+    wu.hnorm(pt - cen): 0.3022161374744902
+    wu.hnorm(pt): 0.3356352186526319
+ic| pt: (0.077, 0.308, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.3307141420471765
+    wu.hnorm(pt): 0.4423313237834282
+ic| pt: (0.077, 0.077, 0.231, 1.0)
+    wu.hnorm(pt - cen): 0.26977322652553937
+    wu.hnorm(pt): 0.2553801088573658
+ic| pt: (0.077, 0.077, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.25802924979544467
+    wu.hnorm(pt): 0.40010373654841064
+ic| pt: (0.077, 0.385, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.388748110927886
+    wu.hnorm(pt): 0.5498899889977994
+ic| pt: (0.077, 0.077, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.2524863238870573
+    wu.hnorm(pt): 0.32668333290818496
+ic| k: 0.133
+ic| pt: (0.308, 0.385, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.3211761101794466
+    wu.hnorm(pt): 0.6756722578291934
+ic| pt: (0.308, 0.462, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.3731592739702445
+    wu.hnorm(pt): 0.6756722578291934
+ic| pt: (0.231, 0.154, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.17602796297747697
+    wu.hnorm(pt): 0.539
+ic| pt: (0.231, 0.308, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.2706637097026493
+    wu.hnorm(pt): 0.6013892250448124
+ic| pt: (0.077, 0.154, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.29088888557316867
+    wu.hnorm(pt): 0.4930405662823294
+ic| pt: (0.308, 0.231, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.1927825037445048
+    wu.hnorm(pt): 0.6013892250448124
+ic| pt: (0.385, 0.308, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.2589601199991999
+    wu.hnorm(pt): 0.6756722578291934
+ic| pt: (0.154, 0.231, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.25899728521743237
+    wu.hnorm(pt): 0.539
+ic| pt: (0.154, 0.077, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.2202784459496662
+    wu.hnorm(pt): 0.4930405662823294
+ic| k: 0.109
+ic| pt: (-0.0, 0.154, 0.231, 1.0)
+    wu.hnorm(pt - cen): 0.34746128381447045
+    wu.hnorm(pt): 0.2776274482107272
+ic| pt: (-0.0, 0.231, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.35624232447871773
+    wu.hnorm(pt): 0.385
+ic| pt: (-0.0, 0.308, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.3959846509020268
+    wu.hnorm(pt): 0.49304056628232934
+ic| pt: (0.231, 0.231, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.1693394335351338
+    wu.hnorm(pt): 0.44898329590308816
+ic| pt: (0.154, 0.154, 0.231, 1.0)
+    wu.hnorm(pt - cen): 0.2082854861722247
+    wu.hnorm(pt): 0.3174791331725599
+ic| pt: (0.308, 0.308, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.22258221795552313
+    wu.hnorm(pt): 0.5813372515158477
+ic| pt: (0.308, 0.385, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.29743292311040487
+    wu.hnorm(pt): 0.625550957156969
+ic| pt: (-0.0, 0.077, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.32916803269758743
+    wu.hnorm(pt): 0.3174791331725599
+ic| pt: (0.077, 0.077, 0.154, 1.0)
+    wu.hnorm(pt - cen): 0.3060454929418174
+    wu.hnorm(pt): 0.18861071019430473
+ic| pt: (0.077, 0.154, 0.154, 1.0)
+    wu.hnorm(pt - cen): 0.31146965141085575
+    wu.hnorm(pt): 0.231
+ic| pt: (-0.0, 0.077, 0.231, 1.0)
+    wu.hnorm(pt - cen): 0.34260741928627286
+    wu.hnorm(pt): 0.24349537983296524
+ic| pt: (-0.0, 0.077, 0.385, 1.0)
+    wu.hnorm(pt - cen): 0.33343866564932145
+    wu.hnorm(pt): 0.39262450254664444
+ic| pt: (-0.0, 0.077, 0.154, 1.0)
+    wu.hnorm(pt - cen): 0.3718414900868379
+    wu.hnorm(pt): 0.1721772342674838
+ic| pt: (0.231, 0.308, 0.308, 1.0)
+    wu.hnorm(pt - cen): 0.2360960477221082
+    wu.hnorm(pt): 0.49304056628232934
+ic| pt: (0.154, 0.231, 0.231, 1.0)
+    wu.hnorm(pt - cen): 0.24205442311595962
+    wu.hnorm(pt): 0.3611620135064041
+ic| k: 0.077
+ic| pt: (0.308, 0.462, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.39234626766416425
+    wu.hnorm(pt): 0.7223240270128082
+ic| pt: (-0.0, 0.231, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.38003433233064615
+    wu.hnorm(pt): 0.5165317028024514
+ic| pt: (0.077, 0.077, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.2850734006356959
+    wu.hnorm(pt): 0.4746598782286112
+ic| pt: (0.231, 0.231, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.2149263682054857
+    wu.hnorm(pt): 0.5658321305829142
+ic| pt: (0.154, 0.462, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.4287774408128301
+    wu.hnorm(pt): 0.6712704373052638
+ic| pt: (0.385, 0.385, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.32555159921278226
+    wu.hnorm(pt): 0.7140686241531692
+ic| pt: (0.385, 0.462, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.39593603492230917
+    wu.hnorm(pt): 0.7583620507383001
+ic| pt: (-0.0, 0.077, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.3547803457774965
+    wu.hnorm(pt): 0.46837271483296294
+ic| pt: (-0.0, 0.154, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.3594698787798499
+    wu.hnorm(pt): 0.4869907596659305
+ic| pt: (-0.0, 0.385, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.4587102503214856
+    wu.hnorm(pt): 0.6013892250448124
+ic| pt: (0.077, 0.462, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.4653969743670451
+    wu.hnorm(pt): 0.6578882883894499
+ic| pt: (-0.0, 0.308, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.4141154352955224
+    wu.hnorm(pt): 0.5552548964214544
+ic| pt: (0.308, 0.308, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.25343755394574025
+    wu.hnorm(pt): 0.6349582663451198
+ic| pt: (0.231, 0.462, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.4036878048071306
+    wu.hnorm(pt): 0.6930000000000001
+ic| pt: (0.154, 0.154, 0.462, 1.0)
+    wu.hnorm(pt - cen): 0.227754459341634
+    wu.hnorm(pt): 0.5107602177147316
+ic| k: 0.077, len(v): 360
+ic| v[0]: array([0.07692308, 0.        , 0.46153846])
+ic| k: 0.109, len(v): 360
+ic| v[0]: array([0.07692308, 0.        , 0.15384615])
+ic| k: 0.133, len(v): 192
+ic| v[0]: array([0.15384615, 0.07692308, 0.46153846])
+ic| k: 0.154, len(v): 144
+ic| v[0]: array([0.07692308, 0.07692308, 0.23076923])
+ic| k: 0.172, len(v): 240
+ic| v[0]: array([0.23076923, 0.07692308, 0.46153846])
+ic| k: 0.188, len(v): 240
+ic| v[0]: array([0.15384615, 0.07692308, 0.23076923])
+ic| k: 0.218, len(v): 168
+ic| v[0]: array([0.15384615, 0.        , 0.30769231])
+ic| k: 0.231, len(v): 96
+ic| v[0]: array([0.15384615, 0.15384615, 0.38461538])
+ic| k: 0.243, len(v): 96
+ic| v[0]: array([0.15384615, 0.07692308, 0.30769231])
+ic| k: 0.255, len(v): 48
+ic| v[0]: array([0.23076923, 0.15384615, 0.38461538])
+ic| k: 0.266, len(v): 48
+ic| v[0]: array([0.23076923, 0.07692308, 0.38461538])
+ic| k: 0.288, len(v): 48
+ic| v[0]: array([0.30769231, 0.15384615, 0.38461538])
+ PyMOL(TM) 2.5.2 - Incentive Product
+ Copyright (C) Schrodinger, LLC
+ 
+ This Executable Build integrates and extends Open-Source PyMOL.
+ Detected OpenGL version 4.6. Shaders available.
+ Detected GLSL version 4.60.
+ OpenGL graphics engine:
+  GL_VENDOR:   NVIDIA Corporation
+  GL_RENDERER: NVIDIA GeForce RTX 3080 Laptop GPU/PCIe/SSE2
+  GL_VERSION:  4.6.0 NVIDIA 515.86.01
+ License Expiry date: 24-jan-2024
+ Detected 16 CPU cores.  Enabled multithreaded rendering.
+PyMOL>import sys
+PyMOL>sys.path.append('/home/sheffler/src/willutil')
+PyMOL>sys.path.append('/home/sheffler/src/wills_pymol_crap')
+PyMOL>viewport 3300, 1800
+PyMOL>stereo
+PyMOL>set ray_opaque_background, on
+ Setting: ray_opaque_background set to 1.
+PyMOL>set stereo_mode=3
+ Setting: stereo_mode set to 3.
+PyMOL>run /home/sheffler/src/wills_pymol_crap/wills_pymol_crap/pymol_util.py
+PyMOL>run /home/sheffler/src/wills_pymol_crap/wills_pymol_crap/sym_util.py
+PyMOL>run /home/sheffler/src/wills_pymol_crap/wills_pymol_crap/sym_comp.py
+PyMOL>run /home/sheffler/src/wills_pymol_crap/wills_pymol_crap/symgen.py
+PyMOL>run /home/sheffler/src/wills_pymol_crap/wills_pymol_crap/helix_util.py
+PyMOL>run /home/sheffler/src/wills_pymol_crap/wills_pymol_crap/cgo.py
+PyMOL>hide car
+PyMOL>show lin, name n+ca+c
+PyMOL>util.cbc
+PyMOL>axes
+PyMOL>set orthoscopic, on
+ Setting: orthoscopic set to on.
+Traceback (most recent call last):
+  File "willutil/tests/sym/test_xtal.py", line 458, in <module>
+    main()
+  File "willutil/tests/sym/test_xtal.py", line 10, in main
+    assert 0
+AssertionError

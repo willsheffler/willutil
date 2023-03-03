@@ -371,11 +371,12 @@ def test_torch_rmsfit(trials=10):
             print(float(rms), float(rms2))
          assert rms2 >= rms - 0.001
 
+# @pytest.mark.skip
 def test_torch_rmsfit_grad():
    torch = pytest.importorskip('torch')
    if not torch.cuda.is_available():
       wu.tests.force_pytest_skip('CUDA not availble')
-   torch.autograd.set_detect_anomaly(True)
+   # torch.autograd.set_detect_anomaly(True)
    # assert 0
    ntrials = 1
    npts = 50

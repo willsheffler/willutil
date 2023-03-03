@@ -42,7 +42,7 @@ class RBSampler:
       prevpos = position.copy()
       newpos = prevpos
       for i in range(100):
-         perturb = hrand(1, self.cartsd * scale, self.rotsd * scale)
+         perturb = hrandsmall(1, self.cartsd * scale, self.rotsd * scale)
          if self.biasradial != 1:
             p = hproj(self.biasdir, hcart3(perturb))
             pp = hprojperp(self.biasdir, hcart3(perturb))

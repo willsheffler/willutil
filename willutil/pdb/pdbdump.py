@@ -6,6 +6,28 @@ import numpy as np
 
 all_pymol_chains = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz" * 100)
 
+def pdb_format_atom_df(
+   ai=0,
+   ri=0,
+   ch=b'A',
+   rn=b'res',
+   an=b'CA',
+   bfac=1,
+   mdl=None,
+   elem=' ',
+   **kw,
+):
+   return pdb_format_atom(
+      ia=ai,
+      ir=ri,
+      c=ch.decode(),
+      rn=rn.decode(),
+      an=an.decode(),
+      b=bfac,
+      elem=elem.decode(),
+      **kw,
+   )
+
 def pdb_format_atom(
    ia=0,
    an="CA",
@@ -21,6 +43,7 @@ def pdb_format_atom(
    b=1,
    elem=" ",
    xyz=None,
+   het=False,
 ):
    if xyz is not None:
       x, y, z, *_ = xyz.squeeze()
@@ -30,6 +53,8 @@ def pdb_format_atom(
       c = all_pymol_chains[c]
 
    format_str = _pdb_atom_record_format
+   if het:
+      format_str = format_str.replace('ATOM  ', 'HETATM')
    if ia >= 100000:
       format_str = format_str.replace("ATOM  {ia:5d}", "ATOM {ia:6d}")
    if ir >= 10000:
@@ -51,6 +76,7 @@ def dumppdb(fname='willutil.pdb', stuff=None, *a, namereset=False, addtimestamp=
       _dumppdb_seenit[fname] += 1
       fname = fname % _dumppdb_seenit[fname]
    if hasattr(stuff, 'dumppdb'): return stuff.dumppdb(fname, *a, **kw)
+   if hasattr(stuff, 'dump_pdb'): return stuff.dump_pdb(fname, *a, **kw)
    else: return dump_pdb_from_points(fname, stuff, *a, **kw)
 
 def dump_pdb_nchain_nres_natom(shape=[], nchain=-1, nres=-1, nresatom=-1):

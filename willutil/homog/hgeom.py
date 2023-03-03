@@ -93,7 +93,8 @@ def hxform(x, stuff, homogout='auto', **kw):
          print('WARNING Deprivation of .coords convention in favor of .xformed method')
          isxarray = isinstance(stuff, xarray.DataArray)
       if not isxarray:
-         orig = copy.copy(stuff)
+         if hasattr(stuff, 'copy'): orig = stuff.copy()
+         else: orig = copy.copy(stuff)
          stuff = stuff.coords
          assert x.ndim in (2, 3)
 
@@ -132,13 +133,16 @@ def hxform(x, stuff, homogout='auto', **kw):
       if result.ndim > 2:
          r = list()
          for x in result:
-            o = copy.copy(orig)
+            if hasattr(orig, 'copy'): o = orig.copy()
+            else: o = copy.copy(orig)
             o.coords = x
             r.append(o)
          result = r
       else:
          orig.coords = result
          result = orig
+
+   assert result is not None
 
    return result
 
@@ -409,6 +413,11 @@ def axis_angle_hel_of(xforms):
    axis, angle = axis_angle_of(xforms)
    hel = hdot(axis, trans_of(xforms))
    return axis, angle, hel
+
+def axis_angle_cen_hel_of(xforms):
+   axis, angle, cen = axis_ang_cen_of(xforms)
+   hel = hdot(axis, trans_of(xforms))
+   return axis, angle, cen, hel
 
 def angle_of(xforms, debug=False):
    tr = xforms[..., 0, 0] + xforms[..., 1, 1] + xforms[..., 2, 2]
@@ -696,7 +705,7 @@ def rand_xform_aac(shape=(), axis=None, ang=None, cen=None, seed=None):
    if seed is not None: np.random.set_state(randstate)
    return hrot(axis, ang, cen)
 
-def hrand(shape=(), cart_sd=0.001, rot_sd=0.001, centers=None, seed=None):
+def hrandsmall(shape=(), cart_sd=0.001, rot_sd=0.001, centers=None, seed=None):
    if seed is not None:
       randstate = np.random.get_state()
       np.random.seed(seed)
@@ -711,9 +720,9 @@ def hrand(shape=(), cart_sd=0.001, rot_sd=0.001, centers=None, seed=None):
    if seed is not None: np.random.set_state(randstate)
    return x.squeeze()
 
-rand_xform_small = hrand
+rand_xform_small = hrandsmall
 
-def rand_xform(shape=(), cart_cen=0, cart_sd=1, seed=None):
+def hrand(shape=(), cart_cen=0, cart_sd=1, seed=None):
    if seed is not None:
       randstate = np.random.get_state()
       np.random.seed(seed)
@@ -723,6 +732,8 @@ def rand_xform(shape=(), cart_cen=0, cart_sd=1, seed=None):
    x[..., :3, 3] = np.random.randn(*shape, 3) * cart_sd + cart_cen
    if seed is not None: np.random.set_state(randstate)
    return x
+
+rand_xform = hrand
 
 def hrandrot(shape=(), seed=None):
    if seed is not None:

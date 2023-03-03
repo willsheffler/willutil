@@ -1,6 +1,6 @@
 import willutil as wu
-from willutil.sym.pymol_symgen import (SymElem, generate_sym_trie, BuildCGO,
-                                       ComponentCenterVisitor, CountFrames, Vec)
+from willutil.sym.pymol_symgen import (PymolSymElem, generate_sym_trie, BuildCGO, ComponentCenterVisitor, CountFrames,
+                                       Vec)
 try:
    import pymol
    from pymol import cmd
@@ -18,8 +18,8 @@ def example_I213(cell=70, **kw):
    # AXS = [Vec(1, 1, 1), Vec(1, 1, -1)]
    # CEN = [cell * Vec(0, 0, 0), cell * Vec(0.5, 0, 0.0)]
    G = [
-      SymElem("C2", axis=Vec(1, 0, 0), cen=Vec(0, 0, 0.25) * cell, col=[1, 0.7, 0.0]),
-      SymElem("C3", axis=Vec(1, 1, 1) * 0.57735, cen=Vec(0, 0, 0) * cell, col=[0.1, 0.5, 1]),
+      PymolSymElem("C2", axis=Vec(1, 0, 0), cen=Vec(0, 0, 0.25) * cell, col=[1, 0.7, 0.0]),
+      PymolSymElem("C3", axis=Vec(1, 1, 1) * 0.57735, cen=Vec(0, 0, 0) * cell, col=[0.1, 0.5, 1]),
    ]
 
    hacky_xtal_maker(
@@ -33,8 +33,7 @@ def example_I213(cell=70, **kw):
       showlinks=1,
       shownodes=1,
       radius=0.5,
-      bbox=[Vec(-1, -1, -1) * -999,
-            Vec(cell + 1, cell + 1, cell + 1) * 100],
+      bbox=[Vec(-1, -1, -1) * -999, Vec(cell + 1, cell + 1, cell + 1) * 100],
       # length=40,
       **kw,
    )

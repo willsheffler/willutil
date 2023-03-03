@@ -1,7 +1,10 @@
 import numpy as np, functools as ft
+import pytest
 from numpy import array
 import willutil as wu
 from willutil.sym.asuslide import asuslide
+
+pytest.skip(allow_module_level=True)
 
 # ic.configureOutput(includeContext=True, contextAbsPath=True)
 

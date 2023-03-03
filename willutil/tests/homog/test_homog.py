@@ -138,7 +138,7 @@ def test_hdiff():
    I = np.eye(4)
    assert hdiff(I, I) == 0
 
-   x = hrand(cart_sd=0.00001, rot_sd=0.00001)
+   x = hrandsmall(cart_sd=0.00001, rot_sd=0.00001)
    assert hdiff(x, x) == 0
    assert hdiff(x, I) != 0
 
@@ -150,7 +150,7 @@ def test_hxform_ray():
    v = rand_vec()
    r = hray(p, v)
    assert r.shape == (4, 2)
-   x = rand_xform()
+   x = hrand()
    m = x @ r
    assert m.shape == (4, 2)
    assert np.allclose(m[..., 0], hxform(x, r[..., 0]))
@@ -158,7 +158,7 @@ def test_hxform_ray():
    assert np.allclose(m, hxform(x, r))
    assert wu.hvalid(m)
 
-   x = rand_xform(3)
+   x = hrand(3)
    m = x @ r
    assert m.shape == (3, 4, 2)
    assert np.allclose(m[..., 0], hxform(x, r[..., 0]))
@@ -170,7 +170,7 @@ def test_hxform_stuff_coords():
       def __init__(self, p):
          self.coords = p
 
-   x = rand_xform()
+   x = hrand()
    p = hpoint([1, 2, 3])
    smrt = Dummy(p)  # I am so smart, S, M, R T...
    q = hxform(x, smrt)
@@ -185,7 +185,7 @@ def test_hxform_stuff_xformed():
       def xformed(self, x):
          return Dummy(wu.hxform(x, self.pos))
 
-   x = rand_xform()
+   x = hrand()
    p = hpoint([1, 2, 3])
    smrt = Dummy(p)
    q = hxform(x, smrt)
@@ -197,7 +197,7 @@ def test_hxform_list():
       def __init__(self, p):
          self.coords = p
 
-   x = rand_xform()
+   x = hrand()
    p = hpoint([1, 2, 3])
    stuff = Dummy(p)
    q = hxform(x, stuff)
@@ -205,14 +205,14 @@ def test_hxform_list():
    assert np.allclose(stuff.coords, p)
 
 def test_hxform():
-   x = rand_xform()
+   x = hrand()
    y = hxform(x, [1, 2, 3], homogout=True)
    assert np.allclose(y, x @ hpoint([1, 2, 3]))
    y = hxform(x, [1, 2, 3])
    assert np.allclose(y, (x @ hpoint([1, 2, 3]))[:3])
 
 def test_hxform_outer():
-   x = rand_xform()
+   x = hrand()
    hxform(x, [1, 2, 3])
 
 def test_hpow():
@@ -589,7 +589,7 @@ def test_axis_ang_cen_of_rand_180():
 
 def test_axis_angle_vs_axis_angle_cen_performance(N=1000):
    t = willutil.Timer().start()
-   xforms = rand_xform(N)
+   xforms = hrand(N)
    t.checkpoint('setup')
    axis, ang = axis_angle_of(xforms)
    t.checkpoint('axis_angle_of')
@@ -645,7 +645,7 @@ def test_line_line_closest_points():
    assert np.all(p == [4, 2, 3, 1]) and np.all(q == [4, 2, 6, 1])
 
    r1, r2 = hray([1, 2, 3], [1, 0, 0]), hray([4, 5, 6], [0, 1, 0])
-   x = rand_xform((5, 6, 7))
+   x = hrand((5, 6, 7))
    xinv = np.linalg.inv(x)
    p, q = llcp(x @ r1, x @ r2)
    assert np.allclose((xinv @ p[..., None]).squeeze(-1), [4, 2, 3, 1])
@@ -682,7 +682,7 @@ def test_dihedral():
    assert 0.00001 > abs(-np.pi / 2 - dihedral([1, 0, 0], [0, 0, 0], [0, 1, 0], [0, 0, 1]))
    a, b, c = hpoint([1, 0, 0]), hpoint([0, 1, 0]), hpoint([0, 0, 1]),
    n = hpoint([0, 0, 0])
-   x = rand_xform(10)
+   x = hrand(10)
    assert np.allclose(dihedral(a, b, c, n), dihedral(x @ a, x @ b, x @ c, x @ n))
    for ang in np.arange(-np.pi + 0.001, np.pi, 0.1):
       x = hrot([0, 1, 0], ang)
@@ -854,7 +854,7 @@ def test_place_lines_to_isect_F432():
    sl2 = hnormalized(tp2 - tp1)
 
    for i in range(100):
-      Xptrb = rand_xform(cart_sd=0)
+      Xptrb = hrand(cart_sd=0)
       ax1 = Xptrb @ np.array([0., 1., 0., 0.])
       pt1 = Xptrb @ np.array([0., 0., 0., 1.])
       ax2 = Xptrb @ np.array([0., -0.5, 0.5, 0.])
@@ -1005,7 +1005,7 @@ def test_scale_translate_lines_isect_lines_p4132():
       pt2 += tmp
       pt1 += ax1 * hm.rand_vec() * 30
       pt2 += ax2 * hm.rand_vec() * 30
-      xtest = hm.rand_xform()
+      xtest = hm.hrand()
       pt1 = xtest @ pt1
       ax1 = xtest @ ax1
       pt2 = xtest @ pt2
@@ -1047,7 +1047,7 @@ def test_scale_translate_lines_isect_lines_nonorthog():
       pt2 += tmp
       pt1 += ax1 * hm.rand_vec() * 30
       pt2 += ax2 * hm.rand_vec() * 30
-      xtest = hm.rand_xform()
+      xtest = hm.hrand()
       pt1 = xtest @ pt1
       ax1 = xtest @ ax1
       pt2 = xtest @ pt2
@@ -1082,7 +1082,7 @@ def test_scale_translate_lines_isect_lines_arbitrary():
       ta1 = hm.rand_unit()
       tp2 = hrandpoint()
       ta2 = hm.rand_unit()
-      rx = hm.rand_xform()
+      rx = hm.hrand()
       pt1 = rx @ tp1
       ax1 = rx @ ta1
       pt2 = rx @ tp2
@@ -1386,7 +1386,7 @@ def test_axis_angle_180_bug():
    assert np.allclose(axis_of(xtest),axis_of(x100))
 
 
-   xform = rand_xform(cart_sd=0)
+   xform = hrand(cart_sd=0)
    xinv = np.linalg.inv(xform)
    x000 = xform @ x000
    x100 = xform @ x100
@@ -1471,7 +1471,7 @@ def test_symfit_180_bug():
    # ic('cen', cen)
 
 def test_hexpand():
-   gen = rand_xform(3)
+   gen = hrand(3)
    x0 = hexpand(gen, depth=4, ntrials=1000, deterministic=False)
    x1 = hexpand(gen, depth=4, ntrials=1000, deterministic=True)
    x2 = hexpand(gen, depth=4, ntrials=1000, deterministic=True)

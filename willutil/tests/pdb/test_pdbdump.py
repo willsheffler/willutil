@@ -45,12 +45,12 @@ def test_pdbdump(pdb1pgx):
    with tempfile.TemporaryDirectory() as d:
       # fname = f'{d}/xyz.pdb'
       fname = f'xyz.pdb'
-      xyz, mask = pdb1pgx.coords()
+      xyz, mask = pdb1pgx.atomcoords()
       xyz, mask = xyz[10:20], mask[10:20]
       wu.dumppdb(fname, xyz, mask, nchain=1)
       newpdb = wu.readpdb(fname)
       # ic(newpdb.df)
-      newxyz, mask = newpdb.coords()
+      newxyz, mask = newpdb.atomcoords()
       assert mask.dtype == bool
       assert np.all(mask[:, :4] == 1)
       assert np.sum(mask[:, 4] == 1) == 8
@@ -60,13 +60,13 @@ def test_pdbdump(pdb1pgx):
       xyz = pdb1pgx.bb()[:13]
       wu.dumppdb(fname, xyz, nchain=1)
       newpdb = wu.readpdb(fname)
-      newxyz, mask = newpdb.coords('n ca c'.split())
+      newxyz, mask = newpdb.atomcoords('n ca c'.split())
       assert np.all(mask[:, :3] == 1)
       assert np.allclose(xyz[:, :3], newxyz, atol=0.002)
 
 def test_pdbdump_ncac(pdb1pgx):
    pdb = pdb1pgx.subset(het=False)
-   xyz, mask = pdb.coords()[:10]
+   xyz, mask = pdb.atomcoords()[:10]
    with tempfile.TemporaryDirectory() as d:
       fname = f'{d}/xyz.pdb'
       fname = f'xyz.pdb'

@@ -185,26 +185,26 @@ def main():
 
 def test_extra_cyclic(nsamp=100):
    frames = wu.sym.frames('c5')
-   frames = wu.hrand(len(frames)) @ frames
-   frames[4] = wu.hrand(cart_sd=2, rot_sd=1)
+   frames = wu.hrandsmall(len(frames)) @ frames
+   frames[4] = wu.hrandsmall(cart_sd=2, rot_sd=1)
    fit = wu.compute_symfit('icos', frames, penalize_redundant_cyclic_nth=2)
    assert fit.redundant_cyclic_err > 5
 
    frames = wu.sym.frames('d2')[:-1]
-   frames = wu.hrand(len(frames)) @ frames
+   frames = wu.hrandsmall(len(frames)) @ frames
    fit = wu.compute_symfit('d2', frames, penalize_redundant_cyclic_nth=2)
    assert fit.redundant_cyclic_err < 0.001
 
    frames = wu.sym.frames('icos')[[0, 1, 2, 3, 8, 15, 20, 31, 44]]
    # wu.showme(frames @ wu.htrans([0, 0, 4]))
-   frames = wu.hrand(len(frames)) @ frames
+   frames = wu.hrandsmall(len(frames)) @ frames
    fit = wu.compute_symfit('icos', frames, penalize_redundant_cyclic_nth=2)
    # print(i, fit.redundant_cyclic_err)
    assert fit.redundant_cyclic_err < 0.001
 
    # frames = wu.sym.frames('c2')
-   # frames = wu.hrand(len(frames)) @ frames
-   # # frames[4] = wu.hrand(cart_sd=2, rot_sd=1)
+   # frames = wu.hrandsmall(len(frames)) @ frames
+   # # frames[4] = wu.hrandsmall(cart_sd=2, rot_sd=1)
    # fit = wu.compute_symfit('c2', frames, penalize_redundant_cyclic_nth=2)
    # assert fit.redundant_cyclic_err < 0.001
 

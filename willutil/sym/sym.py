@@ -25,7 +25,7 @@ def frames(
     bbsym removes redundant building block frames, e.g. TET with c3 bbs has 4 frames 
     asym_of removes redundant frames wrt a point group, e.g. turn TET into C3 and get asym unit of that C3
     '''
-   if sym is None or sym.upper() == 'C1':
+   if sym is None or (not isinstance(sym, int) and sym.upper() == 'C1'):
       return np.eye(4).reshape(1, 4, 4)
    sym = map_sym_abbreviation(sym)
    sym = sym.lower()
@@ -68,16 +68,22 @@ def frames(
       f = remove_if_same_axis(f, bbaxes, partial_ok=partial_ok)
 
    if axis is not None:
+      # assert 0, 'doesnt work right with cyclic...'
       if axis0 is not None: startax = axis0
-      elif sym.startswith('c'): startax = Uz
+      elif sym.startswith('c'): startax = wu.hvec([0, 0, 1])
       elif bbsym: startax = axes(sym, bbnfold)
       elif asym_of: startax = axes(sym, asym_of)
       else: raise ValueError(f'dont know what to align to axis={axis}')
+
       # print(startax)
       # print(axis)
-      # showme(f @ htrans(10 * f[0, :, 2]), name='a')
-      f = halign(startax, axis) @ f
-      # showme(f @ htrans(10 * f[0, :, 2]), name='b')
+      # wu.showme(f)
+      xaln = halign(startax, axis)
+      # f = f @ wu.hrot([0, 1, 0], 90) @ wu.hinv(f)
+      # f = wu.hinv(f) @ wu.hrot([0, 1, 0], 90) @ f
+      # f = wu.hrot([0, 1, 0], 90) @ f @ wu.hrot([0, 1, 0], -90)
+      f = wu.hinv(xaln) @ f @ xaln
+      # wu.showme(f)
       # assert 0
 
    if sortframes:
@@ -153,6 +159,7 @@ def map_sym_abbreviation(sym):
    if sym in 'I32 I53 I52'.split(): return 'icos'
    if sym in 'O32 O42 O43'.split(): return 'oct'
    if sym == 'T32': return 'tet'
+   if isinstance(sym, int): return f'c{sym}'
    return sym
 
 def symaxis_angle(sym, nf1, nf2):
@@ -183,6 +190,10 @@ def axes(sym, nfold=None, all=False, cellsize=1, **kw):
             e.cen = wu.hscaled(cellsize, e.cen)
          return elems
       else:
+         if sym.startswith(('icos', 'oct', 'tet')):
+            if sym[-1].isdigit() and nfold is None:
+               nfold = int(sym[-1])
+               sym = sym[:-1]
          if nfold is None:
             return symaxes[sym].copy()
          elif isinstance(nfold, str):
