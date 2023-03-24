@@ -142,8 +142,8 @@ def test_hdiff():
    assert hdiff(x, x) == 0
    assert hdiff(x, I) != 0
 
-   assert hdiff(homog(x[:3, :3]), I) != 0
-   assert hdiff(homog(trans=x[:3, 3]), I) != 0
+   assert hdiff(hconvert(x[:3, :3]), I) != 0
+   assert hdiff(hconvert(trans=x[:3, 3]), I) != 0
 
 def test_hxform_ray():
    p = hrandpoint().squeeze()

@@ -9,6 +9,11 @@ pytest.skip(allow_module_level=True)
 # ic.configureOutput(includeContext=True, contextAbsPath=True)
 
 def main():
+   # test_asuslide_L632()
+   # assert 0
+
+   manual_test()
+   assert 0
 
    test_asuslide_p213()
    assert 0
@@ -71,14 +76,25 @@ def main():
    ic('DONE')
 
 def manual_test():
-
    #yapf: disable
-   kw = {'maxstep': 10, 'clashdis': 7.2, 'contactdis': 15.2, 'contactfrac': 0.74, 'cellscalelimit': 1.5}
-   coords=np.array([[[54.51119,29.409903,41.55905],[55.404022,30.199131,40.71904],[54.80475,31.564907,40.40925]],[[50.993343,30.501368,49.58386],[51.36628,29.573011,50.644382],[52.437237,30.170462,51.548016]],[[50.81645,31.18953,52.002556],[51.652683,30.111223,52.515972],[53.12805,30.487146,52.466667]],[[50.76109,45.387222,36.6931],[49.574318,46.10996,37.134537],[48.44742,45.992607,36.116314]],[[50.402847,30.614996,50.54183],[49.2313,29.935604,51.08177],[48.20577,30.934965,51.601406]],[[50.156784,28.430199,49.708775],[49.649155,28.881092,50.998985],[50.440693,30.07578,51.515347]],[[47.568687,30.346247,45.422497],[47.46511,30.643986,46.845963],[48.83805,30.888628,47.458855]],[[52.039886,26.259457,54.802845],[52.552208,27.210032,53.823273],[52.995693,26.502792,52.549076]],[[49.67048,30.243135,42.89007],[49.205063,29.327225,43.92455],[50.255432,29.145754,45.012768]],[[49.719425,31.44023,49.359226],[49.01798,30.30116,49.938995],[49.176334,30.269579,51.453716]],[[48.65437,32.22256,50.814247],[49.092762,30.833954,50.74214],[50.04858,30.61794,49.575867]],[[46.69054,31.525162,47.757866],[45.838898,30.54201,48.416473],[44.38849,31.006111,48.453102]],[[51.068855,29.403759,47.45503],[50.390015,29.80569,48.681103],[49.35607,30.890503,48.40802]],[[48.490772,30.510437,50.964443],[48.177532,29.455526,50.00806],[46.77778,28.900673,50.238823]],[[29.709919,46.317963,44.71841],[29.99214,44.994907,44.1748],[31.467758,44.644386,44.316673]],[[46.471992,27.998854,51.43776],[46.382023,29.266502,52.152332],[45.766384,29.078108,53.53289]],[[44.214825,36.826454,53.14749],[44.099888,37.321796,54.513897],[45.454407,37.757965,55.05746]],[[40.711914,11.792399,58.443165],[41.376827,12.430169,57.31322],[42.336136,11.46828,56.624073]],[[46.7976,26.363178,50.228165],[46.827892,27.797981,49.971134],[47.848133,28.14319,48.893936]],[[45.634583,31.482237,52.535007],[45.940495,31.430096,51.11046],[44.669273,31.327003,50.277504]],[[46.012135,31.091051,48.3927],[46.917515,30.814217,49.501434],[48.352142,30.65532,49.014587]],[[32.986732,29.966717,47.246475],[33.391026,30.376778,48.585888],[33.66751,31.87366,48.64374]],[[33.502666,14.853637,48.780735],[34.282253,15.957048,48.232674],[35.398876,15.447759,47.33034]],[[40.082268,26.190973,47.255383],[38.87397,26.969202,47.010387],[38.625446,27.96862,48.132816]],[[42.42685,30.589973,50.754574],[43.663067,31.362072,50.790157],[43.3833,32.85528,50.67843]],[[46.398476,29.847504,50.47195],[47.269993,30.610554,51.357304],[46.48524,31.66326,52.12958]],[[46.31977,29.85919,52.44138],[47.42738,30.154331,51.540417],[47.86578,31.607924,51.664196]],[[47.277813,28.991884,48.79292],[47.771015,30.14654,49.533962],[47.298767,31.449516,48.901764]],[[35.191467,44.29714,47.00056],[36.25365,43.88056,47.908237],[36.34115,42.36219,47.993763]],[[47.194786,31.910461,53.616863],[47.9863,31.894869,52.392574],[47.852116,33.208523,51.633137]],[[52.472107,48.008404,52.002567],[51.997284,49.386864,52.003445],[51.12485,49.66818,53.220078]],[[46.7191,32.949257,52.503937],[47.418682,32.156,53.507412],[46.493782,31.120302,54.13377]],[[44.63648,30.289768,50.601242],[46.02256,30.018358,50.962822],[46.491463,30.942041,52.079685]],[[46.951527,32.239796,49.816612],[46.19379,31.021242,49.558556],[45.15348,30.779085,50.64463]],[[44.125675,31.862848,49.362602],[44.744556,30.734777,50.04823],[44.347168,30.698387,51.518333]],[[50.294582,30.517284,48.943455],[49.480213,29.867598,49.96342],[50.303497,29.548111,51.204624]],[[48.466484,30.866653,51.12663],[49.144737,29.634232,50.74354],[49.315804,29.546465,49.232426]],[[45.54389,27.197826,48.88265],[46.21767,28.252945,49.629894],[45.213623,29.156569,50.334023]],[[37.88225,29.6959,67.0285],[38.679813,30.677744,67.75342],[40.06525,30.824993,67.137535]],[[47.23133,45.901657,53.742523],[48.19499,45.414234,54.722023],[47.53759,44.466564,55.71711]],[[45.42423,28.154987,48.459393],[44.12753,28.02204,47.80629],[43.02064,27.77799,48.823975]],[[48.02686,32.317562,34.984047],[48.138798,32.891502,36.319603],[47.498165,31.986053,37.36372]],[[50.919758,29.981022,49.595917],[49.667004,29.89365,50.3366],[49.072655,28.493732,50.250465]],[[46.37101,31.657902,50.985703],[46.723537,30.24435,51.042446],[46.699253,29.614489,49.655674]],[[32.974712,27.645676,42.05848],[33.567818,26.867233,43.13917],[35.06662,27.11941,43.241367]],[[47.956562,31.07771,50.788708],[46.567665,30.865738,50.399258],[45.63312,31.79336,51.165142]],[[51.902977,30.028152,49.67738],[53.127495,29.55674,49.041782],[53.839962,28.529812,49.91255]],[[46.852753,29.845186,41.01078],[47.586807,30.950294,41.61537],[47.195652,31.13794,43.075592]],[[50.55296,30.0599,45.51342],[51.030663,29.056011,46.45663],[51.97746,29.668709,47.480648]],[[49.02594,22.478662,45.896187],[49.528923,21.372475,46.701797],[48.89156,20.053185,46.28507]],[[36.86418,8.222951,68.56943],[36.031624,9.12927,69.351135],[36.801693,9.702785,70.533714]],[[49.51607,27.569708,50.968277],[48.37647,28.102577,51.705154],[47.071953,27.84982,50.96031]],[[49.03591,26.769102,51.488636],[48.115417,27.095097,52.571247],[48.072483,28.596596,52.824417]],[[31.38462,45.965652,66.288315],[31.332184,45.50645,64.905556],[31.090973,46.666813,63.948578]],[[45.181137,29.960491,50.44939],[46.36725,29.119968,50.33844],[47.21862,29.19951,51.59911]],[[48.340427,28.166515,54.500313],[48.18699,29.512632,55.03888],[46.937508,30.18738,54.48756]],[[44.924744,33.17005,57.525112],[45.047295,32.17692,56.46477],[46.036007,31.082758,56.846474]],[[54.441685,28.200527,58.672997],[53.754234,28.352888,57.396343],[52.92843,29.632532,57.364685]],[[46.27058,30.971676,51.169163],[46.57207,32.36717,50.873665],[48.05331,32.55931,50.574577]],[[59.63514,44.87081,51.99519],[59.223736,45.90732,51.05602],[59.68853,45.585022,49.641613]],[[45.67184,16.958412,48.651516],[46.069626,15.567487,48.83244],[46.935852,15.087295,47.675068]],[[45.777363,31.652958,49.56032],[46.656704,30.969278,50.50105],[45.85657,30.17431,51.524902]],[[34.517807,20.905317,44.245853],[35.331497,22.03519,44.6782],[36.038208,21.73371,45.993534]],[[47.48112,33.021828,48.499287],[48.379345,32.262527,49.360832],[47.726837,30.969978,49.834103]],[[51.70997,32.020325,40.994267],[51.622063,30.569407,40.88134],[50.634964,30.160204,39.795696]],[[51.5201,36.703354,50.835514],[51.026,35.575817,50.054382],[51.307514,34.25369,50.756657]],[[56.377827,33.016003,42.05814],[55.78306,31.786804,42.56897],[54.562286,32.08233,43.43083]],[[47.33628,30.031137,49.454967],[47.91413,28.933064,48.689476],[46.915096,28.378067,47.68233]],[[35.940598,37.360428,46.751423],[35.84982,36.12063,45.98966],[34.535557,35.40081,46.263557]],[[43.012424,34.40379,27.344557],[42.504784,33.7293,28.533257],[41.05034,33.314266,28.352234]],[[39.955437,35.716084,47.293755],[41.04108,36.657764,47.539215],[40.79615,37.461803,48.809635]],[[46.53096,30.68734,50.755527],[47.731167,30.07678,50.196632],[47.46222,29.499454,48.812866]],[[48.40207,30.523767,49.375404],[47.40459,30.65515,48.320217],[48.00142,31.298399,47.075043]],[[48.00724,29.411568,47.87233],[46.656746,29.601315,48.38787],[45.624672,29.525154,47.270073]],[[54.733658,41.58862,26.833849],[54.15404,42.55312,27.7609],[54.909096,42.567955,29.083818]]],dtype=np.float32)
+   kw = {'center': array([ 22.16297525,   9.5657125 , -24.6145983 ,   1.        ]), 'maxstep': 20, 'clashdis': 4.2, 'contactdis': 4.0, 'contactfrac': 0.014500000000000006, 'cellscalelimit': 1.5, 'strict': False}
+   coords=np.array([[37.43444,16.600136,-36.849804],[34.127346,17.459654,-35.431736],[32.369286,15.066488,-37.71309],[34.490143,12.257697,-36.4415],[33.854485,13.158916,-32.85202],[30.14087,13.3336115,-33.421173],[30.158007,9.930897,-34.98829],[32.23455,8.527389,-32.194458],[29.95039,9.888692,-29.552744],[26.968216,8.4673815,-31.334763],[28.574718,5.0961127,-31.58422],[29.435669,5.1508093,-27.937641],[25.918219,6.01223,-26.96678],[24.533623,3.3079495,-29.147669],[26.920853,0.83473206,-27.691029],[26.083107,1.7542557,-24.1724],[22.423754,1.4482727,-24.85936],[22.800695,-1.9285806,-26.41853],[24.82718,-3.1842618,-23.54093],[22.429903,-1.9884397,-20.946342],[19.20533,-2.8035462,-22.704433],[18.457972,-5.5732207,-20.24991],[18.64516,-3.3609507,-17.291187],[15.429527,-1.5817798,-16.780115],[14.755223,0.86148727,-14.093442],[11.515039,2.637912,-13.728129],[13.028138,5.3479424,-11.628789],[15.5056925,6.254575,-14.264113],[12.756031,6.656026,-16.767748],[11.296263,9.68379,-15.092162],[14.608268,11.408663,-14.785076],[15.672325,10.704255,-18.307966],[12.374394,11.930729,-19.61201],[12.870153,15.178934,-17.799953],[16.291807,15.514817,-19.306164],[14.936408,14.857147,-22.750303],[12.49428,17.678102,-22.364908],[15.216918,20.020746,-21.301325],[17.48687,19.24535,-24.226528],[14.83651,19.628355,-26.848402],[17.264915,18.41478,-29.535057],[15.977524,15.582194,-31.580448],[19.0861,13.516757,-31.308044],[19.326181,14.126327,-27.635862],[15.729681,13.235167,-27.08639],[16.184309,10.021897,-28.96388],[19.206068,9.031187,-26.981613],[17.640123,9.982712,-23.699],[14.619852,7.861638,-24.431309],[16.93277,4.982046,-25.070734],[18.757181,5.5761847,-21.847363],[15.637167,5.614854,-19.739874],[15.938946,1.8690094,-19.367538],[19.45126,1.799174,-18.107029],[20.435474,2.3262575,-14.570786],[23.995745,1.1529319,-14.533105],[25.374428,3.3470116,-17.214006],[23.050564,6.2556853,-17.02632],[25.669886,8.84744,-16.293013],[28.01025,7.707162,-18.979683],[25.21269,7.596833,-21.463127],[24.125889,11.077479,-20.585724],[27.620346,12.378192,-21.008371],[27.911135,10.865114,-24.433369],[24.538767,12.190975,-25.415136],[25.384344,15.676883,-24.321796],[28.694895,15.590722,-26.093832],[27.010637,14.470794,-29.272808],[24.55835,17.29831,-28.983686],[27.293612,19.814505,-28.500967],[29.17836,18.490871,-31.461143],[26.098616,18.561434,-33.6082],[25.424032,22.13119,-32.7656],[28.950327,23.137213,-33.46722],[28.874958,21.414234,-36.795696]],dtype=np.float32)
    # yapf: enable
    frames = None
+   foo = dict(
+      contactdis=10,
+      contactfrac=0.1,
+      vizsphereradius=6,
+      towardaxis=True,
+      alongaxis=False,
+      vizfresh=False,
+      centerasu=False,
+   )
+   kw = wu.Bunch(kw)
+   # wu.contactdis = 10
+   # wu.contactfrac = 0.1
    slid = asuslide(
-      sym='I213_32',
+      sym='L6_32',
       coords=coords,
       frames=frames,
       axes=None,
@@ -86,11 +102,11 @@ def manual_test():
       alongaxis=0,
       towardaxis=True,
       printme=False,
-      cellsize=array([80.33195401, 80.33195401, 80.33195401]),
+      cellsize=array([55.18552072, 55.18552072, 55.18552072]),
       isxtal=False,
       nbrs='auto',
       doscale=True,
-      iters=1,
+      iters=3,
       subiters=1,
       clashiters=0,
       receniters=0,
@@ -101,20 +117,13 @@ def manual_test():
       centerasu_at_start=False,
       showme=True,
       scaleslides=1.0,
-      iterstepscale=0.75,
+      iterstepscale=0.5,
       coords_to_asucen=False,
-      xtalrad=0.6,
-      vizsphereradius=6,
-      # ignoreimmobile=True,
+      xtalrad=0.0,
       **kw,
    )
    wu.showme(slid)
-
-   ic(slid.asym.com())
-   ic(slid.cellsize)
-
-   wu.showme(slid)
-   slid.dump_pdb(f'/home/sheffler/DEBUG_slid_willutil.pdb')
+   # slid.dump_pdb(f'/home/sheffler/DEBUG_slid_willutil.pdb')
 
 def test_asuslide_L632_2(showme=False):
    sym = 'L6_32'
@@ -135,9 +144,7 @@ def test_asuslide_L632_2(showme=False):
    primary_frames = wu.hscaled(csize, primary_frames)
    frames = primary_frames
 
-   slid = asuslide(sym, xyz, frames, showme=showme, maxstep=30, step=10, iters=5, clashiters=0, clashdis=8,
-                   contactdis=16, contactfrac=0.2, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False,
-                   vizfresh=False, centerasu=False, scaleslides=1, resetonfail=True)
+   slid = asuslide(sym, xyz, frames, showme=showme, maxstep=30, step=10, iters=5, clashiters=0, clashdis=8, contactdis=16, contactfrac=0.2, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False, scaleslides=1, resetonfail=True)
    # wu.showme(slid, vizsphereradius=6)
    ic(slid.cellsize)
    ic(slid.asym.com())
@@ -158,10 +165,7 @@ def test_asuslide_L632_ignoreimmobile(showme=False):
 
    frames = xtal.cellframes(cellsize=csize)
 
-   slid = asuslide(sym, xyz, frames, showme=False, maxstep=30, step=9, iters=3, subiters=1, doscale=True,
-                   doscaleiters=True, clashiters=0, clashdis=8, contactdis=12, contactfrac=0.1, vizsphereradius=6,
-                   cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False, scaleslides=1,
-                   resetonfail=True, nobadsteps=False, ignoreimmobile=True, iterstepscale=0.5)
+   slid = asuslide(sym, xyz, frames, showme=False, maxstep=30, step=9, iters=3, subiters=1, doscale=True, doscaleiters=True, clashiters=0, clashdis=8, contactdis=12, contactfrac=0.1, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False, scaleslides=1, resetonfail=True, nobadsteps=False, ignoreimmobile=True, iterstepscale=0.5)
    # wu.showme(slid, vizsphereradius=6)
    ic(slid.cellsize)
    ic(slid.asym.com())
@@ -181,8 +185,7 @@ def asuslide_case4():
    fracremains = 1.0
    primaryframes = xtal.primary_frames(cellsize)
    cen = wu.th_com(xyz.reshape(-1, xyz.shape[-1]))
-   frames = wu.sym.frames(sym, ontop=primaryframes, cells=(-1, 1), cellsize=cellsize, center=cen,
-                          xtalrad=cellsize * 0.9)
+   frames = wu.sym.frames(sym, ontop=primaryframes, cells=(-1, 1), cellsize=cellsize, center=cen, xtalrad=cellsize * 0.9)
    # frames = primaryframes
    cfracmin = 0.7
    cfracmax = 0.7
@@ -334,8 +337,7 @@ def test_asuslide_helix_nfold1_2():
    cellsize = [hgeom.radius, hgeom.radius, hgeom.spacing]
 
    rb1 = wu.sym.helix_slide(h, xyz, cellsize, iters=0, closest=20)
-   rb2 = wu.sym.helix_slide(h, xyz, cellsize, contactfrac=0.3, closest=20, steps=30, step=8.7, iters=5, showme=False,
-                            **showmeopts)
+   rb2 = wu.sym.helix_slide(h, xyz, cellsize, contactfrac=0.3, closest=20, steps=30, step=8.7, iters=5, showme=False, **showmeopts)
 
    # ic(rb2.frames())
 
@@ -420,9 +422,7 @@ def test_asuslide_L442():
    primary_frames = wu.hscaled(csize, primary_frames)
    frames = primary_frames
 
-   slid = asuslide(sym, xyz, frames, showme=False, maxstep=30, step=10, iters=10, clashiters=0, clashdis=8,
-                   contactdis=16, contactfrac=0.2, vizsphereradius=2, cellsize=csize, towardaxis=True, alongaxis=False,
-                   vizfresh=False, centerasu=False, cellscalelimit=1.2)
+   slid = asuslide(sym, xyz, frames, showme=False, maxstep=30, step=10, iters=10, clashiters=0, clashdis=8, contactdis=16, contactfrac=0.2, vizsphereradius=2, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False, cellscalelimit=1.2)
    # wu.showme(slid)
    ic(slid.cellsize, slid.asym.com())
    assert np.allclose(slid.cellsize, 99.16625977)
@@ -447,16 +447,13 @@ def test_asuslide_I4132_clashframes():
    ])
 
    primaryframes = wu.hscaled(csize, primaryframes)
-   frames = wu.sym.frames(sym, ontop=primaryframes, cells=(-1, 1), cellsize=csize, center=wu.hcom(xyz),
-                          xtalrad=csize * 0.5)
+   frames = wu.sym.frames(sym, ontop=primaryframes, cells=(-1, 1), cellsize=csize, center=wu.hcom(xyz), xtalrad=csize * 0.5)
    # frames = primaryframes
 
    tooclose = ft.partial(wu.rigid.tooclose_primary_overlap, nprimary=len(primaryframes))
    # tooclose = wu.rigid.tooclose_overlap
 
-   slid = asuslide(sym, xyz, frames, showme=False, maxstep=30, step=5, iters=5, clashiters=0, clashdis=8, contactdis=16,
-                   contactfrac=0.3, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False,
-                   centerasu=False)  #, tooclosefunc=tooclose)
+   slid = asuslide(sym, xyz, frames, showme=False, maxstep=30, step=5, iters=5, clashiters=0, clashdis=8, contactdis=16, contactfrac=0.3, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False)  #, tooclosefunc=tooclose)
    # xtal.dump_pdb('test0.pdb', slid.asym.coords, cellsize=slid.cellsize, cells=0)
    # xtal.dump_pdb('test1.pdb', slid.asym.coords, cellsize=slid.cellsize, cells=(-1, 0), ontop='primary')
    # wu.showme(slid)
@@ -464,9 +461,7 @@ def test_asuslide_I4132_clashframes():
    assert np.allclose(slid.cellsize, 180.390625)
    assert np.allclose(slid.asym.com(), [-4.80305991, 11.55346709, 28.23302801, 1.])
 
-   slid = asuslide(sym, xyz, frames, showme=False, maxstep=30, step=5, iters=5, clashiters=0, clashdis=8, contactdis=16,
-                   contactfrac=0.2, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False,
-                   centerasu=False, tooclosefunc=tooclose)
+   slid = asuslide(sym, xyz, frames, showme=False, maxstep=30, step=5, iters=5, clashiters=0, clashdis=8, contactdis=16, contactfrac=0.2, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False, tooclosefunc=tooclose)
    # xtal.dump_pdb('test0.pdb', slid.asym.coords, cellsize=slid.cellsize, cells=0)
    # xtal.dump_pdb('test1.pdb', slid.asym.coords, cellsize=slid.cellsize, cells=(-1, 0), ontop='primary')
    # wu.showme(slid)
@@ -602,9 +597,7 @@ def test_asuslide_I213():
    # primary_frames = wu.hscaled(csize, primary_frames)
    frames = None  #xtal.primary_frames(cellsize=csize)
 
-   slid = asuslide(sym, xyz, showme=False, frames=frames, maxstep=13, step=10, iters=3, clashiters=0, clashdis=8,
-                   contactdis=16, contactfrac=0.1, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False,
-                   vizfresh=False, centerasu=False, xtalrad=0.6, iterstepscale=0.5)
+   slid = asuslide(sym, xyz, showme=False, frames=frames, maxstep=13, step=10, iters=3, clashiters=0, clashdis=8, contactdis=16, contactfrac=0.1, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False, xtalrad=0.6, iterstepscale=0.5)
    # asym = wu.rigid.RigidBodyFollowers(sym=sym, coords=slid.asym.coords, cellsize=slid.cellsize,
    # frames=xtal.primary_frames(cellsize=slid.cellsize))
    # x = wu.sym.Xtal(sym)
@@ -643,9 +636,7 @@ def test_asuslide_L632():
    primary_frames = wu.hscaled(csize, primary_frames)
    frames = primary_frames
 
-   slid = asuslide(sym, xyz, frames, showme=False, maxstep=20, step=10, iters=3, clashiters=0, clashdis=8,
-                   contactdis=10, contactfrac=0.1, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False,
-                   vizfresh=False, centerasu=False)
+   slid = asuslide(sym, xyz, frames, showme=True, maxstep=20, step=10, iters=3, clashiters=0, clashdis=8, contactdis=10, contactfrac=0.1, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False)
    # wu.showme(slid)
    ic(slid.cellsize, slid.asym.com())
    assert np.allclose(slid.cellsize, 97.5)
@@ -671,9 +662,7 @@ def test_asuslide_I4132():
    primary_frames = wu.hscaled(csize, primary_frames)
    frames = primary_frames
 
-   slid = asuslide(sym, xyz, frames, showme=False, maxstep=30, step=5, iters=3, clashiters=0, clashdis=8, contactdis=16,
-                   contactfrac=0.2, vizsphereradius=2, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False,
-                   centerasu=False)
+   slid = asuslide(sym, xyz, frames, showme=False, maxstep=30, step=5, iters=3, clashiters=0, clashdis=8, contactdis=16, contactfrac=0.2, vizsphereradius=2, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False)
    # wu.showme(slid, vizsphereradius=6)
    ic(slid.cellsize)
    ic(slid.asym.com())
@@ -683,9 +672,7 @@ def test_asuslide_I4132():
    assert np.allclose(slid.cellsize, 183.75)
    assert np.allclose(slid.asym.com(), [0.26694229, 19.87146628, 36.37601256, 1.])
 
-   slid2 = asuslide(sym, xyz, showme=False, maxstep=50, step=10, iters=3, clashiters=0, clashdis=8, contactdis=16,
-                    contactfrac=0.2, vizsphereradius=2, cellsize=csize, towardaxis=True, alongaxis=False,
-                    vizfresh=False, centerasu=False, xtalrad=0.5)
+   slid2 = asuslide(sym, xyz, showme=False, maxstep=50, step=10, iters=3, clashiters=0, clashdis=8, contactdis=16, contactfrac=0.2, vizsphereradius=2, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False, xtalrad=0.5)
    # wu.showme(slid2, vizsphereradius=6)
    ic(slid.cellsize)
    ic(slid.asym.com())
@@ -705,9 +692,7 @@ def test_asuslide_p213():
    xyz[:, 1] -= 2
 
    primary_frames = xtal.primary_frames(cellsize=csize)
-   slid = asuslide(showme=0, sym=sym, coords=xyz, frames=primary_frames, maxstep=30, step=7, iters=5, subiters=3,
-                   contactdis=16, contactfrac=0.1, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False,
-                   vizfresh=False, centerasu=False, iterstepscale=0.75)
+   slid = asuslide(showme=0, sym=sym, coords=xyz, frames=primary_frames, maxstep=30, step=7, iters=5, subiters=3, contactdis=16, contactfrac=0.1, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False, iterstepscale=0.75)
    # wu.showme(slid)
    # slid.dump_pdb('test1.pdb')
    # ic(slid.bvh_op_count, len(slid.bodies))
@@ -717,18 +702,14 @@ def test_asuslide_p213():
 
    frames = xtal.frames(cells=(-1, 1), cellsize=csize, xtalrad=0.9)
 
-   slid = asuslide(showme=0, sym=sym, coords=xyz, frames=frames, maxstep=30, step=7, iters=5, subiters=3, contactdis=16,
-                   contactfrac=0.1, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False,
-                   centerasu=False, iterstepscale=0.75)
+   slid = asuslide(showme=0, sym=sym, coords=xyz, frames=frames, maxstep=30, step=7, iters=5, subiters=3, contactdis=16, contactfrac=0.1, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False, iterstepscale=0.75)
    # slid.dump_pdb('test2.pdb')
    # ic(slid.bvh_op_count, len(slid.bodies))
    ic(slid.cellsize, slid.asym.com())
    assert np.allclose(slid.cellsize, 161.5703125)
    assert np.allclose(slid.asym.com(), [81.45648685, 41.24336469, 62.20570401, 1.])
 
-   slid = asuslide(showme=0, sym=sym, coords=xyz, maxstep=30, step=7, iters=5, subiters=3, contactdis=16,
-                   contactfrac=0.1, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False,
-                   centerasu=False, iterstepscale=0.75)
+   slid = asuslide(showme=0, sym=sym, coords=xyz, maxstep=30, step=7, iters=5, subiters=3, contactdis=16, contactfrac=0.1, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False, iterstepscale=0.75)
    # wu.showme(slid)
    # slid.dump_pdb('test3.pdb')
    # ic(slid.bvh_op_count, len(slid.bodies))
@@ -754,8 +735,7 @@ def test_asuslide_oct():
    xyz += ax3 * 20
    xyz0 = xyz.copy()
 
-   slid = asuslide(showme=0, sym=sym, coords=xyz, frames=frames, axes=axesinfo, alongaxis=True, towardaxis=False,
-                   iters=3, subiters=3, contactfrac=0.1, contactdis=16, vizsphereradius=6)
+   slid = asuslide(showme=0, sym=sym, coords=xyz, frames=frames, axes=axesinfo, alongaxis=True, towardaxis=False, iters=3, subiters=3, contactfrac=0.1, contactdis=16, vizsphereradius=6)
    ic(slid.asym.com(), slid.cellsize)
    assert np.all(np.abs(slid.frames()[:, :3, 3]) < 0.0001)
    assert np.allclose(slid.asym.com(), [67.39961966, 67.39961966, 25.00882048, 1.])
@@ -763,8 +743,7 @@ def test_asuslide_oct():
    assert np.allclose(np.eye(3), slid.asym.position[:3, :3])
    # slid.dump_pdb('ref.pdb')
 
-   slid = asuslide(showme=0, sym=sym, coords=xyz, frames=primary_frames, axes=axesinfo, alongaxis=True,
-                   towardaxis=False, iters=3, subiters=3, contactfrac=0.1, contactdis=16, vizsphereradius=6)
+   slid = asuslide(showme=0, sym=sym, coords=xyz, frames=primary_frames, axes=axesinfo, alongaxis=True, towardaxis=False, iters=3, subiters=3, contactfrac=0.1, contactdis=16, vizsphereradius=6)
    # ic(slid.asym.com(), slid.cellsize)
    assert np.all(np.abs(slid.frames()[:, :3, 3]) < 0.0001)
    assert np.allclose(slid.asym.com(), [67.39961966, 67.39961966, 25.00882048, 1.])
@@ -773,8 +752,7 @@ def test_asuslide_oct():
    # slid.dump_pdb('test0.pdb')
 
    xyz = xyz0 - ax2 * 30
-   slid2 = asuslide(showme=0, sym=sym, coords=xyz, frames=frames, alongaxis=True, vizsphereradius=6, contactdis=12,
-                    contactfrac=0.1, maxstep=20, iters=3, subiters=3, towardaxis=False, along_extra_axes=[[0, 0, 1]])
+   slid2 = asuslide(showme=0, sym=sym, coords=xyz, frames=frames, alongaxis=True, vizsphereradius=6, contactdis=12, contactfrac=0.1, maxstep=20, iters=3, subiters=3, towardaxis=False, along_extra_axes=[[0, 0, 1]])
    # ic(slid.asym.com(), slid.cellsize)
    assert np.all(np.abs(slid2.frames()[:, :3, 3]) < 0.0001)
    assert np.allclose(np.eye(3), slid2.asym.position[:3, :3])
@@ -782,8 +760,7 @@ def test_asuslide_oct():
    # slid.dump_pdb('test1.pdb')
 
    xyz = xyz0 - ax2 * 20
-   slid2 = asuslide(showme=0, sym=sym, coords=xyz, frames=primary_frames, alongaxis=True, vizsphereradius=6,
-                    contactdis=12, contactfrac=0.1, maxstep=20, iters=3, subiters=3, towardaxis=False)
+   slid2 = asuslide(showme=0, sym=sym, coords=xyz, frames=primary_frames, alongaxis=True, vizsphereradius=6, contactdis=12, contactfrac=0.1, maxstep=20, iters=3, subiters=3, towardaxis=False)
    # ic(slid.asym.com(), slid.cellsize)
    assert np.all(np.abs(slid2.frames()[:, :3, 3]) < 0.0001)
    assert np.allclose(np.eye(3), slid2.asym.position[:3, :3])
@@ -800,8 +777,7 @@ def test_asuslide_P432_44(showme=False):
    xyz += wu.hvec(asucen)
    primary_frames = xtal.primary_frames(cellsize=csize)
    cen = wu.hcom(xyz)
-   frames = wu.sym.frames(sym, ontop=primary_frames, cells=(-1, 1), cellsize=csize, center=cen, asucen=asucen,
-                          xtalrad=0.9, strict=False)
+   frames = wu.sym.frames(sym, ontop=primary_frames, cells=(-1, 1), cellsize=csize, center=cen, asucen=asucen, xtalrad=0.9, strict=False)
 
    # rbprimary = wu.RigidBodyFollowers(coords=xyz, frames=primary_frames)
    # wu.showme(rbprimary)
@@ -809,9 +785,7 @@ def test_asuslide_P432_44(showme=False):
    # wu.showme(rbstart)
    # frames = primary_frames
 
-   slid = asuslide(sym, xyz, frames, showme=False, maxstep=10, step=10.123, iters=3, clashiters=0, clashdis=8,
-                   contactdis=16, contactfrac=0.2, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False,
-                   vizfresh=False, centerasu=False, iterstepscale=0.5, resetonfail=True)
+   slid = asuslide(sym, xyz, frames, showme=False, maxstep=10, step=10.123, iters=3, clashiters=0, clashdis=8, contactdis=16, contactfrac=0.2, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False, iterstepscale=0.5, resetonfail=True)
    # wu.showme(slid)
    ic(slid.cellsize, slid.asym.com())
    assert np.allclose(slid.cellsize, 146.85425)
@@ -819,9 +793,7 @@ def test_asuslide_P432_44(showme=False):
 
    asucen = xtal.asucen(method='stored', cellsize=csize)
    csize = 100
-   slid = asuslide(sym, xyz, showme=False, maxstep=10, step=10.123, iters=3, clashiters=0, clashdis=8, contactdis=16,
-                   contactfrac=0.2, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False,
-                   centerasu=False, iterstepscale=0.5, resetonfail=True, xtalrad=0.6)
+   slid = asuslide(sym, xyz, showme=False, maxstep=10, step=10.123, iters=3, clashiters=0, clashdis=8, contactdis=16, contactfrac=0.2, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False, iterstepscale=0.5, resetonfail=True, xtalrad=0.6)
    # wu.showme(slid)
    ic(slid.cellsize, slid.asym.com())
    assert np.allclose(slid.cellsize, 145.5535)
@@ -837,12 +809,9 @@ def test_asuslide_P432_43(showme=False):
    xyz += wu.hvec(asucen)
    primary_frames = xtal.primary_frames(cellsize=csize)
    cen = wu.hcom(xyz)
-   frames = wu.sym.frames(sym, ontop=primary_frames, cells=(-1, 1), cellsize=csize, center=cen, asucen=asucen,
-                          xtalrad=0.6, strict=False)
+   frames = wu.sym.frames(sym, ontop=primary_frames, cells=(-1, 1), cellsize=csize, center=cen, asucen=asucen, xtalrad=0.6, strict=False)
 
-   slid = asuslide(sym, xyz, frames, showme=showme, maxstep=10, step=10.123, iters=3, clashiters=0, clashdis=8,
-                   contactdis=16, contactfrac=0.2, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False,
-                   vizfresh=False, centerasu=False, iterstepscale=0.5, resetonfail=True)
+   slid = asuslide(sym, xyz, frames, showme=showme, maxstep=10, step=10.123, iters=3, clashiters=0, clashdis=8, contactdis=16, contactfrac=0.2, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False, iterstepscale=0.5, resetonfail=True)
    # wu.showme(slid)
    ic(slid.cellsize)
    ic(slid.asym.com())
@@ -865,9 +834,7 @@ def test_asuslide_F432():
    # ic(frames.shape)
    # assert 0
 
-   slid = asuslide(sym, xyz, frames, showme=0, maxstep=30, step=10.3, iters=3, subiters=2, contactdis=10,
-                   contactfrac=0.1, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False,
-                   centerasu=False, along_extra_axes=[[0, 0, 1]], iterstepscale=0.7)
+   slid = asuslide(sym, xyz, frames, showme=0, maxstep=30, step=10.3, iters=3, subiters=2, contactdis=10, contactfrac=0.1, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False, along_extra_axes=[[0, 0, 1]], iterstepscale=0.7)
    wu.showme(slid, vizsphereradius=6)
    ic(slid.cellsize, slid.asym.com())
    assert np.allclose(slid.cellsize, 201.5)
@@ -899,9 +866,7 @@ def test_asuslide_I432():
 
    # wu.showme(wu.rigid.RigidBodyFollowers(sym=sym, coords=xyz, cellsize=csize, xtalrad=0.7, strict=False))
 
-   slid = asuslide(sym, xyz, showme=0, maxstep=30, step=10, iters=2, subiters=1, clashiters=0, clashdis=8,
-                   contactdis=12, contactfrac=0.2, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False,
-                   vizfresh=False, centerasu=False, along_extra_axes=[], xtalrad=0.5, iterstepscale=0.5)
+   slid = asuslide(sym, xyz, showme=0, maxstep=30, step=10, iters=2, subiters=1, clashiters=0, clashdis=8, contactdis=12, contactfrac=0.2, vizsphereradius=6, cellsize=csize, towardaxis=True, alongaxis=False, vizfresh=False, centerasu=False, along_extra_axes=[], xtalrad=0.5, iterstepscale=0.5)
 
    # ic(slid.bvh_op_count)
    # wu.showme(slid)
@@ -926,11 +891,7 @@ def test_asuslide_from_origin():
    sym = 'L632'
    kw = {'maxstep': 40, 'clashdis': 5.68, 'contactdis': 12.0, 'contactfrac': 0.05, 'cellscalelimit': 1.5}
    csize = 1
-   slid = asuslide(showme=1, sym=sym, coords=test_asuslide_case2_coords, axes=None, existing_olig=None, alongaxis=0,
-                   towardaxis=True, printme=False, cellsize=csize, isxtal=False, nbrs='auto', doscale=True, iters=2,
-                   subiters=2, clashiters=0, receniters=0, step=5.26, scalestep=None, closestfirst=True,
-                   centerasu='toward_other', centerasu_at_start=False, scaleslides=1.0, iterstepscale=0.75,
-                   coords_to_asucen=False, boundscheck=boundscheck_L632, nobadsteps=True, vizsphereradius=6, **kw)
+   slid = asuslide(showme=1, sym=sym, coords=test_asuslide_case2_coords, axes=None, existing_olig=None, alongaxis=0, towardaxis=True, printme=False, cellsize=csize, isxtal=False, nbrs='auto', doscale=True, iters=2, subiters=2, clashiters=0, receniters=0, step=5.26, scalestep=None, closestfirst=True, centerasu='toward_other', centerasu_at_start=False, scaleslides=1.0, iterstepscale=0.75, coords_to_asucen=False, boundscheck=boundscheck_L632, nobadsteps=True, vizsphereradius=6, **kw)
    ic(slid.asym.com(), slid.cellsize)
 
 def test_asuslide_case2():
@@ -942,20 +903,12 @@ def test_asuslide_case2():
    csize = 80
 
    frames = xtal.primary_frames(cellsize=csize)  #xtal.frames(cellsize=csize)
-   slid = asuslide(showme=0, sym=sym, coords=test_asuslide_case2_coords, frames=frames, axes=None, existing_olig=None,
-                   alongaxis=0, towardaxis=True, printme=False, cellsize=csize, isxtal=False, nbrs='auto', doscale=True,
-                   iters=2, subiters=2, clashiters=0, receniters=0, step=5.26, scalestep=None, closestfirst=True,
-                   centerasu='toward_other', centerasu_at_start=False, scaleslides=1.0, iterstepscale=0.75,
-                   coords_to_asucen=False, nobadsteps=True, vizsphereradius=6, **kw)
+   slid = asuslide(showme=0, sym=sym, coords=test_asuslide_case2_coords, frames=frames, axes=None, existing_olig=None, alongaxis=0, towardaxis=True, printme=False, cellsize=csize, isxtal=False, nbrs='auto', doscale=True, iters=2, subiters=2, clashiters=0, receniters=0, step=5.26, scalestep=None, closestfirst=True, centerasu='toward_other', centerasu_at_start=False, scaleslides=1.0, iterstepscale=0.75, coords_to_asucen=False, nobadsteps=True, vizsphereradius=6, **kw)
    # wu.showme(slid)
    # ic(slid.asym.com(), slid.cellsize)
    assert np.allclose(slid.asym.com(), [18.33744584, 0.30792098, 3.55403141, 1])
    assert np.allclose(slid.cellsize, [58.96, 58.96, 58.96])
-   slid = asuslide(showme=0, sym=sym, coords=test_asuslide_case2_coords, axes=None, existing_olig=None, alongaxis=0,
-                   towardaxis=True, printme=False, cellsize=csize, isxtal=False, nbrs='auto', doscale=True, iters=2,
-                   subiters=2, clashiters=0, receniters=0, step=5.26, scalestep=None, closestfirst=True,
-                   centerasu='toward_other', centerasu_at_start=False, scaleslides=1.0, iterstepscale=0.75,
-                   coords_to_asucen=False, nobadsteps=True, vizsphereradius=6, **kw)
+   slid = asuslide(showme=0, sym=sym, coords=test_asuslide_case2_coords, axes=None, existing_olig=None, alongaxis=0, towardaxis=True, printme=False, cellsize=csize, isxtal=False, nbrs='auto', doscale=True, iters=2, subiters=2, clashiters=0, receniters=0, step=5.26, scalestep=None, closestfirst=True, centerasu='toward_other', centerasu_at_start=False, scaleslides=1.0, iterstepscale=0.75, coords_to_asucen=False, nobadsteps=True, vizsphereradius=6, **kw)
    # wu.showme(slid)
    # ic(slid.asym.com(), slid.cellsize)
    assert np.allclose(slid.asym.com(), [18.33744584, 0.30792098, 3.55403141, 1])
@@ -979,11 +932,7 @@ def test_asuslide_case2():
    coords[..., 0] += 5
    # wu.showme(test_asuslide_case2_coords[:, 1])
    # ic(wu.hcom(coords))
-   slid = asuslide(showme=0, sym=sym, coords=coords, axes=None, existing_olig=None, alongaxis=0, towardaxis=True,
-                   printme=False, cellsize=csize, isxtal=False, nbrs='auto', doscale=True, iters=2, subiters=2,
-                   clashiters=0, receniters=0, step=5.26, scalestep=None, closestfirst=True, centerasu='toward_other',
-                   centerasu_at_start=False, scaleslides=1.0, iterstepscale=0.75, coords_to_asucen=True,
-                   nobadsteps=True, vizsphereradius=6, boundscheck=boundscheck_L632, **kw)
+   slid = asuslide(showme=0, sym=sym, coords=coords, axes=None, existing_olig=None, alongaxis=0, towardaxis=True, printme=False, cellsize=csize, isxtal=False, nbrs='auto', doscale=True, iters=2, subiters=2, clashiters=0, receniters=0, step=5.26, scalestep=None, closestfirst=True, centerasu='toward_other', centerasu_at_start=False, scaleslides=1.0, iterstepscale=0.75, coords_to_asucen=True, nobadsteps=True, vizsphereradius=6, boundscheck=boundscheck_L632, **kw)
    # slid.dump_pdb('test.pdb')
    # wu.showme(slid)
    ic(slid.asym.com(), slid.cellsize)
@@ -995,11 +944,7 @@ def test_asuslide_case2():
    coords = wu.hcentered(test_asuslide_case2_coords, singlecom=True)
    coords[..., 0] += 5
    csize = 10
-   slid = asuslide(showme=False, sym=sym, coords=coords, axes=None, existing_olig=None, alongaxis=0, towardaxis=True,
-                   printme=False, cellsize=csize, isxtal=False, nbrs='auto', doscale=True, iters=2, subiters=2,
-                   clashiters=0, receniters=0, step=5.26, scalestep=None, closestfirst=True, centerasu='toward_other',
-                   centerasu_at_start=False, scaleslides=1.0, iterstepscale=0.75, coords_to_asucen=False,
-                   nobadsteps=True, vizsphereradius=6, boundscheck=boundscheck_L632, **kw)
+   slid = asuslide(showme=False, sym=sym, coords=coords, axes=None, existing_olig=None, alongaxis=0, towardaxis=True, printme=False, cellsize=csize, isxtal=False, nbrs='auto', doscale=True, iters=2, subiters=2, clashiters=0, receniters=0, step=5.26, scalestep=None, closestfirst=True, centerasu='toward_other', centerasu_at_start=False, scaleslides=1.0, iterstepscale=0.75, coords_to_asucen=False, nobadsteps=True, vizsphereradius=6, boundscheck=boundscheck_L632, **kw)
    # wu.showme(slid)
    ic(slid.asym.com(), slid.cellsize)
    assert np.allclose(slid.asym.com(), [1.81500000e+01, -4.17462713e-04, 4.31305757e-15, 1.00000000e+00], atol=0.1)

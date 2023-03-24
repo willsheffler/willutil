@@ -748,7 +748,7 @@ def hrandrot(shape=(), seed=None):
    quat = rand_quat(shape)
    rot = quat_to_rot(quat)
    if seed is not None: np.random.set_state(randstate)
-   return homog(rot)
+   return hconvert(rot)
 
 def hrandrotsmall(shape=(), rot_sd=0.001, seed=None):
    if seed is not None:
@@ -760,7 +760,7 @@ def hrandrotsmall(shape=(), rot_sd=0.001, seed=None):
    ang = np.random.normal(0, rot_sd, shape) * np.pi
    r = rot(axis, ang, degrees=False).squeeze()
    if seed is not None: np.random.set_state(randstate)
-   return homog(r.squeeze())
+   return hconvert(r.squeeze())
 
 def hrms(a, b):
    a = hpoint(a)
@@ -797,9 +797,9 @@ def hrmsfit(mobile, target):
       # V[:, -1] = -V[:, -1]
       # ic(V - V1)
       # assert 0
-   rot_m2t = homog(V @ W).T
+   rot_m2t = hconvert(V @ W).T
    trans_m2t = target_cen - rot_m2t @ mobile_cen
-   xform_mobile_to_target = homog(rot_m2t, trans_m2t)
+   xform_mobile_to_target = hconvert(rot_m2t, trans_m2t)
 
    mobile = mobile + mobile_cen
    target = target + target_cen
@@ -1389,14 +1389,16 @@ def hrog(points):
    rog = rog.reshape(oshape[:-2])
    return rog
 
-def homog(rot=np.eye(3), trans=None, **kw):
+def hconvert(rot=np.eye(3), trans=None, **kw):
    if trans is None:
-      trans = np.asarray([0, 0, 0, 0], **kw)
+      trans = np.zeros(rot.shape[:-2] + (4, ))
    trans = hpoint(trans)
 
-   if rot.shape == (3, 3):
-      rot = np.concatenate([rot, np.array([[0., 0., 0.]])], axis=0)
-      rot = np.concatenate([rot, np.array([[0], [0], [0], [1]])], axis=1)
+   if rot.shape[-2:] == (3, 3):
+      rot = np.concatenate([rot, np.zeros(rot.shape[:-2] + (3, 1))], axis=-1)
+      rot = np.concatenate([rot, np.zeros(rot.shape[:-2] + (1, 4))], axis=-2)
+      rot[..., 3, 3] = 1
+      # assert hvalid(rot)
 
    assert rot.shape[-2:] == (4, 4)
    assert trans.shape[-1:] == (4, )

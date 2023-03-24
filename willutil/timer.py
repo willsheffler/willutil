@@ -66,18 +66,20 @@ class Timer:
       name=None,
       verbose=False,
       keeppriorname=False,
+      autolabel=False,
    ):
       name = str(name)
       if name is None:
          name = self.lastname
       elif not keeppriorname:
          self.lastname = name
+      if autolabel:
+         name = name + '$$$$'
       t = time.perf_counter()
       self.checkpoints[name].append(t - self.last)
       self.last = t
       if self.verbose or verbose:
-         log.debug(f'{self.name} checkpoint {name} iter {len(self.checkpoints[name])}' +
-                   f'time {self.checkpoints[name][-1]}')
+         log.debug(f'{self.name} checkpoint {name} iter {len(self.checkpoints[name])}' + f'time {self.checkpoints[name][-1]}')
       return self
 
    def __exit__(
@@ -129,20 +131,24 @@ class Timer:
       scale=1.0,
       timecut=0,
       file=None,
+      pattern='',
    ):
+
       if namelen is None:
-         namelen = max(len(n) for n in self.checkpoints) if self.checkpoints else 0
+         namelen = max(len(n.rstrip('$')) for n in self.checkpoints) if self.checkpoints else 0
       lines = [f"Times(name={self.name}, order={order}, summary={summary}):"]
       times = self.report_dict(order=order, summary=summary, timecut=timecut)
       if not times:
-         times['total'] = time.perf_counter() - self._start
+         times['total$$$$'] = time.perf_counter() - self._start
       for cpoint, t in times.items():
-         lines.append(f'    {cpoint:>{namelen}} {t*scale:{precision}}')
+         if not cpoint.count(pattern): continue
+         a = ' ' if cpoint.endswith('$$$$') else '*'
+         lines.append(f'    {cpoint.rstrip("$"):>{namelen}} {a} {t*scale:{precision}}')
          if scale == 1000: lines[-1] += 'ms'
       r = os.linesep.join(lines)
       if printme:
          if file is None:
-            ic(r)
+            print(r, flush=True)
          else:
             with open(file, 'w') as out:
                out.write(r + os.linesep)

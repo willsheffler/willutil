@@ -1,34 +1,34 @@
 import numpy as np
-from willutil.sym.xtal import Xtal, interp_xtal_cell_list
+from willutil.sym.xtalcls import Xtal, interp_xtal_cell_list
 from willutil.sym.xtalinfo import SymElem
 from willutil.viz.pymol_viz import pymol_load, cgo_cyl, cgo_sphere, cgo_fan, cgo_cube, showcube
 import willutil as wu
 
 @pymol_load.register(SymElem)
 def pymol_viz_SymElem(
-   toshow,
-   state,
-   col='bycx',
-   name='SymElem',
-   center=np.array([0, 0, 0, 1]),
-   # scalefans=None,
-   fansize=0.05,
-   fanshift=0,
-   fancover=1.0,
-   make_cgo_only=False,
-   cyc_ang_match_tol=0.1,
-   axislen=0.2,
-   axisrad=0.008,
-   addtocgo=None,
-   scale=1,
-   cellshift=(0, 0, 0),
-   fanrefpoint=[1, 2, 3, 1],
-   symelemscale=1,
-   symelemtwosided=False,
-   shifttounit=False,
-   symelemradiuscut=9e9,
-   symelemcentercut=[0, 0, 0],
-   **kw,
+      toshow,
+      state,
+      col='bycx',
+      name='SymElem',
+      center=np.array([0, 0, 0, 1]),
+      # scalefans=None,
+      fansize=0.05,
+      fanshift=0,
+      fancover=1.0,
+      make_cgo_only=False,
+      cyc_ang_match_tol=0.1,
+      axislen=0.2,
+      axisrad=0.008,
+      addtocgo=None,
+      scale=1,
+      cellshift=(0, 0, 0),
+      fanrefpoint=[1, 2, 3, 1],
+      symelemscale=1,
+      symelemtwosided=False,
+      shifttounit=False,
+      symelemradiuscut=9e9,
+      symelemcentercut=[0, 0, 0],
+      **kw,
 ):
    import pymol
 
@@ -91,12 +91,10 @@ def pymol_viz_SymElem(
    # ic(fanthickness)
    # ic(fanrefpoint)
    # ic(fanshift)
-   mycgo += cgo_fan(axis, cen, fansize, arc=arc, thickness=fanthickness, col=col, startpoint=fanrefpoint,
-                    fanshift=fanshift)
+   mycgo += cgo_fan(axis, cen, fansize, arc=arc, thickness=fanthickness, col=col, startpoint=fanrefpoint, fanshift=fanshift)
    if symelemtwosided:
       col2 = (1, 1, 1)
-      mycgo += cgo_fan(axis, cen, fansize, arc=arc, thickness=fanthickness, col=col2, startpoint=fanrefpoint,
-                       fanshift=fanshift - 0.01)
+      mycgo += cgo_fan(axis, cen, fansize, arc=arc, thickness=fanthickness, col=col2, startpoint=fanrefpoint, fanshift=fanshift - 0.01)
 
    if addtocgo is None:
       pymol.cmd.load_cgo(mycgo, f'{name}_{state["seenit"][name]}')
@@ -130,6 +128,8 @@ def pymol_viz_Xtal(
 ):
    import pymol
    state["seenit"][name] += 1
+   if 'cellsize' in kw:
+      assert kw['cellsize'] == scale
    name = f'{name}_{state["seenit"][name]}'
    # xcellshift = wu.htrans(cellshift)
    allcgo = list() if addtocgo is None else addtocgo

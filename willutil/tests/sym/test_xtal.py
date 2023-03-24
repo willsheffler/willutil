@@ -6,6 +6,10 @@ import willutil as wu
 
 def main():
 
+   test_xtal_performance()
+
+   test_xtalrad_I213()
+
    _analize_xtal_asu_placement()
    assert 0
 
@@ -141,6 +145,39 @@ run /home/sheffler/pymol3/misc/G222.py; gyroid(10,r=11,cen=Vec(5,5,5)); set ligh
 
    # _test_hxtal_viz_gyroid(headless=False)
    ic('test_xtal.py DONE')
+
+def test_xtal_performance():
+   t = wu.Timer()
+
+   wu.sym.frames('L632', cells=None, cellsize=50)
+   t.checkpoint('primaryframes_init')
+   wu.sym.frames('L632', cells=None, cellsize=50, timer=t)
+   wu.sym.frames('L632', cells=None, cellsize=50, timer=t)
+   t.checkpoint('primaryframes')
+
+   x = wu.sym.xtal('L632')
+   t.checkpoint('create_init')
+   x = wu.sym.xtal('L632')
+   x = wu.sym.xtal('L632')
+   x = wu.sym.xtal('L632')
+   t.checkpoint('create')
+
+   t.report()
+
+def test_xtalrad_I213():
+   x = wu.sym.Xtal('I213')
+   # wu.showme(x, scale=100)
+   symcoord = x.symcoords([0, 0, 0], cellsize=10, cells=3, xtalrad=0.01, ontop=None)
+   assert len(symcoord) == 3
+
+   symcoord = x.symcoords([0, 0, 0], cellsize=10, cells=3, xtalrad=0.7, ontop=None)
+   assert len(symcoord) == 21
+
+   pt = [2, 2, 2]
+   symcoord = x.symcoords(pt, cellsize=10, cells=3, xtalrad=0.7, center=pt, ontop=None)
+   ic(symcoord.shape)
+   # wu.showme(symcoord, kind='point')
+   # assert 0
 
 def _analize_xtal_asu_placement(sym='I_4_3_2_432', showme=False):
    x = wu.sym.Xtal(sym)

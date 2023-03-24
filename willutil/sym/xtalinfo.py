@@ -162,9 +162,9 @@ class SymElem:
       self.mobile = False
       if wu.homog.hgeom.h_point_line_dist([0, 0, 0], cen, axis) > 0.0001: self.mobile = True
       if axis2 is not None and wu.hpointlinedis([0, 0, 0], cen, axis2) > 0.0001: self.mobile = True
+      self.operators = self.make_operators()
 
-   @property
-   def operators(self):
+   def make_operators(self):
       # ic(self)
       x = wu.homog.hgeom.hrot(self.axis, nfold=self.nfold, center=self.cen)
       ops = [wu.homog.hgeom.hpow(x, p) for p in range(self.nfold)]

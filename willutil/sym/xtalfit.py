@@ -1,7 +1,7 @@
 import functools as ft
 import numpy as np
 import willutil as wu
-from willutil.sym.xtal import Xtal
+from willutil.sym.xtalcls import Xtal
 
 def npscorefunc(xtal, scom, state):
    dis2 = 0
@@ -25,7 +25,7 @@ def torchscorefunc(xtal, scom, cellsize, cartshift, grad=True):
    err = torch.sqrt(torch.sum(dis2))
    return err
 
-def fit_coords_to_xtal(xtal, coords, cellsize=None, domc=True, domin=False, noshift=False, **kw):
+def fit_coords_to_xtal(xtal, coords, cellsize=None, domc=True, domin=False, noshift=False, mcsteps=1000, **kw):
    'OK... this is a pretty inefficient way...'
    coms = wu.hcom(coords)
    if isinstance(cellsize, np.ndarray):
@@ -45,6 +45,8 @@ def fit_coords_to_xtal(xtal, coords, cellsize=None, domc=True, domin=False, nosh
       scom[-1] /= nops
    # ic(scom)
    elem0 = xtal.symelems[0]
+   # ic(scom)
+
    if noshift:
       cartshift = wu.hvec([0, 0, 0])
    else:
@@ -61,7 +63,7 @@ def fit_coords_to_xtal(xtal, coords, cellsize=None, domc=True, domin=False, nosh
       )
       step = 5
       mc = wu.MonteCarlo(ft.partial(npscorefunc, xtal, scom), temperature=0.3)
-      for i in range(1000):
+      for i in range(mcsteps):
          # if i % 100 == 199:
          # state = mc.beststate
          prev = state.copy()

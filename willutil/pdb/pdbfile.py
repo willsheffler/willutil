@@ -6,6 +6,7 @@ import willutil as wu
 _default_tol = wu.Bunch(rms=2.0, translation=1.0, angle=np.radians(5.0), seqmatch=0.8)
 
 class PDBFile:
+   @wu.timed
    def __init__(
       self,
       df,
@@ -14,15 +15,18 @@ class PDBFile:
       renumber_by_model=True,
       renumber_from_0=False,
       removehet=False,
+      **kw,
    ):
-      self.init(df, meta, original_contents, renumber_by_model, renumber_from_0, removehet)
+      self.init(df, meta, original_contents, renumber_by_model, renumber_from_0, removehet, **kw)
 
-   def init(self, df, meta, original_contents, renumber_by_model=False, renumber_from_0=False, removehet=False):
+   @wu.timed
+   def init(self, df, meta, original_contents, renumber_by_model=False, renumber_from_0=False, removehet=False, **kw):
       self.original_contents = original_contents
       self.meta = meta.copy()
       self.code = meta.code
       self.resl = meta.resl
       self.cryst1 = meta.cryst1
+      # ic(self.cryst1)
       df = df.copy()
       df.reset_index(inplace=True, drop=True)
       self.df = df
@@ -92,6 +96,7 @@ class PDBFile:
       self.subset(het=False, inplace=True)
       return self
 
+   @wu.timed
    def subset(
       self,
       chain=None,
@@ -103,6 +108,7 @@ class PDBFile:
       modelidx=None,
       inplace=False,
       removeatoms=[],
+      **kw,
    ):
       import numpy as np
       import pandas as pd
@@ -150,7 +156,7 @@ class PDBFile:
          df = pd.DataFrame(df.to_dict())
 
       df.reset_index(inplace=True, drop=True)
-      assert len(df) > 0
+      # assert len(df) > 0
 
       if inplace:
          self.init(
@@ -184,51 +190,59 @@ class PDBFile:
 
    dump = dump_pdb
 
-   def atommask(self, atomname, aaonly=True, splitchains=False):
+   @wu.timed
+   def atommask(self, atomname, aaonly=True, splitchains=False, **kw):
       assert not splitchains
       if not isinstance(atomname, (str, bytes)):
          return np.stack([self.atommask(a) for a in atomname]).T
       an = atomname.encode() if isinstance(atomname, str) else atomname
       an = an.upper()
       mask = list()
+
       for i, (ri, g) in enumerate(self.df.groupby(['ri', 'ch'])):
          assert np.sum(g.an == an) <= 1
          # assert np.sum(g.an == an) <= np.sum(g.an == b'CA') # e.g. O in HOH
          hasatom = np.sum(g.an == an) > 0
          mask.append(hasatom)
+
       mask = np.array(mask, dtype=bool)
       if aaonly:
          aaonly = self.aamask
          mask = mask[aaonly]
       return mask
 
-   def atomcoords(self, atomname=['N', 'CA', 'C', 'O', 'CB'], aaonly=True, splitchains=False):
+   @wu.timed
+   def atomcoords(self, atomname=['N', 'CA', 'C', 'O', 'CB'], aaonly=True, splitchains=False, nomask=False, **kw):
       if splitchains:
          chains = self.splitchains()
-         return zip(*[c.atomcoords(atomname, aaonly) for c in chains])
+         return zip(*[c.atomcoords(atomname, aaonly, **kw) for c in chains])
       if atomname is None:
          atomname = self.df.an.unique()
       if not self.isonlyaa():
          self = self.subset(het=False)  # sketchy?
       if not isinstance(atomname, (str, bytes)):
-         coords, masks = zip(*[self.atomcoords(a) for a in atomname])
+         coords, masks = zip(*[self.atomcoords(a, aaonly, nomask=nomask, **kw) for a in atomname])
          # ic(len(coords))
          # ic([len(_) for _ in coords])
          coords = np.stack(coords).swapaxes(0, 1)
          # ic(coords.shape)
-         masks = np.stack(masks).T
+         masks = None if nomask else np.stack(masks).T
          return coords, masks
+
       an = atomname.encode() if isinstance(atomname, str) else atomname
       an = an.upper().strip()
-      mask = self.atommask(an)
       df = self.df
       idx = self.df.an == an
       df = df.loc[idx]
       xyz = np.stack([df['x'], df['y'], df['z']]).T
+      if nomask:
+         return xyz, None
+      mask = self.atommask(an, **kw)
       if np.sum(~mask) > 0:
          coords = 9e9 * np.ones((len(mask), 3))
          coords[mask] = xyz
          xyz = coords
+
       return xyz, mask
 
    def camask(self, aaonly=False, **kw):
@@ -431,6 +445,4 @@ def _get_nfold_angle(ang, tolerances, candidates=[2, 3, 4, 5, 6], **kw):
       angnf = 2 * np.pi / nfold
       if angnf - tolerances.angle < ang < angnf + tolerances.angle:
          return nfold, ang
-   raise ValueError(
-      f'Angle {np.degrees(ang)} deviates from any nfold in {candidates} by more than {np.degrees(tolerances.angle)} degrees'
-   )
+   raise ValueError(f'Angle {np.degrees(ang)} deviates from any nfold in {candidates} by more than {np.degrees(tolerances.angle)} degrees')

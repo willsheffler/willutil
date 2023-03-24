@@ -50,8 +50,7 @@ def test_pdbread(pdbfname, pdbcontents):
       #    5    10   15   20   25   30   35   40   45   50   55   60   65   70   75   80
       #    |    |    |    |    |    |    |    |    |    |    |    |    |    |    |    |
       #hhhhhhiiiii_aaaaLrrr_CiiiiI___xxxxxxxxyyyyyyyyzzzzzzzzoooooobbbbbb      ssssEEcc
-      'HETATM12345 ATOM RES C 1234   1236.8572215.5813376.721440.50547.32      SEGIPBCH\n' +
-      'ATOM1234567 ATOM RES C 1234   1236.8572215.5813376.721440.50547.32      SEGIPBCH\n')
+      'HETATM12345 ATOM RES C 1234   1236.8572215.5813376.721440.50547.32      SEGIPBCH\n' + 'ATOM1234567 ATOM RES C 1234   1236.8572215.5813376.721440.50547.32      SEGIPBCH\n')
    pdb = wu.pdb.readpdb(foo)
    assert all(pdb.df.columns == ['het', 'ai', 'an', 'rn', 'ch', 'ri', 'x', 'y', 'z', 'occ', 'bfac', 'elem', 'mdl'])
    assert pdb.df.shape == (2, 13)

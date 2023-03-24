@@ -1,9 +1,9 @@
-import copy
+import copy, functools
 from willutil import Bunch
 from willutil.homog.hgeom import *
 from willutil.sym.symframes import *
 # from willutil.sym.asufit import *
-from willutil.sym.xtal import *
+from willutil.sym.xtalcls import *
 from willutil.sym.xtalinfo import *
 # from willutil.viz import showme
 
@@ -25,6 +25,8 @@ def frames(
     bbsym removes redundant building block frames, e.g. TET with c3 bbs has 4 frames 
     asym_of removes redundant frames wrt a point group, e.g. turn TET into C3 and get asym unit of that C3
     '''
+   wu.checkpoint(kw, funcbegin=True)
+
    if sym is None or (not isinstance(sym, int) and sym.upper() == 'C1'):
       return np.eye(4).reshape(1, 4, 4)
    sym = map_sym_abbreviation(sym)
@@ -32,11 +34,12 @@ def frames(
 
    try:
       if wu.sym.is_known_xtal(sym):
-         f = Xtal(sym).frames(**kw).copy()
+         f = xtal(sym).frames(**kw).copy()
       else:
          f = sym_frames[sym].copy()
    except KeyError as e:
       raise ValueError(f'unknown symmetry {sym}')
+   wu.checkpoint('frames gen')
 
    if asym_of:
       assert asym_of.startswith('c')
@@ -56,6 +59,7 @@ def frames(
       order = np.argsort(-dot, axis=-1)
       assert np.sum(order[:, 0] == 0) == len(f) / dupnfold
       f = f[order[:, 0] == 0]
+      wu.checkpoint('frames asym_of')
 
    if bbsym:
       assert asym_of is None or bbsym == asym_of
@@ -66,6 +70,7 @@ def frames(
       bbaxes = symaxes_all[sym][bbnfold].copy()
       partial_ok = asym_of is not None
       f = remove_if_same_axis(f, bbaxes, partial_ok=partial_ok)
+      wu.checkpoint('frames bbsym')
 
    if axis is not None:
       # assert 0, 'doesnt work right with cyclic...'
@@ -85,6 +90,7 @@ def frames(
       f = wu.hinv(xaln) @ f @ xaln
       # wu.showme(f)
       # assert 0
+      wu.checkpoint('frames axis')
 
    if sortframes:
       csym = bbsym or asym_of
@@ -101,12 +107,16 @@ def frames(
 
       if len(ontop) > 0:
          f = put_frames_on_top(f, ontop)
+      wu.checkpoint('frames sortframes')
 
+   wu.checkpoint(kw)
    return f
 
 def put_frames_on_top(frames, ontop, strict=True, allowcellshift=False, cellsize=None, **kw):
+   wu.checkpoint(kw, funcbegin=True)
    # ic(allowcellshift, cellsize)
    frames2 = list(frames)
+   if len(frames) == 0: return ontop
    celldeltas = [0]
    if allowcellshift:
       celldeltas = list(itertools.product(*[np.arange(-1, 2) * cellsize] * 3))
@@ -117,7 +127,7 @@ def put_frames_on_top(frames, ontop, strict=True, allowcellshift=False, cellsize
    # ic(diff.shape)
    w = np.where(diff < 0.0001)
    if strict:
-      ic(w, ontop.shape)
+      # ic(w, ontop.shape)
       assert len(w) == 2
       assert set(w[0]) == set(range(len(ontop)))
 
@@ -146,10 +156,13 @@ def put_frames_on_top(frames, ontop, strict=True, allowcellshift=False, cellsize
    #       del frames2[i]
 
    # assert wu.hunique(np.stack(frames2))
-
-   f = np.stack(list(ontop) + frames2)
+   if len(frames2) == 0:
+      f = ontop
+   else:
+      f = np.stack(list(ontop) + frames2)
    assert wu.hunique(f)
 
+   wu.checkpoint(kw)
    return f
 
 def map_sym_abbreviation(sym):
@@ -183,7 +196,7 @@ def axes(sym, nfold=None, all=False, cellsize=1, **kw):
 
    try:
       if wu.sym.is_known_xtal(sym):
-         x = Xtal(sym)
+         x = xtal(sym)
          if all: elems = copy.deepcopy(x.unitelems)
          else: elems = copy.deepcopy(x.symelems.copy())
          for e in elems:
@@ -205,6 +218,7 @@ def axes(sym, nfold=None, all=False, cellsize=1, **kw):
    except (KeyError, ValueError) as e:
       raise ValueError(f'unknown symmetry {sym}')
 
+@functools.lru_cache
 def symelem_associations(sym=None, symelems=None):
    if not symelems:
       symelems = axes(sym)
@@ -263,11 +277,7 @@ tetrahedral_axes = {
    '3b': hnormalized([1, 1, _])  # other c3
 }
 octahedral_axes = {2: hnormalized([1, 1, 0]), 3: hnormalized([1, 1, 1]), 4: hnormalized([1, 0, 0])}
-icosahedral_axes = {
-   2: hnormalized([1, 0, 0]),
-   3: hnormalized([0.934172, 0.000000, 0.356822]),
-   5: hnormalized([0.850651, 0.525731, 0.000000])
-}
+icosahedral_axes = {2: hnormalized([1, 0, 0]), 3: hnormalized([0.934172, 0.000000, 0.356822]), 5: hnormalized([0.850651, 0.525731, 0.000000])}
 
 tetrahedral_axes_all = {
    2: hnormalized([
@@ -296,8 +306,7 @@ tetrahedral_axes_all = {
    ]),
 }
 octahedral_axes_all = {
-   2:
-   hnormalized([
+   2: hnormalized([
       [1, 1, 0],
       [0, 1, 1],
       [1, 0, 1],
@@ -311,8 +320,7 @@ octahedral_axes_all = {
       # [0, _, _],
       # [_, 0, _],
    ]),
-   3:
-   hnormalized([
+   3: hnormalized([
       [1, 1, 1],
       [_, 1, 1],
       [1, _, 1],
@@ -322,8 +330,7 @@ octahedral_axes_all = {
       # [1, _, _],
       # [_, _, _],
    ]),
-   4:
-   hnormalized([
+   4: hnormalized([
       [1, 0, 0],
       [0, 1, 0],
       [0, 0, 1],
@@ -575,14 +582,28 @@ def symunit_bounds(cagesym, cycsym):
 
 def coords_to_asucen(sym, coords, **kw):
    if wu.sym.is_known_xtal(sym):
-      x = Xtal(sym)
+      x = xtal(sym)
       return x.coords_to_asucen(coords, **kw)
    else:
       raise NotImplementedError
 
 def primary_frames(sym, **kw):
    if wu.sym.is_known_xtal(sym):
-      x = Xtal(sym)
+      x = xtal(sym)
       return x.primary_frames(**kw)
    else:
       raise NotImplementedError
+
+_xtal_cache = dict()
+
+def xtal(sym, **kw):
+   global _xtal_cache
+   if sym not in _xtal_cache:
+      _xtal_cache[sym] = wu.sym.Xtal(sym, **kw)
+   return _xtal_cache[sym]
+
+def ndim(sym):
+   try:
+      return xtal(sym).dimension
+   except KeyError:
+      pass
