@@ -1,4 +1,4 @@
-import sys, os, tempfile, numpy as np, time, functools
+import sys, os, tempfile, numpy as np, time, functools, typing
 from collections import defaultdict
 
 from logging import info
@@ -62,24 +62,24 @@ def _(
 
 @pymol_load.register(RelXformInfo)
 def _(
-   toshow,
-   state=_showme_state,
-   col='bycx',
-   name='xrel',
-   showframes=True,
-   center=np.array([0, 0, 0, 1]),
-   scalefans=None,
-   fixedfansize=1,
-   expand=1.0,
-   fuzz=0,
-   make_cgo_only=False,
-   cyc_ang_match_tol=0.1,
-   axislen=20,
-   usefitaxis=False,
-   axisrad=0.1,
-   helicalrad=None,
-   addtocgo=None,
-   **kw,
+      toshow,
+      state=_showme_state,
+      col='bycx',
+      name='xrel',
+      showframes=True,
+      center=np.array([0, 0, 0, 1]),
+      scalefans=None,
+      fixedfansize=1,
+      expand=1.0,
+      fuzz=0,
+      make_cgo_only=False,
+      cyc_ang_match_tol=0.1,
+      axislen=20,
+      usefitaxis=False,
+      axisrad=0.1,
+      helicalrad=None,
+      addtocgo=None,
+      **kw,
 ):
 
    state._nsymops += 1
@@ -128,8 +128,7 @@ def _(
       mycgo += cgo_cyl(c1, c2, axisrad, col=col)
       mycgo += cgo_cyl(cen + axis * toshow.hel / 2, cen - axis * toshow.hel / 2, helicalrad, col=col)
       shift = fuzz * (np.random.rand() - 0.5)
-      mycgo += cgo_fan(axis, cen + axis * shift, fixedfansize if fixedfansize else toshow.rad * scalefans, arc=ang,
-                       col=col, startpoint=cen1)
+      mycgo += cgo_fan(axis, cen + axis * shift, fixedfansize if fixedfansize else toshow.rad * scalefans, arc=ang, col=col, startpoint=cen1)
 
    if addtocgo is None:
       pymol.cmd.load_cgo(mycgo, 'symops%i' % state._nsymops)
@@ -502,7 +501,7 @@ def show_ndarray_point_or_vec(
    v = pymol.cmd.get_view()
    state["seenit"][name] += 1
    name += "_%i" % state["seenit"][name]
-   if col in get_color_dict():
+   if isinstance(col, typing.Hashable) and col in get_color_dict():
       col = get_color_dict()[col]
    if col == 'rand':
       col = get_different_colors(len(toshow), **kw.only('colorseed'))

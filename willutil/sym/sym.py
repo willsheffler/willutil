@@ -120,17 +120,12 @@ def put_frames_on_top(frames, ontop, strict=True, allowcellshift=False, cellsize
    celldeltas = [0]
    if allowcellshift:
       celldeltas = list(itertools.product(*[np.arange(-1, 2) * cellsize] * 3))
-      # ic(celldeltas)
-
-   # ic(np.stack(frames2).shape)
    diff = wu.hdiff(ontop, np.stack(frames2))
-   # ic(diff.shape)
-   w = np.where(diff < 0.0001)
+   w = np.nonzero(diff < 0.0001)
    if strict:
       # ic(w, ontop.shape)
       assert len(w) == 2
       assert set(w[0]) == set(range(len(ontop)))
-
    for i in reversed(sorted(w[1])):
       del frames2[i]
 

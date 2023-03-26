@@ -8,13 +8,14 @@ _xtal_asucens = {
    'P 4 3 2 43': np.array([0.1, 0.2, 0.3, 1]),
    'P 4 3 2 44': np.array([0.1, 0.2, 0.3, 1]),
    'I 4 3 2': np.array([0.28, 0.17, 0.08, 1]),
-   'I 4 3 2 432': np.array([0.28, 0.17, 0.08, 1]),
+   # 'I 4 3 2 432': np.array([0.28, 0.17, 0.08, 1]),
+   'I 4 3 2 432': np.array([-0.0686, 0.037, 0.133, 1]),
    'F 4 3 2': np.array([0.769, 0.077, 0.385, 1.0]),
    # 'F 4 3 2': np.array([0.714, 0.071, 0.357, 1.0]),
-   'L6_32': np.array([0.2886751345948129, 0, 0]),
-   'L4_42': np.array([0.31, 0, 0]),
-   'L4_44': np.array([0.25, 0, 0]),
-   'L3_33': np.array([0.25, 0, 0]),
+   'L6_32': np.array([0.2886751345948129, 0, 0, 1]),
+   'L4_42': np.array([0.31, 0, 0, 1]),
+   'L4_44': np.array([0.25, 0, 0, 1]),
+   'L3_33': np.array([0.25, 0, 0, 1]),
 
    # 'I 21 3': np.array([0.615, 0.385, 0.615, 1.0]),
    # 'I 21 3': np.array([0.577, 0.385, 0.615, 1.0]),
@@ -55,6 +56,38 @@ def _populate__xtal_info_dict():
       'P 4 3 2 43'   : wu.Bunch( nsub=24 , spacegroup='P 4 3 2', symelems=[
          C4 ( axis= [ 0,  1,  0 ] , cen= A([ 1, 0, 1 ]) / 2 ),
          C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 2 ),
+      ]),
+      'P 4 3 2 43'   : wu.Bunch( nsub=24 , spacegroup='P 4 3 2', symelems=[
+         C4 ( axis= [ 0,  1,  0 ] , cen= A([ 1, 0, 1 ]) / 2 ),
+         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 2 ),
+      ]),
+      'P 4 3 2 322'   : wu.Bunch( nsub=24 , spacegroup='P 4 3 2', symelems=[
+         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 2 ),
+         C2 ( axis= [ 1,  1,  0 ] , cen= A([ 0, 0, 0 ]) / 2 ),
+         C2 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 1, 0 ]) / 2 ),
+      ]),
+      'P 4 3 2 422'   : wu.Bunch( nsub=24 , spacegroup='P 4 3 2', symelems=[
+         C4 ( axis= [ 0,  1,  0 ] , cen= A([ 0, 0, 0 ]) / 2 ),
+         C2 ( axis= [ 1,  1,  0 ] , cen= A([ 0, 0, 0 ]) / 2 ),
+         C2 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 1, 0 ]) / 2 ),
+      ]),
+      'P 4 3 2 432'   : wu.Bunch( nsub=24 , spacegroup='P 4 3 2', symelems=[
+         C4 ( axis= [ 0,  1,  0 ] , cen= A([ 0, 0, 0 ]) / 2 ),
+         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 2 ),
+         C2 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 1, 0 ]) / 2 ),
+      ]),
+      'P 4 3 2 4322'   : wu.Bunch( nsub=24 , spacegroup='P 4 3 2', symelems=[
+         C4 ( axis= [ 0,  1,  0 ] , cen= A([ 0, 0, 0 ]) / 2 ),
+         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 2 ),
+         C2 ( axis= [ 1,  1,  0 ] , cen= A([ 0, 0, 0 ]) / 2 ),
+         C2 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 1, 0 ]) / 2 ),
+      ]),
+      'P 4 3 2 432D2'   : wu.Bunch( nsub=24 , spacegroup='P 4 3 2', symelems=[
+         C4 ( axis= [ 0,  1,  0 ] , cen= A([ 0, 0, 0 ]) / 2 ),
+         C3 ( axis= [ 1,  1,  1 ] , cen= A([ 0, 0, 0 ]) / 2 ),
+         C2 ( axis= [ 1,  1,  0 ] , cen= A([ 0, 0, 0 ]) / 2 ),
+         C2 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 1, 0 ]) / 2 ),
+         C2 ( axis= [ 1,  0,  1 ] , cen= A([ 0, 1, 0 ]) / 2 ),
       ]),
       'F 4 3 2'   : wu.Bunch( nsub=96 , spacegroup='F 4 3 2', symelems=[
          C4 ( axis= [ 1,  0,  0 ] , cen= A([ 0, 0, 1 ]) / 2 ),

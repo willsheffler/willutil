@@ -24,13 +24,13 @@ def place_asu_grid(
       clusterdist=3,
       **kw,
 ):
-   t = wu.Timer()
    nsampcell = nsampcell or nsamp
    if isinstance(lbub, (int, float)): lbub = (-lbub, lbub)
    if isinstance(lbubcell, (int, float)): lbubcell = (-lbubcell, lbubcell)
-   pos0, cellsize0, frames0, framesavoid0 = pos, cellsize, frames, framesavoid
+   cellsize0, frames0, framesavoid0 = cellsize, frames, framesavoid
+   pos0 = pos = scaleunit(cellsize0, pos)
+   pos[3], pos0[3] = 1, 1
    lbub = scaleunit(cellsize0, lbub)
-   ic(lbub)
    lbubcell = scaleunit(cellsize0, lbubcell)
    distcontact = scaleunit(cellsize0, distcontact)
    distavoid, distspread, clusterdist = scaleunit(cellsize0, [distavoid, distspread, clusterdist])
@@ -48,20 +48,18 @@ def place_asu_grid(
    framesavoid = np.stack([wu.hscaled(s, framesavoid) for s in cellsizes])
 
    contact = wu.hxform(frames, pos)
-   t.checkpoint('contact')
    avoid = wu.hxform(framesavoid, pos)
-   t.checkpoint('avoid')
    dcontact = wu.hnorm(pos - contact)
    davoid = wu.hnorm(pos - avoid)
    dcontactmin = np.min(dcontact, axis=1)
    dcontactmax = np.max(dcontact, axis=1)
    davoidmin = np.min(davoid, axis=1)
-   t.checkpoint('dists')
 
    okavoid = davoidmin > distavoid
    okccontactmin = dcontactmin > distcontact[0]
    okccontactmax = dcontactmax < distcontact[1]
    okspread = dcontactmax - dcontactmin < distspread
+   # ic(np.sum(okavoid), np.sum(okccontactmin), np.sum(okccontactmax), np.sum(okspread))
    ok = okavoid * okccontactmin * okccontactmax * okspread
    w = np.where(ok)
    goodcell = cellsizes[w[:][0]]
@@ -71,7 +69,6 @@ def place_asu_grid(
    origdist = wu.hnorm(cellpos - cellpos0)
    order = np.argsort(origdist)
    goodcell, goodpos = goodcell[order], goodpos[order]
-   ic(goodcell.shape)
 
    if clusterdist > 0 and len(goodpos) > 1:
       coords = wu.hxform(frames0, goodpos)
@@ -79,8 +76,5 @@ def place_asu_grid(
       keep, clustid = wu.cpp.cluster.cookie_cutter(coords, float(clusterdist))
       goodpos = goodpos[keep]
       goodcell = goodcell[keep]
-      t.checkpoint('clust')
-
-   t.report()
 
    return goodpos, goodcell

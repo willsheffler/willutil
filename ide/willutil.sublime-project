@@ -13,6 +13,9 @@
 			"name": "test_pdbfile.py",
 			"shell_cmd": "cd $folder; python willutil/tests/pdb/test_pdbfile.py &> log/sublime_build.log"
 		},
+		{	"name": "test_asugrid.py",
+			"shell_cmd": "cd $folder; python willutil/tests/sym/test_asugrid.py &> log/sublime_build.log"
+		},
 		{			"name": "test_sym.py",
 			"shell_cmd": "cd $folder; python willutil/tests/sym/test_sym.py &> log/sublime_build.log"
 		},

@@ -6,6 +6,13 @@ import willutil as wu
 
 def main():
 
+   test_xtal_cellframes_P_4_3_2_422()
+   test_xtal_cryst1_P_4_3_2_422()
+
+   test_xtal_cellframes_P_4_3_2_432()
+   test_xtal_cryst1_P_4_3_2_432()
+   assert 0
+
    test_xtal_performance()
 
    test_xtalrad_I213()
@@ -411,6 +418,18 @@ def _test_hxtal_viz_gyroid(headless=True):
    #   # wu.showme(xtal, cellshift=[a, b, c], showgenframes=a == b == c == 0)
    #   wu.showme(xtal, cellshift=[a, b, c], headless=headless, fanshift=[-0.03, 0.05],
    #             fansize=[0.15, 0.12])
+
+def test_xtal_cellframes_P_4_3_2_432(*a, **kw):
+   helper_test_xtal_cellframes('P 4 3 2 432', *a, **kw)
+
+def test_xtal_cryst1_P_4_3_2_432(*a, **kw):
+   helper_test_xtal_cryst1('P 4 3 2 432', *a, **kw)
+
+def test_xtal_cellframes_P_4_3_2_422(*a, **kw):
+   helper_test_xtal_cellframes('P 4 3 2 422', *a, **kw)
+
+def test_xtal_cryst1_P_4_3_2_422(*a, **kw):
+   helper_test_xtal_cryst1('P 4 3 2 422', *a, **kw)
 
 def test_xtal_cellframes_P_4_3_2(*a, **kw):
    helper_test_xtal_cellframes('P 4 3 2', *a, **kw)
