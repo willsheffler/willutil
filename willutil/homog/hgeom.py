@@ -26,10 +26,7 @@ def hvalid(stuff, is_points=None, strict=False, **kw):
 def hvalid44(x):
    if x.shape[-2:] != (4, 4):
       return False
-   return all(
-      [np.allclose(x[..., 3, 3], 1),
-       np.allclose(x[..., 3, :3], 0),
-       np.allclose(np.linalg.det(x[..., :3, :3]), 1)])
+   return all([np.allclose(x[..., 3, 3], 1), np.allclose(x[..., 3, :3], 0), np.allclose(np.linalg.det(x[..., :3, :3]), 1)])
 
 def hscaled(scale, stuff, is_points=None):
    stuff = stuff.copy()
@@ -171,6 +168,7 @@ def _hxform_impl(x, stuff, outerprod='auto', flat=False, is_points='auto'):
    else:
       if outerprod == 'auto':
          outerprod = x.shape[:-2] != stuff.shape[:-1]
+
       if stuff.shape[-1] != 1:
          stuff = stuff[..., None]
       if outerprod:
@@ -182,11 +180,13 @@ def _hxform_impl(x, stuff, outerprod='auto', flat=False, is_points='auto'):
          b = stuff.reshape((1, ) * len(shape1) + shape2 + (4, 1))
          result = a @ b
       else:
+
          # try to match first N dimensions, outer prod the rest
          shape1 = x.shape[:-2]
          shape2 = stuff.shape[:-2]
          sameshape = tuple()
          for i, (s1, s2) in enumerate(zip(shape1, shape2)):
+            ic(s1, s2)
             if s1 == s2:
                shape1 = shape1[1:]
                shape2 = shape2[1:]
@@ -392,8 +392,7 @@ def axis_of(xforms, tol=1e-7, debug=False):
    return axs.reshape(origshape[:-1])
 
 def is_homog_xform(xforms):
-   return ((xforms.shape[-2:] == (4, 4)) and (np.allclose(1, np.linalg.det(xforms[..., :3, :3])))
-           and (np.allclose(xforms[..., 3, :], [0, 0, 0, 1])))
+   return ((xforms.shape[-2:] == (4, 4)) and (np.allclose(1, np.linalg.det(xforms[..., :3, :3]))) and (np.allclose(xforms[..., 3, :], [0, 0, 0, 1])))
 
 def hinv(xforms):
    return np.linalg.inv(xforms)
@@ -1138,8 +1137,7 @@ def xform_around_dof_for_vector_target_angle(fix, mov, dof, target_angle):
    else:
       angles = [-dang + ahat, -dang - ahat, np.pi - dang + ahat, np.pi - dang - ahat]
       moves = [(hrot(dof, ang + 0.000) @ mov[..., None]).reshape(1, 4) for ang in angles]
-      if not (np.allclose(angle(moves[0], fix), angle(moves[1], fix))
-              or np.allclose(angle(moves[2], fix), angle(moves[3], fix))):
+      if not (np.allclose(angle(moves[0], fix), angle(moves[1], fix)) or np.allclose(angle(moves[2], fix), angle(moves[3], fix))):
          return []
 
       if np.allclose(angle(moves[0], fix), target_angle):
