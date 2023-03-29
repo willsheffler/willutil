@@ -32,7 +32,7 @@ def pdb_format_atom(
    ia=0,
    an="CA",
    idx=" ",
-   rn="RES",
+   rn="ALA",
    c="A",
    ir=0,
    insert=" ",

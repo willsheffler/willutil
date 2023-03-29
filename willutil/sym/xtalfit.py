@@ -25,7 +25,75 @@ def torchscorefunc(xtal, scom, cellsize, cartshift, grad=True):
    err = torch.sqrt(torch.sum(dis2))
    return err
 
-def fit_coords_to_xtal(xtal, coords, cellsize=None, domc=True, domin=False, noshift=False, mcsteps=1000, **kw):
+def fix_coords_to_xtal(sym, coords):
+   if sym in ('I213', 'I 21 3', 'I213_32'):
+      return xtalfit_I213(coords)
+   else:
+      raise ValueError(f'xtalfit: can\'t handle symmetry {sym}')
+
+def guess_cx_axis(coords, nfold):
+   if isinstance(nfold, int):
+      idx = list(range(nfold))
+   else:
+      idx = nfold
+      nfold = len(nfold)
+   coords = coords.reshape(coords.shape[0], -1, coords.shape[-1])
+   ncheck = nfold if nfold > 2 else 1
+   # ic(coords.shape)
+   fit = [wu.hrmsfit(coords[idx[i]], coords[idx[(i + 1) % len(idx)]]) for i in range(ncheck)]
+   rms, fit, xform = zip(*fit)
+   axis, ang, cen, hel = wu.haxis_angle_cen_hel_of(np.stack(xform))
+   # ic(hel)
+   return axis.mean(0), cen.mean(0)
+
+def xtalfit_I213(coords):
+   coords = np.asarray(coords)
+   if coords.ndim == 3: coords = coords[:, :, None]
+   assert coords.ndim == 4
+   assert len(coords) == 4
+   coords0 = coords.copy()
+   cacoords = coords[:, :, min(coords.shape[2] - 1, 1)]
+   xtal = wu.sym.xtal('I213_32')
+   ax3, _ = guess_cx_axis(cacoords, [0, 1, 2])
+   ax2, _ = guess_cx_axis(cacoords, [0, 3])
+   # ic(ax3, ax2)
+   if wu.hdot([1, 1, 1], ax3) < 0: ax3 = -ax3
+   if wu.hdot([0, 0, 1], ax2) < 0: ax2 = -ax2
+   xalign = wu.halign2(ax3, ax2, [1, 1, 1], [0, 0, 1])
+   # ax2 = wu.hxform(xalign, ax2)
+   # ax3 = wu.hxform(xalign, ax3)
+   cacoords = wu.hxform(xalign, cacoords)
+
+   cen3 = wu.hcom(cacoords[:3].mean(axis=0))
+   cen2 = wu.hcom(cacoords[0]) / 2 + wu.hcom(cacoords[3]) / 2
+
+   # ic(cen3, cen2)
+
+   def loss(x):
+      # ((cen3[0] + x[0]) - (cen3[1] + x[1]))**2 + ((cen2[0] + x[0]) / 2 - (cen2[1] + x[1]))**2
+      x3f = cen3[0] + x[0]
+      y3f = cen3[1] + x[1]
+      x2f = cen2[0] + x[0]
+      y2f = cen2[1] + x[1]
+      return (x3f - y3f)**2 + (0.75 * x2f - 1.5 * y2f)**2
+
+   import scipy.optimize
+   # method = 'Nelder-Mead'
+   method = 'COBYLA'
+   # method = 'Powell'
+   opt = scipy.optimize.minimize(loss, [0, 0], method=method, tol=0.1)
+   x = opt.x
+   z = (cen3[0] + x[0] + cen3[1] + x[1]) / 2
+   xdelta = wu.htrans([x[0], x[1], z - cen3[2]])
+   cen2 = wu.hxform(xdelta, cen2)
+   cen3 = wu.hxform(xdelta, cen3)
+
+   coords = wu.hxform(xdelta @ xalign, coords0)
+   cell = (cen2[0] / 2 + cen2[1]) / 2 * 4
+
+   return coords[0], cell
+
+def fix_xtal_to_coords(xtal, coords, cellsize=None, domc=True, domin=False, noshift=False, mcsteps=1000, **kw):
    'OK... this is a pretty inefficient way...'
    coms = wu.hcom(coords)
    if isinstance(cellsize, np.ndarray):

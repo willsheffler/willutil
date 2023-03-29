@@ -14,7 +14,11 @@ class NotPose:
       self.pdb = pdb.subset(het=False)
       self.pdbhet = pdb.subset(het=True)
       # self.bbcoords = wu.hpoint(self.pdb.bb(**kw))
-      ncaco, mask = self.pdb.atomcoords(['n', 'ca', 'c', 'o'], nomask=True, **kw)
+      try:
+         ncaco, _mask = self.pdb.atomcoords(['n', 'ca', 'c', 'o'], nomask=True, **kw)
+      except ValueError:
+         ncaco, _mask = self.pdb.atomcoords(['n', 'ca', 'c'], nomask=True, **kw)
+         ncaco = wu.chem.add_bb_o_guess(ncaco)
       self.ncaco = wu.hpoint(ncaco)
       self.ncac = self.ncaco[:, :3]
       self.camask = self.pdb.camask()
@@ -89,13 +93,19 @@ class NotResidue:
       self.nopo = nopo
       self.ir = ir - 1
       self.rdf = nopo.pdb.getres(self.ir)
+      self.anamemap = dict(N=0, CA=1, C=2, O=3)
 
    def xyz(self, ia):
+
       if isinstance(ia, int):
+         if ia < 5:
+            return NotXYZ(self.nopo.ncaco[self.ir, ia - 1])
          ia -= 1
       if isinstance(ia, int):
          xyz = self.rdf.x[ia], self.rdf.y[ia], self.rdf.z[ia]
       if isinstance(ia, str):
+         if ia in self.anamemap:
+            return NotXYZ(self.nopo.ncaco[self.ir, self.anamemap[ia]])
          ia = ia.encode()
       if isinstance(ia, bytes):
          xyz = (
@@ -119,7 +129,8 @@ class NotResidue:
       return self.nheavyatoms()
 
    def nheavyatoms(self):
-      return len(self.rdf)
+      return 4
+      # return len(self.rdf)
 
    def atom_name(self, ia):
       r = self.rdf

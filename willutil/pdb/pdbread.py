@@ -115,7 +115,7 @@ def concatenate_models(df):
    df = pd.concat(df.values())
    return df
 
-def format_atom(atomi=0, atomn='ATOM', idx=' ', resn='RES', chain='A', resi=0, insert=' ', x=0, y=0, z=0, occ=1, b=0):
+def format_atom(atomi=0, atomn='ATOM', idx=' ', resn='ALA', chain='A', resi=0, insert=' ', x=0, y=0, z=0, occ=1, b=0):
    return _atom_record_format.format(**locals())
 
 def find_pdb_files(files_or_pattern, maxsize=99e99):

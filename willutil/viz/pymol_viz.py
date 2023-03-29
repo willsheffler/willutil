@@ -649,7 +649,7 @@ def format_atom(
    atomi=0,
    atomn="ATOM",
    idx=" ",
-   resn="RES",
+   resn="ALA",
    chain="A",
    resi=0,
    insert=" ",

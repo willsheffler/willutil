@@ -30,8 +30,7 @@ using namespace Eigen;
 
 // internal pair class for the BVH--used instead of std::pair because of
 // alignment
-template <class F, int DIM>
-struct VintPair {
+template <class F, int DIM> struct VintPair {
   using first_type = Matrix<F, DIM, 1>;
   using secont_type = int;
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(F, DIM)
@@ -42,8 +41,7 @@ struct VintPair {
 
 // these templates help the tree initializer get the bounding spheres either in
 // from a provided iterator range or using bounding_vol in a unified way
-template <typename Objs, typename Vols, typename Iter>
-struct get_bvols_helper {
+template <typename Objs, typename Vols, typename Iter> struct get_bvols_helper {
   void operator()(const Objs &objs, Iter sphbeg, Iter sphend, Vols &out) {
     out.insert(out.end(), sphbeg, sphend);
     eigen_assert(out.size() == objs.size());
@@ -59,8 +57,7 @@ struct get_bvols_helper<Objs, Vols, int> {
   }
 };
 
-template <class RAiter>
-struct P1Range {
+template <class RAiter> struct P1Range {
   using value_type = typename RAiter::value_type::first_type;
   RAiter a, b;
   auto const &operator[](size_t i) const { return (a + i)->first; }
@@ -68,16 +65,14 @@ struct P1Range {
   size_t size() const { return b - a; }
   auto get_index(size_t i) const { return (a + i)->second; }
 };
-template <class RAiter>
-auto p1range(RAiter a, RAiter b) {
+template <class RAiter> auto p1range(RAiter a, RAiter b) {
   P1Range<RAiter> r;
   r.a = a;
   r.b = b;
   return r;
 }
 
-template <typename F, bool idrange = false>
-struct WelzlBoundingSphere {
+template <typename F, bool idrange = false> struct WelzlBoundingSphere {
   static Sphere<F> bound(auto subtree_objs) {
     return welzl_bounding_sphere<true>(subtree_objs);
   }
@@ -87,7 +82,7 @@ template <typename _Scalar, typename _Object, int _DIM = 3,
           typename _Volume = Sphere<_Scalar>,
           typename BoundingSphere = WelzlBoundingSphere<_Scalar, true>>
 class SphereBVH {
- public:
+public:
   static int const DIM = _DIM;
   typedef _Object Object;
   typedef std::vector<Object, Eigen::aligned_allocator<Object>> Objs;
@@ -96,22 +91,21 @@ class SphereBVH {
   typedef _Volume Volume;
   typedef std::vector<Volume, Eigen::aligned_allocator<Volume>> Vols;
   typedef int Index;
-  typedef const int *VolumeIterator;  // the iterators are just pointers into
-                                      // the tree's vectors
+  typedef const int *VolumeIterator; // the iterators are just pointers into
+                                     // the tree's vectors
   typedef const Object *ObjectIterator;
 
-  std::vector<int> child;  // child of x are child[2x] and
-                           // child[2x+1], indices bigger than
-                           // vols.size() index into objs.
+  std::vector<int> child; // child of x are child[2x] and
+                          // child[2x+1], indices bigger than
+                          // vols.size() index into objs.
   Vols vols;
   Objs objs;
 
   SphereBVH() {}
 
-  template <typename Iter>
-  SphereBVH(Iter begin, Iter end) {
+  template <typename Iter> SphereBVH(Iter begin, Iter end) {
     init(begin, end, 0, 0);
-  }  // int is recognized by init as not being an iterator type
+  } // int is recognized by init as not being an iterator type
 
   template <typename OIter, typename BIter>
   SphereBVH(OIter begin, OIter end, BIter sphbeg, BIter sphend) {
@@ -123,8 +117,7 @@ class SphereBVH {
   /** Given an iterator range over \a Object references, constructs the BVH,
    * overwriting whatever is in there currently.
    * Requires that bounding_vol(Object) return a Volume. */
-  template <typename Iter>
-  void init(Iter begin, Iter end) {
+  template <typename Iter> void init(Iter begin, Iter end) {
     init(begin, end, 0, 0);
   }
 
@@ -141,7 +134,8 @@ class SphereBVH {
     int n = static_cast<int>(objs.size());
 
     // if we have at most one object, we don't need any internal nodes
-    if (n < 2) return;
+    if (n < 2)
+      return;
 
     Vols ovol;
     VIPairs ocen;
@@ -153,14 +147,16 @@ class SphereBVH {
     vols.reserve(n - 1);
     child.reserve(2 * n - 2);
 
-    for (int i = 0; i < n; ++i) ocen.push_back(VIPair(ovol[i].cen, i));
+    for (int i = 0; i < n; ++i)
+      ocen.push_back(VIPair(ovol[i].cen, i));
 
     // the recursive part of the algorithm
     build(ocen, 0, n, ovol, 0);
 
     Objs tmp(n);
     tmp.swap(objs);
-    for (int i = 0; i < n; ++i) objs[i] = tmp[ocen[i].second];
+    for (int i = 0; i < n; ++i)
+      objs[i] = tmp[ocen[i].second];
   }
 
   /** \returns the index of the root of the hierarchy */
@@ -177,25 +173,26 @@ class SphereBVH {
     // the compiler
     if (index < 0) {
       vbeg = vend;
-      if (!objs.empty()) obeg = &(objs[0]);
-      oend = obeg + objs.size();  // output all objs--necessary
-                                  // when the tree has only one
-                                  // object
+      if (!objs.empty())
+        obeg = &(objs[0]);
+      oend = obeg + objs.size(); // output all objs--necessary
+                                 // when the tree has only one
+                                 // object
       return;
     }
 
     int nvol = static_cast<int>(vols.size());
 
     int idx = index * 2;
-    if (child[idx + 1] < nvol) {  // second index is always bigger
+    if (child[idx + 1] < nvol) { // second index is always bigger
       vbeg = &(child[idx]);
       vend = vbeg + 2;
       obeg = oend;
-    } else if (child[idx] >= nvol) {  // if both child are objs
+    } else if (child[idx] >= nvol) { // if both child are objs
       vbeg = vend;
       obeg = &(objs[child[idx] - nvol]);
       oend = obeg + 2;
-    } else {  // if the first child is a volume and the second is an object
+    } else { // if the first child is a volume and the second is an object
       vbeg = &(child[idx]);
       vend = vbeg + 1;
       obeg = &(objs[child[idx + 1] - nvol]);
@@ -206,7 +203,7 @@ class SphereBVH {
 
   inline const Volume &getVolume(Index index) const { return vols[index]; }
 
- private:
+private:
   typedef VintPair<F, DIM> VIPair;
   typedef std::vector<VIPair, Eigen::aligned_allocator<VIPair>> VIPairs;
   typedef Eigen::Matrix<F, DIM, 1> VectorType;
@@ -221,8 +218,7 @@ class SphereBVH {
   struct DotComparator {
     Matrix<F, DIM, 1> normal;
     DotComparator(Matrix<F, DIM, 1> n) : normal(n) {}
-    template <class Pair>
-    DotComparator(Pair p) : normal(p.second - p.first) {}
+    template <class Pair> DotComparator(Pair p) : normal(p.second - p.first) {}
     inline bool operator()(const VIPair &v1, const VIPair &v2) const {
       return v1.first.dot(normal) < v2.first.dot(normal);
     }
@@ -277,5 +273,5 @@ class SphereBVH {
     }
   }
 };
-}  // namespace bvh
-}  // namespace willutil
+} // namespace bvh
+} // namespace willutil

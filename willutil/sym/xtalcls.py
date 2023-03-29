@@ -97,8 +97,11 @@ class Xtal:
       wu.checkpoint(kw)
       return frames
 
-   def fit_coords(self, coords, **kw):
-      return wu.sym.xtalfit.fit_coords_to_xtal(self, coords, **kw)
+   def fit_coords(self, *a, **kw):
+      return wu.sym.fix_coords_to_xtal(self.name, *a, **kw)
+
+   def fit_xtal_to_coords(self, coords, **kw):
+      return wu.sym.xtalfit.fix_xtal_to_coords(self, coords, **kw)
 
    def coords_to_asucen(self, coords, cells=5, frames=None, asucen=None, **kw):
       coords = wu.hpoint(coords)
@@ -229,11 +232,11 @@ class Xtal:
       if asymcoords is None:
          asymcoords = self.asucen(cellsize=cellsize, **kw).reshape(1, 4)
       asymcoords = wu.hpoint(asymcoords)
-      if asymcoords.ndim == 2:
-         asymcoords = asymcoords.reshape(-1, 1, asymcoords.shape[-1])
       if cells == None:
-         wu.pdb.dump_pdb_from_points(fname, asymcoords, header=cryst1)
+         wu.dumppdb(fname, asymcoords, header=cryst1, nchain=1)
       else:
+         if asymcoords.ndim == 2:
+            asymcoords = asymcoords.reshape(-1, 1, asymcoords.shape[-1])
          coords = self.symcoords(asymcoords, cellsize, cells, strict=strict, **kw)
          assert np.allclose(coords[0], asymcoords)
 

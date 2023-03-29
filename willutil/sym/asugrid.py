@@ -48,9 +48,9 @@ def place_asu_grid_multiscale(
             nsampcell=kw.nsampcell + (i - 1),
             lbub=kw.lbub + (i - 1) * 0.03,
             lbubcell=kw.lbubcell + (i - 1) * 0.01,
-            dnistcontact=kw.distcontact,
-            distavoid=kw.distavoid,
-            distspread=kw.distspread,
+            dnistcontact=(kw.distcontact[0], kw.distcontact[1] + (i - 1)),
+            distavoid=kw.distavoid - (i - 1),
+            distspread=kw.distspread + (i - 1),
          ),
       )
 
