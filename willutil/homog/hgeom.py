@@ -1,4 +1,4 @@
-import copy, itertools as it, functools as ft, sys
+import copy, itertools as it, functools as ft, sys, collections
 import willutil as wu
 import deferred_import
 
@@ -773,6 +773,8 @@ def hparallel(a, b):
 def unhomog(stuff):
    return stuff[..., :3]
 
+Result_hrmsfit = collections.namedtuple('Result_hrmsfit', 'rms fitcoords xfit')
+
 def hrmsfit(mobile, target):
    '''use kabsch method to get rmsd fit'''
    mobile = hpoint(mobile)
@@ -805,7 +807,7 @@ def hrmsfit(mobile, target):
    mobile_fit_to_target = hxform(xform_mobile_to_target, mobile)
    rms = hrms(target, mobile_fit_to_target)
 
-   return rms, mobile_fit_to_target, xform_mobile_to_target
+   return Result_hrmsfit(rms, mobile_fit_to_target, xform_mobile_to_target)
 
 def hproj(u, v):
    u = hvec(u)

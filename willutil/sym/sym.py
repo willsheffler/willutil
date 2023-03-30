@@ -602,3 +602,29 @@ def ndim(sym):
       return xtal(sym).dimension
    except KeyError:
       pass
+
+def numpy_or_torch_array(source, example):
+   if 'torch' in sys.modules:
+      import torch
+      if torch.is_tensor(example):
+         return torch.as_tensor(source)
+   return np.asarray(source)
+
+CoordRMS = collections.namedtuple('CorodRMS', 'coords rms')
+
+def average_aligned_coords(coords, nsub=None, repeatfirst=1):
+   orig = coords
+   coords = wu.hpoint(coords)
+   if nsub is None:
+      nsub = len(coords)
+   if coords.ndim == 2:
+      coords = coords.reshape(nsub, -1, 4)
+   assert len(coords) > 1
+   assert nsub is None or nsub == len(coords)
+
+   fits = [wu.hrmsfit(_, coords[0]) for _ in coords[1:]]
+   rms, crds, _ = zip(*fits)
+   crds = [coords[0]] * repeatfirst + list(crds)
+   crd = numpy_or_torch_array(np.stack(crds).mean(0), orig)
+   rms = numpy_or_torch_array(rms, orig)
+   return CoordRMS(crd, rms)
