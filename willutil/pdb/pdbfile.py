@@ -266,21 +266,29 @@ class PDBFile:
 
    def bb(self, **kw):
       crd, mask = self.atomcoords('n ca c o cb'.split(), **kw)
+      if isinstance(crd, (tuple, list)):
+         crd = np.stack(crd)
       return crd
 
    def ca(self, **kw):
       crd, mask = self.atomcoords('ca', **kw)
+      if isinstance(crd, (tuple, list)):
+         crd = np.stack(crd)
       return crd
 
    def ncac(self, **kw):
       crd, mask = self.atomcoords('n ca c'.split(), **kw)
+      if isinstance(crd, (tuple, list)):
+         crd = np.stack(crd)
       return crd
       # pdb = self.subset(het=False, atomnames=['N', 'CA', 'C'])
       # xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']]).T.reshape(-1, 3, 3)
       # return xyz
 
    def ncaco(self, **kw):
-      crd, mask = self.atomcoords('n ca c o'.split())
+      crd, _mask = self.atomcoords('n ca c o'.split(), **kw)
+      if isinstance(crd, (tuple, list)):
+         crd = np.stack(crd)
       return crd
       # pdb = self.subset(het=False, atomnames=['N', 'CA', 'C', 'O'])
       # xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']])

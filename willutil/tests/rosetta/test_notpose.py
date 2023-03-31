@@ -5,10 +5,30 @@ import willutil as wu
 # ic.configureOutput(includeContext=True, contextAbsPath=False)
 
 def main():
+   test_notpose_from_coords()
    test_notpose_has()
    test_notpose()
    test_notpose_sc_coords()
    ic('test_notpose.py DONE')
+
+def test_notpose_from_coords():
+   pdb = wu.readpdb(wu.tests.testdata.test_data_path('pdb/1pgx.pdb1.gz'))
+   ncaco = pdb.ncaco()
+   ic(ncaco.shape)
+
+   nopo = wu.NotPose(coords=ncaco, seq=pdb.sequence())
+   nopo2 = wu.NotPose(pdb=pdb)
+   assert np.allclose(nopo.ncaco, nopo2.ncaco)
+   assert nopo.sequence() == nopo2.sequence()
+   assert nopo.secstruct() == nopo2.secstruct()
+   assert nopo.size() == nopo2.size()
+   assert nopo.pdb_info().name() == 'NONAME'
+   assert nopo2.pdb_info().name().endswith('pdb/1pgx.pdb1.gz')
+   for ir in range(1, nopo.size() + 1):
+      assert np.allclose(nopo.residue(ir).xyz('C'), nopo.residue(ir).xyz('C'))
+   assert nopo.chain(70) == 'A'
+
+   nopo.extract(chain='A')
 
 def test_notpose_has():
    fname = wu.tests.testdata.test_data_path('pdb/1pgx.pdb1.gz')
@@ -71,6 +91,7 @@ def test_notpose():
       if ir == 70:  # OXT
          nnopo += 1
       # ic(ir, pose.residue(ir).name(), pose.residue(ir).nheavyatoms(), nopo.residue(ir).nheavyatoms())
+      # ic(nnopo)
       assert npo == nnopo
 
    nlysclose, nname = 0, 0

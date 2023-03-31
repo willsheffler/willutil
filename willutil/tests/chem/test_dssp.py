@@ -16,6 +16,7 @@ def main():
 def test_add_bb_o(ncac, ncaco):
    test = wu.chem.add_bb_o_guess(ncac)
    # ic((wu.hnorm(test[:-1, 3] - ncaco[:-1, 3])))
+
    assert 0.15 > np.mean(wu.hnorm(test[:-1] - ncaco[:-1]))
 
 def test_dssp(ncac, ncaco):

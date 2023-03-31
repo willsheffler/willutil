@@ -1,56 +1,39 @@
+import numpy as np
 import willutil as wu
 
 class NotPose:
    @wu.timed
-   def __init__(self, fname=None, pdb=None, chain=None, **kw):
-      self.fname = fname
-
-      if pdb is None:
-         assert isinstance(fname, str)
-         pdb = wu.pdb.readpdb(fname, **kw)
-      self.rawpdb = pdb
-      if chain is not None:
-         pdb = self.rawpdb.subset(chain=chain)
-      self.pdb = pdb.subset(het=False)
-      self.pdbhet = pdb.subset(het=True)
-      # self.bbcoords = wu.hpoint(self.pdb.bb(**kw))
-      try:
-         ncaco, _mask = self.pdb.atomcoords(['n', 'ca', 'c', 'o'], nomask=True, **kw)
-      except ValueError:
-         ncaco, _mask = self.pdb.atomcoords(['n', 'ca', 'c'], nomask=True, **kw)
-         ncaco = wu.chem.add_bb_o_guess(ncaco)
-      self.ncaco = wu.hpoint(ncaco)
-      self.ncac = self.ncaco[:, :3]
-      self.camask = self.pdb.camask()
-      self.seq = self.pdb.sequence()
-      try:
-         self.ss = wu.dssp(self.ncaco)
-      except ImportError:
-         self.ss = 'L' * len(self.seq)
-
-      self.crystinfo = CrystInfo.from_cryst1(pdb.cryst1)
-
-      self.info = NotPDBInfo(self)
-
-      self.pdb.renumber_from_0()
+   def __init__(self, fname=None, coords=None, **kw):
+      if coords is None:
+         _init_NotPose_pdb(self, fname, **kw)
+      else:
+         assert fname is None
+         _init_NotPose_coords(self, coords, **kw)
 
    def __len__(self):
       return self.size()
 
    def size(self):
-      return self.pdb.nres
+      return self.nres
 
    def sequence(self):
-      return self.pdb.seq
+      return self.seq
 
    def secstruct(self):
       return self.ss
 
    def chain(self, ires):
-      return self.pdb.chain(ires)
+      return self._chain[ires - 1]
 
-   def extract(self, chain=None, **kw):
-      return NotPose(self.fname, pdb=self.pdb, chain=chain, **kw)
+   def extract(self, chain, **kw):
+      if self.coordsonly:
+         c = np.array(list(self._chain))
+         if isinstance(chain, int):
+            chain = np.unique(c)[chain]
+         w = c == chain
+         return NotPose(coords=self.coords[w], chain=chain, **kw)
+      else:
+         return NotPose(self.fname, pdb=self.pdb, chain=chain, **kw)
 
    def pdb_info(self):
       return self.info
@@ -92,22 +75,26 @@ class NotResidue:
    def __init__(self, nopo, ir):
       self.nopo = nopo
       self.ir = ir - 1
-      self.rdf = nopo.pdb.getres(self.ir)
-      self.anamemap = dict(N=0, CA=1, C=2, O=3)
+      self.rdf = None if nopo.coordsonly else nopo.pdb.getres(self.ir)
+      self.anames = ['N', 'CA', 'C', 'O', 'CB'][:nopo.coords.shape[1]] if nopo.coordsonly else None
+      self.anamemap = dict(N=0, CA=1, C=2, O=3, CB=4)
 
    def xyz(self, ia):
 
       if isinstance(ia, int):
-         if ia < 5:
-            return NotXYZ(self.nopo.ncaco[self.ir, ia - 1])
          ia -= 1
+         if self.nopo.coordsonly:
+            return NotXYZ(self.nopo.ncaco[self.ir, ia])
       if isinstance(ia, int):
          xyz = self.rdf.x[ia], self.rdf.y[ia], self.rdf.z[ia]
       if isinstance(ia, str):
-         if ia in self.anamemap:
-            return NotXYZ(self.nopo.ncaco[self.ir, self.anamemap[ia]])
+         if self.nopo.coordsonly:
+            if ia in self.anamemap:
+               return NotXYZ(self.nopo.ncaco[self.ir, self.anamemap[ia]])
          ia = ia.encode()
       if isinstance(ia, bytes):
+         if self.nopo.coordsonly:
+            return self.nopo.coords[self.ir, self.anamemap[ia.decode()]]
          xyz = (
             float(self.rdf.x[self.rdf.an == ia]),
             float(self.rdf.y[self.rdf.an == ia]),
@@ -117,6 +104,8 @@ class NotResidue:
       raise ValueError(ia)
 
    def has(self, aname):
+      if self.nopo.coordsonly:
+         return aname in ['N', 'CA', 'C', 'O']
       # could be more efficient
       if isinstance(aname, str):
          aname = aname.encode()
@@ -129,15 +118,19 @@ class NotResidue:
       return self.nheavyatoms()
 
    def nheavyatoms(self):
-      return 4
-      # return len(self.rdf)
+      if self.nopo.coordsonly: return 4
+      return len(self.rdf)
 
    def atom_name(self, ia):
+      if self.nopo.coordsonly:
+         return ['N', 'CA', 'C', 'O'][ia - 1]
       r = self.rdf
       aname = r.an[ia - 1]
       return aname.decode()
 
    def name(self):
+      if self.nopo.coordsonly:
+         return self.nopo.seq[ir]
       r = self.rdf.rn[0]
       return r.decode()
 
@@ -154,7 +147,7 @@ class NotPDBInfo:
       self.nopo = nopo
 
    def name(self):
-      return self.nopo.pdb.meta.fname
+      return self.nopo.name
 
    def crystinfo(self):
       return self.nopo.crystinfo
@@ -168,7 +161,7 @@ class CrystInfo:
       a, b, c, alpha, beta, gamma = (float(x) for x in s[1:7])
       spacegroup = ' '.join(s[7:])
       ci = CrystInfo(a, b, c, alpha, beta, gamma, spacegroup)
-      ic(ci.cryst1())
+      # ic(ci.cryst1())
       return ci
 
    def __init__(self, a, b, c, alpha, beta, gamma, spacegroup):
@@ -212,3 +205,78 @@ class CrystInfo:
          self.gamma(),
          self.spacegroup(),
       )
+
+def _init_NotPose_pdb(self, fname=None, pdb=None, chain=None, **kw):
+   self.fname = fname
+
+   if pdb is None:
+      ic(fname)
+      assert isinstance(fname, str)
+      pdb = wu.pdb.readpdb(fname, **kw)
+   self.rawpdb = pdb
+   if chain is not None:
+      pdb = self.rawpdb.subset(chain=chain)
+   self.pdb = pdb.subset(het=False)
+   self.pdbhet = pdb.subset(het=True)
+   # self.bbcoords = wu.hpoint(self.pdb.bb(**kw))
+   try:
+      ncaco, _mask = self.pdb.atomcoords(['n', 'ca', 'c', 'o'], nomask=True, **kw)
+   except ValueError:
+      ncaco, _mask = self.pdb.atomcoords(['n', 'ca', 'c'], nomask=True, **kw)
+      ncaco = wu.chem.add_bb_o_guess(ncaco)
+   self.ncaco = wu.hpoint(ncaco)
+   self.ncac = self.ncaco[:, :3]
+   self.camask = self.pdb.camask()
+   self.seq = self.pdb.sequence()
+   self._chain = str.join('', [x.decode() for x in self.pdb.df.ch[self.pdb.df.an == b'CA']])
+   try:
+      self.ss = wu.dssp(self.ncaco)
+   except ImportError:
+      self.ss = 'L' * len(self.seq)
+   self.nres = pdb.nres
+
+   self.crystinfo = CrystInfo.from_cryst1(pdb.cryst1)
+   self.info = NotPDBInfo(self)
+   self.pdb.renumber_from_0()
+   self.coordsonly = False
+   self.name = self.pdb.meta.fname
+
+def _init_NotPose_coords(self, coords, seq=None, name=None, chain=None, **kw):
+   kw = wu.Bunch(kw, _strict=False)
+   self.coordsonly = True
+   assert kw.pdb is None
+   assert kw.chain is None
+   self.fname = None
+   self.pdb = None
+   self.rawpdb = None
+   self.pdbhet = None
+   assert coords.ndim in (3, 4)
+   if len(coords) == 0:
+      raise ValueError(f'Can\'t create NotPose from empty coordinates')
+   coords = wu.hpoint(coords)
+   self._chain = 'A' * len(coords)
+   if coords.ndim == 4:
+      self._chain = str.join('', [wu.pdb.all_pymol_chains[i] * coords.shape[1] for i in range(len(coords))])
+      coords = coords.reshape(-1, *coords.shape[-2:])
+   self._chain = chain or self._chain
+   assert coords.shape[1] > 2
+   if coords.shape[1] == 3:
+      coords = wu.chem.add_bb_o_guess(coords)
+   assert len(coords) > 0
+   self.coords = wu.hpoint(coords)
+   self.ncaco = self.coords[:, :4]
+   self.ncac = self.coords[:, :3]
+   self.camask = np.ones(len(coords), dtype=bool)
+
+   self.seq = seq or ('G' * len(coords))
+   try:
+      self.ss = wu.dssp(self.ncaco)
+   except ImportError:
+      self.ss = 'L' * len(self.seq)
+   self.nres = len(coords)
+
+   # self.crystinfo = CrystInfo.from_cryst1(cryst1)
+   self.crystinfo = None
+   self.info = NotPDBInfo(self)
+   # self.pdb.renumber_from_0()
+   self.name = name or 'NONAME'

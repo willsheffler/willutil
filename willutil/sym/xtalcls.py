@@ -1,10 +1,12 @@
 import itertools, os
 import numpy as np
 import willutil as wu
-from .xtalinfo import _xtal_asucens
+from willutil.sym.xtalinfo import _xtal_asucens
 
 cryst1_pattern = "CRYST1 %8.3f %8.3f %8.3f  90.00  90.00  90.00 %s\n"
-cryst1_pattern_full = "CRYST1 %8.3f %8.3f %8.3f %7.3f%7.3f%7.3f%s\n"
+cryst1_pattern_full = "CRYST1 %8.3f %8.3f %8.3f%7.2f%7.2f%7.2f %s\n"
+# CRYST1  150.000  150.000  150.000  90.00  90.00  90.00 I 21 3
+# CRYST1  139.291  139.291  139.291  90.00  90.00  90.00 I 21 3
 
 class Xtal:
    def __init__(self, name='xtal', symelems=None, **kw):
@@ -40,7 +42,7 @@ class Xtal:
          wu.WARNME('willutil.Xtal.cellframes: maxdist not valid arg')
 
       if self.dimension != 3:
-         frames = wu.hscaled(cellsize, self.unitframes)
+         frames = _scaled_frames(cellsize, self.unitframes)
          if ontop == 'primary':
             ontop = self.primary_frames(cellsize)
          if ontop is not None and len(ontop) > 0:
@@ -70,7 +72,7 @@ class Xtal:
       xcellshift = wu.htrans(cells)
       frames = self.unitframes.copy()
       frames = wu.hxform(xcellshift, frames)
-      frames = wu.hscaled(cellsize, frames)
+      frames = _scaled_frames(cellsize, frames)
       if flat: frames = frames.reshape(-1, 4, 4)
 
       if xtalrad is not None:
@@ -133,7 +135,7 @@ class Xtal:
          f = s.operators[[1, -1]] if contacting_only else s.operators[1:]
          frames += list(f)
       frames = np.stack(frames)
-      scaleframes = wu.hscaled(cellsize, frames)
+      scaleframes = _scaled_frames(cellsize, frames)
       wu.checkpoint(kw)
       return scaleframes
 
@@ -158,7 +160,7 @@ class Xtal:
          if self.name in _xtal_asucens: cen = _xtal_asucens[self.name]
          elif self.spacegroup in _xtal_asucens: cen = _xtal_asucens[self.spacegroup]
          else: raise ValueError(f'no stored asucen info for "{self.name}" or "{self.spacegroup}"')
-         cen = wu.hscaled(cellsize, cen)
+         cen = _scaled_frames(cellsize, cen)
          # ic(cen)
          return cen
       elif xtalasumethod == 'closest_to_cen':
@@ -189,7 +191,7 @@ class Xtal:
          cen = olig_nbr_wt * cen + (1 - olig_nbr_wt) * cen0
       else:
          cen = cen0
-      return wu.hscaled(cellsize, cen)
+      return _scaled_frames(cellsize, cen)
 
    def compute_frames(self, **kw):
       if self.dimension == 3:
@@ -223,7 +225,12 @@ class Xtal:
       if self.dimension == 3:
          if isinstance(cellsize, (int, float)):
             cellsize = np.array([cellsize] * 3, dtype=np.float64)
-         return cryst1_pattern % (*cellsize, self.spacegroup)
+         if len(cellsize) == 3:
+            return cryst1_pattern % (*cellsize, self.spacegroup)
+         elif len(cellsize) == 6:
+            return cryst1_pattern_full % (*cellsize, self.spacegroup)
+         else:
+            raise ValueError(f'bad cellsize {cellsize}')
       else:
          return f'LAYER {self.spacegroup} {cellsize}'
 
@@ -368,3 +375,10 @@ def interp_xtal_cell_list(cells):
    return cells
 
 _warn_asucen_xtalasumethod = True
+
+def _scaled_frames(cellsize, frames):
+   if isinstance(cellsize, (int, float)):
+      cellsize = np.array([cellsize, cellsize, cellsize])
+   if len(cellsize) == 6:
+      assert np.all(cellsize[3:] == 90)
+   return wu.hscaled(cellsize[:3], frames)
