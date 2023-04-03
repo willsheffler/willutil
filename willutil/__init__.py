@@ -12,8 +12,7 @@ def datapath(f):
    return os.path.join(datadir, f)
 
 from willutil.bunch import Bunch, bunchify, unbunchify
-from willutil.timer import Timer
-from willutil.misc import timed
+from willutil.timer import Timer, timed, checkpoint
 from willutil.sym.symfit import compute_symfit
 from willutil.rigid.rigidbody import RigidBody, RigidBodyFollowers
 from willutil.search.montecarlo import MonteCarlo
@@ -43,7 +42,7 @@ from willutil.rosetta import NotPose
 
 from willutil.tests import test_data_path
 
-from willutil.misc import WARNME, checkpoint
+from willutil.misc import WARNME
 
 # deferr import of cpp libs to avoid compilation if unnecessary
 cpp = deferred_import('willutil.cpp')

@@ -206,7 +206,7 @@ class CrystInfo:
          self.spacegroup(),
       )
 
-def _init_NotPose_pdb(self, fname=None, pdb=None, chain=None, **kw):
+def _init_NotPose_pdb(self, fname=None, pdb=None, chain=None, secstruct=None, **kw):
    self.fname = fname
 
    if pdb is None:
@@ -229,19 +229,23 @@ def _init_NotPose_pdb(self, fname=None, pdb=None, chain=None, **kw):
    self.camask = self.pdb.camask()
    self.seq = self.pdb.sequence()
    self._chain = str.join('', [x.decode() for x in self.pdb.df.ch[self.pdb.df.an == b'CA']])
-   try:
-      self.ss = wu.dssp(self.ncaco)
-   except ImportError:
-      self.ss = 'L' * len(self.seq)
    self.nres = pdb.nres
-
+   if secstruct is not None:
+      self.ss = secstruct
+      if len(self.ss) == 1:
+         self.ss = self.ss * len(self.ncaco)
+   else:
+      try:
+         self.ss = wu.dssp(self.ncaco)
+      except ImportError:
+         self.ss = 'L' * len(self.seq)
    self.crystinfo = CrystInfo.from_cryst1(pdb.cryst1)
    self.info = NotPDBInfo(self)
    self.pdb.renumber_from_0()
    self.coordsonly = False
    self.name = self.pdb.meta.fname
 
-def _init_NotPose_coords(self, coords, seq=None, name=None, chain=None, **kw):
+def _init_NotPose_coords(self, coords, seq=None, name=None, chain=None, secstruct=None, **kw):
    kw = wu.Bunch(kw, _strict=False)
    self.coordsonly = True
    assert kw.pdb is None
@@ -267,13 +271,17 @@ def _init_NotPose_coords(self, coords, seq=None, name=None, chain=None, **kw):
    self.ncaco = self.coords[:, :4]
    self.ncac = self.coords[:, :3]
    self.camask = np.ones(len(coords), dtype=bool)
-
-   self.seq = seq or ('G' * len(coords))
-   try:
-      self.ss = wu.dssp(self.ncaco)
-   except ImportError:
-      self.ss = 'L' * len(self.seq)
    self.nres = len(coords)
+   self.seq = seq or ('G' * len(coords))
+   if secstruct is not None:
+      self.ss = secstruct
+      if len(self.ss) == 1:
+         self.ss = self.ss * len(self.ncaco)
+   else:
+      try:
+         self.ss = wu.dssp(self.ncaco)
+      except ImportError:
+         self.ss = 'L' * len(self.seq)
 
    # self.crystinfo = CrystInfo.from_cryst1(cryst1)
    self.crystinfo = None

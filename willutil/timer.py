@@ -1,4 +1,5 @@
-import time, os, collections, statistics, logging, statistics
+import time, os, collections, statistics, logging, statistics, functools, inspect, sys, _testcapi
+import willutil as wu
 
 log = logging.getLogger(__name__)
 
@@ -9,6 +10,46 @@ _summary_types = dict(
    max=max,
    median=statistics.median,
 )
+
+def checkpoint(kw, label=None, funcbegin=False, dont_mod_label=False, filename=None, funcname=None):
+   t = None
+   if isinstance(kw, wu.Timer): t = kw
+   elif 'timer' in kw: t = kw['timer']
+   else: return
+   autogen_label = False
+   istack = 1 + int(funcbegin)
+   func = funcname or inspect.stack()[istack][3]
+   fn = filename or os.path.basename(inspect.stack()[istack][1])
+   fulllabel = label
+   if not dont_mod_label:
+      fulllabel = f'{fn}:{func}'
+   if label:
+      fulllabel += f':{label}'
+   t.checkpoint(fulllabel, autolabel=label is None)
+
+def timed(func=None, *, label=None):
+
+   if func is None:
+      return functools.partial(timed, label=label)
+
+   filen = os.path.basename(func.__globals__['__file__'])
+   funcn = func.__name__
+
+   @functools.wraps(func)
+   def wrapper(*a, **kw):
+      checkpoint(kw, label, funcbegin=True)
+      # try/except removes this decorator from stack traces
+      try:
+         val = func(*a, **kw)
+      except:
+         tp, exc, tb = sys.exc_info()
+         _testcapi.set_exc_info(tp, exc, tb.tb_next)
+         del tp, exc, tb
+         raise
+      checkpoint(kw, label, filename=filen, funcname=funcn)
+      return val
+
+   return wrapper
 
 class _TimerGetter:
    def __init__(self, timer, summary):

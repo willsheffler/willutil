@@ -289,6 +289,8 @@ class PDBFile:
       crd, _mask = self.atomcoords('n ca c o'.split(), **kw)
       if isinstance(crd, (tuple, list)):
          crd = np.stack(crd)
+      if np.all(crd[..., 3, :3] == 9e9):
+         crd = wu.chem.add_bb_o_guess(crd[..., :3, :3])
       return crd
       # pdb = self.subset(het=False, atomnames=['N', 'CA', 'C', 'O'])
       # xyz = np.stack([pdb.df['x'], pdb.df['y'], pdb.df['z']])
