@@ -40,8 +40,7 @@ def test_meta_search():
       entrytype='all',
    )
    assert len(pdbset) == 1104
-   assert pdbset.issuperset(
-      {'4AVR', '6GN5', '3S9X', '4RRI', '4I6X', '6O40', '5FUI', '6E7E', '3R72', '3FIL', '4MQ3'})
+   assert pdbset.issuperset({'4AVR', '6GN5', '3S9X', '4RRI', '4I6X', '6O40', '5FUI', '6E7E', '3R72', '3FIL', '4MQ3'})
 
    pdbset = meta.make_pdb_set(
       maxresl=1.5,
@@ -52,15 +51,12 @@ def test_meta_search():
       entrytype='prot',
    )
    assert len(pdbset) == 1094
-   assert pdbset.issuperset(
-      {'4AVR', '6GN5', '3S9X', '4RRI', '4I6X', '6O40', '5FUI', '6E7E', '3R72', '3FIL', '4MQ3'})
+   assert pdbset.issuperset({'4AVR', '6GN5', '3S9X', '4RRI', '4I6X', '6O40', '5FUI', '6E7E', '3R72', '3FIL', '4MQ3'})
 
 def test_meta_search_pisces_chains():
-   pdbset = meta.make_pdb_set(maxresl=1.5, max_seq_ident=30, minres=50, maxres=200,
-                              pisces_chains=True, entrytype='prot')
+   pdbset = meta.make_pdb_set(maxresl=1.5, max_seq_ident=30, minres=50, maxres=200, pisces_chains=True, entrytype='prot')
    assert len(pdbset) == 1106
-   assert pdbset.issuperset(
-      {'4RGDA', '1OK0A', '3X0IA', '3IMKA', '3OBQA', '1JF8A', '1Y9LA', '4BK7A', '1X8QA', '5L87A'})
+   assert pdbset.issuperset({'4RGDA', '1OK0A', '3X0IA', '3IMKA', '3OBQA', '1JF8A', '1Y9LA', '4BK7A', '1X8QA', '5L87A'})
 
 def test_meta_pdb_compound():
    _ = 'THE 1.66 ANGSTROMS X-RAY STRUCTURE OF THE B2 IMMUNOGLOBULIN-BINDING DOMAIN OF STREPTOCOCCAL PROTEIN G AND COMPARISON TO THE NMR STRUCTURE OF THE B1 DOMAIN'
@@ -147,13 +143,7 @@ def test_meta_ligpdbs():
    assert len(meta.ligpdbs['ATP']) == 2241
    assert len(meta.ligpdbs['HEM']) == 6873
    assert len(meta.ligpdbs['DOD']) == 37
-   assert meta.ligpdbs['CHL'] == [
-      '3PL9', '2X20', '6GIX', '7A4P', '6KAC', '6RHZ', '5XNL', '5XNN', '5XNO', '5XNM', '6YP7',
-      '6YEZ', '6IGZ', '5ZJI', '7OUI', '6SL5', '1RWT', '5MDX', '4LCZ', '2BHW', '6ZZY', '6ZZX',
-      '6ZOO', '3JCU', '6ZXS', '6YXR', '6S2Y', '6S2Z', '6QPH', '7BGI', '6L35', '6YAC', '7D0J',
-      '4XK8', '4XK8', '7E0H', '7E0K', '7E0J', '7E0I', '7DZ7', '7DZ8', '4Y28', '1VCR', '5L8R',
-      '7DKZ', '6JO6', '6JO5'
-   ]
+   assert meta.ligpdbs['CHL'] == ['3PL9', '2X20', '6GIX', '7A4P', '6KAC', '6RHZ', '5XNL', '5XNN', '5XNO', '5XNM', '6YP7', '6YEZ', '6IGZ', '5ZJI', '7OUI', '6SL5', '1RWT', '5MDX', '4LCZ', '2BHW', '6ZZY', '6ZZX', '6ZOO', '3JCU', '6ZXS', '6YXR', '6S2Y', '6S2Z', '6QPH', '7BGI', '6L35', '6YAC', '7D0J', '4XK8', '4XK8', '7E0H', '7E0K', '7E0J', '7E0I', '7DZ7', '7DZ8', '4Y28', '1VCR', '5L8R', '7DKZ', '6JO6', '6JO5']
 
 def test_meta_hetres():
 
@@ -164,25 +154,7 @@ def test_meta_hetres():
    # print(len(meta.hetres))
    assert len(meta.rescount) == 176277
 
-   assert meta.rescount['1PGX'] == {
-      'GLU': 6,
-      'LEU': 3,
-      'THR': 14,
-      'PRO': 2,
-      'ALA': 8,
-      'VAL': 9,
-      'TYR': 3,
-      'LYS': 7,
-      'ILE': 1,
-      'ASN': 3,
-      'GLY': 4,
-      'ASP': 5,
-      'PHE': 2,
-      'GLN': 1,
-      'TRP': 1,
-      'MET': 1,
-      'HOH': 61
-   }
+   assert meta.rescount['1PGX'] == {'GLU': 6, 'LEU': 3, 'THR': 14, 'PRO': 2, 'ALA': 8, 'VAL': 9, 'TYR': 3, 'LYS': 7, 'ILE': 1, 'ASN': 3, 'GLY': 4, 'ASP': 5, 'PHE': 2, 'GLN': 1, 'TRP': 1, 'MET': 1, 'HOH': 61}
 
    allligs = set()
    pdbnolig = 0

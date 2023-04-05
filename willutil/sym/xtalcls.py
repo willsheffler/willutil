@@ -297,7 +297,7 @@ class Xtal:
       # cache='nosave',
       **kw,
    ):
-      cachefile = wu.datapath(f'xtal/lots_of_frames_{self.name.replace(" ","_")}.npy')
+      cachefile = wu.package_data_path(f'xtal/lots_of_frames_{self.name.replace(" ","_")}.npy')
       if self.dimension == 2 or not os.path.exists(cachefile) or not cache:
          generators = np.concatenate([s.operators for s in self.symelems])
          x, _ = wu.cpp.geom.expand_xforms_rand(generators, depth=depth, radius=genradius, trials=trials)

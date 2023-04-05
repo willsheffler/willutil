@@ -36,8 +36,6 @@ def place_asu_grid_multiscale(
    newpos, newcell = place_asu_grid(pos, cellsize, *a, **kw)
    if len(newpos) >= minpos: return newpos, newcell
    kw.distcontact = np.array(kw.distcontact)
-   ic(kw.distcontact)
-   assert 0
    for i in range(5, 0, -1):
       if not 'refpos' in kw: kw.refpos = pos.copy()
       if not 'refcell' in kw: kw.refcell = cellsize
@@ -55,7 +53,7 @@ def place_asu_grid_multiscale(
             distspread=kw.distspread + (i - 1),
          ),
       )
-
+      assert 0
       pos, cellsize = newpos[0], newcell[0]
       # ic(kw.refpos)
       # ic(newpos[1] - kw.refpos)
@@ -133,7 +131,7 @@ def place_asu_grid(
    goodpos = posgrid[w[:][1]]
    # cellpos = goodpos / goodcell[:, None]
    # cellpos0 = pos0 / cellsize0
-   origdist = wu.hnorm2(goodpos - refpos) + (goodcell - refcell)**2 / 4
+   origdist = wu.hnorm2(goodpos - refpos) + ((goodcell - refcell) * 0.6)**2
    order = np.argsort(origdist)
    goodcell, goodpos = goodcell[order], goodpos[order]
 

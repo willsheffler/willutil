@@ -17,7 +17,7 @@ def frames(
    sortframes=True,
    com=None,
    symops=None,
-   ontop=[],
+   ontop=None,
    **kw,
 ):
    '''generate symmetrical coordinate frames
@@ -34,7 +34,7 @@ def frames(
 
    try:
       if wu.sym.is_known_xtal(sym):
-         f = xtal(sym).frames(**kw).copy()
+         f = xtal(sym).frames(ontop=ontop, **kw).copy()
       else:
          f = sym_frames[sym].copy()
    except KeyError as e:
@@ -105,7 +105,7 @@ def frames(
          # print(order)
          # assert 0
 
-      if len(ontop) > 0:
+      if ontop is not None:
          f = put_frames_on_top(f, ontop)
       wu.checkpoint('frames sortframes')
 

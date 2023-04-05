@@ -5,6 +5,8 @@ from willutil.sym.symframes import *
 from willutil.sym.rosetta_symdef import *
 from willutil.sym.xtalinfo import *
 from willutil.sym.xtalcls import *
+from willutil.sym.spacegroup import *
+from willutil.sym.spacegroup_data import *
 from willutil.sym.xtalfit import *
 from willutil.sym.asufit import *
 from willutil.sym.asuslide import *

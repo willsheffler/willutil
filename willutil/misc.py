@@ -3,8 +3,8 @@ import willutil as wu
 
 _WARNINGS_ISSUED = set()
 
-def WARNME(message):
-   if message not in _WARNINGS_ISSUED:
+def WARNME(message, once=True):
+   if once and message not in _WARNINGS_ISSUED:
       import traceback
       print('-' * 80, flush=True)
       print(message)
@@ -73,9 +73,17 @@ def tostr(s):
    if isinstance(s, bytes): return s.decode()
    return s
 
-def datetimetag():
+def datetimetag(sep='_'):
    now = datetime.datetime.now()
-   return now.strftime('%Y_%m_%d_%H_%M_%S')
+   if sep == 'label':
+      return now.strftime(f'y%Ym%md%dh%Hm%Ms%S')
+   return now.strftime(f'%Y{sep}%m{sep}%d{sep}%H{sep}%M{sep}%S')
+
+def datetag(sep='_'):
+   now = datetime.datetime.now()
+   if sep == 'label':
+      return now.strftime(f'y%Ym%md%d')
+   return now.strftime(f'%Y{sep}%m{sep}%d')
 
 def seconds_between_datetimetags(tag1, tag2):
    t1 = datetime_from_tag(tag1)

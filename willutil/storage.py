@@ -7,7 +7,16 @@ def package_data_path(fname):
    return os.path.join(data_dir, fname)
 
 def load_package_data(fname):
-   return load(package_data_path(fname))
+   fname = package_data_path(fname)
+   if os.path.exists(fname):
+      return load(fname)
+   elif os.path.exists(fname + '.pickle'):
+      return load(fname + '.pickle')
+   else:
+      raise ValueError(f'no package data found for {fname}')
+
+def have_package_data(fname):
+   return os.path.exists(package_data_path(fname)) or os.path.exists(package_data_path(fname + '.pickle'))
 
 def open_package_data(fname):
    if fname.endswith('.xz'):

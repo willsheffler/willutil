@@ -186,7 +186,7 @@ def _hxform_impl(x, stuff, outerprod='auto', flat=False, is_points='auto'):
          shape2 = stuff.shape[:-2]
          sameshape = tuple()
          for i, (s1, s2) in enumerate(zip(shape1, shape2)):
-            ic(s1, s2)
+            # ic(s1, s2)
             if s1 == s2:
                shape1 = shape1[1:]
                shape2 = shape2[1:]

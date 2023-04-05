@@ -109,6 +109,9 @@ _overrides = {
 }
 
 _file_mappings = {
+   'willutil/sym/spacegroup.py': ['willutil/tests/sym/test_spacegroup.py'],
+   'willutil/sym/spacegroup_data.py': ['willutil/tests/sym/test_spacegroup.py'],
+   'willutil/sym/spacegroup_frames.py': ['willutil/tests/sym/test_spacegroup.py'],
    'willutil/sym/xtalinfo.py': ['willutil/tests/sym/test_xtal.py'],
    'willutil/viz/viz_xtal.py': ['willutil/tests/sym/test_xtal.py'],
    'willutil/viz/pymol.py': ['willutil/tests/sym/test_xtal.py'],
