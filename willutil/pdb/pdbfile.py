@@ -182,10 +182,10 @@ class PDBFile:
       models = self.models()
       return models.index(m)
 
-   def dump_pdb(self, fname):
+   def dump_pdb(self, fname, **kw):
       with open(fname, 'w') as out:
          for i, row in self.df.iterrows():
-            s = wu.pdb.pdbdump.pdb_format_atom_df(**row)
+            s = wu.pdb.pdbdump.pdb_format_atom_df(**row, **kw)
             out.write(s)
 
    dump = dump_pdb

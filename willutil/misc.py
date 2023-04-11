@@ -3,6 +3,9 @@ import willutil as wu
 
 _WARNINGS_ISSUED = set()
 
+def arraystr(array):
+   return 'np.' + repr(array.round(10)).replace('\n', '').replace(' ', '').replace('.,', ',')
+
 def WARNME(message, once=True):
    if once and message not in _WARNINGS_ISSUED:
       import traceback

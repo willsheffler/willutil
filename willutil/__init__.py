@@ -21,6 +21,7 @@ from willutil.inprocess import InProcessExecutor
 from willutil.cache import Cache, GLOBALCACHE
 from willutil import runtests
 from willutil import pdb
+from willutil import sampling
 from willutil import search
 from willutil import misc
 from willutil import tests

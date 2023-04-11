@@ -97,7 +97,8 @@ class Xtal:
 
       assert wu.hunique(frames)
       wu.checkpoint(kw)
-      return frames
+
+      return frames.round(10)
 
    def fit_coords(self, *a, **kw):
       return wu.sym.fix_coords_to_xtal(self.name, *a, **kw)
@@ -137,7 +138,7 @@ class Xtal:
       frames = np.stack(frames)
       scaleframes = _scaled_frames(cellsize, frames)
       wu.checkpoint(kw)
-      return scaleframes
+      return scaleframes.round(10)
 
    def asucen(
       self,

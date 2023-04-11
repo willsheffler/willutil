@@ -12,7 +12,7 @@ def fake_diffuse(fname, noise, outname, nfold=1):
    symframes = wu.sym.frames(f'C{nfold}')
    for i, beta in enumerate(noise):
       print('step', i, noise[i])
-      delta = wu.hrandsmall(len(coords), cart_sd=beta * 500, rot_sd=beta * 1, centers=coords[:, 1])
+      delta = wu.hrandsmall(len(coords), cart_sd=beta * 500, rot_sd=beta * 10, centers=coords[:, 1])
       coords = wu.hxform(delta, coords, outerprod=False)
       symcoords = wu.hxform(symframes, coords)
       wu.dumppdb(f'{outname}_{i:03}.pdb', symcoords)
@@ -22,9 +22,11 @@ def betaschedule(T, bT, b0):
    return np.concatenate([[0], noise])
 
 def main():
-   fname = '/home/sheffler/for/alexi/C8_n5_24.pdb'
-   noise = betaschedule(T=20, bT=0.035, b0=0.005)
-   fake_diffuse(fname, noise, outname='fakediffuse', nfold=1)
+   fname = '/home/sheffler/Downloads/redes_sym_nn5_15_bb_regularized_aligned_0001.pdb'
+   # fname = '/home/sheffler/for/alexi/C8_n5_24.pdb'
+   noise = betaschedule(T=100, bT=0.01, b0=0.0002)
+   outname = os.path.basename(fname) + '_fakediffuse'
+   fake_diffuse(fname, noise, outname=outname, nfold=8)
 
 if __name__ == '__main__':
    main()

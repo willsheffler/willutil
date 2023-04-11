@@ -40,6 +40,7 @@ def place_asu_grid_multiscale(
       if not 'refpos' in kw: kw.refpos = pos.copy()
       if not 'refcell' in kw: kw.refcell = cellsize
       # ic(i, repr(pos), cellsize)
+      print('place_asu_grid_multiscale', i, flush=True)
       newpos, newcell = place_asu_grid(
          pos,
          cellsize,
@@ -53,7 +54,6 @@ def place_asu_grid_multiscale(
             distspread=kw.distspread + (i - 1),
          ),
       )
-      assert 0
       pos, cellsize = newpos[0], newcell[0]
       # ic(kw.refpos)
       # ic(newpos[1] - kw.refpos)
@@ -80,8 +80,30 @@ def place_asu_grid(
       clusterdist=3,
       refpos=None,
       refcell=None,
+      printme=False,
       **kw,
 ):
+   if printme:
+      print('   # yapf: disable')
+      print('   kw =', repr(kw))
+      print(f'''   wu.sym.place_asu_grid(
+      pos={wu.misc.arraystr(pos)},
+      cellsize={repr(cellsize)},
+      frames={wu.misc.arraystr(frames)},
+      framesavoid={wu.misc.arraystr(framesavoid)},
+      lbub={repr(lbub)},
+      lbubcell={repr(lbubcell)},
+      nsamp={repr(nsamp)},
+      nsampcell={repr(nsampcell)},
+      distcontact={repr(distcontact)},
+      distavoid={repr(distavoid)},
+      distspread={repr(distspread)},
+      clusterdist={repr(clusterdist)},
+      refpos={repr(refpos)},
+      refcell={repr(refcell)},
+   )''')
+      print('   # yapf: enable', flush=True)
+
    assert isinstance(cellsize, (int, float))
    nsampcell = nsampcell or nsamp
    if isinstance(lbub, (int, float)): lbub = (-lbub, lbub)
@@ -124,7 +146,7 @@ def place_asu_grid(
    okccontactmin = dcontactmin > distcontact[0]
    okccontactmax = dcontactmax < distcontact[1]
    okspread = dcontactmax - dcontactmin < distspread
-   # ic(np.sum(okavoid), np.sum(okccontactmin), np.sum(okccontactmax), np.sum(okspread))
+   ic(np.sum(okavoid), np.sum(okccontactmin), np.sum(okccontactmax), np.sum(okspread))
    ok = okavoid * okccontactmin * okccontactmax * okspread
    w = np.where(ok)
    goodcell = cellsizes[w[:][0]]
@@ -142,6 +164,10 @@ def place_asu_grid(
       goodpos = goodpos[keep]
       goodcell = goodcell[keep]
 
+   # f = wu.hscaled(goodcell[0], frames0)
+   # p = wu.hxformpts(f, goodpos[0])
+   # ic(wu.hnorm(p[0] - p[1]), wu.hnorm(p[0] - p[-1]))
+
    # if len(goodpos):
    # ic(refpos)
    # ic(goodpos[:5])
@@ -149,3 +175,23 @@ def place_asu_grid(
    # ic(wu.hnorm(goodpos - refpos)[:5])
 
    return goodpos, goodcell
+
+def place_asu_sample_dof(
+   sym,
+   coords,
+   cellsize,
+   axis,
+   contactdist,
+   cartnsamp,
+   angnsamp,
+   cartrange,
+   angrange,
+   cellrange,
+   cellnsamp,
+):
+   axis = wu.hnormalized(axis)
+   angsamp = wu.hrot(axis, np.linspace(-angrange, angrange, angnsamp))
+   cartsamp = wu.htrans(axis * np.linspace(-cartrange, cartrange, cartnsamp))
+   cellsamp = np.linspace(-cellrange, cellrange, cellnsamp)
+   cframes = np.stack([wu.sym.frames(sym, cellsize=c) for c in cellsamp])
+   ic(cframes.shape)

@@ -44,6 +44,7 @@ def pdb_format_atom(
    elem=" ",
    xyz=None,
    het=False,
+   xform=None,
 ):
    if xyz is not None:
       x, y, z, *_ = xyz.squeeze()
@@ -51,6 +52,8 @@ def pdb_format_atom(
       rn = wu.chem.aa123[rn]
    if not isinstance(c, str):
       c = all_pymol_chains[c]
+   if xform is not None:
+      x, y, z, _ = xform @ np.array([x, y, z, 1])
 
    format_str = _pdb_atom_record_format
    if het:
@@ -118,6 +121,7 @@ def dump_pdb_from_points(
    dumppdbscale=1,
    spacegroup=None,
    cellsize=None,
+   skipval=9999.999,
    **kw,
 ):
    pts = np.asarray(pts)
@@ -166,6 +170,7 @@ def dump_pdb_from_points(
       for ichain, chainpts in enumerate(pts):
          for ires, respts in enumerate(chainpts):
             for iatom, p in enumerate(respts):
+               if p[0] == skipval: continue
                if mask[ichain, ires, iatom]:
                   s = pdb_format_atom(
                      ia=atomconut,

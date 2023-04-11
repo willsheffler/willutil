@@ -110,7 +110,7 @@ def frames(
       wu.checkpoint('frames sortframes')
 
    wu.checkpoint(kw)
-   return f
+   return f.round(10)
 
 def put_frames_on_top(frames, ontop, strict=True, allowcellshift=False, cellsize=None, **kw):
    wu.checkpoint(kw, funcbegin=True)

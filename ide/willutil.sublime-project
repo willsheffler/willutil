@@ -10,6 +10,9 @@
 			"shell_cmd": "cd $folder; python willutil/app/makesym.py /home/sheffler/project/george/makesym/input/5u52.pdb --radius 80 120 10 --angle -15 15 10 --rms_tolerance 1 --translation_tolerance 1 --angle_tolerance 1.0 &> log/sublime_build.log"
 		},
 		{
+			"name": "test_orientations.py",
+			"shell_cmd": "cd $folder; python willutil/tests/sampling/test_orientations.py &> log/sublime_build.log"
+		},		{
 			"name": "test_spacegroup.py",
 			"shell_cmd": "cd $folder; python willutil/tests/sym/test_spacegroup.py &> log/sublime_build.log"
 		},
