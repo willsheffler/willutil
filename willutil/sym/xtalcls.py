@@ -77,9 +77,9 @@ class Xtal:
 
       if xtalrad is not None:
          if xtalrad <= 3: xtalrad = xtalrad * np.linalg.norm(np.array(cellsize))
-         if center is None: center = self.asucen(cellsize)
-         if asucen is None: asucen = center
-         # ic(center, asucen)
+         if asucen is None: asucen = self.asucen(cellsize)
+         if center is None: center = asucen
+         ic(center, asucen)
          # if xtalrad is None: xtalrad = 0.5 * cellsize # ???
          center = wu.hpoint(center)
          asucen = wu.hpoint(asucen)
@@ -239,9 +239,14 @@ class Xtal:
       cryst1 = self.cryst1(cellsize)
       if asymcoords is None:
          asymcoords = self.asucen(cellsize=cellsize, **kw).reshape(1, 4)
+      assert asymcoords.ndim in (2, 3)
       asymcoords = wu.hpoint(asymcoords)
       if cells == None:
-         wu.dumppdb(fname, asymcoords, header=cryst1, nchain=1)
+         nchain = kw['nchain'] if 'nchain' in kw else 1
+         natom = 1 if asymcoords.ndim == 2 else asymcoords.shape[1]
+         if nchain > 1:
+            asymcoords = asymcoords.reshape(nchain, -1, natom, 4)
+         wu.dumppdb(fname, asymcoords, header=cryst1, nchain=nchain)
       else:
          if asymcoords.ndim == 2:
             asymcoords = asymcoords.reshape(-1, 1, asymcoords.shape[-1])

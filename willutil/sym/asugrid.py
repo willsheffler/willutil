@@ -86,7 +86,7 @@ def place_asu_grid(
    if printme:
       print('   # yapf: disable')
       print('   kw =', repr(kw))
-      print(f'''   wu.sym.place_asu_grid(
+      print(f'''   newpos, newcell = wu.sym.place_asu_grid(
       pos={wu.misc.arraystr(pos)},
       cellsize={repr(cellsize)},
       frames={wu.misc.arraystr(frames)},
@@ -153,10 +153,14 @@ def place_asu_grid(
    goodpos = posgrid[w[:][1]]
    # cellpos = goodpos / goodcell[:, None]
    # cellpos0 = pos0 / cellsize0
-   origdist = wu.hnorm2(goodpos - refpos) + ((goodcell - refcell) * 0.6)**2
+   origdist = np.sqrt(wu.hnorm2(goodpos - refpos) + ((goodcell - refcell) * 1.1)**2)
    order = np.argsort(origdist)
    goodcell, goodpos = goodcell[order], goodpos[order]
-
+   # ic(origdist[order])
+   # ic(goodpos[0])
+   # ic(goodcell[0])
+   # ic(refpos)
+   # assert 0
    if clusterdist > 0 and len(goodpos) > 1:
       coords = wu.hxformpts(frames0, goodpos, outerprod=True)
       coords = coords.swapaxes(0, 1).reshape(len(goodpos), -1)
