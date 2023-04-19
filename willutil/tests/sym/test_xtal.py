@@ -6,6 +6,9 @@ import willutil as wu
 
 def main():
 
+   test_xtalrad_I213()
+   assert 0
+
    test_xtal_cellframes_P_4_3_2_422()
    test_xtal_cryst1_P_4_3_2_422()
 
@@ -175,10 +178,10 @@ def test_xtalrad_I213():
    x = wu.sym.Xtal('I213')
    # wu.showme(x, scale=100)
    symcoord = x.symcoords([0, 0, 0], cellsize=10, cells=3, xtalrad=0.01, ontop=None)
-   assert len(symcoord) == 3
+   assert len(symcoord) == 0
 
    symcoord = x.symcoords([0, 0, 0], cellsize=10, cells=3, xtalrad=0.7, ontop=None)
-   assert len(symcoord) == 21
+   assert len(symcoord) == 33
 
    pt = [2, 2, 2]
    symcoord = x.symcoords(pt, cellsize=10, cells=3, xtalrad=0.7, center=pt, ontop=None)

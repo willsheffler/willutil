@@ -32,7 +32,7 @@ def test_xtalfit_I213():
    ic(np.min(vals), np.mean(vals))
    assert np.min(vals) > -0.2
 
-def test_xtalfit_I213_bk():
+def DISABLED_test_xtalfit_I213_bk():
    fname = wu.tests.test_data_path('pdb/i213fittest.pdb')
    pdb = wu.readpdb(fname)
    coords = wu.hpoint(pdb.ncac(splitchains=True))

@@ -3,6 +3,42 @@ import numpy as np
 import willutil as wu
 from willutil import homog as hm, Bunch
 
+def align(coords, sym='auto', **kw):
+   '''assumes shape (nchain, nres, natom, 3|4)'''
+   assert len(coords) > 1
+   if sym == 'auto':
+      raise NotImplementedError(f'hook up sym detection')
+   if sym.startswith('C'):
+      return aligncx(coords, sym, **kw)
+   else:
+      raise NotImplementedError(f'hook up compute_symfit')
+
+def aligncx(coords, sym='C', axis=[0, 0, 1], rmsthresh=1, axistol=0.02, angtol=0.05, centol=1.0, **kw):
+   if sym in ('C', 'Cx'): nfold = len(coords)
+   elif len(coords) == 1: nfold = int(sym[1:])
+   assert len(coords) == nfold
+   ic(coords.shape)
+   coords = coords.reshape(nfold, -1, *coords.shape[-2:])
+   ic(coords.shape)
+   fitcoords = coords
+   if coords.ndim > 3:  # ca only
+      fitcoords = coords[:, :, 1]
+   rms, _, xfits = zip(*[wu.hrmsfit(fitcoords[i - 1], fitcoords[i]) for i in range(len(coords))])
+   if max(rms) > rmsthresh: raise ValueError(f'subunits have high rms {rms}')
+   axs, ang, cen = (np.array(x) for x in zip(*[wu.haxis_ang_cen_of(x) for x in xfits]))
+
+   if np.max(ang - 2 * np.pi / nfold) > angtol: raise ValueError(f'sub rotation angles incoherent {ang}')
+   if np.max(np.std(axs, axis=0)) > axistol: raise ValueError(f'sub rotation axes incoherent {axs}')
+   if np.max(np.std(cen, axis=0)) > centol: raise ValueError(f'sub rotation centers incoherent {cen}')
+   avgaxs = np.mean(axs, axis=0)
+   avgcen = np.mean(cen, axis=0)
+   # coords = wu.hxform(wu.htrans(-avgcen), coords)
+   ic(avgaxs, axis)
+   ic(avgcen)
+   # coords = wu.halign(avgaxs, axis, doto=coords)
+   ic(wu.halign(avgaxs, axis, doto=wu.hnormalized([1, 1, 1, 0])))
+   return coords
+
 def compute_symfit(
    sym,
    frames,
@@ -90,10 +126,7 @@ def compute_symfit(
    if lossterms:
       weighted_err = np.sqrt(sum(loss[c] for c in lossterms))
 
-   return SymFit(sym=sym, nframes=len(frames), frames=frames, symops=symops, center=center, opcen1=cen1, opcen2=cen2,
-                 opaxs1=axs1, opaxs2=axs2, iscet=isect, isect1=p, iscet2=q, radius=radius, xfit=xfit, cen_err=cen_err,
-                 symop_hel_err=op_hel_err, symop_ang_err=op_ang_err, axes_err=axesfiterr, total_err=total_err,
-                 weighted_err=weighted_err, redundant_cyclic_err=redundant_cyclic_err, losses=loss)
+   return SymFit(sym=sym, nframes=len(frames), frames=frames, symops=symops, center=center, opcen1=cen1, opcen2=cen2, opaxs1=axs1, opaxs2=axs2, iscet=isect, isect1=p, iscet2=q, radius=radius, xfit=xfit, cen_err=cen_err, symop_hel_err=op_hel_err, symop_ang_err=op_ang_err, axes_err=axesfiterr, total_err=total_err, weighted_err=weighted_err, redundant_cyclic_err=redundant_cyclic_err, losses=loss)
 
 _get_redundant_cyclic_err_warning = True
 
@@ -236,8 +269,7 @@ def symops_from_frames(*, sym, frames, **kw):
    inplane = hm.hprojperp(axs, cen - frame1[:, :, 3])
    rad = np.sqrt(np.sum(inplane**2, axis=-1))
    hel = np.sum(axs * xrel[:, :, 3], axis=-1)
-   assert (len(frame1) == len(frame2) == len(xrel) == len(axs) == len(ang) == len(cen) == len(framecen) == len(rad) ==
-           len(hel))
+   assert (len(frame1) == len(frame2) == len(xrel) == len(axs) == len(ang) == len(cen) == len(framecen) == len(rad) == len(hel))
    errrad = np.minimum(10000, np.maximum(rad, 1.0))
    angdelta, err, closest = dict(), dict(), dict()
    point_angles = wu.sym.sym_point_angles[sym]
@@ -999,8 +1031,7 @@ def symfit_parallel_mc_scoreterms_trials(**kw):
             ' '.join(['%4.2f' % q for q in np.quantile(badscores, [0.0, 0.1, 0.25, 0.5, 1.0])] if badscores else '', ),
          )
 
-def setup_test_frames(nframes, sym, cart_sd_fuzz, rot_sd_fuzz, tprelen=20, tprerand=0, tpostlen=10, tpostrand=0,
-                      noxpost=False, **kw):
+def setup_test_frames(nframes, sym, cart_sd_fuzz, rot_sd_fuzz, tprelen=20, tprerand=0, tpostlen=10, tpostrand=0, noxpost=False, **kw):
    symframes = wu.sym.sym_frames[sym]
    selframes = symframes[np.random.choice(len(symframes), nframes, replace=False), :, :]
    xpre = hm.rand_xform()

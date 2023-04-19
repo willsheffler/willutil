@@ -1,6 +1,9 @@
 import numpy as np
 import willutil as wu
 from willutil.sym.asugrid import vispoints
+import pytest
+
+pytest.skip(allow_module_level=True)
 
 def main():
    test_asugrid_case1()

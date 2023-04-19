@@ -2,8 +2,20 @@ import numpy as np
 import willutil as wu
 
 def main():
-   test_hxformpts_bug()
+   # test_hnormalized()
+   test_halign_bug()
+   # test_hxformpts_bug()
    # test_homog_misc1()
+
+def test_hnormalized():
+   a = wu.hnormalized([1, 1, 1])
+   assert a[3] == 0
+
+def test_halign_bug():
+   a = wu.hnormalized([1, 1, 1])
+   b = wu.hnormalized([0, 0, 1])
+   c = wu.halign(a, b, doto=a)
+   assert np.allclose(c, b)
 
 def test_hxformpts_bug():
    pts6 = np.array([

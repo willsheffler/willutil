@@ -2,6 +2,11 @@ import numpy as np
 import willutil as wu
 
 def main():
+   test_spacegroup_frames_P1()
+   test_spacegroup_frames_P3()
+   # test_sgframes()
+   # assert 0
+   test_lattice_vectors()
    test_two_iface()
    test_spacegroup_frames_P213()
    test_spacegroup_frames_P23()
@@ -11,10 +16,12 @@ def main():
    test_spacegroup_frames_P432()
    test_spacegroup_frames_F432()
    test_spacegroup_frames_I432()
+   ic('PASS test_spacegroup')
 
 def helper_test_spacegroup_frames(sg):
    f1 = wu.sym.sgframes(sg, [1, 1, 1])
    f2 = wu.sym.frames(sg, cells=1, ontop=None)
+   assert f1.shape == f2.shape
    f2[np.where(np.abs(f2) < 0.0001)] = 0
    f2[f2[:, 0, 3] > 0.999, 0, 3] = 0  # mod1
    f2[f2[:, 1, 3] > 0.999, 1, 3] = 0  # mod1
@@ -28,7 +35,24 @@ def helper_test_spacegroup_frames(sg):
       assert match is not None
    # print(f'pass {sg}')
 
+def test_lattice_vectors():
+   print('''
+      15.737   15.887   25.156  85.93  86.19  69.86 P 1     
+      15.737000,   0.000000,   0.000000
+       5.470136,  14.915575,   0.000000
+       1.671566,   1.288705,  25.067297
+   ''', flush=True)
+   lvec = wu.sym.spacegroup.lattice_vectors('P1', [15.737, 15.887, 25.156, 85.93, 86.19, 69.86])
+   assert np.allclose(lvec, np.array([[15.737, 0., 0.], [5.47013594, 14.91557514, 0.], [1.67156711, 1.28870451, 25.06729822]]))
+
+def test_spacegroup_frames_P1():
+   f = wu.sym.spacegroup.sgframes('P1', [15.737, 15.887, 25.156, 85.93, 86.19, 69.86], cells=3)
+   ref = np.array([[-22.87870305, -16.20427966, -25.06729822], [-21.20713594, -14.91557514, 0.], [-19.53556883, -13.62687063, 25.06729822], [-17.40856711, -1.28870451, -25.06729822], [-15.737, 0., 0.], [-14.06543289, 1.28870451, 25.06729822], [-11.93843117, 13.62687063, -25.06729822], [-10.26686406, 14.91557514, 0.], [-8.59529695, 16.20427966, 25.06729822], [-7.14170305, -16.20427966, -25.06729822], [-5.47013594, -14.91557514, 0.], [-3.79856883, -13.62687063, 25.06729822], [-1.67156711, -1.28870451, -25.06729822], [0., 0., 0.], [1.67156711, 1.28870451, 25.06729822], [3.79856883, 13.62687063, -25.06729822], [5.47013594, 14.91557514, 0.], [7.14170305, 16.20427966, 25.06729822], [8.59529695, -16.20427966, -25.06729822], [10.26686406, -14.91557514, 0.], [11.93843117, -13.62687063, 25.06729822], [14.06543289, -1.28870451, -25.06729822], [15.737, 0., 0.], [17.40856711, 1.28870451, 25.06729822], [19.53556883, 13.62687063, -25.06729822], [21.20713594, 14.91557514, 0.], [22.87870305, 16.20427966, 25.06729822]])
+   assert np.allclose(f[:, :3, 3], ref)
+   # wu.showme(f)
+
 def test_two_iface():
+   assert len(wu.sym.spacegroup_data.two_iface_spacegroups) == 31
    for sg in wu.sym.spacegroup_data.two_iface_spacegroups:
       if sg not in wu.sym.spacegroup_data.sg_lattice:
          assert sg == 'R3'

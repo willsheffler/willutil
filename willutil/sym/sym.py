@@ -34,7 +34,7 @@ def frames(
 
    try:
       if wu.sym.is_known_xtal(sym):
-         f = xtal(sym).frames(ontop=ontop, **kw).copy()
+         return xtal(sym).frames(ontop=ontop, **kw).copy()
       else:
          f = sym_frames[sym].copy()
    except KeyError as e:
@@ -188,7 +188,6 @@ def min_symaxis_angle(sym):
 
 def axes(sym, nfold=None, all=False, cellsize=1, **kw):
    sym = sym.lower()
-
    try:
       if wu.sym.is_known_xtal(sym):
          x = xtal(sym)
@@ -207,8 +206,10 @@ def axes(sym, nfold=None, all=False, cellsize=1, **kw):
          elif isinstance(nfold, str):
             assert nfold.lower().startswith('c')
             nfold = int(nfold[1:])
-         if all: return symaxes_all[sym][nfold].copy()
-         else: return symaxes[sym][nfold].copy()
+         if all:
+            return symaxes_all[sym][nfold].copy()
+         else:
+            return symaxes[sym][nfold].copy()
 
    except (KeyError, ValueError) as e:
       raise ValueError(f'unknown symmetry {sym}')
@@ -568,6 +569,12 @@ for icyc in range(2, 33):
    minsymang[sym] = np.pi / icyc / 2
    symaxes_all[sym] = symaxes[sym]
    _ambiguous_axes[sym] = list()
+
+def is_closed(sym):
+   sym = sym.upper()
+   if sym.startswith(('C', 'D')): return True
+   if sym in 'I O T ICOS OCT TET': return True
+   return False
 
 def symunit_bounds(cagesym, cycsym):
    flb, fub, fnum = 1, -1, 2

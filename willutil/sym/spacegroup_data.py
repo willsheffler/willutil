@@ -591,44 +591,43 @@ def get_spacegroup_tag():
    _sg_cheshire,
 ) = _get_spacegroup_data()
 
-def check_cellgeom(spacegroup, cellgeom, radians=False):
+def full_cellgeom(spacegroup, cellgeom):
    if isinstance(cellgeom, (int, float)):
       cellgeom = [cellgeom]
    lattice = sg_lattice[spacegroup]
    p = cellgeom
    if lattice == 'TRICLINIC':
-      p = p[0], p[1], p[2], p[3], p[4], p[5]
+      p = [p[0], p[1], p[2], p[3], p[4], p[5]]
    elif lattice == 'MONOCLINIC':
-      p = p[0], p[1], p[2], 90.0, p[4], 90.0
+      p = [p[0], p[1], p[2], 90.0, p[4], 90.0]
    elif lattice == 'CUBIC':
-      p = p[0], p[0], p[0], 90.0, 90.0, 90.0
+      p = [p[0], p[0], p[0], 90.0, 90.0, 90.0]
    elif lattice == 'ORTHORHOMBIC':
-      p = p[0], p[1], p[2], 90.0, 90.0, 90.0
+      p = [p[0], p[1], p[2], 90.0, 90.0, 90.0]
    elif lattice == 'TETRAGONAL':
-      p = p[0], p[0], p[2], 90.0, 90.0, 90.0
+      p = [p[0], p[0], p[2], 90.0, 90.0, 90.0]
    elif lattice == 'HEXAGONAL':
-      p = p[0], p[0], p[2], 90.0, 90.0, 120.0
-   if radians:
-      for i in range(3, 6):
-         p[i] = np.radians(p[1])
+      p = [p[0], p[0], p[2], 90.0, 90.0, 120.0]
    return p
 
-def cell2global(spacegroup, cellgeom):
-   a, b, c, A, B, C = cellgeom(spacegroup, cellgeom, radians=True)
-   cosA, cosB, cosC = [np.cos(_) for _ in (A, B, C)]
-   sinB, sinC = [np.sin(_) for _ in (B, C)]
-   cell2global = np.array([
+def lattice_vectors(spacegroup, cellgeom):
+   a, b, c, A, B, C = full_cellgeom(spacegroup, cellgeom)
+   cosA, cosB, cosC = [np.cos(np.radians(_)) for _ in (A, B, C)]
+   sinB, sinC = [np.sin(np.radians(_)) for _ in (B, C)]
+   lattice_vectors = np.array([[
       a,
       b * cosC,
       c * cosB,
+   ], [
       0.0,
       b * sinC,
       c * (cosA - cosB * cosC) / sinC,
+   ], [
       0.0,
       0.0,
-      c * sinB * sqrt(1.0 - ((cosB * cosC - cosA) / (sinB * sinC))**2),
-   ])
-   return cell2global
+      c * sinB * np.sqrt(1.0 - ((cosB * cosC - cosA) / (sinB * sinC))**2),
+   ]]).T
+   return lattice_vectors
 
 def cellvol(spacegroup, cellgeom):
    a, b, c, A, B, C = cellgeom(spacegroup, cellgeom, radians=True)

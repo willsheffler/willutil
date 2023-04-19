@@ -7,7 +7,7 @@ class RigidBodyFollowers:
       self.kw = kw
       assert not (frames is None and sym is None)
       if frames is None:
-         frames = wu.sym.frames(sym, cellsize=cellsize, **kw)
+         frames = wu.sym.frames(sym, cellsize=cellsize, ontop='primary', **kw)
       if bodies is not None:
          self.asym = bodies[0]
          self.symbodies = bodies[1:]
@@ -173,20 +173,20 @@ class RigidBodyFollowers:
 
 class RigidBody:
    def __init__(
-      self,
-      coords=None,
-      contact_coords=None,
-      extra=None,
-      position=np.eye(4),
-      parent=None,
-      xfromparent=None,
-      contactdis=8,
-      clashdis=3,
-      usebvh=True,
-      scale=1,
-      interacting_points=None,
-      recenter=False,
-      **kw,
+         self,
+         coords=None,
+         contact_coords=None,
+         extra=None,
+         position=np.eye(4),
+         parent=None,
+         xfromparent=None,
+         contactdis=8,
+         clashdis=3,
+         usebvh=True,
+         scale=1,
+         interacting_points=None,
+         recenter=False,
+         **kw,
    ):
 
       assert xfromparent is None or not np.allclose(np.eye(4), xfromparent)
@@ -362,8 +362,7 @@ class RigidBody:
       self.bvhopcount += 1
       assert isinstance(other, RigidBody)
       if usebvh or (usebvh is None and self.usebvh):
-         count = wu.cpp.bvh.bvh_count_pairs(self.contactbvh, other.contactbvh, self.position, other.position,
-                                            contactdist)
+         count = wu.cpp.bvh.bvh_count_pairs(self.contactbvh, other.contactbvh, self.position, other.position, contactdist)
       else:
          assert 0
          # import scipy.spatial
@@ -437,8 +436,7 @@ class RigidBody:
       assert isinstance(other, RigidBody)
       if usebvh or (usebvh is None and self.usebvh):
          if not buf: buf = np.empty((100000, 2), dtype="i4")
-         pairs, overflow = wu.cpp.bvh.bvh_collect_pairs(self.contactbvh, other.contactbvh, self.position,
-                                                        other.position, contactdist, buf)
+         pairs, overflow = wu.cpp.bvh.bvh_collect_pairs(self.contactbvh, other.contactbvh, self.position, other.position, contactdist, buf)
          assert not overflow
       else:
          d = wu.hnorm(self.contact_coords[None] - other.contact_coords[:, None])
@@ -450,8 +448,7 @@ class RigidBody:
       assert isinstance(other, RigidBody)
       if usebvh or (usebvh is None and self.usebvh):
          if not buf: buf = np.empty((100000, 2), dtype="i4")
-         pairs, overflow = wu.cpp.bvh.bvh_collect_pairs(self.bvh, other.bvh, self.position, other.position, contactdist,
-                                                        buf)
+         pairs, overflow = wu.cpp.bvh.bvh_collect_pairs(self.bvh, other.bvh, self.position, other.position, contactdist, buf)
          assert not overflow
       else:
          d = wu.hnorm(self.coords[None] - other.coords[:, None])

@@ -9,7 +9,6 @@ from icecream import ic
 # ic.configureOutput(includeContext=True, contextAbsPath=True)
 
 def main():
-
    test_hcentered()
 
    test_halign()

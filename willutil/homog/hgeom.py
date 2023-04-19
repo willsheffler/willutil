@@ -398,6 +398,7 @@ def hinv(xforms):
    return np.linalg.inv(xforms)
 
 def hunique(xforms):
+   if len(xforms) == 0: return True
    diff = wu.hdiff(xforms, xforms)
    np.fill_diagonal(diff, 9e9)
    # ic(diff.shape, np.min(diff))
@@ -491,15 +492,25 @@ def hrot(axis, angle=None, center=None, dtype='f8', hel=0.0, **kw):
 def hpoint(point):
    point = np.asanyarray(point)
    if point.shape[-1] == 4:
-      return point
+      if np.allclose(point[..., 3], 1):
+         # if True:
+         return point.copy()
+      else:
+         return hpoint(point[..., :3])
    elif point.shape[-1] == 3:
       r = np.ones(point.shape[:-1] + (4, ))
       r[..., :3] = point
       return r
    elif point.shape[-2:] == (4, 4):
-      return point[..., :, 3]
+      return point[..., :, 3].copy()
    else:
       raise ValueError('point must len 3 or 4')
+
+def hpointorvec(point):
+   point = np.asanyarray(point)
+   if point.shape[-1] == 4:
+      return point.copy()
+   return hpoint(point)
 
 def hvec(vec):
    vec = np.asanyarray(vec)
@@ -811,7 +822,7 @@ def hrmsfit(mobile, target):
 
 def hproj(u, v):
    u = hvec(u)
-   v = hpoint(v)
+   v = hpointorvec(v)
    return hdot(u, v)[..., None] / hnorm2(u)[..., None] * u
 
 def hcart(x):
@@ -828,7 +839,7 @@ def hori3(x):
 
 def hprojperp(u, v):
    u = hvec(u)
-   v = hpoint(v)
+   v = hpointorvec(v)
    # return v - hdot(u, v)[..., None] / hnorm2(u)[..., None] * u
    return v - hproj(u, v)
 
@@ -1262,6 +1273,7 @@ def scale_translate_lines_isect_lines(pt1, ax1, pt2, ax2, tp1, ta1, tp2, ta2):
          delta2 *= -1
    _pt1 += delta2
    _pt2 += delta2
+
    xalign[:, 3] = delta1 + delta2
    xalign[3, 3] = 1
 
