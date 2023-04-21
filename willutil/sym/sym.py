@@ -16,8 +16,8 @@ def frames(
    asym_index=0,
    sortframes=True,
    com=None,
-   symops=None,
    ontop=None,
+   sgonly=False,
    **kw,
 ):
    '''generate symmetrical coordinate frames
@@ -32,6 +32,11 @@ def frames(
    sym = map_sym_abbreviation(sym)
    sym = sym.lower()
 
+   okexe = (SystemExit, ) if sgonly else (KeyError, )
+   try:
+      return wu.sym.sgframes(sym, ontop=ontop, **kw)
+   except okexe:
+      pass
    try:
       if wu.sym.is_known_xtal(sym):
          return xtal(sym).frames(ontop=ontop, **kw).copy()
@@ -635,3 +640,32 @@ def average_aligned_coords(coords, nsub=None, repeatfirst=1):
    crd = numpy_or_torch_array(np.stack(crds).mean(0), orig)
    rms = numpy_or_torch_array(rms, orig)
    return CoordRMS(crd, rms)
+
+def subframes(frames, bbsym, asym):
+   assert frames.ndim == 3 and frames.shape[1:] == (4, 4)
+   subframes = wu.sym.frames(bbsym)
+   coords = wu.hxform(frames, wu.hcom(asym, flat=True))
+   ic(coords)
+   ic(frames.shape)
+   ic(subframes.shape)
+   # relframes = frames[1:, None] @ wu.hinv(frames[None, :-1])
+   relframes = frames[:, None] @ wu.hinv(frames[None, :])
+   ic(relframes.shape)
+
+   axs, ang, cen, hel = wu.haxis_angle_cen_hel_of(relframes)
+
+   for i in range(len(frames)):
+
+      axdist = wu.hpointlinedis(coords, cen[i, :], axs[i, :])
+      ic(axdist)
+
+   # what about multiple nfold axes???\
+   # can distinguish by axis direction?
+   assert 0
+
+   helok = hel == 0
+   # priax =
+   # closest axis
+
+   axisdist = wu.hprojperp(axs, cen)
+   ic(axisdist)

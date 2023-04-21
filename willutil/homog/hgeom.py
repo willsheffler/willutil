@@ -4,6 +4,15 @@ import deferred_import
 
 import numpy as np
 
+def isarray(x):
+   if isinstance(x, np.array):
+      return True
+   if 'torch' in sys.modules:
+      import torch
+      if isinstance(x, torch.Tensor):
+         return True
+   return False
+
 def to_xyz(x):
    if isinstance(x, (int, float)):
       x = [x] * 3
@@ -12,7 +21,7 @@ def to_xyz(x):
 
 def hvalid(stuff, is_points=None, strict=False, **kw):
    if stuff.shape[-2:] == (4, 4) and not is_points == True:
-      return hvalid44(stuff)
+      return hvalid44(stuff, **kw)
    if stuff.shape[-2:] == (4, 2) and not is_points == True:
       return is_valid_rays(stuff)
    elif stuff.shape[-1] == 4 and strict:
@@ -23,10 +32,14 @@ def hvalid(stuff, is_points=None, strict=False, **kw):
       return True
    return False
 
-def hvalid44(x):
+def hvalid44(x, improper_ok=False, **kw):
    if x.shape[-2:] != (4, 4):
       return False
-   return all([np.allclose(x[..., 3, 3], 1), np.allclose(x[..., 3, :3], 0), np.allclose(np.linalg.det(x[..., :3, :3]), 1)])
+   det = np.linalg.det(x[..., :3, :3])
+   if improper_ok:
+      det = np.abs(det)
+   detok = np.allclose(det, 1.0)
+   return all([np.allclose(x[..., 3, 3], 1), np.allclose(x[..., 3, :3], 0), detok])
 
 def hscaled(scale, stuff, is_points=None):
    stuff = stuff.copy()
@@ -60,6 +73,12 @@ def hdiff(x, y, lever=10.0):
    diff = np.mean(diff, axis=-1)
 
    return diff
+
+def hxformx(x, stuff, **kw):
+   assert np.allclose(stuff[..., 3, :], [0, 0, 0, 1])
+   result = hxform(x, stuff, is_points=False, **kw)
+   assert np.allclose(stuff[..., 3, :], [0, 0, 0, 1])
+   return result
 
 def hxformpts(x, stuff, **kw):
    assert np.allclose(stuff[..., 3], 1)
@@ -119,7 +138,11 @@ def hxform(x, stuff, homogout='auto', **kw):
    if result.shape[-1] == 4 and not hvalid(result, **kw):
       ic(x.shape)
       ic(stuff.shape)
-      ic(result)
+      # ic(result)
+      for x in result:
+         if not hvalid(x, **kw):
+            ic(x)
+            assert 0
       # this is a bad copout.. should make this check handle nans correctly
       if not stuff.shape[-2:] == (4, 1):
          raise ValueError(f'malformed homogeneous coords with shape {stuff.shape}, '
@@ -143,9 +166,9 @@ def hxform(x, stuff, homogout='auto', **kw):
 
    return result
 
-def _hxform_impl(x, stuff, outerprod='auto', flat=False, is_points='auto'):
+def _hxform_impl(x, stuff, outerprod='auto', flat=False, is_points='auto', improper_ok=False):
    if is_points == 'auto':
-      is_points = not hvalid44(stuff)
+      is_points = not hvalid44(stuff, improper_ok=improper_ok)
       if is_points:
          if stuff.shape[-1] != 4 and stuff.shape[-2:] == (4, 1):
             raise ValueError(f'hxform cant understand shape {stuff.shape}')
@@ -580,7 +603,7 @@ def yaxis_of(xforms):
 def zaxis_of(xforms):
    return xforms[..., :, 2]
 
-def htrans(trans, dtype='f8'):
+def htrans(trans, dtype='f8', doto=None):
    if isinstance(trans, (int, float)):
       trans = np.array([trans, 0, 0])
    trans = np.asanyarray(trans)
@@ -591,7 +614,7 @@ def htrans(trans, dtype='f8'):
    tileshape = trans.shape[:-1] + (1, 1)
    t = np.tile(np.identity(4, dtype), tileshape)
    t[..., :trans.shape[-1], 3] = trans
-   return t
+   return t if doto is None else wu.hxform(t, doto)
 
 def hdot(a, b, outerprod=False):
    a = np.asanyarray(a)
@@ -864,7 +887,7 @@ def h_point_line_dist(point, cen, norm):
    norm = hnormalized(norm)
    point = point - cen
    perp = hprojperp(norm, point)
-   return wu.hnorm(perp)
+   return hnorm(perp)
 
 def intesect_line_plane(p0, n, l0, l):
    l = hm.hnormalized(l)
@@ -946,17 +969,17 @@ def axis_ang_cen_of_planes(xforms, debug=False, ident_match_tol=1e-8):
 
    axis, angle = axis_angle_of(xforms)
    not_ident = np.abs(angle) > ident_match_tol
-   cen = np.tile([0, 0, 0, 1], np.shape(angle)).reshape(*np.shape(angle), 4)
+   cen = np.tile([0.0, 0.0, 0.0, 1.0], np.shape(angle)).reshape(*np.shape(angle), 4)
 
    if np.any(not_ident):
       xforms1 = xforms[not_ident]
       axis1 = axis[not_ident]
       #  sketchy magic points...
       p1, p2 = _axis_ang_cen_magic_points_numpy
-      tparallel = hdot(axis, xforms[..., :, 3])[..., None] * axis
+      tparallel = hdot(axis1, xforms1[..., :, 3])[..., None] * axis1
 
-      q1 = xforms @ p1 - tparallel
-      q2 = xforms @ p2 - tparallel
+      q1 = xforms1 @ p1 - tparallel
+      q2 = xforms1 @ p2 - tparallel
       n1 = hnormalized(q1 - p1)
       n2 = hnormalized(q2 - p2)
       c1 = (p1 + q1) / 2.0
@@ -975,6 +998,7 @@ def axis_ang_cen_of_planes(xforms, debug=False, ident_match_tol=1e-8):
    axis = axis.reshape(*origshape, 4)
    angle = angle.reshape(origshape)
    cen = cen.reshape(*origshape, 4)
+
    return axis, angle, cen
 
 axis_ang_cen_of = axis_ang_cen_of_planes

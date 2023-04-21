@@ -32,7 +32,7 @@ def showcom(sel="all"):
    _numcom += 1
 
 def cgo_sphere(cen, rad=1, col=(1, 1, 1)):
-   cen = wu.hpoint(cen).reshape(-1, 4)
+   cen = wu.homog.hpoint(cen).reshape(-1, 4)
    # white sphere with 3A radius
    mycgo = [cgo.COLOR, col[0], col[1], col[2]]
    for c in cen:
@@ -210,18 +210,18 @@ def showlineabs(axis, cen, col=(1, 1, 1), lbl=''):
    pymol.cmd.set_view(v)
 
 def cgo_fan(
-   axis,
-   cen,
-   rad,
-   arc,
-   col=(1, 1, 1),
-   col2=None,
-   startpoint=[1, 2, 3, 1],
-   thickness=0.0,
-   showstart=True,
-   randspread=0,
-   fanshift=0.0,
-   ntri=50,
+      axis,
+      cen,
+      rad,
+      arc,
+      col=(1, 1, 1),
+      col2=None,
+      startpoint=[1, 2, 3, 1],
+      thickness=0.0,
+      showstart=True,
+      randspread=0,
+      fanshift=0.0,
+      ntri=50,
 ):
    if arc > 10: arc = np.radians(arc)
    col2 = col2 or col
@@ -281,11 +281,7 @@ def showfan(axis, cen, rad, arc, col=(1, 1, 1), lbl='', **kw):
 
 def showaxes():
    v = pymol.cmd.get_view()
-   obj = [
-      cgo.BEGIN, cgo.LINES, cgo.COLOR, 1.0, 0.0, 0.0, cgo.VERTEX, 0.0, 0.0, 0.0, cgo.VERTEX, 20.0, 0.0, 0.0, cgo.COLOR,
-      0.0, 1.0, 0.0, cgo.VERTEX, 0.0, 0.0, 0.0, cgo.VERTEX, 0.0, 20.0, 0.0, cgo.COLOR, 0.0, 0.0, 1.0, cgo.VERTEX, 0.0,
-      0.0, 0.0, cgo.VERTEX, 00, 0.0, 20.0, cgo.END
-   ]
+   obj = [cgo.BEGIN, cgo.LINES, cgo.COLOR, 1.0, 0.0, 0.0, cgo.VERTEX, 0.0, 0.0, 0.0, cgo.VERTEX, 20.0, 0.0, 0.0, cgo.COLOR, 0.0, 1.0, 0.0, cgo.VERTEX, 0.0, 0.0, 0.0, cgo.VERTEX, 0.0, 20.0, 0.0, cgo.COLOR, 0.0, 0.0, 1.0, cgo.VERTEX, 0.0, 0.0, 0.0, cgo.VERTEX, 00, 0.0, 20.0, cgo.END]
    pymol.cmd.load_cgo(obj, "axes")
 
 def cgo_cyl_arrow(c1, c2, r, col=(1, 1, 1), col2=None, arrowlen=4.0):
@@ -341,18 +337,7 @@ def cgo_cube(lb=[-10, -10, -10], ub=[10, 10, 10], r=0.1, xform=np.eye(4)):
       wu.homog.hxform(xform, [ub[0], lb[1], ub[2]]),
       wu.homog.hxform(xform, [ub[0], lb[1], lb[2]]),
    ]
-   mycgo = [
-      cgo.CYLINDER, a[0][0], a[0][1], a[0][2], b[0][0], b[0][1], b[0][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[1][0],
-      a[1][1], a[1][2], b[1][0], b[1][1], b[1][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[2][0], a[2][1], a[2][2],
-      b[2][0], b[2][1], b[2][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[3][0], a[3][1], a[3][2], b[3][0], b[3][1],
-      b[3][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[4][0], a[4][1], a[4][2], b[4][0], b[4][1], b[4][2], r, 1, 1, 1, 1,
-      1, 1, cgo.CYLINDER, a[5][0], a[5][1], a[5][2], b[5][0], b[5][1], b[5][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER,
-      a[6][0], a[6][1], a[6][2], b[6][0], b[6][1], b[6][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[7][0], a[7][1],
-      a[7][2], b[7][0], b[7][1], b[7][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[8][0], a[8][1], a[8][2], b[8][0],
-      b[8][1], b[8][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[9][0], a[9][1], a[9][2], b[9][0], b[9][1], b[9][2], r, 1,
-      1, 1, 1, 1, 1, cgo.CYLINDER, a[10][0], a[10][1], a[10][2], b[10][0], b[10][1], b[10][2], r, 1, 1, 1, 1, 1, 1,
-      cgo.CYLINDER, a[11][0], a[11][1], a[11][2], b[11][0], b[11][1], b[11][2], r, 1, 1, 1, 1, 1, 1
-   ]
+   mycgo = [cgo.CYLINDER, a[0][0], a[0][1], a[0][2], b[0][0], b[0][1], b[0][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[1][0], a[1][1], a[1][2], b[1][0], b[1][1], b[1][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[2][0], a[2][1], a[2][2], b[2][0], b[2][1], b[2][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[3][0], a[3][1], a[3][2], b[3][0], b[3][1], b[3][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[4][0], a[4][1], a[4][2], b[4][0], b[4][1], b[4][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[5][0], a[5][1], a[5][2], b[5][0], b[5][1], b[5][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[6][0], a[6][1], a[6][2], b[6][0], b[6][1], b[6][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[7][0], a[7][1], a[7][2], b[7][0], b[7][1], b[7][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[8][0], a[8][1], a[8][2], b[8][0], b[8][1], b[8][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[9][0], a[9][1], a[9][2], b[9][0], b[9][1], b[9][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[10][0], a[10][1], a[10][2], b[10][0], b[10][1], b[10][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[11][0], a[11][1], a[11][2], b[11][0], b[11][1], b[11][2], r, 1, 1, 1, 1, 1, 1]
    # yapf: disable
    #   l=10#*sqrt(3)
    #   m=-l

@@ -215,7 +215,7 @@ def _(
    elif len(shape) > 2 and shape[-2:] == (4, 4):
       return pymol_visualize_xforms(toshow, state, **kw)
    elif shape == (4, ) or len(shape) == 2 and shape[-1] in (3, 4):
-      return show_ndarray_point_or_vec(wu.hpoint(toshow), state, **kw)
+      return show_ndarray_point_or_vec(wu.homog.hpoint(toshow), state, **kw)
    else:
       raise NotImplementedError(f'cant understand np.ndarray type {type(toshow)} shape {toshow.shape}')
 
@@ -508,7 +508,7 @@ def show_ndarray_point_or_vec(
    mycgo = list()
    if toshow.ndim == 1: toshow = [toshow]
    if kind == 'vec': toshow = wu.hvec(toshow).reshape(-1, 4)
-   if kind == 'point': toshow = wu.hpoint(toshow).reshape(-1, 4)
+   if kind == 'point': toshow = wu.homog.hpoint(toshow).reshape(-1, 4)
    for i, p_or_v in enumerate(toshow):
       color = (1, 1, 1) if col is None else col
       if isinstance(color[0], (list, tuple, np.ndarray)):

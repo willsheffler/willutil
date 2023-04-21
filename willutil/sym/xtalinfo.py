@@ -1,7 +1,7 @@
 import numpy as np
-import copy
 import willutil as wu
 from willutil.homog import *
+from willutil.sym.symelem import SymElem
 
 _xtal_asucens = {
    'P 4 3 2': np.array([0.1, 0.2, 0.3, 1]),
@@ -170,71 +170,6 @@ def _populate__xtal_info_dict():
 
    }
    # yapf: enable
-
-class SymElem:
-   def __init__(self, nfold, axis, cen=[0, 0, 0], axis2=None, label=None, vizcol=None):
-      self.nfold = nfold
-      self.origaxis = axis
-      self.origaxis2 = axis2
-      self.angle = np.pi * 2 / self.nfold
-      self.axis = wu.homog.hgeom.hvec(axis)
-      self.axis2 = axis2
-      self.vizcol = vizcol
-      if self.axis2 is not None:
-         self.axis2 = wu.homog.hgeom.hvec(self.axis2)
-      self.cen = wu.homog.hgeom.hpoint(cen)
-      self.origin = np.eye(4)
-      self.label = label
-      if self.label is None:
-         if axis2 is None: self.label = f'C{self.nfold}'
-         else: self.label = f'D{self.nfold}'
-      self.mobile = False
-      if wu.homog.hgeom.h_point_line_dist([0, 0, 0], cen, axis) > 0.0001: self.mobile = True
-      if axis2 is not None and wu.hpointlinedis([0, 0, 0], cen, axis2) > 0.0001: self.mobile = True
-      self.operators = self.make_operators()
-
-   def make_operators(self):
-      # ic(self)
-      x = wu.homog.hgeom.hrot(self.axis, nfold=self.nfold, center=self.cen)
-      ops = [wu.homog.hgeom.hpow(x, p) for p in range(self.nfold)]
-      if self.axis2 is not None:
-         xd2f = wu.homog.hgeom.hrot(self.axis2, nfold=2, center=self.cen)
-         ops = ops + [xd2f @ x for x in ops]
-      ops = np.stack(ops)
-      assert wu.homog.hgeom.hvalid(ops)
-      return ops
-
-   @property
-   def coords(self):
-      axis2 = [0, 0, 0, 0] if self.axis2 is None else self.axis2
-      return np.stack([self.axis, axis2, self.cen])
-
-   def xformed(self, xform):
-      assert xform.shape[-2:] == (4, 4)
-      single = False
-      if xform.ndim == 2:
-         xform = xform.reshape(1, 4, 4)
-         single = True
-      result = list()
-      for x in xform:
-         other = copy.copy(self)
-         other.axis = wu.hxform(x, self.axis)
-         if self.axis2 is not None:
-            other.axis2 = wu.hxform(x, self.axis2)
-         other.cen = wu.hxform(x, self.cen)
-         result.append(other)
-      if single:
-         result = result[0]
-      return result
-
-   def __repr__(self):
-      # ax = self.axis / min(self.axis[self.axis != 0])
-      ax = self.origaxis
-      ax2 = self.origaxis2
-      if self.origaxis2 is None:
-         return f'SymElem({self.nfold}, ax={ax[:3]}, cen={self.cen[:3]})'
-      else:
-         return f'SymElem({self.nfold}, ax={ax[:3]}, dax{ax2[:3]}, cen={self.cen[:3]})'
 
 def C2(**kw):
    return SymElem(nfold=2, **kw)

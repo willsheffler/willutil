@@ -1,11 +1,21 @@
+import pytest
 import numpy as np
 import willutil as wu
 
 def main():
-   test_spacegroup_frames_P1()
-   test_spacegroup_frames_P3()
-   # test_sgframes()
+   # test_subsym()
+
    # assert 0
+
+   test_spacegroup_frames_tounitcell('P1', [15, 25, 35, 75, 85, 95], 4)
+   test_spacegroup_frames_tounitcell('P-1', [15, 25, 35, 75, 85, 95], 4)
+   test_spacegroup_frames_tounitcell('P121', [15, 25, 35, 90, 85, 90], 4)
+   test_spacegroup_frames_tounitcell('I213', [10], 2)
+   test_spacegroup_frames_tounitcell('P212121', [10, 11, 12], 4)
+   test_spacegroup_frames_tounitcell('P43', [10, 10, 12], 4)
+   test_spacegroup_frames_tounitcell('P3', [11, 11, 13, 90, 90, 120], 2)
+
+   test_spacegroup_frames_P1()
    test_lattice_vectors()
    test_two_iface()
    test_spacegroup_frames_P213()
@@ -50,6 +60,26 @@ def test_spacegroup_frames_P1():
    ref = np.array([[-22.87870305, -16.20427966, -25.06729822], [-21.20713594, -14.91557514, 0.], [-19.53556883, -13.62687063, 25.06729822], [-17.40856711, -1.28870451, -25.06729822], [-15.737, 0., 0.], [-14.06543289, 1.28870451, 25.06729822], [-11.93843117, 13.62687063, -25.06729822], [-10.26686406, 14.91557514, 0.], [-8.59529695, 16.20427966, 25.06729822], [-7.14170305, -16.20427966, -25.06729822], [-5.47013594, -14.91557514, 0.], [-3.79856883, -13.62687063, 25.06729822], [-1.67156711, -1.28870451, -25.06729822], [0., 0., 0.], [1.67156711, 1.28870451, 25.06729822], [3.79856883, 13.62687063, -25.06729822], [5.47013594, 14.91557514, 0.], [7.14170305, 16.20427966, 25.06729822], [8.59529695, -16.20427966, -25.06729822], [10.26686406, -14.91557514, 0.], [11.93843117, -13.62687063, 25.06729822], [14.06543289, -1.28870451, -25.06729822], [15.737, 0., 0.], [17.40856711, 1.28870451, 25.06729822], [19.53556883, 13.62687063, -25.06729822], [21.20713594, 14.91557514, 0.], [22.87870305, 16.20427966, 25.06729822]])
    assert np.allclose(f[:, :3, 3], ref)
    # wu.showme(f)
+
+@pytest.mark.parametrize('sgroup,cellgeom,ncell', [
+   ('P1', [15, 25, 35, 75, 85, 95], 4),
+   ('P-1', [15, 25, 35, 75, 85, 95], 4),
+   ('P121', [15, 25, 35, 90, 85, 90], 4),
+   ('I213', [10], 2),
+   ('P212121', [10, 11, 12], 4),
+   ('P43', [10, 10, 12], 4),
+   ('P3', [11, 11, 13, 90, 90, 120], [1, 2, 1]),
+])
+def test_spacegroup_frames_tounitcell(sgroup, cellgeom, ncell):
+   fcell = wu.sym.spacegroup.sgframes(sgroup, cellgeom, cells=ncell)
+   # ic(fcell.shape)
+   funit = wu.sym.spacegroup.sgframes(sgroup, cellgeom='unit', cells=ncell)
+   # ic(funit.shape)
+   ftest = wu.sym.spacegroup.tounitframes(fcell, sgroup, cellgeom, cells=ncell)
+   # ic(ftest.shape)
+   # ic(funit)
+   # ic(ftest)
+   assert np.allclose(funit, ftest)
 
 def test_two_iface():
    assert len(wu.sym.spacegroup_data.two_iface_spacegroups) == 31

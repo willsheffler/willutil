@@ -1,35 +1,43 @@
 import itertools
 import willutil as wu
-from willutil.sym.spacegroup_data import _sg_frames, _sg_cheshire
+
 from willutil.sym.spacegroup_data import *
+from willutil.sym.spacegroup_util import *
+from willutil.sym.spacegroup_deriveddata import *
 
-def sgframes(spacegroup, cellgeom=None, cells=1):
+_memoized_frames = dict()
+
+def sgframes(
+   spacegroup: str,
+   cellgeom=None,
+   cells=1,
+   sortframes='None',
+   roundgeom=10,
+   **kw,
+):
+   spacegroup = spacegroup.upper()
+   if cellgeom not in ('unit', None):
+      cellgeom = tuple(round(x, roundgeom) for x in cellgeom)
    cells = process_num_cells(cells)
-   if spacegroup not in sg_lattice:
-      spacegroup = sg_from_pdbname[spacegroup]
-   unitframes = _sg_frames[spacegroup]
-   latticevec = lattice_vectors(spacegroup, cellgeom)
-   xshift = wu.htrans(cells @ latticevec)
-   frames = wu.hxform(xshift, unitframes, flat=True)
-   return frames.round(10)
+   key = spacegroup, cellgeom, tuple(cells.flat), sortframes
+   if not key in _memoized_frames:
 
-def process_num_cells(cells):
-   if cells == None:
-      return np.eye(4)[None]
-   if isinstance(cells, (int, float)):
-      ub = cells // 2
-      lb = ub - cells + 1
-      cells = [(a, b, c) for a, b, c in itertools.product(*[range(lb, ub + 1)] * 3)]
+      if spacegroup not in sg_lattice:
+         spacegroup = sg_from_pdbname[spacegroup]
+      unitframes = sg_frames_dict[spacegroup]
+      if cellgeom == 'unit': latticevec = np.eye(3)
+      else: latticevec = lattice_vectors(spacegroup, cellgeom)
+      frames = latticeframes(unitframes, latticevec, cells)
 
-   elif len(cells) == 2:
-      lb, ub = cells
-      cells = [(a, b, c) for a, b, c in itertools.product(*[range(lb, ub + 1)] * 3)]
-   elif len(cells) == 3:
-      cells = [(a, b, c) for a, b, c in itertools.product(
-         range(cells[0][0], cells[0][1] + 1),
-         range(cells[1][0], cells[1][1] + 1),
-         range(cells[2][0], cells[2][1] + 1),
-      )]
-   else:
-      raise ValueError(f'bad cells {cells}')
-   return np.array(cells)
+      sort_frames(frames, method=sortframes)
+
+      _memoized_frames[key] = frames.round(10)
+      if len(_memoized_frames) > 10_000:
+         wu.WARNME(f'sgframes holding >10000 _memoized_frames')
+
+   return _memoized_frames[key]
+
+def sort_frames(frames, method):
+   if method is None: return frames
+   if method == 'dist_to_asucen':
+      assert 0

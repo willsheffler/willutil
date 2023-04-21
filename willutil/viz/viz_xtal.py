@@ -42,7 +42,7 @@ def pymol_viz_SymElem(
    fansize = fansize * scale * symelemscale
    fanshift = fanshift * scale * symelemscale
 
-   cen = wu.hscaled(scale, toshow.cen)
+   cen = wu.homog.hscaled(scale, toshow.cen)
    if shifttounit:
       if cen[0] < 0: cen[0] += scale
       if cen[1] < 0: cen[1] += scale
@@ -53,7 +53,7 @@ def pymol_viz_SymElem(
    cen[0] += scale * cellshift[0]
    cen[1] += scale * cellshift[1]
    cen[2] += scale * cellshift[2]
-   if wu.hnorm(cen - wu.hpoint(symelemcentercut)) > symelemradiuscut:
+   if wu.homog.hnorm(cen - wu.homog.hpoint(symelemcentercut)) > symelemradiuscut:
       return
 
    ang = toshow.angle

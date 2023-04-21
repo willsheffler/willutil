@@ -3,23 +3,19 @@ import numpy as np
 import willutil as wu
 from willutil import homog as hm, Bunch
 
-def align(coords, sym='auto', **kw):
+def align(coords, symelem, **kw):
    '''assumes shape (nchain, nres, natom, 3|4)'''
    assert len(coords) > 1
-   if sym == 'auto':
-      raise NotImplementedError(f'hook up sym detection')
-   if sym.startswith('C'):
-      return aligncx(coords, sym, **kw)
+   if symelem.iscyclic:
+      return aligncx(coords, symelem, **kw)
    else:
       raise NotImplementedError(f'hook up compute_symfit')
 
-def aligncx(coords, sym='C', axis=[0, 0, 1], rmsthresh=1, axistol=0.02, angtol=0.05, centol=1.0, **kw):
-   if sym in ('C', 'Cx'): nfold = len(coords)
-   elif len(coords) == 1: nfold = int(sym[1:])
-   assert len(coords) == nfold
-   ic(coords.shape)
-   coords = coords.reshape(nfold, -1, *coords.shape[-2:])
-   ic(coords.shape)
+def aligncx(coords, symelem, rmsthresh=1, axistol=0.02, angtol=0.05, centol=1.0, **kw):
+   assert len(coords) == symelem.nfold
+   # ic(coords.shape)
+   coords = coords.reshape(symelem.nfold, -1, *coords.shape[-2:])
+   # ic(coords.shape)
    fitcoords = coords
    if coords.ndim > 3:  # ca only
       fitcoords = coords[:, :, 1]
@@ -27,16 +23,18 @@ def aligncx(coords, sym='C', axis=[0, 0, 1], rmsthresh=1, axistol=0.02, angtol=0
    if max(rms) > rmsthresh: raise ValueError(f'subunits have high rms {rms}')
    axs, ang, cen = (np.array(x) for x in zip(*[wu.haxis_ang_cen_of(x) for x in xfits]))
 
-   if np.max(ang - 2 * np.pi / nfold) > angtol: raise ValueError(f'sub rotation angles incoherent {ang}')
+   if np.max(ang - 2 * np.pi / symelem.nfold) > angtol: raise ValueError(f'sub rotation angles incoherent {ang}')
    if np.max(np.std(axs, axis=0)) > axistol: raise ValueError(f'sub rotation axes incoherent {axs}')
    if np.max(np.std(cen, axis=0)) > centol: raise ValueError(f'sub rotation centers incoherent {cen}')
    avgaxs = np.mean(axs, axis=0)
+   avgang = np.mean(ang)
    avgcen = np.mean(cen, axis=0)
-   # coords = wu.hxform(wu.htrans(-avgcen), coords)
-   ic(avgaxs, axis)
-   ic(avgcen)
-   # coords = wu.halign(avgaxs, axis, doto=coords)
-   ic(wu.halign(avgaxs, axis, doto=wu.hnormalized([1, 1, 1, 0])))
+   # ic(avgaxs, avgang, avgcen)
+   coords = wu.htrans(-avgcen, doto=coords)
+   coords = wu.halign(avgaxs, symelem.axis, doto=coords)
+   com = wu.hcom(coords, flat=True)
+   delta = -wu.hproj(symelem.axis, wu.hvec(com))
+   coords = wu.htrans(delta, doto=coords)
    return coords
 
 def compute_symfit(

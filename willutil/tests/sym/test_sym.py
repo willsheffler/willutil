@@ -3,13 +3,20 @@ import numpy as np
 import willutil as wu
 
 def main():
-   test_t4()
+   test_subframes()
    assert 0
    test_frames_asym_of()
    test_frames_asym_remove_sameaxis()
    test_remove_if_same_axis()
    test_sym()
    test_sym_frames()
+
+@pytest.mark.skip
+def test_subframes():
+   frames = wu.sym.frames('tet')
+   subframes = wu.sym.subframes(frames, 'C3', asym=[100, 10, 1])
+   ic(frames.shape)
+   ic(subframes.shape)
 
 def test_frames_asym_of():
    f = wu.sym.frames('icos', asym_of='c5')
