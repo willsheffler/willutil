@@ -2,7 +2,7 @@ import numpy as np
 import willutil as wu
 
 class NotPose:
-   @wu.timed
+   #@timed
    def __init__(self, fname=None, coords=None, **kw):
       if coords is None:
          _init_NotPose_pdb(self, fname, **kw)

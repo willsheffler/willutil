@@ -11,8 +11,11 @@ def sgframes(
    spacegroup: str,
    cellgeom=None,
    cells=1,
-   sortframes='None',
+   sortframes='nosort',
    roundgeom=10,
+   xtalrad=9e9,
+   asucen=[0.5, 0.5, 0.5],
+   xtalcen=None,
    **kw,
 ):
    spacegroup = spacegroup.upper()
@@ -29,7 +32,8 @@ def sgframes(
       else: latticevec = lattice_vectors(spacegroup, cellgeom)
       frames = latticeframes(unitframes, latticevec, cells)
 
-      sort_frames(frames, method=sortframes)
+      frames = prune_frames(frames, asucen, xtalrad, xtalcen)
+      frames = sort_frames(frames, method=sortframes)
 
       _memoized_frames[key] = frames.round(10)
       if len(_memoized_frames) > 10_000:
@@ -37,7 +41,17 @@ def sgframes(
 
    return _memoized_frames[key]
 
+def prune_frames(frames, asucen, xtalrad, center=None):
+   center = center or asucen
+   center = wu.hpoint(center)
+   asucen = wu.hpoint(asucen)
+   pos = wu.hxform(frames, asucen)
+   dis = wu.hnorm(pos - center)
+   frames = frames[dis <= xtalrad]
+   return frames
+
 def sort_frames(frames, method):
-   if method is None: return frames
+   if method == 'nosort':
+      return frames
    if method == 'dist_to_asucen':
       assert 0

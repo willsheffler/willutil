@@ -6,7 +6,7 @@ import willutil as wu
 _default_tol = wu.Bunch(rms=2.0, translation=1.0, angle=np.radians(5.0), seqmatch=0.8)
 
 class PDBFile:
-   @wu.timed
+   #@timed
    def __init__(
       self,
       df,
@@ -19,7 +19,7 @@ class PDBFile:
    ):
       self.init(df, meta, original_contents, renumber_by_model, renumber_from_0, removehet, **kw)
 
-   @wu.timed
+   #@timed
    def init(self, df, meta, original_contents, renumber_by_model=False, renumber_from_0=False, removehet=False, **kw):
       self.original_contents = original_contents
       self.meta = meta.copy()
@@ -96,7 +96,7 @@ class PDBFile:
       self.subset(het=False, inplace=True)
       return self
 
-   @wu.timed
+   #@timed
    def subset(
       self,
       chain=None,
@@ -190,7 +190,7 @@ class PDBFile:
 
    dump = dump_pdb
 
-   @wu.timed
+   #@timed
    def atommask(self, atomname, aaonly=True, splitchains=False, **kw):
       assert not splitchains
       if not isinstance(atomname, (str, bytes)):
@@ -211,7 +211,7 @@ class PDBFile:
          mask = mask[aaonly]
       return mask
 
-   @wu.timed
+   #@timed
    def atomcoords(self, atomname=['N', 'CA', 'C', 'O', 'CB'], aaonly=True, splitchains=False, nomask=False, **kw):
       if splitchains:
          chains = self.splitchains()

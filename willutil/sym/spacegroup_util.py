@@ -5,12 +5,19 @@ import willutil as wu
 from willutil.sym.spacegroup_data import *
 from willutil.sym.symelem import *
 
+def applylattice(unitframes, latticevec):
+   origshape = unitframes.shape
+   if unitframes.ndim == 3: unitframes = unitframes.reshape(1, -1, 4, 4)
+   if latticevec.ndim == 2: latticevec = latticevec.reshape(1, 3, 3)
+   latticeframes = unitframes.copy()
+   latticeframes[:, :, :3, 3] = einsum('nij,nkj->nki', latticevec, latticeframes[:, :, :3, 3])
+   return latticeframes.reshape(origshape)
+
 def latticeframes(unitframes, latticevec, cells=1):
+   latticeframes = applylattice(unitframes, latticevec)
    cells = process_num_cells(cells)
-   cellframes = unitframes.copy()
-   cellframes[:, :3, 3] = einsum('ij,kj->ki', latticevec, cellframes[:, :3, 3])
    xshift = wu.homog.htrans(cells @ latticevec)
-   frames = wu.homog.hxformx(xshift, cellframes, flat=True, improper_ok=True)
+   frames = wu.homog.hxformx(xshift, latticeframes, flat=True, improper_ok=True)
    return frames.round(10)
 
 def tounitframes(frames, spacegroup, latticevec, cells):

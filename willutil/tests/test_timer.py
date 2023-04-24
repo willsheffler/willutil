@@ -39,7 +39,7 @@ def aaaa(timer=None):
    time.sleep(0.2)
    wu.checkpoint(timer)
 
-@wu.timed
+##@timed
 def bbbb(**kw):
    time.sleep(0.2)
 

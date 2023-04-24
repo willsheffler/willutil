@@ -5,6 +5,7 @@ from willutil.pdb.pdbfile import PDBFile
 
 log = logging.getLogger(__name__)
 
+##@timed
 def readpdb(fname_or_buf, indatabase=False, **kw):
    pdbatoms, meta, original_contents = read_pdb_atoms(fname_or_buf)
    df = parse_pdb_atoms(pdbatoms)
@@ -26,7 +27,8 @@ def pdb_code(fname):
    else:
       return 'none'
 
-def read_pdb_atoms(fname_or_buf):
+##@timed
+def read_pdb_atoms(fname_or_buf, **kw):
    atomlines, meta = dict(), wu.Bunch(fname=None, cryst1=None)
 
    if wu.storage.is_pdb_fname(fname_or_buf):
@@ -60,7 +62,8 @@ def read_pdb_atoms(fname_or_buf):
 
    return {k: '\n'.join(v) for k, v in atomlines.items()}, meta, contents
 
-def parse_pdb_atoms(atomstr):
+##@timed
+def parse_pdb_atoms(atomstr, **kw):
    import pandas as pd
    import numpy as np
    assert (atomstr)
@@ -106,6 +109,7 @@ def parse_pdb_atoms(atomstr):
       mdf[m] = df
    return mdf
 
+##@timed
 def concatenate_models(df):
    import pandas as pd
    assert isinstance(df, dict)
@@ -118,7 +122,8 @@ def concatenate_models(df):
 def format_atom(atomi=0, atomn='ATOM', idx=' ', resn='ALA', chain='A', resi=0, insert=' ', x=0, y=0, z=0, occ=1, b=0):
    return _atom_record_format.format(**locals())
 
-def find_pdb_files(files_or_pattern, maxsize=99e99):
+##@timed
+def find_pdb_files(files_or_pattern, maxsize=99e99, **kw):
    if isinstance(files_or_pattern, str):
       files_or_pattern = [files_or_pattern]
    candidates = list()

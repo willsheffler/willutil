@@ -26,6 +26,7 @@ class SymElem:
       if wu.homog.hgeom.h_point_line_dist([0, 0, 0], cen, axis) > 0.0001: self.mobile = True
       if axis2 is not None and wu.hpointlinedis([0, 0, 0], cen, axis2) > 0.0001: self.mobile = True
       self.operators = self.make_operators()
+      self.numops = len(self.operators)
 
    def place_center(self, cen, scale):
       self.cen = wu.homog.hgeom.hpoint(cen)
