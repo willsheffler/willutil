@@ -41,6 +41,12 @@ def sgframes(
 
    return _memoized_frames[key]
 
+def latticetype(spacegroup):
+   try:
+      return sg_lattice[spacegroup]
+   except KeyError:
+      return sg_lattice[sg_from_pdbname[spacegroup]]
+
 def prune_frames(frames, asucen, xtalrad, center=None):
    center = center or asucen
    center = wu.hpoint(center)

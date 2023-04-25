@@ -75,7 +75,7 @@ def test_spacegroup_frames_tounitcell(sgroup, cellgeom, ncell):
    # ic(fcell.shape)
    funit = wu.sym.spacegroup.sgframes(sgroup, cellgeom='unit', cells=ncell)
    # ic(funit.shape)
-   ftest = wu.sym.spacegroup.tounitframes(fcell, sgroup, cellgeom, cells=ncell)
+   ftest = wu.sym.spacegroup.tounitframes(fcell, cellgeom, sgroup)
    # ic(ftest.shape)
    # ic(funit)
    # ic(ftest)

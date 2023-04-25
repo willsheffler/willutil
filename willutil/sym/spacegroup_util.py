@@ -20,12 +20,12 @@ def latticeframes(unitframes, latticevec, cells=1):
    frames = wu.homog.hxformx(xshift, latticeframes, flat=True, improper_ok=True)
    return frames.round(10)
 
-def tounitframes(frames, spacegroup, latticevec, cells):
+def tounitframes(frames, latticevec, spacegroup=None):
    if not hasattr(latticevec, 'shape') or latticevec.shape != (3, 3):
       latticevec = lattice_vectors(spacegroup, latticevec)
    uframes = frames.copy()
-   cells = process_num_cells(cells)
-   xshift = wu.hinv(wu.htrans(cells @ latticevec))
+   # cells = process_num_cells(cells)
+   # xshift = wu.hinv(wu.htrans(cells @ latticevec))
    uframes[:, :3, 3] = einsum('ij,jk->ik', uframes[:, :3, 3], np.linalg.inv(latticevec))
    # uframes = wu.hxform(xshift, uframes, flat=True)
 
