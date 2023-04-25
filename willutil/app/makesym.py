@@ -2,9 +2,13 @@ import os, argparse
 import numpy as np
 import willutil as wu
 
+print(wu.__file__)
+
 def makesym(fname, arch, **kw):
    print('-' * 80)
    print(fname, flush=True)
+   if arch.lower().startswith('c'):
+      return makecx(fname, arch)
    tgtaxis, nfold, frames = get_tgtaxis_frames(arch, **kw)
    pdb = wu.readpdb(fname, removehet=True)
    componentinfo = pdb.syminfo(**kw)
@@ -14,6 +18,15 @@ def makesym(fname, arch, **kw):
    tag = os.path.basename(fname)
    dump_transformed_samples(pdbaln, compaxis, frames, tag=tag, arch=arch, **kw)
    print('-' * 80, flush=True)
+
+def makecx(fname, arch):
+   frames = wu.sym.frames(arch)
+   print(frames)
+   pdb = wu.readpdb(fname)
+   newpdb = wu.pdb.join([wu.hxform(frame, pdb) for frame in frames])
+   newfname = f'{os.path.basename(fname)}.{arch}.pdb'
+   newpdb.dump(newfname)
+   print(pdb)
 
 def get_tgtaxis_frames(arch, output_symmetry, **kw):
    nfold, sym = int(arch[-1]), arch[:-1]
@@ -176,7 +189,7 @@ def get_cli_config():
    )
    args.arch = args.architecture
 
-   ic(args.tolerances)
+   print(args.tolerances)
 
    assert not args.template
 
