@@ -4,6 +4,9 @@ import willutil as wu
 
 def main():
 
+   # ic(wu.pdb.pdbdump.dump_pdb_nchain_nres_natom((100, 5)))
+   # assert wu.pdb.pdbdump.dump_pdb_nchain_nres_natom((100, 5)) == (1, 100, 5)
+   # assert 0
    test_dump_pdb_nchain_nres_natom()
    from willutil.tests import fixtures as f
    test_pdbdump(f.pdb1pgx())

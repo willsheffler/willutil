@@ -12,7 +12,7 @@ from willutil.sym.asugrid import *
 from willutil.sym.helix import *
 from willutil.sym.helix_slide import *
 from willutil.sym.permutations import *
-from willutil.sym.symelem import *
+from willutil.sym.SymElem import *
 
 from willutil.sym.spacegroup_data import *
 from willutil.sym.spacegroup_util import *

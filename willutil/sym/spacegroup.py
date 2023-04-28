@@ -18,15 +18,12 @@ def sgframes(
    xtalcen=None,
    **kw,
 ):
-   spacegroup = spacegroup.upper()
+   spacegroup = spacegroup_canonical_name(spacegroup)
    if cellgeom not in ('unit', None):
       cellgeom = tuple(round(x, roundgeom) for x in cellgeom)
    cells = process_num_cells(cells)
    key = spacegroup, cellgeom, tuple(cells.flat), sortframes
    if not key in _memoized_frames:
-
-      if spacegroup not in sg_lattice:
-         spacegroup = sg_from_pdbname[spacegroup]
       unitframes = sg_frames_dict[spacegroup]
       if cellgeom == 'unit': latticevec = np.eye(3)
       else: latticevec = lattice_vectors(spacegroup, cellgeom)
@@ -41,11 +38,30 @@ def sgframes(
 
    return _memoized_frames[key]
 
+def symelems(spacegroup: str, psym=None):
+   if isinstance(psym, int):
+      psym = f'c{psym}'
+   spacegroup = spacegroup_canonical_name(spacegroup)
+   se = sg_symelem[spacegroup]
+   if psym:
+      return se[psym.lower()]
+   return se
+
+def spacegroup_canonical_name(spacegroup):
+   spacegroup = spacegroup.upper()
+   if spacegroup not in sg_lattice:
+      spacegroup = sg_from_pdbname[spacegroup]
+   return spacegroup
+
 def latticetype(spacegroup):
    try:
       return sg_lattice[spacegroup]
    except KeyError:
       return sg_lattice[sg_from_pdbname[spacegroup]]
+
+def cryst1_line(spacegroup, lattice):
+   cellgeom = cellgeom_from_lattice(lattice)
+   return wu.sym.cryst1_pattern_full % (*cellgeom, spacegroup)
 
 def prune_frames(frames, asucen, xtalrad, center=None):
    center = center or asucen
@@ -55,6 +71,15 @@ def prune_frames(frames, asucen, xtalrad, center=None):
    dis = wu.hnorm(pos - center)
    frames = frames[dis <= xtalrad]
    return frames
+
+def cellgeom_from_lattice(lattice):
+   a = wu.hnorm(lattice[0])
+   b = wu.hnorm(lattice[1])
+   c = wu.hnorm(lattice[2])
+   A = wu.hangle_degrees(lattice[1], lattice[2])
+   B = wu.hangle_degrees(lattice[0], lattice[2])
+   C = wu.hangle_degrees(lattice[0], lattice[1])
+   return [a, b, c, A, B, C]
 
 def sort_frames(frames, method):
    if method == 'nosort':

@@ -3,30 +3,30 @@ from opt_einsum import contract as einsum
 import numpy as np
 import willutil as wu
 from willutil.sym.spacegroup_data import *
-from willutil.sym.symelem import *
+from willutil.sym.SymElem import *
 
-def applylattice(unitframes, latticevec):
+def applylattice(lattice, unitframes):
    origshape = unitframes.shape
    if unitframes.ndim == 3: unitframes = unitframes.reshape(1, -1, 4, 4)
-   if latticevec.ndim == 2: latticevec = latticevec.reshape(1, 3, 3)
+   if lattice.ndim == 2: lattice = lattice.reshape(1, 3, 3)
    latticeframes = unitframes.copy()
-   latticeframes[:, :, :3, 3] = einsum('nij,nkj->nki', latticevec, latticeframes[:, :, :3, 3])
+   latticeframes[:, :, :3, 3] = einsum('nij,nkj->nki', lattice, latticeframes[:, :, :3, 3])
    return latticeframes.reshape(origshape)
 
-def latticeframes(unitframes, latticevec, cells=1):
-   latticeframes = applylattice(unitframes, latticevec)
+def latticeframes(unitframes, lattice, cells=1):
+   latticeframes = applylattice(lattice, unitframes)
    cells = process_num_cells(cells)
-   xshift = wu.homog.htrans(cells @ latticevec)
+   xshift = wu.homog.htrans(cells @ lattice)
    frames = wu.homog.hxformx(xshift, latticeframes, flat=True, improper_ok=True)
    return frames.round(10)
 
-def tounitframes(frames, latticevec, spacegroup=None):
-   if not hasattr(latticevec, 'shape') or latticevec.shape != (3, 3):
-      latticevec = lattice_vectors(spacegroup, latticevec)
+def tounitframes(frames, lattice, spacegroup=None):
+   if not hasattr(lattice, 'shape') or lattice.shape != (3, 3):
+      lattice = lattice_vectors(spacegroup, lattice)
    uframes = frames.copy()
    # cells = process_num_cells(cells)
-   # xshift = wu.hinv(wu.htrans(cells @ latticevec))
-   uframes[:, :3, 3] = einsum('ij,jk->ik', uframes[:, :3, 3], np.linalg.inv(latticevec))
+   # xshift = wu.hinv(wu.htrans(cells @ lattice))
+   uframes[:, :3, 3] = einsum('ij,jk->ik', uframes[:, :3, 3], np.linalg.inv(lattice))
    # uframes = wu.hxform(xshift, uframes, flat=True)
 
    return uframes.round(10)
@@ -57,13 +57,12 @@ def process_num_cells(cells):
    return np.array(cells)
 
 def compute_symelems(spacegroup, unitframes):
-   # if spacegroup != 'I213': return
-   latticevec = np.eye(3)
+   lattice = np.eye(3)
 
    ncell = 1
    # if len(unitframes) < 4: ncell = 2
    # if len(unitframes) < 8: ncell = 2
-   frames = latticeframes(unitframes, latticevec, cells=ncell)
+   frames = latticeframes(unitframes, lattice, cells=ncell)
 
    # relframes = einsum('aij,bjk->abik', frames, wu.)
    axs, ang, cen, hel = wu.homog.axis_angle_cen_hel_of(frames)
@@ -82,11 +81,19 @@ def compute_symelems(spacegroup, unitframes):
          np.isclose(0, hel),
       ))[0]
       if np.sum(idx) == 0: continue
-      t = tag[idx]
-      o = np.lexsort(t.T, axis=0)
-      t = t[o]
-      nftag = np.unique(t, axis=0)
-      symelems[nfold] = [SymElem(nfold, t[:3], t[3:6]) for t in nftag]
+      nftag = tag[idx]
+      nftag = nftag[np.lexsort(-nftag.T, axis=0)]
+      nftag = np.unique(nftag, axis=0)
+
+      # nftag = nftag[np.argsort(-nftag[:, 2], kind='stable')]
+      # nftag = nftag[np.argsort(-nftag[:, 1], kind='stable')]
+      # nftag = nftag[np.argsort(-nftag[:, 0], kind='stable')]
+      d = np.sum(nftag[:, 3:]**2, axis=1).round(6)
+      nftag = nftag[np.argsort(d, kind='stable')]
+      # if spacegroup == 'I213' and nfold == 3:
+      # ic(nftag)
+
+      symelems[f'c{nfold}'] = [SymElem(nfold, t[:3], t[3:6]) for t in nftag]
 
    #from willutil.viz import showme
    #frames[:, :3, 3] *= 10
@@ -99,8 +106,8 @@ def compute_symelems(spacegroup, unitframes):
    return symelems
 
 # def compute_asucover(spacegroup, lattice, frames, nsamp=11):
-#    latticevec = lattice_vectors(lattice)
-#    lframes = latticeframes(frames, latticevec, cells=3)
+#    lattice = lattice_vectors(lattice)
+#    lframes = latticeframes(frames, lattice, cells=3)
 #    # ic(frames.shape, lframes.shape)
 #
 #    assert lframes
@@ -128,12 +135,11 @@ def compute_symelems(spacegroup, unitframes):
 #    assert 0
 #    return com, cover
 
-def full_cellgeom(spacegroup, cellgeom, strict=True):
+def full_cellgeom(lattice, cellgeom, strict=True):
    if isinstance(cellgeom, (int, float)):
       cellgeom = [cellgeom]
-   lattice = spacegroup
-   if spacegroup in sg_lattice:
-      lattice = sg_lattice[spacegroup]
+   if lattice in sg_lattice:
+      lattice = sg_lattice[lattice]
    p = cellgeom
    if lattice == 'TRICLINIC':
       p = [p[0], p[1], p[2], p[3], p[4], p[5]]
@@ -165,19 +171,22 @@ def full_cellgeom(spacegroup, cellgeom, strict=True):
       p = [p[0], p[0], p[2], 90.0, 90.0, 120.0]
    return p
 
-def lattice_vectors(spacegroup, cellgeom=None):
+def lattice_vectors(lattice, cellgeom=None):
+   if lattice in sg_lattice:
+      lattice = sg_lattice[lattice]
    if cellgeom is None:
-      lattice = spacegroup
-      if spacegroup in sg_lattice:
-         lattice = sg_lattice[spacegroup]
-
       cellgeom = [1.0, 1.0, 1.0, 90.0, 90.0, 90.0]
       if lattice == 'HEXAGONAL':
          cellgeom = [1.0, 1.0, 1.0, 90.0, 90.0, 120.0]
 
-   a, b, c, A, B, C = full_cellgeom(spacegroup, cellgeom)
+   a, b, c, A, B, C = full_cellgeom(lattice, cellgeom)
    cosA, cosB, cosC = [np.cos(np.radians(_)) for _ in (A, B, C)]
    sinB, sinC = [np.sin(np.radians(_)) for _ in (B, C)]
+
+   # ic(cosB * cosC - cosA)
+   # ic(sinB, sinC)
+   # ic(1.0 - ((cosB * cosC - cosA) / (sinB * sinC))**2)
+
    lattice_vectors = np.array([[
       a,
       b * cosC,

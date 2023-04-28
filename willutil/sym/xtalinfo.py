@@ -1,7 +1,7 @@
 import numpy as np
 import willutil as wu
 from willutil.homog import *
-from willutil.sym.symelem import SymElem
+from willutil.sym.SymElem import SymElem
 
 _xtal_asucens = {
    'P 4 3 2': np.array([0.1, 0.2, 0.3, 1]),

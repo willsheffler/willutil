@@ -6,6 +6,9 @@ import willutil as wu
 
 def main():
 
+   test_symelem()
+   assert 0
+
    test_xtalrad_I213()
    assert 0
 
@@ -274,9 +277,13 @@ def test_symelem(headless=True):
 
    x = wu.hrandsmall()
    e2 = wu.hxform(x, elem1, strict=False)
-   ic(elem1.coords)
-   ic(elem2.coords)
-   assert np.allclose(e2.coords, wu.hxform(x, elem1.coords))
+   # ic(x)
+   # ic(elem1.coords)
+   # ic(elem2.coords)
+   # ic(e2.coords)
+   # ic(wu.hxform(x, elem1.coords))
+   assert np.allclose(e2.axis, wu.hxform(x, elem1.axis))
+   # assert np.allclose(e2.cen, wu.hxform(x, elem1.cen))
 
    # x = wu.hrandsmall()
    # e2 = wu.hxform(x, elem1)

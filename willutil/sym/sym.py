@@ -219,7 +219,7 @@ def axes(sym, nfold=None, all=False, cellsize=1, **kw):
    except (KeyError, ValueError) as e:
       raise ValueError(f'unknown symmetry {sym}')
 
-@functools.lru_cache
+@functools.lru_cache()
 def symelem_associations(sym=None, symelems=None):
    if not symelems:
       symelems = axes(sym)

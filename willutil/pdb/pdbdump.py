@@ -86,7 +86,7 @@ def dump_pdb_nchain_nres_natom(shape=[], nchain=-1, nres=-1, nresatom=-1):
    if len(shape) == 3:
       return shape
    elif len(shape) == 2:
-      if nresatom == -1: nresatom = 1
+      # if nresatom == -1: nresatom = 1
       if nchain == shape[0] and nresatom > 0: return (shape[0], shape[1] // nresatom, nresatom)
       if nchain >= 0: return (nchain, shape[0], shape[1])
       if nres >= 0: return (shape[0], nres, shape[1])

@@ -1,4 +1,5 @@
 REBUILD_SPACEGROUP_DATA = False
+# REBUILD_SPACEGROUP_DATA = True
 
 import numpy as np
 import willutil as wu

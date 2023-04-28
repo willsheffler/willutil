@@ -12,6 +12,7 @@ def align(coords, symelem, **kw):
       raise NotImplementedError(f'hook up compute_symfit')
 
 def aligncx(coords, symelem, rmsthresh=1, axistol=0.02, angtol=0.05, centol=1.0, **kw):
+   '''leaves center at 0 regardless of symelem'''
    assert len(coords) == symelem.nfold
    # ic(coords.shape)
    coords = coords.reshape(symelem.nfold, -1, *coords.shape[-2:])
@@ -34,6 +35,7 @@ def aligncx(coords, symelem, rmsthresh=1, axistol=0.02, angtol=0.05, centol=1.0,
    coords = wu.halign(avgaxs, symelem.axis, doto=coords)
    com = wu.hcom(coords, flat=True)
    delta = -wu.hproj(symelem.axis, wu.hvec(com))
+   # delta += symelem.cen
    coords = wu.htrans(delta, doto=coords)
    return coords
 

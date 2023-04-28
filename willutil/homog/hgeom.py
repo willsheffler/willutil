@@ -1004,8 +1004,8 @@ def axis_ang_cen_of_planes(xforms, debug=False, ident_match_tol=1e-8):
 axis_ang_cen_of = axis_ang_cen_of_planes
 
 def line_line_distance_pa(pt1, ax1, pt2, ax2):
-   # point1, point2 = hpoint(point1), hpoint(point2)
-   # axis1, axis2 = hnormalized(axis1), hnormalized(axis2)
+   pt1, pt2 = hpoint(pt1), hpoint(pt2)
+   ax1, ax2 = hnormalized(ax1), hnormalized(ax2)
    n = abs(hdot(pt2 - pt1, hcross(ax1, ax2)))
    d = hnorm(hcross(ax1, ax2))
    r = np.zeros_like(n)

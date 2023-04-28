@@ -9,14 +9,15 @@ class SymElem:
       self.origaxis2 = axis2
       self.origcen = cen
       self.angle = np.pi * 2 / self.nfold
-      self.axis = wu.homog.hgeom.hvec(axis)
+      self.axis = wu.homog.hnormalized(axis)
       self.axis2 = axis2
+      self.scale = scale
       self.iscyclic = axis2 is None
       self.isdihedral = axis2 is not None
-      self.place_center(cen, scale)
+      self.place_center(cen)
       self.vizcol = vizcol
       if self.axis2 is not None:
-         self.axis2 = wu.homog.hgeom.hvec(self.axis2)
+         self.axis2 = wu.homog.hnormalized(self.axis2)
       self.origin = np.eye(4)
       self.label = label
       if self.label is None:
@@ -28,13 +29,12 @@ class SymElem:
       self.operators = self.make_operators()
       self.numops = len(self.operators)
 
-   def place_center(self, cen, scale):
+   def place_center(self, cen):
       self.cen = wu.homog.hgeom.hpoint(cen)
       if self.isdihedral: return
-      # ic(self.axis, self.cen)
-      dist = wu.homog.line_line_distance_pa(cen, self.axis, _cube_edge_cen * scale, _cube_edge_axis)
+      dist = wu.homog.line_line_distance_pa(cen, self.axis, _cube_edge_cen * self.scale, _cube_edge_axis)
       w = np.argmin(dist)
-      newcen, _ = wu.homog.line_line_closest_points_pa(cen, self.axis, _cube_edge_cen[w] * scale, _cube_edge_axis[w])
+      newcen, _ = wu.homog.line_line_closest_points_pa(cen, self.axis, _cube_edge_cen[w] * self.scale, _cube_edge_axis[w])
       # ic(cen, newcen)
       if not np.any(np.isnan(newcen)):
          self.cen = newcen
@@ -63,11 +63,15 @@ class SymElem:
          single = True
       result = list()
       for x in xform:
-         other = copy.copy(self)
-         other.axis = wu.hxform(x, self.axis)
-         if self.axis2 is not None:
-            other.axis2 = wu.hxform(x, self.axis2)
-         other.cen = wu.hxform(x, self.cen)
+         # other = copy.copy(self)
+         # other.axis = wu.hxform(x, self.axis)
+         # if self.axis2 is not None: other.axis2 = wu.hxform(x, self.axis2)
+         # other.cen = wu.hxform(x, self.cen)
+         # other.make_operators()
+         axis = wu.hxform(x, self.axis)
+         axis2 = None if self.axis2 is None else wu.hxform(x, self.axis2)
+         cen = wu.hxform(x, self.cen)
+         other = SymElem(self.nfold, axis, cen, axis2, self.label, self.vizcol, 1.0)  #self.scale)
          result.append(other)
       if single:
          result = result[0]

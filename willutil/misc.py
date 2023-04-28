@@ -10,7 +10,7 @@ def WARNME(message, once=True):
    if once and message not in _WARNINGS_ISSUED:
       import traceback
       print('-' * 80, flush=True)
-      print(message)
+      print(message, flush=True)
       traceback.print_stack()
       _WARNINGS_ISSUED.add(message)
       print('-' * 80)

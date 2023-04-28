@@ -6,6 +6,8 @@ def main():
    # test_subsym()
 
    # assert 0
+   test_spacegroup_symelems()
+   test_lattice_cellgeom()
 
    test_spacegroup_frames_tounitcell('P1', [15, 25, 35, 75, 85, 95], 4)
    test_spacegroup_frames_tounitcell('P-1', [15, 25, 35, 75, 85, 95], 4)
@@ -27,6 +29,29 @@ def main():
    test_spacegroup_frames_F432()
    test_spacegroup_frames_I432()
    ic('PASS test_spacegroup')
+
+def test_spacegroup_symelems():
+   for se in wu.sym.symelems('I213', psym=3):
+      print(se)
+   for se in wu.sym.symelems('I213', psym=2):
+      print(se)
+   # assert 0
+
+def test_lattice_cellgeom():
+   for i in range(100):
+      a, b, c = np.random.rand(3) * 100
+      A, B, C = np.random.rand(3) * 60 + 60
+      # if np.random.rand() < 0.5:
+      # A, B, C = 180 - A, 180 - B, 180 - C
+      g = [a, b, c, A, B, C]
+      l = wu.sym.lattice_vectors('TRICLINIC', g)
+      # ic(l)
+      assert not np.any(np.isnan(l))
+      h = wu.sym.cellgeom_from_lattice(l)
+
+      # ic(g)
+      # ic(h)
+      assert np.allclose(g, h)
 
 def helper_test_spacegroup_frames(sg):
    f1 = wu.sym.sgframes(sg, [1, 1, 1])
