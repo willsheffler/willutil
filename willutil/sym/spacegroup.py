@@ -11,7 +11,7 @@ def sgframes(
    spacegroup: str,
    cellgeom=None,
    cells=1,
-   sortframes='nosort',
+   sortframes='default',
    roundgeom=10,
    xtalrad=9e9,
    asucen=[0.5, 0.5, 0.5],
@@ -82,7 +82,7 @@ def cellgeom_from_lattice(lattice):
    return [a, b, c, A, B, C]
 
 def sort_frames(frames, method):
-   if method == 'nosort':
+   if method == 'default':
       return frames
    if method == 'dist_to_asucen':
       assert 0

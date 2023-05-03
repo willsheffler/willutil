@@ -2,8 +2,11 @@ import copy
 import numpy as np
 import willutil as wu
 
+class ScrewError(Exception):
+   pass
+
 class SymElem:
-   def __init__(self, nfold, axis, cen=[0, 0, 0], axis2=None, label=None, vizcol=None, scale=1):
+   def __init__(self, nfold, axis, cen=[0, 0, 0], axis2=None, label=None, vizcol=None, scale=1, parent=None, children=None, hel=0):
       self.nfold = nfold
       self.origaxis = axis
       self.origaxis2 = axis2
@@ -11,6 +14,8 @@ class SymElem:
       self.angle = np.pi * 2 / self.nfold
       self.axis = wu.homog.hnormalized(axis)
       self.axis2 = axis2
+      self.hel = hel
+      self.check_screw()
       self.scale = scale
       self.iscyclic = axis2 is None
       self.isdihedral = axis2 is not None
@@ -21,13 +26,37 @@ class SymElem:
       self.origin = np.eye(4)
       self.label = label
       if self.label is None:
-         if axis2 is None: self.label = f'C{self.nfold}'
+         if axis2 is None:
+            self.label = f'C{self.nfold}'
+            if self.screw != 0: self.label += f'{self.screw}'
          else: self.label = f'D{self.nfold}'
       self.mobile = False
       if wu.homog.hgeom.h_point_line_dist([0, 0, 0], cen, axis) > 0.0001: self.mobile = True
       if axis2 is not None and wu.hpointlinedis([0, 0, 0], cen, axis2) > 0.0001: self.mobile = True
       self.operators = self.make_operators()
       self.numops = len(self.operators)
+      self.parent = parent
+      self.children = children or list()
+
+   def check_screw(self):
+      if self.hel == 0.0:
+         self.screw = 0
+         return
+      assert not self.axis2
+
+      self.screw = self.axis / self.hel
+      self.screw = 1 / self.screw[np.argmax(np.abs(self.screw))]
+      self.screw = self.nfold * self.screw
+      # ic(self.nfold, self.axis, self.hel, self.screw)
+
+      if not all([
+            np.allclose(round(self.screw), self.screw),
+            self.screw < self.nfold,
+            self.screw > -self.nfold,
+      ]):
+         raise ScrewError()
+      self.screw = round(self.screw)
+      if self.screw < 0: self.screw += self.nfold
 
    def place_center(self, cen):
       self.cen = wu.homog.hgeom.hpoint(cen)
@@ -46,6 +75,9 @@ class SymElem:
       if self.axis2 is not None:
          xd2f = wu.homog.hgeom.hrot(self.axis2, nfold=2, center=self.cen)
          ops = ops + [xd2f @ x for x in ops]
+      if self.hel != 0.0:
+         for i, x in enumerate(ops):
+            x[:, 3] += self.axis * self.hel * i
       ops = np.stack(ops)
       assert wu.homog.hgeom.hvalid(ops)
       return ops
@@ -79,10 +111,13 @@ class SymElem:
 
    def __repr__(self):
       # ax = self.axis / min(self.axis[self.axis != 0])
-      ax = self.origaxis
+      ax = self.origaxis / np.max(np.abs(self.origaxis))
       ax2 = self.origaxis2
       if self.origaxis2 is None:
-         return f'SymElem({self.nfold}, ax={ax[:3]}, cen={self.cen[:3]})'
+         if self.screw == 0:
+            return f'SymElem({self.nfold}, ax={ax[:3]}, cen={self.cen[:3]})'
+         else:
+            return f'SymElem({self.nfold}, ax={ax[:3]}, cen={self.cen[:3]}, hel={self.hel})'
       else:
          return f'SymElem({self.nfold}, ax={ax[:3]}, dax{ax2[:3]}, cen={self.cen[:3]})'
 

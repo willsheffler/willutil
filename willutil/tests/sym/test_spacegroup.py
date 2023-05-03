@@ -3,12 +3,12 @@ import numpy as np
 import willutil as wu
 
 def main():
+   _test_spacegroup_symelems()
+
    test_spacegroup_frames_P1()
    # test_subsym()
    test_spacegroup_frames_order()
    test_spacegroup_frames_P3()
-   # assert 0
-   _test_spacegroup_symelems()
    test_lattice_cellgeom()
 
    test_spacegroup_frames_tounitcell('P1', [15, 25, 35, 75, 85, 95], 4)

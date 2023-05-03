@@ -13,6 +13,8 @@ setup(name='willutil', version='0.1', url='https://github.com/willsheffler/willu
    'rmsd',
    'seaborn',
    'opt_einsum',
+   'icecream',
+   'numba',
 ], package_data={'willutil': [
    'data/rosetta_residue_type_info.json.xz',
    'data/pdb/meta/author.txt.xz',

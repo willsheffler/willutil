@@ -1,4 +1,4 @@
-import itertools
+import itertools, collections
 from opt_einsum import contract as einsum
 import numpy as np
 import willutil as wu
@@ -76,81 +76,117 @@ def process_num_cells(cells):
 def compute_symelems(spacegroup, unitframes):
    lattice = np.eye(3)
 
-   ncell = 1
    # if len(unitframes) < 4: ncell = 2
    # if len(unitframes) < 8: ncell = 2
-   frames = latticeframes(unitframes, lattice, cells=ncell)
+   unitframes = latticeframes(unitframes, lattice, cells=2)
+   frames = latticeframes(unitframes, lattice, cells=5)
+   # for f in frames:
+   # if np.allclose(f[:3, :3], np.eye(3)) and f[0, 3] == 0 and f[2, 3] == 0:
+   # print(f)
 
-   # relframes = einsum('aij,bjk->abik', frames, wu.)
-   axs, ang, cen, hel = wu.homog.axis_angle_cen_hel_of(frames)
-
-   axs, cen = axs[:, :3], cen[:, :3]
+   # relframes = einsum('aij,bjk->abik', unitframes, wu.)
+   axs, ang, cen, hel = wu.homog.axis_angle_cen_hel_of(unitframes)
+   axs, cen, hel = axs[:, :3], cen[:, :3], hel[:, None]
 
    flip = np.sum(axs * [3, 2, 1], axis=1) > 0
    axs = np.where(np.stack([flip, flip, flip], axis=1), axs, -axs)
-   tag = np.concatenate([axs, cen], axis=1).round(10)
-   symelems = dict()
-   for nfold in [2, 3, 4, 6]:
+   tag0 = np.concatenate([axs, cen, hel], axis=1).round(10)
+   symelems = collections.defaultdict(list)
+   for nfold in [2, 3, 4, 6, -2, -3, -4, -6]:
+      screw, nfold = nfold < 0, abs(nfold)
       nfang = 2 * np.pi / nfold
 
-      idx = np.where(np.logical_and(
-         np.isclose(ang, nfang, atol=1e-6),
-         np.isclose(0, hel),
-      ))[0]
+      # idx = np.isclose(ang, nfang, atol=1e-6)
+      if screw:
+         idx = np.logical_and(np.isclose(ang, nfang, atol=1e-6), ~np.isclose(0, hel[:, 0]))
+      else:
+         idx = np.logical_and(np.isclose(ang, nfang, atol=1e-6), np.isclose(0, hel[:, 0]))
       if np.sum(idx) == 0: continue
-      nftag = tag[idx]
+      nftag = tag0[idx]
       nftag = nftag[np.lexsort(-nftag.T, axis=0)]
       nftag = np.unique(nftag, axis=0)
 
-      # nftag = nftag[np.argsort(-nftag[:, 2], kind='stable')]
-      # nftag = nftag[np.argsort(-nftag[:, 1], kind='stable')]
-      # nftag = nftag[np.argsort(-nftag[:, 0], kind='stable')]
-      d = np.sum(nftag[:, 3:]**2, axis=1).round(6)
+      nftag = nftag[np.argsort(-nftag[:, 5], kind='stable')]
+      nftag = nftag[np.argsort(-nftag[:, 4], kind='stable')]
+      nftag = nftag[np.argsort(-nftag[:, 3], kind='stable')]
+      d = np.sum(nftag[:, 3:6]**2, axis=1).round(6)
       nftag = nftag[np.argsort(d, kind='stable')]
-      # if spacegroup == 'I213' and nfold == 3:
-      # ic(nftag)
 
-      symelems[f'c{nfold}'] = [SymElem(nfold, t[:3], t[3:6]) for t in nftag]
+      # remove symmetric dups
+      keep = nftag[:1]
+      for tag in nftag[1:]:
+         tax, tcen, thel = tag[:3], tag[3:6], tag[6]
+         if np.any(np.isclose(thel, [0.5, np.sqrt(2) / 2])):
+            # if is 21, 42, 63 screw, allow reverse axis with same helical shift
+            symtags = np.concatenate([
+               np.concatenate([(frames @ wu.hvec(+tax))[:, :3], (frames @ wu.hpoint(tcen))[:, :3], np.tile(+thel, [len(frames), 1])], axis=1),
+               np.concatenate([(frames @ wu.hvec(-tax))[:, :3], (frames @ wu.hpoint(tcen))[:, :3], np.tile(-thel, [len(frames), 1])], axis=1),
+               np.concatenate([(frames @ wu.hvec(-tax))[:, :3], (frames @ wu.hpoint(tcen))[:, :3], np.tile(+thel, [len(frames), 1])], axis=1),
+            ])
+         else:
+            symtags = np.concatenate([
+               np.concatenate([(frames @ wu.hvec(+tax))[:, :3], (frames @ wu.hpoint(tcen))[:, :3], np.tile(+thel, [len(frames), 1])], axis=1),
+               np.concatenate([(frames @ wu.hvec(-tax))[:, :3], (frames @ wu.hpoint(tcen))[:, :3], np.tile(-thel, [len(frames), 1])], axis=1),
+            ])
+         seenit = np.all(np.isclose(keep[None], symtags[:, None], atol=0.001), axis=2)
+         if not np.any(seenit):
+            picktag = _pick_symelemtags(symtags, symelems)
+            # picktag = None
+            if picktag is None:
+               keep = np.concatenate([keep, tag[None]])
+            else:
+               keep = np.concatenate([keep, picktag[None]])
 
-   #from willutil.viz import showme
-   #frames[:, :3, 3] *= 10
-   #showme(frames)
-   ## showme(frames @ wu.homog.htrans([1, 2, 3]))
-   #showme(symelems[2], scale=10)
-   #showme(symelems[3], scale=10)
-   #ic(spacegroup, symelems)
+      # ic((keep * 1000).astype('i'))
+      for tag in keep:
+         try:
+            se = SymElem(nfold, tag[:3], tag[3:6], hel=tag[6])
+            symelems[se.label].append(se)
+         except wu.sym.ScrewError:
+            continue
+      # ic(screw, nfold, symelems)
 
+      symelems = _symelem_remove_redundant_syms(symelems)
    return symelems
 
-# def compute_asucover(spacegroup, lattice, frames, nsamp=11):
-#    lattice = lattice_vectors(lattice)
-#    lframes = latticeframes(frames, lattice, cells=3)
-#    # ic(frames.shape, lframes.shape)
-#
-#    assert lframes
-#
-#    cover = np.array([[0, 0, 0, 1], [1, 1, 1, 1]])
-#    com = cover.mean(0)
-#
-#    samp = np.linspace(0, 1, nsamp)
-#    xyz = np.meshgrid(samp, samp, samp)
-#    xyz = np.stack(xyz, axis=3).reshape(-1, 3)
-#    xyz = wu.homog.hpoint(xyz)
-#
-#    fgrid = einsum('fij,pj->pfi', lframes, xyz)
-#
-#    wu.homog.hnorm(fgrid[])
-#
-#    ic(spacegroup, fgrid.shape)
-#    from willutil.viz import showme
-#
-#
-#
-#    # fgrid[..., :3] *= 100
-#    # showme(fgrid.reshape(-1, 4))
-#
-#    assert 0
-#    return com, cover
+def _pick_symelemtags(symtags, symelems):
+
+   # assert 0, 'this is incorrect somehow'
+
+   # for i in [0, 1, 2]:
+   #    symtags = symtags[np.argsort(-symtags[:, i], kind='stable')]
+   # for i in [6, 5, 4, 3]:
+   #    symtags = symtags[symtags[:, i] > -0.0001]
+   #    symtags = symtags[symtags[:, i] < +0.9999]
+   # for i in [5, 4, 3]:
+   #    symtags = symtags[np.argsort(symtags[:, i], kind='stable')]
+   # if len(symtags) == 0: return None
+   # # ic(symtags)
+
+   cen = [se.cen[:3] for psym in symelems for se in symelems[psym]]
+   if cen and len(symtags):
+      w = np.where(np.all(np.isclose(symtags[:, None, 3:6], np.stack(cen)[None]), axis=2))[0]
+      if len(w) > 0:
+         return symtags[w[0]]
+   return None
+
+   # d = np.sum(symtags[:, 3:6]**2, axis=1).round(6)
+   # symtags = symtags[np.argsort(d, kind='stable')]
+   # # ic(symtags[0])
+   # return symtags[0]
+
+def _symelem_remove_redundant_syms(symelems):
+   symelems = symelems.copy()
+   for sym1, sym2 in [('C2', 'C4'), ('C3', 'C6')]:
+      if sym2 in symelems:
+         newc2 = list()
+         for s2 in symelems[sym1]:
+            for s in symelems[sym2]:
+               if np.allclose(s.axis, s2.axis) and np.allclose(s.cen, s2.cen): break
+            else:
+               newc2.append(s2)
+         symelems[sym1] = newc2
+   return symelems
 
 def full_cellgeom(lattice, cellgeom, strict=True):
    if isinstance(cellgeom, (int, float)):

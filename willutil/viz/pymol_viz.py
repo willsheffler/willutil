@@ -286,6 +286,7 @@ def pymol_visualize_xforms(
    framecolors=None,
    perturb=0,
    addtocgo=None,
+   colors=None,
    **kw,
 ):
    kw = wu.Bunch(kw)
@@ -301,7 +302,7 @@ def pymol_visualize_xforms(
       xforms = xforms.reshape(1, 4, 4)
 
    name = get_cgo_name(name)
-   colors = None
+
    if framecolors == 'rand':
       colors = get_different_colors(len(xforms) + 1, **kw.only('colorseed'))
 
@@ -327,7 +328,7 @@ def pymol_visualize_xforms(
       x = xform @ x0
       y = xform @ y0
       z = xform @ z0
-      color = framecolors if colors is None else colors[ix]
+      color = framecolors if colors is None else colors[ix % len(colors)]
       col1 = [1, 0, 0] if color is None else color
       col2 = [0, 1, 0] if color is None else color
       col3 = [0, 0, 1] if color is None else color

@@ -13,7 +13,7 @@ def symframe_permutations(frames, **kw):
    return perm
 
 def symframe_permutations_torch(frames):
-   frames = torch.tensor(frames, device='cuda')
+   frames = torch.tensor(frames, device='cuda').to(torch.int32)
    perm = list()
    for i, frame in enumerate(frames):
       if i % 100 == 0:

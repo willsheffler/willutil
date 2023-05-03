@@ -1067,8 +1067,11 @@ def align_around_axis(axis, u, v):
    return hrot(axis, -dihedral(u, axis, [0, 0, 0, 0], v))
 
 def halign(a, b, doto=None):
+   # if a.shape == b.shape and np.allclose(a, b): return np.eye(4)
    # x = hrot((hnormalized(a) + hnormalized(b)) / 2, np.pi)
-   x = align_around_axis(hcross(a, b), a, b)
+   ax = hcross(a, b)
+   if np.allclose(ax, 0): return np.eye(4)
+   x = align_around_axis(ax, a, b)
    return x if doto is None else wu.hxform(x, doto)
 
 def halign2(a1, a2, b1, b2, doto=None):
