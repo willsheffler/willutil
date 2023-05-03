@@ -11,6 +11,8 @@ def applylattice(lattice, unitframes):
    if lattice.ndim == 2: lattice = lattice.reshape(1, 3, 3)
    latticeframes = unitframes.copy()
    latticeframes[:, :, :3, 3] = einsum('nij,nkj->nki', lattice, latticeframes[:, :, :3, 3])
+   # latticeframes[:, :, :3, :3] = einsum('nij,nfjk->nfik', lattice, latticeframes[:, :, :3, :3])
+
    return latticeframes.reshape(origshape)
 
 def latticeframes(unitframes, lattice, cells=1):
@@ -46,7 +48,6 @@ def process_num_cells(cells):
    elif len(cells) == 3:
       if isinstance(cells[0], int):
          cells = [(0, cells[0] - 1), (0, cells[1] - 1), (0, cells[2] - 1)]
-
       cells = [(a, b, c) for a, b, c in itertools.product(
          range(cells[0][0], cells[0][1] + 1),
          range(cells[1][0], cells[1][1] + 1),
@@ -54,7 +55,23 @@ def process_num_cells(cells):
       )]
    else:
       raise ValueError(f'bad cells {cells}')
-   return np.array(cells)
+   cells = np.array(cells)
+
+   # order in stages, cell 0 first, cell 0 to 1, cells -1 to 1, cells -1 to 2, etc
+   blocked = list()
+   mn, mx = np.min(cells, axis=1), np.max(cells, axis=1)
+   lb, ub = 0, 0
+   prevok = np.zeros(len(cells), dtype=bool)
+   for i in [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6, 7, -7, 8, -8]:
+      lb, ub = min(i, lb), max(i, ub)
+      ok = np.logical_and(lb <= mn, mx <= ub)
+      c = cells[np.logical_and(ok, ~prevok)]
+      blocked.append(c)
+      prevok |= ok
+      if np.all(prevok): break
+   cells = np.concatenate(blocked)
+
+   return cells
 
 def compute_symelems(spacegroup, unitframes):
    lattice = np.eye(3)
@@ -138,36 +155,47 @@ def compute_symelems(spacegroup, unitframes):
 def full_cellgeom(lattice, cellgeom, strict=True):
    if isinstance(cellgeom, (int, float)):
       cellgeom = [cellgeom]
-   if lattice in sg_lattice:
+   if isinstance(lattice, str) and lattice in sg_lattice:
       lattice = sg_lattice[lattice]
-   p = cellgeom
+
+   # assert lattice in 'TETRAGONAL CUBIC'.split()
+   assert isinstance(cellgeom, (np.ndarray, list, tuple))
+   p = np.array(cellgeom)
    if lattice == 'TRICLINIC':
       p = [p[0], p[1], p[2], p[3], p[4], p[5]]
    elif lattice == 'MONOCLINIC':
-      assert np.allclose(p[3], 90.0), f'invalid cell geometry {p}'
-      assert len(p) < 6 or np.allclose(p[5], 90.0), f'invalid cell geometry {p}'
+      if strict:
+         assert np.allclose(p[3], 90.0), f'invalid cell geometry {p}'
+         assert len(p) < 6 or np.allclose(p[5], 90.0), f'invalid cell geometry {p}'
       p = [p[0], p[1], p[2], 90.0, p[4], 90.0]
    elif lattice == 'CUBIC':
-      assert len(p) < 4 or np.allclose(p[3], 90.0), f'invalid cell geometry {p}'
-      assert len(p) < 5 or np.allclose(p[4], 90.0), f'invalid cell geometry {p}'
-      assert len(p) < 6 or np.allclose(p[5], 90.0), f'invalid cell geometry {p}'
+      if strict:
+         assert len(p) < 4 or np.allclose(p[3], 90.0), f'invalid cell geometry {p}'
+         assert len(p) < 5 or np.allclose(p[4], 90.0), f'invalid cell geometry {p}'
+         assert len(p) < 6 or np.allclose(p[5], 90.0), f'invalid cell geometry {p}'
+         assert np.allclose(p[0], p[:3])
       p = [p[0], p[0], p[0], 90.0, 90.0, 90.0]
    elif lattice == 'ORTHORHOMBIC':
-      assert len(p) < 4 or np.allclose(p[3], 90.0), f'invalid cell geometry {p}'
-      assert len(p) < 5 or np.allclose(p[4], 90.0), f'invalid cell geometry {p}'
-      assert len(p) < 6 or np.allclose(p[5], 90.0), f'invalid cell geometry {p}'
+      if strict:
+         assert len(p) < 4 or np.allclose(p[3], 90.0), f'invalid cell geometry {p}'
+         assert len(p) < 5 or np.allclose(p[4], 90.0), f'invalid cell geometry {p}'
+         assert len(p) < 6 or np.allclose(p[5], 90.0), f'invalid cell geometry {p}'
       p = [p[0], p[1], p[2], 90.0, 90.0, 90.0]
    elif lattice == 'TETRAGONAL':
-      assert np.allclose(p[0], p[1]), f'invalid cell geometry {p}'
-      assert len(p) < 4 or np.allclose(p[3], 90.0), f'invalid cell geometry {p}'
-      assert len(p) < 5 or np.allclose(p[4], 90.0), f'invalid cell geometry {p}'
-      assert len(p) < 6 or np.allclose(p[5], 90.0), f'invalid cell geometry {p}'
+      if strict:
+         assert np.allclose(p[0], p[1]), f'invalid cell geometry {p}'
+         assert len(p) < 4 or np.allclose(p[3], 90.0), f'invalid cell geometry {p}'
+         assert len(p) < 5 or np.allclose(p[4], 90.0), f'invalid cell geometry {p}'
+         assert len(p) < 6 or np.allclose(p[5], 90.0), f'invalid cell geometry {p}'
+         assert np.allclose(p[0], p[1])
       p = [p[0], p[0], p[2], 90.0, 90.0, 90.0]
    elif lattice == 'HEXAGONAL':
-      assert np.allclose(p[0], p[1]), f'invalid cell geometry {p}'
-      assert len(p) < 4 or np.allclose(p[3], 90.0), f'invalid cell geometry {p}'
-      assert len(p) < 5 or np.allclose(p[4], 90.0), f'invalid cell geometry {p}'
-      assert len(p) < 6 or np.allclose(p[5], 120.0), f'invalid cell geometry {p}'
+      if strict:
+         assert np.allclose(p[0], p[1]), f'invalid cell geometry {p}'
+         assert len(p) < 4 or np.allclose(p[3], 90.0), f'invalid cell geometry {p}'
+         assert len(p) < 5 or np.allclose(p[4], 90.0), f'invalid cell geometry {p}'
+         assert len(p) < 6 or np.allclose(p[5], 120.0), f'invalid cell geometry {p}'
+         assert np.allclose(p[0], p[1])
       p = [p[0], p[0], p[2], 90.0, 90.0, 120.0]
    return p
 

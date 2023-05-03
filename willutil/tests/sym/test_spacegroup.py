@@ -3,10 +3,12 @@ import numpy as np
 import willutil as wu
 
 def main():
+   test_spacegroup_frames_P1()
    # test_subsym()
-
+   test_spacegroup_frames_order()
+   test_spacegroup_frames_P3()
    # assert 0
-   test_spacegroup_symelems()
+   _test_spacegroup_symelems()
    test_lattice_cellgeom()
 
    test_spacegroup_frames_tounitcell('P1', [15, 25, 35, 75, 85, 95], 4)
@@ -17,7 +19,6 @@ def main():
    test_spacegroup_frames_tounitcell('P43', [10, 10, 12], 4)
    test_spacegroup_frames_tounitcell('P3', [11, 11, 13, 90, 90, 120], 2)
 
-   test_spacegroup_frames_P1()
    test_lattice_vectors()
    test_two_iface()
    test_spacegroup_frames_P213()
@@ -30,12 +31,42 @@ def main():
    test_spacegroup_frames_I432()
    ic('PASS test_spacegroup')
 
-def test_spacegroup_symelems():
-   for se in wu.sym.symelems('I213', psym=3):
+def test_spacegroup_frames_order():
+   f1 = wu.sym.sgframes('I213', cells=1)
+   f2 = wu.sym.sgframes('I213', cells=2)
+   f3 = wu.sym.sgframes('I213', cells=3)
+   f4 = wu.sym.sgframes('I213', cells=4)
+   f5 = wu.sym.sgframes('I213', cells=5)
+   assert np.allclose(f1, f2[:len(f1)])
+   assert np.allclose(f2, f3[:len(f2)])
+   assert np.allclose(f3, f4[:len(f3)])
+   assert np.allclose(f4, f5[:len(f4)])
+
+@pytest.mark.xfail
+def test_spacegroup_frames_P3():
+   f = wu.sym.sgframes('P3')
+   ic(f @ wu.htrans([0.1, 0.2, 0.3]))
+   # wu.showme(f @ wu.htrans([0.1, 0.2, 0.3]))
+   latticevec = np.array([
+      [1.00000000e+00, 0.00000000e+00, 0.00000000e+00],
+      [-5.00000000e-01, 8.66025404e-01, 0.00000000e+00],
+      [6.12323400e-17, 1.06057524e-16, 1.00000000e+00],
+   ])
+   ic(latticevec)
+   fname = wu.tests.test_data_path('pdb/i213fittest.pdb')
+   coords = wu.readpdb(fname).subset(chain='A').ca()
+   wu.showme(coords)
+   assert 0
+
+def _test_spacegroup_symelems():
+   # for se in wu.sym.symelems('I213', psym=3):
+   # print(se)
+   # for se in wu.sym.symelems('I213', psym=2):
+   # print(se)
+   for se in wu.sym.symelems('P3', psym=3):
       print(se)
-   for se in wu.sym.symelems('I213', psym=2):
-      print(se)
-   # assert 0
+   wu.showme(wu.sym.sgframes('P3', cells=1) @ wu.htrans([0.1, 0.2, 0.3]))
+   assert 0
 
 def test_lattice_cellgeom():
    for i in range(100):
@@ -82,7 +113,7 @@ def test_lattice_vectors():
 
 def test_spacegroup_frames_P1():
    f = wu.sym.spacegroup.sgframes('P1', [15.737, 15.887, 25.156, 85.93, 86.19, 69.86], cells=3)
-   ref = np.array([[-22.87870305, -16.20427966, -25.06729822], [-21.20713594, -14.91557514, 0.], [-19.53556883, -13.62687063, 25.06729822], [-17.40856711, -1.28870451, -25.06729822], [-15.737, 0., 0.], [-14.06543289, 1.28870451, 25.06729822], [-11.93843117, 13.62687063, -25.06729822], [-10.26686406, 14.91557514, 0.], [-8.59529695, 16.20427966, 25.06729822], [-7.14170305, -16.20427966, -25.06729822], [-5.47013594, -14.91557514, 0.], [-3.79856883, -13.62687063, 25.06729822], [-1.67156711, -1.28870451, -25.06729822], [0., 0., 0.], [1.67156711, 1.28870451, 25.06729822], [3.79856883, 13.62687063, -25.06729822], [5.47013594, 14.91557514, 0.], [7.14170305, 16.20427966, 25.06729822], [8.59529695, -16.20427966, -25.06729822], [10.26686406, -14.91557514, 0.], [11.93843117, -13.62687063, 25.06729822], [14.06543289, -1.28870451, -25.06729822], [15.737, 0., 0.], [17.40856711, 1.28870451, 25.06729822], [19.53556883, 13.62687063, -25.06729822], [21.20713594, 14.91557514, 0.], [22.87870305, 16.20427966, 25.06729822]])
+   ref = np.array([[0., 0., 0.], [1.67156711, 1.28870451, 25.06729822], [5.47013594, 14.91557514, 0.], [7.14170305, 16.20427966, 25.06729822], [15.737, 0., 0.], [17.40856711, 1.28870451, 25.06729822], [21.20713594, 14.91557514, 0.], [22.87870305, 16.20427966, 25.06729822], [-22.87870305, -16.20427966, -25.06729822], [-21.20713594, -14.91557514, 0.], [-19.53556883, -13.62687063, 25.06729822], [-17.40856711, -1.28870451, -25.06729822], [-15.737, 0., 0.], [-14.06543289, 1.28870451, 25.06729822], [-11.93843117, 13.62687063, -25.06729822], [-10.26686406, 14.91557514, 0.], [-8.59529695, 16.20427966, 25.06729822], [-7.14170305, -16.20427966, -25.06729822], [-5.47013594, -14.91557514, 0.], [-3.79856883, -13.62687063, 25.06729822], [-1.67156711, -1.28870451, -25.06729822], [3.79856883, 13.62687063, -25.06729822], [8.59529695, -16.20427966, -25.06729822], [10.26686406, -14.91557514, 0.], [11.93843117, -13.62687063, 25.06729822], [14.06543289, -1.28870451, -25.06729822], [19.53556883, 13.62687063, -25.06729822]])
    assert np.allclose(f[:, :3, 3], ref)
    # wu.showme(f)
 
