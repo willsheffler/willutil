@@ -258,9 +258,9 @@ def get_cgo_name(name):
    if not name in names:
       return name
    i = 0
-   while name + str(i) in names:
+   while name + '_' + str(i) in names:
       i += 1
-   return name + str(i)
+   return name + '_' + str(i)
 
    # if not 'seenit' in _showme_state:
    # _showme_state['seenit'] = defaultdict(int)
@@ -287,6 +287,7 @@ def pymol_visualize_xforms(
    perturb=0,
    addtocgo=None,
    colors=None,
+   bounds=None,
    **kw,
 ):
    kw = wu.Bunch(kw)
@@ -328,6 +329,9 @@ def pymol_visualize_xforms(
       x = xform @ x0
       y = xform @ y0
       z = xform @ z0
+      if bounds:
+         if np.any(cen < bounds[0] - 0.0001): continue
+         if np.any(cen > bounds[1] + 0.0001): continue
       color = framecolors if colors is None else colors[ix % len(colors)]
       col1 = [1, 0, 0] if color is None else color
       col2 = [0, 1, 0] if color is None else color

@@ -1030,11 +1030,14 @@ def line_line_closest_points_pa(pt1, ax1, pt2, ax2, verbose=0):
    C21 = pt2 - pt1
    M = hcross(ax1, ax2)
    m2 = np.sum(M**2, axis=-1)[..., None]
+   if np.allclose(m2, 0):
+      return pt1, pt1
    R = hcross(C21, M / m2)
    t1 = hdot(R, ax2)[..., None]
    t2 = hdot(R, ax1)[..., None]
    Q1 = pt1 - t1 * ax1
    Q2 = pt2 - t2 * ax2
+
    if verbose:
       ic('C21', C21)
       ic('M', M)

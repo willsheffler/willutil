@@ -8,8 +8,6 @@ class ScrewError(Exception):
 class SymElem:
    def __init__(self, nfold, axis, cen=[0, 0, 0], axis2=None, label=None, vizcol=None, scale=1, parent=None, children=None, hel=0):
       self.nfold = nfold
-      self.origaxis = axis
-      self.origaxis2 = axis2
       self.origcen = cen
       self.angle = np.pi * 2 / self.nfold
       self.axis = wu.homog.hnormalized(axis)
@@ -38,6 +36,16 @@ class SymElem:
       self.parent = parent
       self.children = children or list()
 
+   def __eq__(self, other):
+      if self.nfold != other.nfold: return False
+      if not np.allclose(self.axis, other.axis): return False
+      if self.axis2 is not None and not np.allclose(self.axis2, other.axis2): return False
+      if not np.allclose(self.cen, other.cen): return False
+      if not np.allclose(self.hel, other.hel): return False
+      if not np.allclose(self.screw, other.screw): return False
+      assert np.allclose(self.operators, other.operators)
+      return True
+
    def check_screw(self):
       if self.hel == 0.0:
          self.screw = 0
@@ -47,16 +55,35 @@ class SymElem:
       self.screw = self.axis / self.hel
       self.screw = 1 / self.screw[np.argmax(np.abs(self.screw))]
       self.screw = self.nfold * self.screw
-      # ic(self.nfold, self.axis, self.hel, self.screw)
 
+      # ic(self.nfold, self.axis, self.hel, self.screw)
       if not all([
             np.allclose(round(self.screw), self.screw),
             self.screw < self.nfold,
             self.screw > -self.nfold,
       ]):
          raise ScrewError()
-      self.screw = round(self.screw)
+
+      assert np.isclose(self.screw, round(self.screw))
+      self.screw = int(round(self.screw))
+
       if self.screw < 0: self.screw += self.nfold
+
+#      if self.screw == 3 and self.nfold == 4:
+#         self.screw = self.nfold - self.screw
+#         self.axis = -self.axis
+#         self.hel = -self.hel
+#
+#      if self.nfold == 3:
+#         if np.min(np.abs(self.axis)) < 0.1:
+#            self.hel = self.hel % 1
+#         else:
+#            self.hel = self.hel % np.sqrt(3)
+#      elif self.nfold == 4:
+#         self.hel = self.hel % 1.0
+#      elif self.nfold == 6:
+#         self.hel = self.hel % 1.0
+#      # assert self.screw <= self.nfold / 2
 
    def place_center(self, cen):
       self.cen = wu.homog.hgeom.hpoint(cen)
@@ -111,15 +138,15 @@ class SymElem:
 
    def __repr__(self):
       # ax = self.axis / min(self.axis[self.axis != 0])
-      ax = self.origaxis / np.max(np.abs(self.origaxis))
-      ax2 = self.origaxis2
-      if self.origaxis2 is None:
+      ax = (self.axis / np.max(np.abs(self.axis))).round(6)
+      if self.axis2 is None:
          if self.screw == 0:
-            return f'SymElem({self.nfold}, ax={ax[:3]}, cen={self.cen[:3]})'
+            return f'SymElem({self.nfold}, axis={list(ax[:3])}, cen={list(self.cen[:3])})'
          else:
-            return f'SymElem({self.nfold}, ax={ax[:3]}, cen={self.cen[:3]}, hel={self.hel})'
+            return f'SymElem({self.nfold}, axis={list(ax[:3])}, cen={list(self.cen[:3])}, hel={self.hel})'
       else:
-         return f'SymElem({self.nfold}, ax={ax[:3]}, dax{ax2[:3]}, cen={self.cen[:3]})'
+         ax2 = (self.axis2 / np.max(np.abs(self.axis2))).round(6)
+         return f'SymElem({self.nfold}, axis={list(ax[:3])}, axis2={list(ax2[:3])}, cen={list(self.cen[:3])})'
 
 _cubeedges = [
    [[0, 0, 0], [1, 0, 0]],

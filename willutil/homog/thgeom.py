@@ -221,23 +221,19 @@ def th_quat_to_rot(quat):
    qj = quat[..., 2]
    qk = quat[..., 3]
 
-   rot = torch.cat([
-      torch.tensor([[
-         1 - 2 * (qj**2 + qk**2),
-         2 * (qi * qj - qk * qr),
-         2 * (qi * qk + qj * qr),
-      ]]),
-      torch.tensor([[
-         2 * (qi * qj + qk * qr),
-         1 - 2 * (qi**2 + qk**2),
-         2 * (qj * qk - qi * qr),
-      ]]),
-      torch.tensor([[
-         2 * (qi * qk - qj * qr),
-         2 * (qj * qk + qi * qr),
-         1 - 2 * (qi**2 + qj**2),
-      ]])
-   ])
+   rot = torch.cat([torch.tensor([[
+      1 - 2 * (qj**2 + qk**2),
+      2 * (qi * qj - qk * qr),
+      2 * (qi * qk + qj * qr),
+   ]]), torch.tensor([[
+      2 * (qi * qj + qk * qr),
+      1 - 2 * (qi**2 + qk**2),
+      2 * (qj * qk - qi * qr),
+   ]]), torch.tensor([[
+      2 * (qi * qk - qj * qr),
+      2 * (qj * qk + qi * qr),
+      1 - 2 * (qi**2 + qj**2),
+   ]])])
    # ic(rot.shape)
    return rot
 
@@ -307,9 +303,7 @@ def th_xform(xform, stuff, homogout='auto', **kw):
       ic(result[:10])
       # this is a bad copout.. should make this check handle nans correctly
       if not stuff.shape[-2:] == (4, 1):
-         raise ValueError(
-            f'malformed homogeneous coords with shape {stuff.shape}, if points and shape is (...,4,4) try is_points=True'
-         )
+         raise ValueError(f'malformed homogeneous coords with shape {stuff.shape}, if points and shape is (...,4,4) try is_points=True')
 
    return result
 
@@ -368,7 +362,7 @@ def th_randunit(shape=(), cen=[0, 0, 0], std=1):
 def th_point(point, **kw):
    point = torch.as_tensor(point)
    shape = point.shape[:-1]
-   points = torch.cat([point[..., :3], torch.ones(shape + (1, ))], axis=-1)
+   points = torch.cat([point[..., :3], torch.ones(shape + (1, ), device=point.device)], axis=-1)
    if points.dtype not in (torch.float32, torch.float64):
       points = points.to(torch.float32)
    return points
@@ -379,10 +373,10 @@ def th_vec(vec):
       vec = vec.to(torch.float32)
    if vec.shape[-1] == 4:
       if torch.any(vec[..., 3] != 0):
-         vec = torch.cat([vec[..., :3], torch.zeros(*vec.shape[:-1], 1)], dim=-1)
+         vec = torch.cat([vec[..., :3], torch.zeros(*vec.shape[:-1], 1, device=vec.device)], dim=-1)
       return vec
    elif vec.shape[-1] == 3:
-      r = torch.zeros(vec.shape[:-1] + (4, ), dtype=vec.dtype)
+      r = torch.zeros(vec.shape[:-1] + (4, ), dtype=vec.dtype, device=vec.device)
       r[..., :3] = vec
       return r
    else:
@@ -423,20 +417,18 @@ def th_axis_angle(xforms):
 
 def th_axis(xforms):
    if xforms.shape[-2:] == (4, 4):
-      return th_normalized(
-         torch.stack((
-            xforms[..., 2, 1] - xforms[..., 1, 2],
-            xforms[..., 0, 2] - xforms[..., 2, 0],
-            xforms[..., 1, 0] - xforms[..., 0, 1],
-            torch.zeros(xforms.shape[:-2]),
-         ), axis=-1))
+      return th_normalized(torch.stack((
+         xforms[..., 2, 1] - xforms[..., 1, 2],
+         xforms[..., 0, 2] - xforms[..., 2, 0],
+         xforms[..., 1, 0] - xforms[..., 0, 1],
+         torch.zeros(xforms.shape[:-2]),
+      ), axis=-1))
    if xforms.shape[-2:] == (3, 3):
-      return th_normalized(
-         torch.stack((
-            xforms[..., 2, 1] - xforms[..., 1, 2],
-            xforms[..., 0, 2] - xforms[..., 2, 0],
-            xforms[..., 1, 0] - xforms[..., 0, 1],
-         ), axis=-1))
+      return th_normalized(torch.stack((
+         xforms[..., 2, 1] - xforms[..., 1, 2],
+         xforms[..., 0, 2] - xforms[..., 2, 0],
+         xforms[..., 1, 0] - xforms[..., 0, 1],
+      ), axis=-1))
    else:
       raise ValueError('wrong shape for xform/rotation matrix: ' + str(xforms.shape))
 

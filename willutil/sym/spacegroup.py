@@ -48,7 +48,7 @@ def symelems(spacegroup: str, psym=None):
    return se
 
 def spacegroup_canonical_name(spacegroup):
-   spacegroup = spacegroup.upper()
+   spacegroup = spacegroup.replace('p', 'P').replace('i', 'I').replace('f', 'F')
    if spacegroup not in sg_lattice:
       spacegroup = sg_from_pdbname[spacegroup]
    return spacegroup

@@ -5,6 +5,7 @@ import numpy as np
 import willutil as wu
 from willutil.sym.spacegroup_data import *
 from willutil.sym.spacegroup_util import *
+from willutil.sym.spacegroup_symelems import compute_symelems
 
 def _get_spacegroup_data():
    from willutil.storage import load_package_data, save_package_data, have_package_data
