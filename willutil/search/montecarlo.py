@@ -53,8 +53,9 @@ class MonteCarlo:
       self.ntrials += 1
       # if self.debug: print(score)
       delta = score - self.low
-      if score > 1_000_000:
+      if score > 10_000_000:
          ic(f'WARNING MonteCarlo.try_this score {score} is pretty high....')
+         assert 0
       if np.exp(max(-99, min(99, -delta / self.temperature))) > np.random.rand():
          self.naccept += 1
          self.accepted_last = True

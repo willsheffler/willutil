@@ -42,10 +42,14 @@ def symelems(spacegroup: str, psym=None):
    if isinstance(psym, int):
       psym = f'c{psym}'
    spacegroup = spacegroup_canonical_name(spacegroup)
-   se = sg_symelem[spacegroup]
+   se = sg_symelem_dict[spacegroup]
    if psym:
-      return se[psym.lower()]
+      return [e for e in se if e.label == psym.upper()]
    return se
+
+def copies_per_cell(spacegroup):
+   spacegroup = spacegroup_canonical_name(spacegroup)
+   return len(sg_frames_dict[spacegroup])
 
 def spacegroup_canonical_name(spacegroup):
    spacegroup = spacegroup.replace('p', 'P').replace('i', 'I').replace('f', 'F')
@@ -72,13 +76,18 @@ def prune_frames(frames, asucen, xtalrad, center=None):
    frames = frames[dis <= xtalrad]
    return frames
 
-def cellgeom_from_lattice(lattice):
+def cellgeom_from_lattice(lattice, radians=False):
    a = wu.hnorm(lattice[0])
    b = wu.hnorm(lattice[1])
    c = wu.hnorm(lattice[2])
-   A = wu.hangle_degrees(lattice[1], lattice[2])
-   B = wu.hangle_degrees(lattice[0], lattice[2])
-   C = wu.hangle_degrees(lattice[0], lattice[1])
+   if radians:
+      A = wu.hangle(lattice[1], lattice[2])
+      B = wu.hangle(lattice[0], lattice[2])
+      C = wu.hangle(lattice[0], lattice[1])
+   else:
+      A = wu.hangle_degrees(lattice[1], lattice[2])
+      B = wu.hangle_degrees(lattice[0], lattice[2])
+      C = wu.hangle_degrees(lattice[0], lattice[1])
    return [a, b, c, A, B, C]
 
 def sort_frames(frames, method):

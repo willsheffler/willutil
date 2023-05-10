@@ -4,13 +4,24 @@ import willutil as wu
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
 
 def package_data_path(fname):
-   return os.path.join(data_dir, fname)
+   if os.path.exists(os.path.join(data_dir, fname)):
+      return os.path.join(data_dir, fname)
+   elif os.path.exists(os.path.join(data_dir, fname + '.pickle')):
+      return os.path.join(data_dir, fname + '.pickle')
+   elif os.path.exists(os.path.join(data_dir, fname + '.pickle.gz')):
+      return os.path.join(data_dir, fname + '.pickle.gz')
+   elif os.path.exists(os.path.join(data_dir, fname + '.pickle.xz')):
+      return os.path.join(data_dir, fname + '.pickle.xz')
+   return None
 
 def load_package_data(fname):
-   return load(package_data_path(fname))
+   datapath = package_data_path(fname)
+   data = load(datapath)
+   return data
 
 def have_package_data(fname):
-   return os.path.exists(package_data_path(fname)) or os.path.exists(package_data_path(fname + '.pickle'))
+   datapath = package_data_path(fname)
+   return datapath is not None
 
 def open_package_data(fname):
    if fname.endswith('.xz'):
@@ -118,6 +129,8 @@ def save_pickle(stuff, fname, add_dotpickle=True, uselzma=False, **kw):
    if fname.endswith('.xz'):
       assert fname.endswith('.pickle.xz')
       opener = lzma.open
+      if os.path.exists(fname + '.decompressed'):
+         os.remove(fname + '.decompressed')
    elif fname.endswith('.gz'):
       assert fname.endswith('.pickle.gz')
       opener = gzip.open

@@ -1,5 +1,4 @@
 import itertools
-from opt_einsum import contract as einsum
 import numpy as np
 import willutil as wu
 from willutil.sym.spacegroup_data import *
@@ -62,6 +61,7 @@ def process_num_cells(cells):
    lb, ub = 0, 0
    prevok = np.zeros(len(cells), dtype=bool)
    for i in [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6, 7, -7, 8, -8]:
+      # for i in [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7, -8, 8]:
       lb, ub = min(i, lb), max(i, ub)
       ok = np.logical_and(lb <= mn, mx <= ub)
       c = cells[np.logical_and(ok, ~prevok)]
@@ -69,6 +69,9 @@ def process_num_cells(cells):
       prevok |= ok
       if np.all(prevok): break
    cells = np.concatenate(blocked)
+
+   # ic(cells)
+   # assert 0
 
    return cells
 
@@ -150,8 +153,13 @@ def lattice_vectors(lattice, cellgeom=None):
    ]]).T
    return lattice_vectors
 
-def cellvol(spacegroup, cellgeom):
-   a, b, c, A, B, C = cellgeom(spacegroup, cellgeom, radians=True)
-   cosA, cosB, cosC = [np.cos(_) for _ in (A, B, C)]
-   sinB, sinC = [np.sin(_) for _ in (B, C)]
+def cell_volume(spacegroup, cellgeom):
+   if isinstance(cellgeom, np.ndarray) and cellgeom.shape == (3, 3):
+      cellgeom = wu.sym.cellgeom_from_lattice(cellgeom)
+   a, b, c, A, B, C = full_cellgeom(spacegroup, cellgeom)
+   cosA, cosB, cosC = [np.cos(np.radians(_)) for _ in (A, B, C)]
+   sinB, sinC = [np.sin(np.radians(_)) for _ in (B, C)]
    return a * b * c * np.sqrt(1 - cosA**2 - cosB**2 - cosC**2 + 2 * cosA * cosB * cosC)
+
+def sg_is_chiral(sg):
+   return not any([sg.count(x) for x in 'm-c/n:baHd'])

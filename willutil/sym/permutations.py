@@ -1,8 +1,7 @@
-import functools, opt_einsum
+import functools
 import concurrent.futures as cf
 import numpy as np
 import willutil as wu
-import torch
 
 def symframe_permutations(frames, **kw):
 
@@ -12,21 +11,22 @@ def symframe_permutations(frames, **kw):
    perm = np.stack(perm)
    return perm
 
-def symframe_permutations_torch(frames):
-   frames = torch.tensor(frames, device='cuda').to(torch.int32)
+def symframe_permutations_torch(frames, maxcols=None):
+   import torch
+   frames = torch.tensor(frames, device='cuda').to(torch.float32)
    perm = list()
    for i, frame in enumerate(frames):
       if i % 100 == 0:
          ic(i, len(frames))
-      local_frames = opt_einsum.contract('ij,fjk->fik', torch.linalg.inv(frame), frames)
+      local_frames = einsum('ij,fjk->fik', torch.linalg.inv(frame), frames)
       dist2 = torch.sum((local_frames[None] - frames[:, None])**2, axis=(2, 3))
-      idx = torch.argmin(dist2, axis=1)
+      idx = torch.argmin(dist2, axis=1)[:maxcols]
       mindist = dist2[torch.arange(len(idx)), idx]
       missing = mindist > 1e-5
       idx[missing] = -1
       perm.append(idx)
    perm = torch.stack(perm).to(torch.int32)
-   return perm.to('cpu').numpy()
+   return perm.to('cpu').numpy().astype(np.int32)
 
 def symperm1(i, frames):
    if i % 100 == 0:

@@ -1,27 +1,33 @@
 import itertools, collections
-from opt_einsum import contract as einsum
 import numpy as np
 import willutil as wu
 from willutil.sym.spacegroup_data import *
 from willutil.sym.spacegroup_util import *
 from willutil.sym.SymElem import *
-from willutil.homog.hgeom import h_point_line_dist
+from willutil.homog.hgeom import h_point_line_dist, hvec, hpoint
 
-def compute_symelems(spacegroup, unitframes, torch_device=None):
+def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=None):
    if torch_device:
       try:
          import torch
       except ImportError:
          torch_device = False
+   if unitframes is None:
+      unitframes = wu.sym.sgframes(spacegroup, cellgeom='unit')
 
-   lattice = np.eye(3)
+   if lattice is None:
+      a, b, c = 1, 1.23456789, 9.87654321
+      if sg_lattice[spacegroup] == 'CUBIC': lattice = np.diag([a, a, a])
+      elif sg_lattice[spacegroup] == 'TETRAGONAL': lattice = np.diag([a, a, b])
+      elif sg_lattice[spacegroup] == 'ORTHORHOMBIC': lattice = np.diag([a, b, c])
+      else: assert 0
 
    # if len(unitframes) < 4: ncell = 2
    # if len(unitframes) < 8: ncell = 2
    # unitframes = unitframes.astype(np.float32)
    f2cel = latticeframes(unitframes, lattice, cells=2)
-   f5cel = latticeframes(unitframes, lattice, cells=5)
-   # for f in f5cel:
+   f4cel = latticeframes(unitframes, lattice, cells=4)
+   # for f in f4cel:
    # if np.allclose(f[:3, :3], np.eye(3)) and f[0, 3] == 0 and f[2, 3] == 0:
    # print(f)
 
@@ -29,8 +35,15 @@ def compute_symelems(spacegroup, unitframes, torch_device=None):
    f2geom = wu.homog.axis_angle_cen_hel_of(f2cel)
    axs, ang, cen, hel = f2geom
    axs, cen, hel = axs[:, :3], cen[:, :3], hel[:, None]
-   flip = np.sum(axs * [3, 2, 1], axis=1) > 0
-   axs = np.where(np.stack([flip, flip, flip], axis=1), axs, -axs)
+   flip = np.sum(axs * [3, 2, 1], axis=1) <= 0
+   axs[flip] = -axs[flip]
+   hel[flip] = -hel[flip]
+   # flip = np.stack([flip, flip, flip], axis=1)
+   # ic(flip.shape)
+   # axs = np.where(flip, axs, -axs)
+   # hel = np.where(flip[:, 0], hel, -hel)
+   # ic(axs.shape)
+   # ic(hel.shape)
    tag0 = np.concatenate([axs, cen, hel], axis=1).round(10)
    symelems = collections.defaultdict(list)
    for nfold in [2, 3, 4, 6, -2, -3, -4, -6]:
@@ -62,7 +75,7 @@ def compute_symelems(spacegroup, unitframes, torch_device=None):
       # assert 0
 
       if torch_device:
-         f5cell_torch = torch.tensor(f5cel, device=torch_device, dtype=torch.float32)
+         f5cell_torch = torch.tensor(f4cel, device=torch_device, dtype=torch.float32)
 
       # remove symmetric dups
       keep = nftag[:1]
@@ -74,7 +87,7 @@ def compute_symelems(spacegroup, unitframes, torch_device=None):
             if torch.any(seenit): continue
             picktag = _pick_symelemtags(symtags.to('cpu').numpy(), symelems)
          else:
-            symtags = _make_symtags(tag, f5cel)
+            symtags = _make_symtags(tag, f4cel)
             seenit = np.all(np.isclose(keep[None], symtags[:, None], atol=0.001), axis=2)
             if np.any(seenit): continue
             picktag = _pick_symelemtags(symtags, symelems)
@@ -92,14 +105,14 @@ def compute_symelems(spacegroup, unitframes, torch_device=None):
             seenit = symelems[se.label].copy()
             if screw and se.label[:2] in symelems:
                seenit += symelems[se.label[:2]]
-            if not any([_symelem_is_same(se, se2, f5cel) for se2 in seenit]):
+            if not any([_symelem_is_same(se, se2, f4cel) for se2 in seenit]):
                symelems[se.label].append(se)
-         except wu.sym.ScrewError:
+         except ScrewError:
             continue
 
       # ic(symelems)
    symelems = _symelem_remove_ambiguous_syms(symelems)
-   symelems = _find_compond_symelems(symelems, f5cel, f2geom)
+   symelems = _find_compond_symelems(symelems, f4cel, f2geom)
 
    return symelems
 
@@ -163,7 +176,7 @@ ic| 'PASS test_spacegroup_symelems'
 def _make_symtags(tag, frames):
    import torch
    concat = np.concatenate
-   tax, tcen, thel = wu.hvec(tag[:3]), wu.hpoint(tag[3:6]), np.tile(tag[6], [len(frames), 1])
+   tax, tcen, thel = hvec(tag[:3]), hpoint(tag[3:6]), np.tile(tag[6], [len(frames), 1])
 
    # if is 21, 42, 63 screw, allow reverse axis with same helical shift
    c1 = (frames @ tax)[:, :3]
@@ -191,7 +204,7 @@ def _make_symtags_torch(tag, frames, torch_device, t):
    tax, tcen, thel = wu.th_vec(tag[:3]), wu.th_point(tag[3:6]), torch.tile(tag[6], [len(frames), 1])
 
    # concat = np.concatenate
-   # tax, tcen, thel = wu.hvec(tag[:3]), wu.hpoint(tag[3:6]), np.tile(tag[6], [len(frames), 1])
+   # tax, tcen, thel = hvec(tag[:3]), hpoint(tag[3:6]), np.tile(tag[6], [len(frames), 1])
 
    const1 = torch.tensor(0.5, device=torch_device).to(torch.float32)
    const2 = torch.tensor(np.sqrt(2.) / 2., device=torch_device).to(torch.float32)

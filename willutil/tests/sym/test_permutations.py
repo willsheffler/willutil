@@ -1,27 +1,65 @@
 import numpy as np
 import willutil as wu
+import itertools
+from willutil.sym.spacegroup_symelems import _compute_symelems
 
 def main():
    # test_symelems_I432(showme=False)
    # assert 0
 
-   test_symelems_P4232(showme=True)
+   # for k, v in wu.sym.sg_symelem_frame_ids_dict.items():
+   # print(k, v.shape)
+   # assert 0
 
-   test_symelems_P23()
-   test_symelems_F23()
-   test_symelems_I23()
-
-   test_symelems_P213()
-   test_symelems_I213()
-
-   test_symelems_P432()
-
-   WIP_i4132_perm()
-   test_icos_perm()
-
+   # WIP_P23_perm()
+   # test_icos_perm()
    ic('PASS test_permutations')
 
-def WIP_i4132_perm():
+def WIP_opcompid():
+   f = wu.sym.frames('P23', cells=4)
+   ic(wu.sym.symelems('P23'))
+
+   for ielem, se in enumerate(wu.sym.symelems('P23')):
+      fcompid = wu.sym.sg_symelem_frame444_compids_dict['P23'][:, ielem]
+      fopid = se.frame_operator_ids(f)
+      ids = fcompid.copy()
+      for i in range(np.max(fopid)):
+         fcids = fcompid[fopid == i]
+         idx0 = fcompid == fcids[0]
+         for fcid in fcids[1:]:
+            idx = fcompid == fcid
+            ids[idx] = min(min(ids[idx]), min(ids[idx0]))
+      for i, id in enumerate(sorted(set(ids))):
+         ids[ids == id] = i
+      for i in range(max(ids)):
+         ic(f[ids == i, :3, 3])
+      assert 0
+
+def WIP_P23_perm():
+
+   frames = wu.sym.sgframes('P23', cells=4)
+   # semap = wu.sym.symelems('P23')
+   semap = _compute_symelems('P23')
+
+   selems = list(itertools.chain(*semap.values()))
+
+   perms = wu.sym.symframe_permutations_torch(frames)
+
+   compid = -np.ones((len(frames), len(selems)), dtype=np.int32)
+   for ielem, se in enumerate(selems):
+      compid[:, ielem] = se.frame_component_ids(frames, perms)
+
+   ielem = 4
+   ecen, eaxs = selems[ielem].cen, selems[ielem].axis
+   ic(selems[ielem])
+   for icomp in range(np.max(compid[:, ielem])):
+      # ic(np.max(frames[:, :3, 3]))
+      selframes = compid[:, ielem] == icomp
+      assert len(selframes)
+      testf = frames[selframes] @ wu.htrans(ecen) @ wu.halign([0, 0, 1], eaxs)
+      # ic(testf.shape)
+      # print(testf[:, :3, 3])
+      # wu.showme(testf)
 
    # sym = 'I4132'
    # frames = wu.sym.frames('I4132', sgonly=True, cells=5)

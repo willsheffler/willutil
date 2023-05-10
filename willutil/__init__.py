@@ -6,6 +6,11 @@ import icecream as ic
 
 ic.install()
 
+import builtins, opt_einsum, collections
+
+setattr(builtins, 'einsum', opt_einsum.contract)
+setattr(builtins, 'defaultdict', collections.defaultdict)
+
 from willutil.bunch import Bunch, bunchify, unbunchify
 from willutil.timer import Timer, timed, checkpoint
 from willutil.sym.symfit import compute_symfit
@@ -25,15 +30,14 @@ from willutil import sampling
 from willutil import search
 from willutil import misc
 from willutil import tests
-from willutil import reproducibility
-from willutil import format
+# from willutil import reproducibility
+# from willutil import format
 from willutil import homog
 from willutil import sym
 from willutil import viz
 from willutil import rigid
 from willutil import rosetta
-from willutil import unsym
-
+# from willutil import unsym
 from willutil.chem import dssp
 from willutil.rosetta import NotPose
 
