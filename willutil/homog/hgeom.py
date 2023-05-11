@@ -1049,6 +1049,8 @@ def line_line_closest_points_pa(pt1, ax1, pt2, ax2, verbose=0):
       ic('Q2', Q2)
    return Q1, Q2
 
+hlinesisect = line_line_closest_points_pa
+
 def line_line_closest_points(ray1, ray2, verbose=0):
    "currently errors if ax1==ax2"
    # pt1, pt2 = hpoint(pt1), hpoint(pt2)

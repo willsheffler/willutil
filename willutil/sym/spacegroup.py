@@ -38,13 +38,23 @@ def sgframes(
 
    return _memoized_frames[key]
 
-def symelems(spacegroup: str, psym=None):
+def symelems(spacegroup: str, psym=None, asdict=False, screws=True, cyclic=True):
    if isinstance(psym, int):
       psym = f'c{psym}'
    spacegroup = spacegroup_canonical_name(spacegroup)
    se = sg_symelem_dict[spacegroup]
+   if not screws:
+      se = [e for e in se if e.screw == 0]
+   if not cyclic:
+      se = [e for e in se if not e.iscyclic]
    if psym:
       return [e for e in se if e.label == psym.upper()]
+
+   if asdict:
+      d = defaultdict(list)
+      for e in se:
+         d[e.label].append(e)
+      se = d
    return se
 
 def copies_per_cell(spacegroup):

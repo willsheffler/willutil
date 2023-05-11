@@ -15,7 +15,7 @@ class SymElem:
       self.hel = hel
       self.check_screw()
       self.scale = scale
-      self.iscyclic = axis2 is None
+      self.iscyclic = axis2 is None and not self.screw
       self.isdihedral = axis2 is not None
       self.place_center(cen)
       self.origin = np.eye(4)
