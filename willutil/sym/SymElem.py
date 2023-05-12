@@ -6,8 +6,20 @@ class ScrewError(Exception):
    pass
 
 class SymElem:
-   def __init__(self, nfold, axis, cen=[0, 0, 0], axis2=None, label=None, vizcol=None, scale=1, parent=None, children=None, hel=0):
-      self.nfold = nfold
+   def __init__(
+      self,
+      nfold,
+      axis,
+      cen=[0, 0, 0],
+      axis2=None,
+      label=None,
+      vizcol=None,
+      scale=1,
+      parent=None,
+      children=None,
+      hel=0,
+   ):
+      self._set_nfold(nfold)
       self.origcen = cen
       self.angle = np.pi * 2 / self.nfold
       self.axis = wu.homog.hnormalized(axis)
@@ -15,8 +27,8 @@ class SymElem:
       self.hel = hel
       self.check_screw()
       self.scale = scale
-      self.iscyclic = axis2 is None and not self.screw
-      self.isdihedral = axis2 is not None
+      self._make_label(label)
+      self._set_kind()
       self.place_center(cen)
       self.origin = np.eye(4)
       self.vizcol = vizcol
@@ -26,7 +38,7 @@ class SymElem:
       if self.axis2 is not None:
          self.axis2 = wu.homog.hnormalized(self.axis2)
          self.axis2[self.axis2 == -0] = 0
-      self._make_label(label)
+
       self.mobile = False
       if wu.homog.hgeom.h_point_line_dist([0, 0, 0], cen, axis) > 0.0001: self.mobile = True
       if axis2 is not None and wu.hpointlinedis([0, 0, 0], cen, axis2) > 0.0001: self.mobile = True
@@ -34,6 +46,17 @@ class SymElem:
       self.numops = len(self.operators)
       self.parent = parent
       self.children = children or list()
+
+   def _set_nfold(self, nfold):
+      if isinstance(nfold, str):
+         self.label = nfold[:-2]  # strip componend nfolds
+         if nfold[0] in 'CD':
+            nfold = int(nfold[1:-2])
+         else:
+            self._opinfo = int(nfold[-2]), int(nfold[-1])
+            assert nfold[0] in 'TO'
+            nfold = dict(T=12, O=24)[nfold[0]]
+      self.nfold = nfold
 
    def frame_operator_ids(self, frames):
       ids = np.arange(len(frames), dtype=np.int32)
@@ -79,6 +102,7 @@ class SymElem:
       return w
 
    def _make_label(self, label):
+      if hasattr(self, 'label'): return
       self.label = label
       if self.label is None:
          if self.axis2 is None:
@@ -138,7 +162,7 @@ class SymElem:
 
    def place_center(self, cen):
       self.cen = wu.homog.hgeom.hpoint(cen)
-      if self.isdihedral: return
+      if not self.iscyclic: return
       dist = wu.homog.line_line_distance_pa(cen, self.axis, _cube_edge_cen * self.scale, _cube_edge_axis)
       w = np.argmin(dist)
       newcen, _ = wu.homog.line_line_closest_points_pa(cen, self.axis, _cube_edge_cen[w] * self.scale, _cube_edge_axis[w])
@@ -146,17 +170,40 @@ class SymElem:
       if not np.any(np.isnan(newcen)):
          self.cen = newcen
 
+   def _set_kind(self):
+      self.iscyclic, self.isdihedral, self.istet, self.isoct, self.isscrew, self.iscompound = [False] * 6
+      if self.label == 'T':
+         self.kind, self.istet, self.iscompound = 'tet', True, True
+      elif self.label == 'O':
+         self.kind, self.isoct, self.iscompound = 'oct', True, True
+      elif not np.isclose(self.hel, 0):
+         assert self.axis2 is None
+         self.kind, self.isscrew = 'screw', True
+      elif self.axis2 is not None:
+         self.kind, self.isdihedral, self.iscompound = 'dihedral', True, True
+      else:
+         self.kind, self.iscyclic = 'cyclic', True
+
    def make_operators(self):
       # ic(self)
-      x = wu.homog.hgeom.hrot(self.axis, nfold=self.nfold, center=self.cen)
-      ops = [wu.homog.hgeom.hpow(x, p) for p in range(self.nfold)]
-      if self.axis2 is not None:
-         xd2f = wu.homog.hgeom.hrot(self.axis2, nfold=2, center=self.cen)
-         ops = ops + [xd2f @ x for x in ops]
-      if self.hel != 0.0:
-         for i, x in enumerate(ops):
-            x[:, 3] += self.axis * self.hel * i
-      ops = np.stack(ops)
+      if self.label == 'T':
+         ops = wu.sym.frames(self.label)
+         assert self._opinfo == (3, 2)
+         ops = wu.halign2([1, 1, 1], [0, 0, 1], self.axis, self.axis2) @ ops
+         # ic(self.axis, self.axis2)
+      elif self.label == 'O':
+         assert self._opinfo in [(4, 3), (4, 2), (3, 2)]
+         ops = wu.sym.frames(self.label)
+      else:
+         x = wu.homog.hgeom.hrot(self.axis, nfold=self.nfold, center=self.cen)
+         ops = [wu.homog.hgeom.hpow(x, p) for p in range(self.nfold)]
+         if self.axis2 is not None:
+            xd2f = wu.homog.hgeom.hrot(self.axis2, nfold=2, center=self.cen)
+            ops = ops + [xd2f @ x for x in ops]
+         if self.hel != 0.0:
+            for i, x in enumerate(ops):
+               x[:, 3] += self.axis * self.hel * i
+         ops = np.stack(ops)
       assert wu.homog.hgeom.hvalid(ops)
       return ops
 
@@ -187,11 +234,17 @@ class SymElem:
          result = result[0]
       return result
 
-   def __str__(self):
+   def __repr__(self):
       ax = (self.axis / np.max(np.abs(self.axis))).round(6)
       if np.allclose(ax.round(), ax):
          ax = ax.astype('i')
-      if self.axis2 is None:
+      if self.istet:
+         ax2 = (self.axis2 / np.max(np.abs(self.axis2))).round(6)
+         s = f'SymElem(\'T32\', axis={list(ax[:3])}, axis2={list(ax2[:3])}, cen={list(self.cen[:3])}, label=\'{self.label}\')'
+      elif self.isoct:
+         ax2 = (self.axis2 / np.max(np.abs(self.axis2))).round(6)
+         s = f'SymElem(\'O43\', axis={list(ax[:3])}, axis2={list(ax2[:3])}, cen={list(self.cen[:3])}, label=\'{self.label}\')'
+      elif self.axis2 is None:
          if self.screw == 0:
             s = f'SymElem({self.nfold}, axis={list(ax[:3])}, cen={list(self.cen[:3])}, label=\'{self.label}\')'
          else:
@@ -199,21 +252,6 @@ class SymElem:
       else:
          ax2 = (self.axis2 / np.max(np.abs(self.axis2))).round(6)
          s = f'SymElem({self.nfold}, axis={list(ax[:3])}, axis2={list(ax2[:3])}, cen={list(self.cen[:3])}, label=\'{self.label}\')'
-      # s = s.replace('0.0,', '0,').replace('0.0],', '0]')
-      return s
-
-   def __repr__(self):
-      ax = (self.axis / np.max(np.abs(self.axis))).round(6)
-      if np.allclose(ax.round(), ax):
-         ax = ax.astype('i')
-      if self.axis2 is None:
-         if self.screw == 0:
-            s = f'SymElem({self.nfold}, axis={list(ax[:3])}, cen={list(self.cen[:3])})'
-         else:
-            s = f'SymElem({self.nfold}, axis={list(ax[:3])}, cen={list(self.cen[:3])}, hel={self.hel})'
-      else:
-         ax2 = (self.axis2 / np.max(np.abs(self.axis2))).round(6)
-         s = f'SymElem({self.nfold}, axis={list(ax[:3])}, axis2={list(ax2[:3])}, cen={list(self.cen[:3])})'
       # s = s.replace('0.0,', '0,').replace('0.0],', '0]')
       return s
 

@@ -288,6 +288,7 @@ def pymol_visualize_xforms(
    addtocgo=None,
    colors=None,
    bounds=None,
+   colorset=0,
    **kw,
 ):
    kw = wu.Bunch(kw)
@@ -337,6 +338,17 @@ def pymol_visualize_xforms(
       col2 = [0, 1, 0] if color is None else color
       col3 = [0, 0, 1] if color is None else color
       col4 = [1, 0.5, 0.5] if color is None else color
+      if colorset == 1:
+         col1 = [1, 0.5, 0] if color is None else color
+         col2 = [0, 1, 0.5] if color is None else color
+         col3 = [0.5, 0, 1] if color is None else color
+         col4 = [1, 0.75, 0.5] if color is None else color
+      if colorset == 2:
+         col1 = [1, 0, 0.5] if color is None else color
+         col2 = [0.5, 1, 0] if color is None else color
+         col3 = [0, 0.5, 1] if color is None else color
+         col4 = [1, 0.5, 0.5] if color is None else color
+
       mycgo.extend(cgo_cyl(cen, x, 0.05 * weight, col1))
       mycgo.extend(cgo_cyl(cen, y, 0.05 * weight, col2))
       mycgo.extend(cgo_cyl(cen, z, 0.05 * weight, col3))

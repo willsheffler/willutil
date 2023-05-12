@@ -1074,9 +1074,18 @@ def align_around_axis(axis, u, v):
 def halign(a, b, doto=None):
    # if a.shape == b.shape and np.allclose(a, b): return np.eye(4)
    # x = hrot((hnormalized(a) + hnormalized(b)) / 2, np.pi)
+   a, b = hvec(a), hvec(b)
    ax = hcross(a, b)
    if np.allclose(ax, 0): return np.eye(4)
-   x = align_around_axis(ax, a, b)
+   x = np.tile(np.eye(4), (*ax.shape[:-1], 1, 1))
+   ok = ~np.all(np.isclose(ax, 0), axis=-1)
+   # ic(ok.shape, x.shape, a.shape, b.shape)
+   if a.ndim > 1: a = a[ok]
+   if b.ndim > 1: b = b[ok]
+   # ic(ok.shape, x.shape, a.shape, b.shape)
+   tmp = align_around_axis(ax[ok], a, b)
+   x[ok] = tmp
+   # ic(x.shape)
    return x if doto is None else wu.hxform(x, doto)
 
 def halign2(a1, a2, b1, b2, doto=None):

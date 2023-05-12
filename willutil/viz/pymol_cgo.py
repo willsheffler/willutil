@@ -308,7 +308,7 @@ def showcube(*args, **kw):
    cmd.load_cgo(mycgo, "CUBE")
    cmd.set_view(v)
 
-def cgo_cube(lb=[-10, -10, -10], ub=[10, 10, 10], r=0.1, xform=np.eye(4)):
+def cgo_cube(lb=[-10, -10, -10], ub=[10, 10, 10], r=0.03, xform=np.eye(4)):
    if isinstance(lb, (float, int)): lb = [lb] * 3
    if isinstance(ub, (float, int)): ub = [ub] * 3
    a = [

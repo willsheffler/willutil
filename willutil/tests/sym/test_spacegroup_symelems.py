@@ -1,14 +1,21 @@
 import numpy as np
-import itertools as it
 import willutil as wu
 from willutil.sym.SymElem import SymElem
-from willutil.sym.spacegroup_symelems import _compute_symelems
+from willutil.sym.spacegroup_symelems import _compute_symelems, _find_compound_symelems
 from numpy import array
 
 def main():
 
-   test_compound_elems()
-   assert 0
+   test_compound_elems_P213()
+   test_compound_elems_I23()
+   test_compound_elems_F23()
+   test_compound_elems_P23()
+   test_compound_elems_P4132()
+   test_compound_elems_P432()
+   test_compound_elems_I432()
+   test_compound_elems_F432()
+   test_compound_elems_I4132()
+   test_compound_elems_F4132()
 
    test_symelems_P23()
 
@@ -34,87 +41,212 @@ def main():
 
    ic('PASS test_spacegroup_symelems')
 
-def inunit(p):
-   x, y, z, w = p.T
-   ok = ((-0.001 < x) * (x < 0.999) * (-0.001 < y) * (y < 0.999) * (-0.001 < z) * (z < 0.999))
-   return ok
+def test_compound_elems_P4132(showme=False):
+   sym = 'P4132'
+   elems = wu.sym.symelems(sym, asdict=True)
+   celems = _find_compound_symelems(sym)
 
-def flipaxs(a):
-   if np.sum(a[:3] * [1, 1.1, 1.2]) < 0:
-      a[:3] *= -1
-   return a
+   for k, v in celems.items():
+      print(k)
+      for x in v:
+         print(x, flush=True)
 
-def test_compound_elems():
-   # sym = 'P23'
-   # sym = 'I23'
+   if showme: showsymelems(sym, elems)
+   if showme: showsymelems(sym, celems)
+
+   print(repr(celems), flush=True)
+   assert celems == {'D3': [SymElem(3, axis=[1, 1, 1], axis2=[0.0, -1.0, 1.0], cen=[0.375, 0.375, 0.375], label='D3')]}
+
+def test_compound_elems_P432(showme=False):
+   sym = 'P432'
+   elems = wu.sym.symelems(sym, asdict=True)
+   celems = _find_compound_symelems(sym)
+
+   for k, v in celems.items():
+      print(k)
+      for x in v:
+         print(x, flush=True)
+
+   if showme: showsymelems(sym, elems)
+   if showme: showsymelems(sym, celems)
+
+   print(repr(celems), flush=True)
+   assert celems == {
+      'O': [
+         SymElem('O43', axis=[0, 0, 1], axis2=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0], label='O'),
+         SymElem('O43', axis=[0, 0, 1], axis2=[1.0, 1.0, 1.0], cen=[0.5, 0.5, 0.5], label='O'),
+      ],
+      'D4': [
+         SymElem(4, axis=[1, 0, 0], axis2=[0.0, 1.0, 1.0], cen=[0.5, 0.0, 0.0], label='D4'),
+         SymElem(4, axis=[0, 0, 1], axis2=[1.0, 0.0, 0.0], cen=[0.5, 0.5, 0.0], label='D4'),
+      ],
+   }
+
+def test_compound_elems_I432(showme=False):
+   sym = 'I432'
+   elems = wu.sym.symelems(sym, asdict=True)
+   celems = _find_compound_symelems(sym)
+
+   for k, v in celems.items():
+      print(k)
+      for x in v:
+         print(x, flush=True)
+
+   if showme: showsymelems(sym, elems)
+   if showme: showsymelems(sym, celems)
+
+   print(repr(celems), flush=True)
+   assert celems == {
+      'O': [SymElem('O43', axis=[0, 0, 1], axis2=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0], label='O')],
+      'D2': [SymElem(2, axis=[1, 0, 1], axis2=[0.0, 1.0, 0.0], cen=[0.5, 0.25, 0.0], label='D2')],
+      'D4': [SymElem(4, axis=[1, 0, 0], axis2=[0.0, 0.0, 1.0], cen=[0.5, 0.0, 0.0], label='D4')],
+      'D3': [SymElem(3, axis=[1, 1, 1], axis2=[0.0, -1.0, 1.0], cen=[0.25, 0.25, 0.25], label='D3')],
+   }
+
+def test_compound_elems_F4132(showme=False):
+   sym = 'F4132'
+   elems = wu.sym.symelems(sym, asdict=True)
+   celems = _find_compound_symelems(sym)
+
+   for k, v in celems.items():
+      print(k)
+      for x in v:
+         print(x, flush=True)
+
+   if showme: showsymelems(sym, elems)
+   if showme: showsymelems(sym, celems)
+
+   print(repr(celems), flush=True)
+   assert celems == {'T': [SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.0], label='T')], 'D3': [SymElem(3, axis=[1, 1, 1], axis2=[0.0, -1.0, 1.0], cen=[0.125, 0.125, 0.125], label='D3')]}
+
+def test_compound_elems_F432(showme=False):
+   sym = 'F432'
+   elems = wu.sym.symelems(sym, asdict=True)
+   celems = _find_compound_symelems(sym)
+
+   for k, v in celems.items():
+      print(k)
+      for x in v:
+         print(x, flush=True)
+
+   if showme: showsymelems(sym, elems)
+   if showme: showsymelems(sym, celems)
+   # print(repr(celems), flush=True)
+   assert celems == {
+      'D2': [
+         SymElem(2, axis=[1, 1, 0], axis2=[0.0, 0.0, 1.0], cen=[0.25, 0.25, 0.0], label='D2'),
+      ],
+      'O': [
+         SymElem('O43', axis=[0, 0, 1], axis2=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0], label='O'),
+         SymElem('O43', axis=[1, 1, 1], axis2=[1.0, 0.0, 1.0], cen=[0.5, 0.0, 0.0], label='O'),
+      ],
+      'T': [
+         SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.25, 0.25, 0.25], label='T'),
+      ],
+   }
+
+def test_compound_elems_I4132(showme=False):
    sym = 'I4132'
-   se = wu.sym.symelems(sym, asdict=True, screws=False)
-   frames = wu.sym.sgframes(sym, cells=3)
-   ic(se)
-   # showsymelems(sym, se)
-   isects = defaultdict(set)
-   for e1, e2 in it.product(it.chain(*se.values()), it.chain(*se.values())):
-      # if e1.id == e2.id: continue
-      # e2 = se['C3'][0]
-      axis, cen = e1.axis, e1.cen
-      symcen = einsum('fij,j->fi', frames, e2.cen)
-      symcen = symcen
-      symaxis = einsum('fij,j->fi', frames, e2.axis)
-      taxis, tcen = [np.tile(x, (len(symcen), 1)) for x in (axis, cen)]
-      p, q = wu.hlinesisect(tcen, taxis, symcen, symaxis)
-      d = wu.hnorm(p - q)
-      p = (p + q) / 2
-      ok = inunit(p)
-      ok = np.logical_and(ok, d < 0.001)
-      if np.sum(ok) == 0: continue
-      axis2 = symaxis[ok][0]
-      cen = p[ok][0]
-      axis = einsum('fij,j->fi', frames, axis)
-      axis2 = einsum('fij,j->fi', frames, axis2)
-      cen = einsum('fij,j->fi', frames, cen)
-      axis = axis[inunit(cen)]
-      axis2 = axis2[inunit(cen)]
-      cen = cen[inunit(cen)]
-      pick = np.argmin(wu.hnorm(cen - [0.003, 0.002, 0.001, 1]))
-      axis = flipaxs(axis[pick])
-      axis2 = flipaxs(axis2[pick])
-      if not np.isclose(wu.hangle(axis, axis2), np.pi / 2):
-         ic('SKIPPING T or O')
-         continue
-      cen = cen[pick]
-      nfold = e1.nfold
-      if e2.nfold > e1.nfold:
-         nfold = e2.nfold
-         axis, axis2 = axis2, axis
-      t = tuple([nfold, *cen[:3].round(9), *axis[:3].round(9), *axis2[:3].round(9)])
-      isects[f'D{nfold}'].add(t)
-   # ic(isects)
+   elems = wu.sym.symelems(sym)
+   celems = _find_compound_symelems(sym)
 
-   # ic(isects['D2'])
-   # remove redundant D2 centers
-   isects['D2'] = list({t[1:4]: t for t in isects['D2']}.values())
-   # ic(isects['D2'])
-   # assert 0
-   delems = defaultdict(list)
-   for psym in isects:
-      delems[psym] = [SymElem(t[0], t[4:7], t[1:4], t[7:10]) for t in isects[psym]]
-      for e in delems[psym]:
-         print(e)
-   # delems['D3'] = list()
-   # showsymelems(sym, se, scan=10)
-   showsymelems(sym, delems)
+   for k, v in celems.items():
+      print(k)
+      for x in v:
+         print(x, flush=True)
 
-   # p = einsum('fij,j->fi', frames, [0.25, 0.125, 0.0, 1])
-   # wu.showme(p * 10)
-   # p = einsum('fij,j->fi', frames, [0.5, 0.25, 0.375, 1])
-   # wu.showme(p * 10)
-   # p = einsum('fij,j->fi', frames, [0.125, 0.125, 0.125, 1])
-   # wu.showme(p * 10)
-   # p = einsum('fij,j->fi', frames, [0.375, 0.375, 0.375, 1])
-   # wu.showme(p * 10)
+   # if showme: showsymelems(sym, elems)
+   if showme: showsymelems(sym, celems)
+   print(repr(celems), flush=True)
+   assert celems == {
+      'D2': [
+         SymElem(2, axis=[1, 0, 1], axis2=[0.0, 1.0, 0.0], cen=[0.25, 0.125, 0.0], label='D2'),
+         SymElem(2, axis=[0, 0, 1], axis2=[-1.0, 1.0, 0.0], cen=[0.5, 0.25, 0.375], label='D2'),
+      ],
+      'D3': [
+         SymElem(3, axis=[1, 1, 1], axis2=[0.0, -1.0, 1.0], cen=[0.125, 0.125, 0.125], label='D3'),
+         SymElem(3, axis=[1, 1, 1], axis2=[0.0, -1.0, 1.0], cen=[0.375, 0.375, 0.375], label='D3'),
+      ],
+   }
 
-   # showsymelems(sym, se)
-   assert 0
+def test_compound_elems_P23(showme=False):
+   sym = 'P23'
+   elems = wu.sym.symelems(sym)
+   celems = _find_compound_symelems(sym)
+
+   for k, v in celems.items():
+      print(k)
+      for x in v:
+         print(x, flush=True)
+
+   # if showme: showsymelems(sym, elems)
+   if showme: showsymelems(sym, celems)
+
+   assert celems == {
+      'D2': [
+         SymElem(2, axis=[1, 0, 0], axis2=[0.0, 1.0, 0.0], cen=[0.5, 0.0, 0.0]),
+         SymElem(2, axis=[1, 0, 0], axis2=[0.0, 0.0, 1.0], cen=[0.5, 0.5, 0.0]),
+      ],
+      'T': [
+         SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.0]),
+         SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.5, 0.5, 0.5]),
+      ],
+   }
+
+def test_compound_elems_P213(showme=False):
+   sym = 'P213'
+   elems = wu.sym.symelems(sym)
+   celems = _find_compound_symelems(sym)
+
+   for k, v in celems.items():
+      print(k)
+      for x in v:
+         print(x, flush=True)
+
+   # if showme: showsymelems(sym, elems)
+   if showme: showsymelems(sym, celems)
+
+   assert celems == {}
+
+def test_compound_elems_I23(showme=False):
+   sym = 'I23'
+   elems = wu.sym.symelems(sym, asdict=True)
+   celems = _find_compound_symelems(sym)
+
+   for k, v in celems.items():
+      print(k)
+      for x in v:
+         print(x, flush=True)
+
+   if showme: showsymelems(sym, elems)
+   if showme: showsymelems(sym, celems)
+
+   print(repr(celems))
+   assert celems == {
+      'D2': [SymElem(2, axis=[1, 0, 0], axis2=[0.0, 0.0, 1.0], cen=[0.5, 0.0, 0.0], label='D2')],
+      'T': [SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.0], label='T')],
+   }
+
+def test_compound_elems_F23(showme=False):
+   sym = 'F23'
+   elems = wu.sym.symelems(sym, asdict=True)
+   celems = _find_compound_symelems(sym)
+
+   for k, v in celems.items():
+      print(k)
+      for x in v:
+         print(x, flush=True)
+
+   if showme: showsymelems(sym, elems)
+   if showme: showsymelems(sym, celems)
+
+   print(repr(celems))
+   assert celems == {
+      'T': [
+         SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.0], label='T'),
+         SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.25, 0.25, 0.25], label='T'),
+      ]
+   }
 
 def test_screw_elem():
    a = SymElem(4, axis=[0.0, 1.0, 0.0], cen=[0.5, 0.0, 0.25], hel=0.75)
@@ -195,11 +327,11 @@ def test_symelems_F432(showme=False, **kw):
       'C2': [
          SymElem(2, axis=[0.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0]),
          SymElem(2, axis=[0.0, 0.0, 1.0], cen=[0.25, 0.25, 0.0]),
-         SymElem(2, axis=[0.0, 1.0, 1.0], cen=[0.5, 0.0, -0.0]),
+         SymElem(2, axis=[0.0, 1.0, 1.0], cen=[0.5, 0.0, 0.0]),
       ],
       'C21': [
-         SymElem(2, axis=[0.0, 0.0, 1.0], cen=[0.25, -0.0, 0.0], hel=0.5),
-         SymElem(2, axis=[1.0, 0.0, 1.0], cen=[1.125, 0.25, 0.875], hel=0.3535533906),
+         SymElem(2, axis=[0.0, 0.0, 1.0], cen=[0.25, 0.0, 0.0], hel=0.5),
+         SymElem(2, axis=[1.0, 0.0, 1.0], cen=[0.25, 0.25, 0.0], hel=0.3535533906),
       ],
       'C3': [SymElem(3, axis=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0])],
       'C4': [SymElem(4, axis=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.0])],
@@ -343,15 +475,17 @@ def showsymelems(
    colorbyelem=False,
    cells=3,
    bounds=[-0.1, 1.1],
-   scale=10,
-   offset=0.2,
+   scale=12,
+   offset=0,
+   weight=2.0,
    scan=0,
 ):
+   import pymol
    f = np.eye(4).reshape(1, 4, 4)
-   if allframes: f = wu.sym.sgframes(sym, cells=cells, cellgeom=[10])
-   args = wu.Bunch(xyzlen=[0.3, 0.4, 1.0])
+   if allframes: f = wu.sym.sgframes(sym, cells=cells, cellgeom=[scale])
 
    ii = 0
+   labelcount = defaultdict(lambda: 0)
    for i, c in enumerate(symelems):
       for j, s in enumerate(symelems[c]):
          if colorbyelem: args.colors = [[(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, 0, 1), (0, 1, 1), (1, 1, 1)][ii]]
@@ -361,16 +495,68 @@ def showsymelems(
             ic(f2.shape)
             f2 = f2.reshape(-1, 4, 4)
             ic(f2.shape)
-            # assert 0
-         wu.showme(
-            f2 @ wu.htrans(s.cen * scale + offset * wu.hvec([0.1, 0.2, 0.3])) @ wu.halign([0, 0, 1], s.axis),
-            name=s.label,
-            bounds=[b * 10 for b in bounds],
-            **args,
-         )
+
+         shift = wu.htrans(s.cen * scale + offset * wu.hvec([0.1, 0.2, 0.3]))
+
+         if s.istet:
+            configs = [
+               ((s.axis, [0, 1, 0]), (None, None), [0.0, 0.8, 0.0]),
+               ((-s.axis, [0, 1, 0]), (None, None), [0.0, 0.8, 0.0]),
+               ((s.axis2, [1, 0, 0]), (None, None), [0.8, 0.0, 0.0]),
+            ]
+         elif s.isoct:
+            configs = [
+               (([0, 1, 1], [1, 0, 0]), (None, None), [0.7, 0.0, 0.0]),
+               (([1, 1, 1], [0, 1, 0]), (None, None), [0.0, 0.7, 0.0]),
+               (([0, 0, 1], [0, 0, 1]), (None, None), [0.0, 0.0, 0.7]),
+            ]
+         elif s.label == 'D2':
+            configs = [
+               ((s.axis, [1, 0, 0]), (s.axis2, [0, 1, 0]), [0.7, 0, 0]),
+               ((s.axis, [0, 1, 0]), (s.axis2, [0, 0, 1]), [0.7, 0, 0]),
+               ((s.axis, [0, 0, 1]), (s.axis2, [1, 0, 0]), [0.7, 0, 0]),
+            ]
+         elif s.label == 'D4':
+            configs = [
+               ((s.axis2, [1, 0, 0]), (s.axis, [0, 1, 0]), [0.7, 0, 0]),
+               ((wu.hrot(s.axis, 45, s.cen) @ s.axis2, [1, 0, 0]), (s.axis, [0, 1, 0]), [0.7, 0, 0]),
+               ((s.axis, [0, 0, 1]), (s.axis2, [1, 0, 0]), [0.0, 0, 0.9]),
+            ]
+         elif s.nfold == 2:
+            configs = [((s.axis, [1, 0, 0]), (s.axis2, [0, 0, 1]), [1.0, 0.3, 0.6])]
+         elif s.nfold == 3:
+            configs = [((s.axis, [0, 1, 0]), (s.axis2, [1, 0, 0]), [0.6, 1, 0.3])]
+         elif s.nfold == 4:
+            configs = [((s.axis, [0, 0, 1]), (s.axis2, [1, 0, 0]), [0.6, 0.3, 1])]
+         elif s.nfold == 6:
+            configs = [((s.axis, [1, 1, 1]), (s.axis2, [-1, 1, 0]), [1, 1, 1])]
+         else:
+            assert 0
+         name = s.label + '_' + ('ABCDEFGH')[labelcount[s.label]]
+
+         cgo = list()
+         for (tax, ax), (tax2, ax2), xyzlen in configs:
+            xyzlen = np.array(xyzlen)
+            if s.isdihedral:
+               origin = wu.halign2(ax, ax2, tax, tax2)
+               xyzlen[xyzlen == 0.6] = 1
+            else:
+               origin = wu.halign(ax, tax)
+            wu.showme(
+               f2 @ shift @ origin,
+               name=name,
+               bounds=[b * scale for b in bounds],
+               xyzlen=xyzlen,
+               addtocgo=cgo,
+               make_cgo_only=True,
+               weight=weight,
+               colorset=labelcount[s.label],
+            )
+         pymol.cmd.load_cgo(cgo, name)
+         labelcount[s.label] += 1
          ii += 1
    from willutil.viz.pymol_viz import showcube
-   showcube(0, 10)
+   showcube(0, scale)
 
 if __name__ == '__main__':
    main()

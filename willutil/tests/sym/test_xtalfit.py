@@ -1,5 +1,6 @@
 import numpy as np
 import willutil as wu
+from willutil.sym.xtalfit import fix_coords_to_xtal
 
 def main():
    test_fit_xtal_to_coords()

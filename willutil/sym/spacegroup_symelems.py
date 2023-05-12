@@ -1,10 +1,21 @@
-import itertools, collections
+import itertools as it
+from collections import defaultdict
 import numpy as np
 import willutil as wu
 from willutil.sym.spacegroup_data import *
 from willutil.sym.spacegroup_util import *
 from willutil.sym.SymElem import *
 from willutil.homog.hgeom import h_point_line_dist, hvec, hpoint
+
+def _inunit(p):
+   x, y, z, w = p.T
+   ok = ((-0.001 < x) * (x < 0.999) * (-0.001 < y) * (y < 0.999) * (-0.001 < z) * (z < 0.999))
+   return ok
+
+def _flipaxs(a):
+   if np.sum(a[:3] * [1, 1.1, 1.2]) < 0:
+      a[:3] *= -1
+   return a
 
 def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=None):
    if torch_device:
@@ -45,7 +56,17 @@ def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=No
    # ic(axs.shape)
    # ic(hel.shape)
    tag0 = np.concatenate([axs, cen, hel], axis=1).round(10)
-   symelems = collections.defaultdict(list)
+   symelems = defaultdict(list)
+
+   if False:
+      tf = np.logical_and(np.isclose(np.pi, ang), np.all(axs == [0.5, -0.5, 0], axis=1))
+      ic(np.sum(tf), len(tf))
+      ic(axs[tf])
+      ic(ang[tf])
+      ic(cen[tf])
+      ic(hel[tf])
+      assert 0
+
    for nfold in [2, 3, 4, 6, -2, -3, -4, -6]:
       screw, nfold = nfold < 0, abs(nfold)
       nfang = 2 * np.pi / nfold
@@ -69,10 +90,6 @@ def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=No
 
       d = np.sum(nftag[:, 3:6]**2, axis=1).round(6)
       nftag = nftag[np.argsort(d, kind='stable')]
-
-      # if nfold == 3:
-      # print(nftag[:, :6])
-      # assert 0
 
       if torch_device:
          f5cell_torch = torch.tensor(f4cel, device=torch_device, dtype=torch.float32)
@@ -112,12 +129,95 @@ def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=No
 
       # ic(symelems)
    symelems = _symelem_remove_ambiguous_syms(symelems)
-   symelems = _find_compond_symelems(symelems, f4cel, f2geom)
 
    return symelems
 
+def _find_compound_symelems(sym):
+   se = wu.sym.symelems(sym, asdict=True, screws=False)
+   frames = wu.sym.sgframes(sym, cells=3)
+   isects = defaultdict(set)
+   for e1, e2 in it.product(it.chain(*se.values()), it.chain(*se.values())):
+      # if e1.id == e2.id: continue
+      # e2 = se['C3'][0]
+      axis, cen = e1.axis, e1.cen
+      symcen = einsum('fij,j->fi', frames, e2.cen)
+      symcen = symcen
+      symaxis = einsum('fij,j->fi', frames, e2.axis)
+      taxis, tcen = [np.tile(x, (len(symcen), 1)) for x in (axis, cen)]
+      p, q = wu.hlinesisect(tcen, taxis, symcen, symaxis)
+      d = wu.hnorm(p - q)
+      p = (p + q) / 2
+      ok = _inunit(p)
+      ok = np.logical_and(ok, d < 0.001)
+      if np.sum(ok) == 0: continue
+      axis2 = symaxis[ok][0]
+      cen = p[ok][0]
+      axis = einsum('fij,j->fi', frames, axis)
+      axis2 = einsum('fij,j->fi', frames, axis2)
+      cen = einsum('fij,j->fi', frames, cen)
+      axis = axis[_inunit(cen)]
+      axis2 = axis2[_inunit(cen)]
+      cen = cen[_inunit(cen)]
+      # ic(cen)
+      pick = np.argmin(wu.hnorm(cen - [0.003, 0.002, 0.001, 1]))
+      axis = _flipaxs(axis[pick])
+      axis2 = _flipaxs(axis2[pick])
+      nf1, nf2 = e1.nfold, e2.nfold
+      # D np.pi/2
+      ang = wu.hangle(axis, axis2)
+      if e2.nfold > e1.nfold:
+         nf1, nf2 = e2.nfold, e1.nfold
+         axis, axis2 = axis2, axis
+      if np.isclose(ang, np.pi / 2):
+         psym = f'D{nf1}'
+      elif (nf1, nf2) == (3, 2) and np.isclose(ang, 0.9553166181245092):
+         psym = 'T'
+      elif any([
+         (nf1, nf2) == (3, 2) and np.isclose(ang, 0.6154797086703874),
+         (nf1, nf2) == (4, 3) and np.isclose(ang, 0.9553166181245092),
+         (nf1, nf2) == (4, 2) and np.isclose(ang, 0.7853981633974484),
+      ]):
+         psym = 'O'
+      # elif (nf1, nf2) in [(2, 2), (3, 3)]:
+      # continue
+      else:
+         # print('SKIP', nf1, nf2, ang, flush=True)
+         continue
+      cen = cen[pick]
+      t = tuple([f'{psym}{nf1}{nf2}', *cen[:3].round(9), *axis[:3].round(9), *axis2[:3].round(9)])
+      isects[psym].add(t)
+
+   for psym in isects:
+      isects[psym] = list(sorted(isects[psym]))
+
+   # ic(isects['D2'])
+   # remove redundant centers
+   for psym in isects:
+      isects[psym] = list({t[1:4]: t for t in isects[psym]}.values())
+
+   # ic(isects['D2'])
+   # assert 0
+   celems = defaultdict(list)
+   for psym in isects:
+      celems[psym] = [SymElem(t[0], t[4:7], t[1:4], t[7:10]) for t in isects[psym]]
+   newd2 = list()
+   for ed2 in celems['D2']:
+      if not np.any([np.allclose(ed2.cen, eto.cen) for eto in it.chain(celems['T'], celems['O'], celems['D4'])]):
+         newd2.append(ed2)
+   celems['D2'] = newd2
+   newd4 = list()
+   for ed4 in celems['D4']:
+      if not np.any([np.allclose(ed4.cen, eo.cen) for eo in celems['O']]):
+         newd4.append(ed4)
+   celems['D4'] = newd4
+   celems = {k: v for k, v in celems.items() if len(v)}
+
+   return celems
+
 def _symelem_is_same(elem, elem2, frames):
-   assert elem.iscyclic and elem.label[:2] == elem2.label[:2]
+   assert elem.iscyclic or elem.isscrew
+   assert elem2.iscyclic or elem2.isscrew
+   assert elem.label[:2] == elem2.label[:2]
    axis = einsum('fij,j->fi', frames, elem2.axis)
    axsame = np.all(np.isclose(axis, elem.axis), axis=1)
    axsameneg = np.all(np.isclose(-axis, elem.axis), axis=1)
@@ -223,10 +323,6 @@ def _make_symtags_torch(tag, frames, torch_device, t):
          concat([-c1, c2, -thel], axis=1),
       ])
    return symtags
-
-def _find_compond_symelems(symelems, t5cell, f2geom):
-   # assert 0
-   return symelems
 
 def _pick_symelemtags(symtags, symelems):
 
