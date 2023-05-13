@@ -38,6 +38,11 @@ def sgframes(
 
    return _memoized_frames[key]
 
+def sgpermutations(spacegroup: str, cells=4):
+   assert cells == 4
+   spacegroup = spacegroup_canonical_name(spacegroup)
+   return sg_permutations444_dict[spacegroup]
+
 def symelems(spacegroup: str, psym=None, asdict=False, screws=True, cyclic=True):
    if isinstance(psym, int):
       psym = f'c{psym}'

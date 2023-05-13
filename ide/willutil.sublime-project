@@ -22,6 +22,10 @@
 			"shell_cmd": "cd $folder; python willutil/tests/unsym/test_symscaffold.py &> log/sublime_build.log"
 		},		
 		{
+			"name": "test_SymElem.py",
+			"shell_cmd": "cd $folder; python willutil/tests/sym/test_SymElem.py &> log/sublime_build.log"
+		},		
+		{
 			"name": "test_spacegroup_symelems.py",
 			"shell_cmd": "cd $folder; python willutil/tests/sym/test_spacegroup_symelems.py &> log/sublime_build.log"
 		},		

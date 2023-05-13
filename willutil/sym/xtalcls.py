@@ -101,7 +101,7 @@ class Xtal:
       return frames.round(10)
 
    def fit_coords(self, *a, **kw):
-      return wu.sym.fix_coords_to_xtal(self.name, *a, **kw)
+      return wu.sym.xtalfit.fix_coords_to_xtal(self.name, *a, **kw)
 
    def fit_xtal_to_coords(self, coords, **kw):
       return wu.sym.xtalfit.fix_xtal_to_coords(self, coords, **kw)
@@ -355,7 +355,7 @@ class Xtal:
          # ic(len(elems))
          assert len(elems) == len(frames), f'{len(elems)} {len(frames)}'
          for e, f in zip(elems, frames):
-            assert np.allclose(np.eye(4), e.origin)
+            # assert np.allclose(np.eye(4), e.origin)
             e.origin = f
          coverelems.append(elems)
       return coverelems

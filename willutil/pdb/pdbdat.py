@@ -8,14 +8,14 @@ xr = deferred_import.deferred_import('xarray')
 log = logging.getLogger(__name__)
 
 class PdbData:
-   def __init__(self, data, sanity_check=None):
+   def __init__(self, data, sanitycheck=None):
       if isinstance(data, xr.Dataset): self.data = data
       elif isinstance(data, PdbData): self.data = data.data
       if hasattr(self, "data"):
-         if sanity_check is True: self.sanity_check()
+         if sanitycheck is True: self.sanitycheck()
          return
       else:
-         pdbdata_from_dicts(self, data, sanity_check)
+         pdbdata_from_dicts(self, data, sanitycheck)
 
    def __getattr__(self, k):
       if k == "data":
@@ -44,7 +44,7 @@ class PdbData:
          keep = np.where(keep)[0]
       return np.array(sorted(keep))
 
-   def subset_by_pdb(self, keep, sanity_check=False, update_p_res=True, **kw):
+   def subset_by_pdb(self, keep, sanitycheck=False, update_p_res=True, **kw):
       """keep subset of data in same order as original"""
       keepers = self._get_keepers_by_pdb(keep, **kw)
       if np.sum(keepers) == 0: raise ValueError('no pdbs remain')
@@ -56,31 +56,31 @@ class PdbData:
       _update_relational_data(rpsub, self.data.pdb_res_offsets, keepers, update_p_res)
 
       new = PdbData(rpsub)
-      if sanity_check:
+      if sanitycheck:
          # try:
-         new.sanity_check()
+         new.sanitycheck()
       # except AssertionError:
       # import _pickle
       # with open('subset_by_pdb_error')
       return new
 
-   def subset_by_aa(self, aas, sanity_check=False, return_keepers=False):
+   def subset_by_aa(self, aas, sanitycheck=False, return_keepers=False):
       if isinstance(aas, str): aas = tuple(aas)
       keepers = np.isin(self.id2aa[self.aaid].data, aas)
-      to_return = self.subset_by_res(keepers, sanity_check)
+      to_return = self.subset_by_res(keepers, sanitycheck)
       if return_keepers: to_return = to_return, keepers
       return to_return
 
-   def subset_by_ss(self, ss, sanity_check=False, return_keepers=False):
+   def subset_by_ss(self, ss, sanitycheck=False, return_keepers=False):
       if len(set(ss) - set("EHL")) > 0:
          raise ValueError('ss must be EHL')
       if isinstance(ss, str): ss = tuple(ss)
       keepers = np.isin(self.id2ss[self.ssid].data, ss)
-      to_return = self.subset_by_res(keepers, sanity_check)
+      to_return = self.subset_by_res(keepers, sanitycheck)
       if return_keepers: to_return = to_return, keepers
       return to_return
 
-   def subset_by_res(self, keepers, sanity_check=False):
+   def subset_by_res(self, keepers, sanitycheck=False):
       assert len(keepers) == len(self.data.resid)
       if np.sum(keepers) == 0: raise ValueError('no residues remain')
 
@@ -141,11 +141,11 @@ class PdbData:
       # print('t5', time.perf_counter() - t5)
 
       # t6 = time.perf_counter()
-      if sanity_check: rp_pair.sanity_check()
+      if sanitycheck: rp_pair.sanitycheck()
       # print('t6', time.perf_counter() - t6)
       return rp_pair
 
-   def subset_by_pair(self, keepers, sanity_check=False, update_p_res=True):
+   def subset_by_pair(self, keepers, sanitycheck=False, update_p_res=True):
       rpsub = PdbData(self.data.sel(pairid=keepers))
       pdb_keep = np.unique(rpsub.p_pdbid)
       if len(pdb_keep) == 0: raise ValueError('no pairs remain')
@@ -158,8 +158,8 @@ class PdbData:
          new_pdb_pair_offsets = np.concatenate([[0], tmp])
          rpsub.data.attrs["pdb_pair_offsets"] = new_pdb_pair_offsets
 
-      if sanity_check:
-         rpsub.sanity_check()
+      if sanitycheck:
+         rpsub.sanitycheck()
 
       return rpsub
 
@@ -176,13 +176,13 @@ class PdbData:
       parts = [sorted(part1), sorted(part2)]
       return [self.subset_by_pdb(part, **kw) for part in parts]
 
-   def sanity_check(self):
+   def sanitycheck(self):
       rp = self.data
       Npdb = len(self.pdb)
       # from rpxdock import Timer
       # with Timer() as timer:
       if True:
-         log.debug(f'ResPaisDat sanity_check iters {min(Npdb, 100)}')
+         log.debug(f'ResPaisDat sanitycheck iters {min(Npdb, 100)}')
          for ipdb in np.random.choice(Npdb, min(Npdb, 100), replace=False):
             rlb, rub = rp.pdb_res_offsets[ipdb:ipdb + 2]
             # if rlb > 0:
@@ -206,7 +206,7 @@ class PdbData:
                #
                # with open(r + ".pickle", "wb") as out:
                # _pickle.dump(rp, out)
-               print(r, "sanity_check fail")
+               print(r, "sanitycheck fail")
                print(r, "pdb", ipdb, rp.pdb[ipdb].values, rp.nres[ipdb].values)
                print(r, "offset res", rp.pdb_res_offsets[ipdb])
                print(r, "pair_range", plb, pub)
@@ -241,12 +241,8 @@ class PdbData:
 
    def only_whats_needed(self, task):
       not_needed = dict(
-         seqproftest=
-         "phi psi omega chi1 chi2 chi3 chi4 chain r_fa_sol r_fa_intra_atr_xover4 r_fa_intra_rep_xover4 r_fa_intra_sol_xover4 r_lk_ball r_lk_ball_iso r_lk_ball_bridge r_lk_ball_bridge_uncpl r_fa_elec r_fa_intra_elec r_pro_close r_hbond_sr_bb r_hbond_lr_bb r_hbond_bb_sc r_hb_sc r_dslf_fa13 r_rama_prepro r_omega r_p_aa_pp r_fa_dun_rot r_fa_dun_dev r_fa_dun_semi r_hxl_tors r_ref sasa2 sasa4 nnb6 nnb8 nnb12 nnb14 p_hb_bb_bb p_hb_bb_sc p_hb_sc_bb p_hb_sc_sc p_fa_atr p_fa_rep p_fa_sol p_lk_ball p_fa_elec p_hbond_sr_bb p_hbond_lr_bb"
-         .split(),
-         respairscore=
-         "r_fa_intra_atr_xover4 r_fa_intra_rep_xover4 r_fa_intra_sol_xover4 r_lk_ball_iso r_lk_ball_bridge r_lk_ball_bridge_uncpl r_fa_intra_elec r_pro_close r_rama_prepro r_omega r_p_aa_pp r_hxl_tors r_ref sasa2 sasa4 nnb6 nnb8 nnb12 nnb14 p_hb_bb_bb p_hb_bb_sc p_hb_sc_bb p_fa_atr p_fa_rep p_fa_sol p_lk_ball p_fa_elec"
-         .split(),
+         seqproftest="phi psi omega chi1 chi2 chi3 chi4 chain r_fa_sol r_fa_intra_atr_xover4 r_fa_intra_rep_xover4 r_fa_intra_sol_xover4 r_lk_ball r_lk_ball_iso r_lk_ball_bridge r_lk_ball_bridge_uncpl r_fa_elec r_fa_intra_elec r_pro_close r_hbond_sr_bb r_hbond_lr_bb r_hbond_bb_sc r_hb_sc r_dslf_fa13 r_rama_prepro r_omega r_p_aa_pp r_fa_dun_rot r_fa_dun_dev r_fa_dun_semi r_hxl_tors r_ref sasa2 sasa4 nnb6 nnb8 nnb12 nnb14 p_hb_bb_bb p_hb_bb_sc p_hb_sc_bb p_hb_sc_sc p_fa_atr p_fa_rep p_fa_sol p_lk_ball p_fa_elec p_hbond_sr_bb p_hbond_lr_bb".split(),
+         respairscore="r_fa_intra_atr_xover4 r_fa_intra_rep_xover4 r_fa_intra_sol_xover4 r_lk_ball_iso r_lk_ball_bridge r_lk_ball_bridge_uncpl r_fa_intra_elec r_pro_close r_rama_prepro r_omega r_p_aa_pp r_hxl_tors r_ref sasa2 sasa4 nnb6 nnb8 nnb12 nnb14 p_hb_bb_bb p_hb_bb_sc p_hb_sc_bb p_fa_atr p_fa_rep p_fa_sol p_lk_ball p_fa_elec".split(),
       )
       assert task in not_needed
       for v in not_needed[task]:
@@ -305,7 +301,7 @@ def _change_seq_ss_to_ids(rp):
    dat["ss2id"] = xr.DataArray(ss2id, [id2ss], ["ss"])
    rp.data = dat
 
-def pdbdata_from_dicts(self, data, sanity_check):
+def pdbdata_from_dicts(self, data, sanitycheck):
    # loading from raw dicts
    assert isinstance(data, dict)
 
@@ -388,5 +384,5 @@ def pdbdata_from_dicts(self, data, sanity_check):
    assert np.all(self.data.ca.sel(xyzw="w") == 1)
    assert np.all(self.data.cb.sel(xyzw="w") == 1)
 
-   if sanity_check is not False:
-      self.sanity_check()
+   if sanitycheck is not False:
+      self.sanitycheck()

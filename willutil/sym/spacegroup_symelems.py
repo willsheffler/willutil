@@ -1,11 +1,12 @@
 import itertools as it
+from opt_einsum import contract as einsum
 from collections import defaultdict
 import numpy as np
 import willutil as wu
 from willutil.sym.spacegroup_data import *
 from willutil.sym.spacegroup_util import *
 from willutil.sym.SymElem import *
-from willutil.homog.hgeom import h_point_line_dist, hvec, hpoint
+from willutil.homog.hgeom import h_point_line_dist, hvec, hpoint, line_line_closest_points_pa, hnorm, angle
 
 def _inunit(p):
    x, y, z, w = p.T
@@ -132,20 +133,20 @@ def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=No
 
    return symelems
 
-def _find_compound_symelems(sym):
-   se = wu.sym.symelems(sym, asdict=True, screws=False)
-   frames = wu.sym.sgframes(sym, cells=3)
+def _find_compound_symelems(sym, se=None, frames=None):
+   if se is None: se = wu.sym.symelems(sym, asdict=False, screws=False)
+   se = [e for e in se if e.iscyclic]
+   if frames is None: frames = wu.sym.sgframes(sym, cells=3)
    isects = defaultdict(set)
-   for e1, e2 in it.product(it.chain(*se.values()), it.chain(*se.values())):
+   for e1, e2 in it.product(se, se):
       # if e1.id == e2.id: continue
-      # e2 = se['C3'][0]
       axis, cen = e1.axis, e1.cen
       symcen = einsum('fij,j->fi', frames, e2.cen)
       symcen = symcen
       symaxis = einsum('fij,j->fi', frames, e2.axis)
       taxis, tcen = [np.tile(x, (len(symcen), 1)) for x in (axis, cen)]
-      p, q = wu.hlinesisect(tcen, taxis, symcen, symaxis)
-      d = wu.hnorm(p - q)
+      p, q = line_line_closest_points_pa(tcen, taxis, symcen, symaxis)
+      d = hnorm(p - q)
       p = (p + q) / 2
       ok = _inunit(p)
       ok = np.logical_and(ok, d < 0.001)
@@ -159,12 +160,12 @@ def _find_compound_symelems(sym):
       axis2 = axis2[_inunit(cen)]
       cen = cen[_inunit(cen)]
       # ic(cen)
-      pick = np.argmin(wu.hnorm(cen - [0.003, 0.002, 0.001, 1]))
+      pick = np.argmin(hnorm(cen - [0.003, 0.002, 0.001, 1]))
       axis = _flipaxs(axis[pick])
       axis2 = _flipaxs(axis2[pick])
       nf1, nf2 = e1.nfold, e2.nfold
       # D np.pi/2
-      ang = wu.hangle(axis, axis2)
+      ang = angle(axis, axis2)
       if e2.nfold > e1.nfold:
          nf1, nf2 = e2.nfold, e1.nfold
          axis, axis2 = axis2, axis
@@ -197,22 +198,68 @@ def _find_compound_symelems(sym):
 
    # ic(isects['D2'])
    # assert 0
-   celems = defaultdict(list)
+   compound = defaultdict(list)
    for psym in isects:
-      celems[psym] = [SymElem(t[0], t[4:7], t[1:4], t[7:10]) for t in isects[psym]]
+      compound[psym] = [SymElem(t[0], t[4:7], t[1:4], t[7:10]) for t in isects[psym]]
    newd2 = list()
-   for ed2 in celems['D2']:
-      if not np.any([np.allclose(ed2.cen, eto.cen) for eto in it.chain(celems['T'], celems['O'], celems['D4'])]):
+   for ed2 in compound['D2']:
+      if not np.any([np.allclose(ed2.cen, eto.cen) for eto in it.chain(compound['T'], compound['O'], compound['D4'])]):
          newd2.append(ed2)
-   celems['D2'] = newd2
+   compound['D2'] = newd2
    newd4 = list()
-   for ed4 in celems['D4']:
-      if not np.any([np.allclose(ed4.cen, eo.cen) for eo in celems['O']]):
+   for ed4 in compound['D4']:
+      if not np.any([np.allclose(ed4.cen, eo.cen) for eo in compound['O']]):
          newd4.append(ed4)
-   celems['D4'] = newd4
-   celems = {k: v for k, v in celems.items() if len(v)}
+   compound['D4'] = newd4
+   compound = {k: v for k, v in compound.items() if len(v)}
 
-   return celems
+   # newcompound = dict()
+   # for psym, elems in compound.items():
+   #    newcompound[psym] = [_to_central_symelem(frames, e, [0.6, 0.6, 0.6]) for e in elems]
+   # compound = newcompound
+
+   return compound
+
+# def _to_central_symelem(frames, elem, cen):
+#    ic(elem)
+#    ic(elem.matching_frames(frames))
+#    ic(elem.matching_frames(wu.sym.sgframes('I432', cells=2)))
+#    # wu.showme(elem, scale=10)
+#    # wu.showme(elem.operators, scale=10)
+#    # wu.showme(frames, scale=10)
+#    if not elem.isdihedral: return elem
+#    ic(len(frames))
+#    for i, f in enumerate(frames):
+#       cen = einsum('ij,j->i', f, elem.cen)
+#       # if not _inunit(cen): continue
+#       elem2 = SymElem(
+#          elem.nfold,
+#          einsum('ij,j->i', f, elem.axis),
+#          cen,
+#          einsum('ij,j->i', f, elem.axis2),
+#       )
+
+#       try:
+#          m = np.max(elem2.matching_frames(frames))
+#       except AssertionError:
+#          pass
+#       if 48 * 8 > m:
+#          ic(elem)
+#          assert 0
+#    assert 0
+#    return
+
+#    # ic(elem)
+#    cens = einsum('fij,j->fi', frames, elem.cen)
+#    ipick = np.argmin(hnorm(cens - cen))
+#    frame = frames[ipick]
+#    elem = SymElem(
+#       elem.nfold,
+#       einsum('ij,j->i', frame, elem.axis),
+#       einsum('ij,j->i', frame, elem.cen),
+#       einsum('ij,j->i', frame, elem.axis2),
+#    )
+#    return elem
 
 def _symelem_is_same(elem, elem2, frames):
    assert elem.iscyclic or elem.isscrew

@@ -513,6 +513,7 @@ def show_ndarray_point_or_vec(
    addtocgo=None,
    chainbow=False,
    kind=None,
+   scale=1,
    **kw,
 ):
    v = pymol.cmd.get_view()
@@ -525,7 +526,9 @@ def show_ndarray_point_or_vec(
    mycgo = list()
    if toshow.ndim == 1: toshow = [toshow]
    if kind == 'vec': toshow = wu.hvec(toshow).reshape(-1, 4)
-   if kind == 'point': toshow = wu.homog.hpoint(toshow).reshape(-1, 4)
+   elif kind == 'point': toshow = wu.homog.hpoint(toshow).reshape(-1, 4)
+   else: toshow = np.array(toshow)
+   toshow[..., :3] *= scale
    for i, p_or_v in enumerate(toshow):
       color = (1, 1, 1) if col is None else col
       if isinstance(color[0], (list, tuple, np.ndarray)):

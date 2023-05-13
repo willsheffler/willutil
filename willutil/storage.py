@@ -3,7 +3,7 @@ import willutil as wu
 
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
 
-def package_data_path(fname):
+def package_data_path(fname, emptyok=True):
    if os.path.exists(os.path.join(data_dir, fname)):
       return os.path.join(data_dir, fname)
    elif os.path.exists(os.path.join(data_dir, fname + '.pickle')):
@@ -12,7 +12,10 @@ def package_data_path(fname):
       return os.path.join(data_dir, fname + '.pickle.gz')
    elif os.path.exists(os.path.join(data_dir, fname + '.pickle.xz')):
       return os.path.join(data_dir, fname + '.pickle.xz')
-   return None
+   if emptyok:
+      return os.path.join(data_dir, fname)
+   else:
+      return None
 
 def load_package_data(fname):
    datapath = package_data_path(fname)
@@ -20,7 +23,7 @@ def load_package_data(fname):
    return data
 
 def have_package_data(fname):
-   datapath = package_data_path(fname)
+   datapath = package_data_path(fname, emptyok=False)
    return datapath is not None
 
 def open_package_data(fname):
@@ -102,6 +105,7 @@ def load_pickle(fname, add_dotpickle=True, assume_lzma=False, **kw):
    return stuff
 
 def save(stuff, fname, **kw):
+   ic(fname)
    if fname.endswith('.nc'):
       import xarray
       if not isinstance(stuff, xarray.Dataset):

@@ -29,7 +29,7 @@ def main():
    # test_d3_frames()
    test_hmean()
 
-   torque_delta_sanity_check()
+   torque_delta_sanitycheck()
    test_symfit_180_bug()
    # assert 0
 
@@ -1467,7 +1467,7 @@ def test_hexpand():
    assert np.allclose(x1, x2, atol=1e-5)
    assert not np.allclose(x0, x1, atol=1e-5)
 
-def torque_delta_sanity_check():
+def torque_delta_sanitycheck():
    nsamp, scale = 1000, 0.0001
    u = hm.rand_unit(nsamp)
    v = hm.rand_unit(nsamp)

@@ -21,7 +21,7 @@ def test_pairdat_subset_by_aa(respairdat10):
    # for aas in ["ILV", "W", "MPQRTF"]:
    for aas in ["ILV"]:
       rp, keepers = rpd.subset_by_aa(aas, return_keepers=True)
-      rp.sanity_check()
+      rp.sanitycheck()
       assert rp.keys() == rpd.keys()
       assert np.all(np.isin(rp.id2aa[rp.aaid], tuple(aas)))
       notaa = rpd.id2aa[rpd.aaid[~keepers]]
@@ -31,7 +31,7 @@ def test_pairdat_subset_by_ss(respairdat10):
    rpd = respairdat10
    for ss in ["H", "E", "L", "HE", "HL", "EL", "HEL"]:
       rp, keepers = rpd.subset_by_ss(ss, return_keepers=True)
-      rp.sanity_check()
+      rp.sanitycheck()
       assert np.all(np.isin(rp.id2ss[rp.ssid], tuple(ss)))
       notss = rpd.id2ss[rpd.ssid[~keepers]]
       assert not np.any(np.isin(notss, tuple(ss)))
@@ -46,29 +46,28 @@ def test_pairdatextra_subset_by_ss(respairdat10_plus_xmap_rots):
    test_pairdat_subset_by_ss(respairdat10_plus_xmap_rots)
 
 def test_tiny_subset_by_aa_pdb_removal_2pdb():
-   rp = xr.Dataset(
-      dict(
-         pdb=(['pdbid'], ['a', 'b']),
-         nres=(['pdbid'], [1, 2]),
-         r_pdbid=(['resid'], [0, 1, 1]),
-         seq=(['resid'], ['A', 'C', 'D']),
-         ss=(['resid'], ['E', 'H', 'L']),
-         resno=(['resid'], [0, 0, 1]),
-         p_pdbid=(['pairid'], [1]),
-         p_resi=(['pairid'], [1]),
-         p_resj=(['pairid'], [2]),
-      ), attrs=dict(
-         pdb_res_offsets=[0, 1, 3],
-         pdb_pair_offsets=[0, 0, 1],
-      ))
+   rp = xr.Dataset(dict(
+      pdb=(['pdbid'], ['a', 'b']),
+      nres=(['pdbid'], [1, 2]),
+      r_pdbid=(['resid'], [0, 1, 1]),
+      seq=(['resid'], ['A', 'C', 'D']),
+      ss=(['resid'], ['E', 'H', 'L']),
+      resno=(['resid'], [0, 0, 1]),
+      p_pdbid=(['pairid'], [1]),
+      p_resi=(['pairid'], [1]),
+      p_resj=(['pairid'], [2]),
+   ), attrs=dict(
+      pdb_res_offsets=[0, 1, 3],
+      pdb_pair_offsets=[0, 0, 1],
+   ))
    rp = PdbData(rp)
-   rp.sanity_check()
+   rp.sanitycheck()
    _change_seq_ss_to_ids(rp)
    with pytest.raises(ValueError):
       rp.subset_by_aa('C')
    rpC = rp.subset_by_aa('CD')
    # print(rpC)
-   rpC.sanity_check()
+   rpC.sanitycheck()
    assert len(rpC.nres) == 1
    assert np.all(rpC.r_pdbid == [0])
    assert np.all(rpC.aaid == [1, 2])
@@ -76,29 +75,28 @@ def test_tiny_subset_by_aa_pdb_removal_2pdb():
    assert np.all(rpC.pdb_pair_offsets == [0, 1])
 
 def test_tiny_subset_by_aa_pdb_removal_3pdb():
-   rp = xr.Dataset(
-      dict(
-         pdb=(['pdbid'], ['a', 'b', 'c']),
-         nres=(['pdbid'], [1, 2, 3]),
-         r_pdbid=(['resid'], [0, 1, 1, 2, 2, 2]),
-         resno=(['resid'], [0, 0, 1, 0, 1, 2]),
-         seq=(['resid'], ['A', 'C', 'D', 'E', 'F', 'G']),
-         ss=(['resid'], ['E', 'H', 'L', 'E', 'H', 'L']),
-         p_pdbid=(['pairid'], [1, 2, 2, 2]),
-         p_resi=(['pairid'], [1, 3, 3, 4]),
-         p_resj=(['pairid'], [2, 4, 5, 5]),
-      ), attrs=dict(
-         pdb_res_offsets=[0, 1, 3, 6],
-         pdb_pair_offsets=[0, 0, 1, 4],
-      ))
+   rp = xr.Dataset(dict(
+      pdb=(['pdbid'], ['a', 'b', 'c']),
+      nres=(['pdbid'], [1, 2, 3]),
+      r_pdbid=(['resid'], [0, 1, 1, 2, 2, 2]),
+      resno=(['resid'], [0, 0, 1, 0, 1, 2]),
+      seq=(['resid'], ['A', 'C', 'D', 'E', 'F', 'G']),
+      ss=(['resid'], ['E', 'H', 'L', 'E', 'H', 'L']),
+      p_pdbid=(['pairid'], [1, 2, 2, 2]),
+      p_resi=(['pairid'], [1, 3, 3, 4]),
+      p_resj=(['pairid'], [2, 4, 5, 5]),
+   ), attrs=dict(
+      pdb_res_offsets=[0, 1, 3, 6],
+      pdb_pair_offsets=[0, 0, 1, 4],
+   ))
    rp = PdbData(rp)
-   rp.sanity_check()
+   rp.sanitycheck()
    _change_seq_ss_to_ids(rp)
    with pytest.raises(ValueError):
       rp.subset_by_aa('C')
 
    rpC = rp.subset_by_aa('EFG')
-   rpC.sanity_check()
+   rpC.sanitycheck()
    assert len(rpC.nres) == 1
    assert np.all(rpC.r_pdbid == [0])
    assert np.all(rpC.aaid == [3, 4, 5])
@@ -109,7 +107,7 @@ def test_tiny_subset_by_aa_pdb_removal_3pdb():
 
    rpC = rp.subset_by_aa('AEFG')
    # print(rpC)
-   rpC.sanity_check()
+   rpC.sanitycheck()
    assert len(rpC.nres) == 2
    assert np.all(rpC.r_pdbid == [0, 1, 1, 1])
    assert np.all(rpC.aaid == [0, 3, 4, 5])

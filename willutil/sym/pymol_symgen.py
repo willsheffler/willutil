@@ -103,20 +103,7 @@ class PymolSymElem(object):
             self.frames.append(cx)
             self.frames.append(RAD(self.axis2, 180.0, cen) * cx)
       elif self.kind == "T":
-         self.frames = [
-            Xform(Mat(Vec(1, 0, 0), Vec(0, 1, 0), Vec(0, 0, 1)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(0, 0, 1), Vec(1, 0, 0), Vec(0, 1, 0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(0, 0, 1), Vec(-1, 0, 0), Vec(0, -1, 0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(0, 0, -1), Vec(1, 0, 0), Vec(0, -1, 0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(0, 0, -1), Vec(-1, 0, 0), Vec(0, 1, 0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(0, 1, 0), Vec(0, 0, 1), Vec(1, 0, 0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(0, 1, 0), Vec(0, 0, -1), Vec(-1, 0, 0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(0, -1, 0), Vec(0, 0, 1), Vec(-1, 0, 0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(0, -1, 0), Vec(0, 0, -1), Vec(1, 0, 0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(1, 0, 0), Vec(0, -1, 0), Vec(0, -0, -1)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(-1, 0, 0), Vec(0, 1, 0), Vec(0, 0, -1)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(-1, 0, 0), Vec(0, -1, 0), Vec(0, 0, 1)), Vec(0, 0, 0))
-         ]
+         self.frames = [Xform(Mat(Vec(1, 0, 0), Vec(0, 1, 0), Vec(0, 0, 1)), Vec(0, 0, 0)), Xform(Mat(Vec(0, 0, 1), Vec(1, 0, 0), Vec(0, 1, 0)), Vec(0, 0, 0)), Xform(Mat(Vec(0, 0, 1), Vec(-1, 0, 0), Vec(0, -1, 0)), Vec(0, 0, 0)), Xform(Mat(Vec(0, 0, -1), Vec(1, 0, 0), Vec(0, -1, 0)), Vec(0, 0, 0)), Xform(Mat(Vec(0, 0, -1), Vec(-1, 0, 0), Vec(0, 1, 0)), Vec(0, 0, 0)), Xform(Mat(Vec(0, 1, 0), Vec(0, 0, 1), Vec(1, 0, 0)), Vec(0, 0, 0)), Xform(Mat(Vec(0, 1, 0), Vec(0, 0, -1), Vec(-1, 0, 0)), Vec(0, 0, 0)), Xform(Mat(Vec(0, -1, 0), Vec(0, 0, 1), Vec(-1, 0, 0)), Vec(0, 0, 0)), Xform(Mat(Vec(0, -1, 0), Vec(0, 0, -1), Vec(1, 0, 0)), Vec(0, 0, 0)), Xform(Mat(Vec(1, 0, 0), Vec(0, -1, 0), Vec(0, -0, -1)), Vec(0, 0, 0)), Xform(Mat(Vec(-1, 0, 0), Vec(0, 1, 0), Vec(0, 0, -1)), Vec(0, 0, 0)), Xform(Mat(Vec(-1, 0, 0), Vec(0, -1, 0), Vec(0, 0, 1)), Vec(0, 0, 0))]
          if input_xform:
             xc = Xform(cen) * input_xform
          else:
@@ -673,8 +660,8 @@ def generate_sym_trie(generators, depth=10, opts=None, verbose=False):
    body = list()
    newheads = list()
    generate_sym_trie_recurse(generators, depth, opts, body, heads, newheads, 0)
-   sanity_check = SymTrieSanityCheckVisitor()
-   root.visit(sanity_check)
+   sanitycheck = SymTrieSanityCheckVisitor()
+   root.visit(sanitycheck)
    return root
 
 ##########################################################################
@@ -898,16 +885,16 @@ def cgo_cyl_arrow(c1, c2, rad, col=(1, 1, 1), col2=None, arrowlen=4.0):
 class BuildCGO(object):
    """docstring for BuildCGO"""
    def __init__(
-      self,
-      nodes,
-      maxrad=9e9,
-      origin=Vec(0, 0, 0),
-      bbox=[Vec(-9e9, -9e9, -9e9), Vec(9e9, 9e9, 9e9)],
-      showlinks=False,
-      showelems=True,
-      label="BuildCGO",
-      arrowlen=10.0,
-      **kwargs,
+         self,
+         nodes,
+         maxrad=9e9,
+         origin=Vec(0, 0, 0),
+         bbox=[Vec(-9e9, -9e9, -9e9), Vec(9e9, 9e9, 9e9)],
+         showlinks=False,
+         showelems=True,
+         label="BuildCGO",
+         arrowlen=10.0,
+         **kwargs,
    ):
       super(BuildCGO, self).__init__()
       self.nodes = nodes
@@ -1132,7 +1119,7 @@ class ComponentCenterVisitor(object):
       for k in list(jsetsort.keys()):
          if verbose: print("  ", k)
 
-   def sanity_check(self):
+   def sanitycheck(self):
       if not self.parentmap:
          self.makeCCtree()
       self.check_jumps()
@@ -1154,7 +1141,7 @@ class ComponentCenterVisitor(object):
                assert stn.position * priCC == CC
 
    def show(self, component_pos=(Vec(0, -4, 4), Vec(0, 3, 3), Vec(11, 9, 3), Vec(9, 3, 11)), showframes=True, **kwargs):
-      self.sanity_check()
+      self.sanitycheck()
       if not self.parentmap:
          self.makeCCtree()
       CGO = []
@@ -1236,17 +1223,13 @@ class ComponentCenterVisitor(object):
             if True:
                ELEMDIR2 = projperp(ELEMDIR, Vec(1, 2, 3)).normalized()
             if PCC:
-               Sxyz += (XYZ_TEMPLATE % (PCCDofBegName, DIR.x, DIR.y, DIR.z, DIR2.x, DIR2.y, DIR2.z, PCC.x * scale,
-                                        PCC.y * scale, PCC.z * scale))
+               Sxyz += (XYZ_TEMPLATE % (PCCDofBegName, DIR.x, DIR.y, DIR.z, DIR2.x, DIR2.y, DIR2.z, PCC.x * scale, PCC.y * scale, PCC.z * scale))
             if PCC:
-               Sxyz += (XYZ_TEMPLATE % (PCCDofEndName, DIR.x, DIR.y, DIR.z, DIR2.x, DIR2.y, DIR2.z, CC.x * scale,
-                                        CC.y * scale, CC.z * scale))
+               Sxyz += (XYZ_TEMPLATE % (PCCDofEndName, DIR.x, DIR.y, DIR.z, DIR2.x, DIR2.y, DIR2.z, CC.x * scale, CC.y * scale, CC.z * scale))
             if True:
-               Sxyz += (XYZ_TEMPLATE % (CCDofBegName, ELEMDIR.x, ELEMDIR.y, ELEMDIR.z, ELEMDIR2.x, ELEMDIR2.y,
-                                        ELEMDIR2.z, CC.x * scale, CC.y * scale, CC.z * scale))
+               Sxyz += (XYZ_TEMPLATE % (CCDofBegName, ELEMDIR.x, ELEMDIR.y, ELEMDIR.z, ELEMDIR2.x, ELEMDIR2.y, ELEMDIR2.z, CC.x * scale, CC.y * scale, CC.z * scale))
             if True:
-               Sxyz += (XYZ_TEMPLATE % (CCDofEndName, ELEMDIR.x, ELEMDIR.y, ELEMDIR.z, ELEMDIR2.x, ELEMDIR2.y,
-                                        ELEMDIR2.z, CC.x * scale, CC.y * scale, CC.z * scale))
+               Sxyz += (XYZ_TEMPLATE % (CCDofEndName, ELEMDIR.x, ELEMDIR.y, ELEMDIR.z, ELEMDIR2.x, ELEMDIR2.y, ELEMDIR2.z, CC.x * scale, CC.y * scale, CC.z * scale))
             if PCC:
                edges.append((PCCName, PCCDofBegName))
             if PCC:
@@ -1271,8 +1254,7 @@ class ComponentCenterVisitor(object):
                SX = stn.position.R * Vec(1, 0, 0)
                SY = stn.position.R * Vec(0, 1, 0)
                SO = stn.position * priCC
-               Sxyz += (XYZ_TEMPLATE %
-                        (SUBName, SX.x, SX.y, SX.z, SY.x, SY.y, SY.z, SO.x * scale, SO.y * scale, SO.z * scale))
+               Sxyz += (XYZ_TEMPLATE % (SUBName, SX.x, SX.y, SX.z, SY.x, SY.y, SY.z, SO.x * scale, SO.y * scale, SO.z * scale))
             edges.append((None, None))  # spacer
             Sxyz += "\n"
 
@@ -1446,7 +1428,7 @@ class RosettaSymDef(object):
          return virt[2] - offset * virt[0]  # shift -X only
       return virt[2] + offset * virt[0] + offset * virt[1]
 
-   def sanity_check(self):
+   def sanitycheck(self):
       for name, vnames in list(self.edges.items()):
          v1name, v2name = vnames
          v1 = self.virtuals[v1name]
@@ -1463,7 +1445,7 @@ class RosettaSymDef(object):
                raise ValueError
 
    def show(self, tag="SYMDEF", XYlen=5.0, rad=3.0, **kwargs):
-      self.sanity_check()
+      self.sanitycheck()
       seenit = []
       CGO = []
       for name, xyo in list(self.virtuals.items()):

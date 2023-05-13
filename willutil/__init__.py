@@ -13,7 +13,8 @@ setattr(builtins, 'defaultdict', collections.defaultdict)
 
 from willutil.bunch import Bunch, bunchify, unbunchify
 from willutil.timer import Timer, timed, checkpoint
-from willutil.sym.symfit import compute_symfit
+from willutil.viz import showme
+
 from willutil.rigid.rigidbody import RigidBody, RigidBodyFollowers
 from willutil.search.montecarlo import MonteCarlo
 
@@ -51,9 +52,8 @@ cpp = deferred_import('willutil.cpp')
 
 # emptybunch = Bunch()
 
-from willutil.viz import showme
 # figure things in homog starting with h should't pollute namespace too bad
-from willutil.sym.symfit import compute_symfit as symfit
+from willutil.sym.symfit import compute_symfit
 
 from willutil.pdb import dumppdb, readpdb
 

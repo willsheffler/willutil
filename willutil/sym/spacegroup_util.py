@@ -37,6 +37,7 @@ def process_num_cells(cells):
    if isinstance(cells, np.ndarray) and cells.ndim == 2 and cells.shape[1] == 3:
       return cells
    if isinstance(cells, (int, float)):
+      # ub = (cells - 1) // 2
       ub = cells // 2
       lb = ub - cells + 1
       cells = [(a, b, c) for a, b, c in itertools.product(*[range(lb, ub + 1)] * 3)]
@@ -54,6 +55,7 @@ def process_num_cells(cells):
    else:
       raise ValueError(f'bad cells {cells}')
    cells = np.array(cells)
+   # ic(set(cells[:, 0]))
 
    # order in stages, cell 0 first, cell 0 to 1, cells -1 to 1, cells -1 to 2, etc
    blocked = list()
@@ -69,9 +71,6 @@ def process_num_cells(cells):
       prevok |= ok
       if np.all(prevok): break
    cells = np.concatenate(blocked)
-
-   # ic(cells)
-   # assert 0
 
    return cells
 
