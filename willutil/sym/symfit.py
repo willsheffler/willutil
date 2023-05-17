@@ -9,6 +9,9 @@ def align(coords, symelem, **kw):
    if symelem.iscyclic:
       return aligncx(coords, symelem, **kw)
    else:
+      print(f'WARNING not aligning input on symelem:')
+      print(symelem, flush=True)
+      return coords
       raise NotImplementedError(f'hook up compute_symfit')
 
 def aligncx(coords, symelem, rmsthresh=1, axistol=0.02, angtol=0.05, centol=1.0, **kw):

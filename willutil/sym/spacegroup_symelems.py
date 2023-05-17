@@ -321,7 +321,6 @@ ic| 'PASS test_spacegroup_symelems'
 '''
 
 def _make_symtags(tag, frames):
-   import torch
    concat = np.concatenate
    tax, tcen, thel = hvec(tag[:3]), hpoint(tag[3:6]), np.tile(tag[6], [len(frames), 1])
 

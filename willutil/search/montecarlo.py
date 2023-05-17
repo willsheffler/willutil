@@ -42,6 +42,7 @@ class MonteCarlo:
       if score is None:
          self.timer.checkpoint('trythis')
          score = self.scorefunc(state, **kw)
+         self.last = score
          if self.debug: print('trythis trial score', score)
          self.timer.checkpoint('trythis score')
       if self.startstate is None:

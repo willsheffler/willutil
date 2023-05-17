@@ -124,6 +124,10 @@ def dump_pdb_from_points(
    skipval=9999.999,
    **kw,
 ):
+   chainstarts = [0]
+   if isinstance(pts, list):
+      chainstarts += list(np.cumsum([len(p) for p in pts[:-1]]))
+      pts = np.concatenate(pts)
    pts = np.asarray(pts)
    # ic(pts.shape)
    if frames is not None:
@@ -167,8 +171,12 @@ def dump_pdb_from_points(
    with open(fname, "w") as out:
       out.write(header)
       # for ic1, f in enumerate(pts):
+      chain = -1
       for ichain, chainpts in enumerate(pts):
          for ires, respts in enumerate(chainpts):
+            if ires in chainstarts:
+               chain += 1
+               # ic('newchain', ires, chain)
             for iatom, p in enumerate(respts):
                if p[0] == skipval: continue
                if mask[ichain, ires, iatom]:
@@ -180,7 +188,7 @@ def dump_pdb_from_points(
                      ir=ires,
                      rn=resnames[ires],
                      an=anames[iatom],
-                     c=ichain,
+                     c=chain,
                   )
                   out.write(s)
                   atomconut += 1

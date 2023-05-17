@@ -96,9 +96,9 @@ class NotResidue:
          if self.nopo.coordsonly:
             return self.nopo.coords[self.ir, self.anamemap[ia.decode()]]
          xyz = (
-            float(self.rdf.x[self.rdf.an == ia]),
-            float(self.rdf.y[self.rdf.an == ia]),
-            float(self.rdf.z[self.rdf.an == ia]),
+            float(self.rdf.x[self.rdf.an == ia][0]),
+            float(self.rdf.y[self.rdf.an == ia][0]),
+            float(self.rdf.z[self.rdf.an == ia][0]),
          )
       return NotXYZ(xyz)
       raise ValueError(ia)

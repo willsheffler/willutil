@@ -38,7 +38,7 @@ from willutil import sym
 from willutil import viz
 from willutil import rigid
 from willutil import rosetta
-from willutil import unsym
+# from willutil import unsym
 from willutil.chem import dssp
 from willutil.rosetta import NotPose
 

@@ -22,7 +22,7 @@ def main():
    test_hpow_float()
 
    test_hdiff()
-   test_hrmsfit()
+   # test_hrmsfit()
 
    test_hexpand()
 
@@ -1495,6 +1495,7 @@ def test_hrot():
    assert np.allclose(hrot(r, 120), hrot(r, nfold=3))
 
 def test_hrmsfit(trials=10):
+   torch = pytest.importorskip('torch')
    for _ in range(trials):
       p = hrandpoint(10, std=10)
       p03 = unhomog(p)
