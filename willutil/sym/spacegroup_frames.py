@@ -1983,7 +1983,7 @@ def symframes_P32():
    cc = (0.666666666666667, 0.666666666666667, 0)
    return frames, cc
 
-def symframes_R3__H():
+def symframes_R3():
    frames = np.ones((9, 12)) * 12345
    frames[0] = (1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
    frames[1] = (0, -1, 0, 1, -1, 0, 0, 0, 1, 0, 0, 0)
@@ -2089,7 +2089,7 @@ def symframes_P3221():
    cc = (1, 1, 0.5)
    return frames, cc
 
-def symframes_R32__H():
+def symframes_R32():
    frames = np.ones((18, 12)) * 12345
    frames[0] = (1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
    frames[1] = (0, -1, 0, 1, -1, 0, 0, 0, 1, 0, 0, 0)

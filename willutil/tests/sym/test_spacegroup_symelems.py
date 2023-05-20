@@ -1,3 +1,4 @@
+import itertools
 import numpy as np
 import willutil as wu
 from willutil.sym.SymElem import SymElem
@@ -5,6 +6,10 @@ from willutil.sym.spacegroup_symelems import _compute_symelems, _find_compound_s
 from numpy import array
 
 def main():
+
+   test_symelems_P3()
+
+   assert 0
 
    test_compound_elems_P213()
    test_compound_elems_I23()
@@ -40,6 +45,29 @@ def main():
    test_symelems_F4132()
 
    ic('PASS test_spacegroup_symelems')
+
+def test_symelems_P3():
+
+   sym = 'P3'
+   frames = wu.sym.sgframes(sym, cellgeom='nonsingular', cells=3)
+
+   ic(frames.shape)
+   elems = _compute_symelems(sym)
+   ic(elems)
+   assert elems == {
+      'C3': [
+         SymElem(3, axis=[0, 0, 1], cen=[0, 0, 0.0], label='C3'),
+         SymElem(3, axis=[0, 0, 1], cen=[2 / 3, 1 / 3, 0.0], label='C3'),
+         SymElem(3, axis=[0, 0, 1], cen=[1 / 3, -1 / 3, 0.0], label='C3'),
+      ]
+   }
+
+   # wu.showme(frames @ wu.htrans([0.01, 0.015, 0.02]), scale=10)
+   # wu.showme(elems, scale=10)
+
+   elems = list(itertools.chain(*elems.values()))
+   celems = _find_compound_symelems(sym, elems)
+   assert celems == {}
 
 def test_compound_elems_P4132(showme=False):
    sym = 'P4132'

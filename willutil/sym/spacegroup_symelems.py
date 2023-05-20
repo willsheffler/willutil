@@ -18,7 +18,7 @@ def _flipaxs(a):
       a[:3] *= -1
    return a
 
-def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=None):
+def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=None, aslist=False):
    if torch_device:
       try:
          import torch
@@ -28,17 +28,19 @@ def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=No
       unitframes = wu.sym.sgframes(spacegroup, cellgeom='unit')
 
    if lattice is None:
-      a, b, c = 1, 1.23456789, 9.87654321
-      if sg_lattice[spacegroup] == 'CUBIC': lattice = np.diag([a, a, a])
-      elif sg_lattice[spacegroup] == 'TETRAGONAL': lattice = np.diag([a, a, b])
-      elif sg_lattice[spacegroup] == 'ORTHORHOMBIC': lattice = np.diag([a, b, c])
-      else: assert 0
+      lattice = lattice_vectors(spacegroup, cellgeom='nonsingular')
+      # a, b, c = 1, 1.23456789, 9.87654321
+      # if sg_lattice[spacegroup] == 'CUBIC': lattice = np.diag([a, a, a])
+      # elif sg_lattice[spacegroup] == 'TETRAGONAL': lattice = np.diag([a, a, b])
+      # elif sg_lattice[spacegroup] == 'ORTHORHOMBIC': lattice = np.diag([a, b, c])
+      # else: assert 0
 
    # if len(unitframes) < 4: ncell = 2
    # if len(unitframes) < 8: ncell = 2
    # unitframes = unitframes.astype(np.float32)
    f2cel = latticeframes(unitframes, lattice, cells=2)
    f4cel = latticeframes(unitframes, lattice, cells=4)
+
    # for f in f4cel:
    # if np.allclose(f[:3, :3], np.eye(3)) and f[0, 3] == 0 and f[2, 3] == 0:
    # print(f)
@@ -59,15 +61,6 @@ def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=No
    tag0 = np.concatenate([axs, cen, hel], axis=1).round(10)
    symelems = defaultdict(list)
 
-   if False:
-      tf = np.logical_and(np.isclose(np.pi, ang), np.all(axs == [0.5, -0.5, 0], axis=1))
-      ic(np.sum(tf), len(tf))
-      ic(axs[tf])
-      ic(ang[tf])
-      ic(cen[tf])
-      ic(hel[tf])
-      assert 0
-
    for nfold in [2, 3, 4, 6, -2, -3, -4, -6]:
       screw, nfold = nfold < 0, abs(nfold)
       nfang = 2 * np.pi / nfold
@@ -78,6 +71,9 @@ def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=No
       else:
          idx = np.logical_and(np.isclose(ang, nfang, atol=1e-6), np.isclose(0, hel[:, 0]))
       if np.sum(idx) == 0: continue
+
+      # ic(tag0[idx])
+
       nftag = tag0[idx]
       nftag = nftag[np.lexsort(-nftag.T, axis=0)]
       nftag = np.unique(nftag, axis=0)
@@ -131,6 +127,19 @@ def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=No
       # ic(symelems)
    symelems = _symelem_remove_ambiguous_syms(symelems)
 
+   # move back to unitcell postions, identical for cubic groups
+   # 'nonsingular' lattice used to avoid cases where symelems only appear
+   # in a particular lattice configuration
+   newelems = defaultdict(list)
+   for psym, elems in symelems.items():
+      for e in elems:
+         e2 = e.tounit(lattice)
+         newelems[psym].append(e2)
+         assert e2.tolattice(lattice) == e
+   symelems = newelems
+
+   if aslist:
+      symelems = list(itertools.chain(*symelems.values()))
    return symelems
 
 def _find_compound_symelems(sym, se=None, frames=None):

@@ -7,6 +7,14 @@ from willutil.sym.spacegroup_deriveddata import *
 
 _memoized_frames = dict()
 
+if 'H32' in sg_frames_dict:
+   sg_frames_dict['R3'] = sg_frames_dict['H3']
+   sg_frames_dict['R32'] = sg_frames_dict['H32']
+
+sg_redundant = {'P2': 'P121'}
+sg_all = [k for k in sg_pdbname if not k in sg_redundant]
+sg_all_chiral = [k for k in sg_all if sg_is_chiral(k)]
+
 def sgframes(
    spacegroup: str,
    cellgeom=None,
@@ -19,14 +27,16 @@ def sgframes(
    **kw,
 ):
    spacegroup = spacegroup_canonical_name(spacegroup)
-   if cellgeom not in ('unit', None):
+   if cellgeom not in ('unit', 'nonsingular', None):
       cellgeom = tuple(round(x, roundgeom) for x in cellgeom)
    cells = process_num_cells(cells)
    key = spacegroup, cellgeom, tuple(cells.flat), sortframes
    if not key in _memoized_frames:
       unitframes = sg_frames_dict[spacegroup]
-      if cellgeom == 'unit': latticevec = np.eye(3)
-      else: latticevec = lattice_vectors(spacegroup, cellgeom)
+      if cellgeom == 'unit':
+         latticevec = np.eye(3)
+      else:
+         latticevec = lattice_vectors(spacegroup, cellgeom)
       frames = latticeframes(unitframes, latticevec, cells)
 
       frames = prune_frames(frames, asucen, xtalrad, xtalcen)
@@ -86,23 +96,24 @@ def prune_frames(frames, asucen, xtalrad, center=None):
    center = center or asucen
    center = wu.hpoint(center)
    asucen = wu.hpoint(asucen)
-   pos = wu.hxform(frames, asucen)
+   pos = wu.hxformpts(frames, asucen)
    dis = wu.hnorm(pos - center)
    frames = frames[dis <= xtalrad]
    return frames
 
 def cellgeom_from_lattice(lattice, radians=False):
-   a = wu.hnorm(lattice[0])
-   b = wu.hnorm(lattice[1])
-   c = wu.hnorm(lattice[2])
+   u, v, w = lattice.T
+   a = wu.hnorm(u)
+   b = wu.hnorm(v)
+   c = wu.hnorm(w)
    if radians:
-      A = wu.hangle(lattice[1], lattice[2])
-      B = wu.hangle(lattice[0], lattice[2])
-      C = wu.hangle(lattice[0], lattice[1])
+      A = wu.hangle(v, w)
+      B = wu.hangle(u, w)
+      C = wu.hangle(u, v)
    else:
-      A = wu.hangle_degrees(lattice[1], lattice[2])
-      B = wu.hangle_degrees(lattice[0], lattice[2])
-      C = wu.hangle_degrees(lattice[0], lattice[1])
+      A = wu.hangle_degrees(v, w)
+      B = wu.hangle_degrees(u, w)
+      C = wu.hangle_degrees(u, v)
    return [a, b, c, A, B, C]
 
 def sort_frames(frames, method):

@@ -148,11 +148,25 @@ class SymElem:
       # assert 0
       return compid
 
+   def tolattice(self, lattice):
+      newcen = wu.sym.applylatticepts(lattice, self.cen)
+      newhel = wu.sym.applylatticepts(lattice, self.cen + self.axis * self.hel)
+      newhel = wu.hnorm(newhel - newcen)
+      return SymElem(self.nfold, self.axis, newcen, self.axis2, hel=newhel)
+
+   def tounit(self, lattice):
+      newcen = wu.sym.tounitcellpts(lattice, self.cen)
+      newhel = wu.sym.tounitcellpts(lattice, self.cen + self.axis * self.hel)
+      newhel = wu.hnorm(newhel - newcen)
+      return SymElem(self.nfold, self.axis, newcen, self.axis2, hel=newhel)
+
    def matching_frames(self, frames):
       'find frames related by self.operators that are closest to cen'
       match = np.isclose(frames[None], self.operators[:, None])
       match = np.any(np.all(match, axis=(2, 3)), axis=0)
       match = np.where(match)[0]
+      # ic(frames.shape)
+      # ic(match)
       assert len(match) == len(self.operators)
       return match
 

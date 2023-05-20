@@ -5,7 +5,10 @@ import willutil as wu
 def main():
    # _test_spacegroup_symelems()
 
-   test_spacegroup_frames_P1()
+   test_spacegroup_frames_sanity_check()
+
+   test_spacegroup_lattice_transpose_bug()
+
    # test_subsym()
    test_spacegroup_frames_order()
    # test_spacegroup_frames_P3()
@@ -19,6 +22,8 @@ def main():
    test_spacegroup_frames_tounitcell('P43', [10, 10, 12], 4)
    test_spacegroup_frames_tounitcell('P3', [11, 11, 13, 90, 90, 120], 2)
 
+   test_spacegroup_frames_P1()
+
    test_lattice_vectors()
    test_two_iface()
    test_spacegroup_frames_P213()
@@ -30,6 +35,48 @@ def main():
    test_spacegroup_frames_F432()
    test_spacegroup_frames_I432()
    ic('PASS test_spacegroup')
+
+def test_spacegroup_identify_chiral():
+   assert len(wu.sym.sg_all_chiral) == 65
+
+def test_spacegroup_frames_sanity_check():
+   seenit = list()
+   # for sym in wu.sym.sg_all_chiral:
+   count = 0
+   for sym in wu.sym.sg_all:
+
+      f = wu.sym.sgframes(sym, cells=3, cellgeom='nonsingular')
+      if not wu.hvalid(f):
+         assert not wu.sym.sg_is_chiral(sym)
+      # ic(sym)
+      count += 1
+      # wu.showme(f @ wu.htrans([0.01, 0.015, 0.02]), scale=10, name=sym)
+      # assert 0
+      for sym2, f2 in seenit:
+         if f.shape == f2.shape and np.allclose(f, f2):
+            ic('IDENT', sym, sym2)
+      seenit.append((sym, f))
+   ic(count)
+   # assert 0
+
+def test_spacegroup_lattice_transpose_bug():
+   sym = 'P3'
+   lat = wu.sym.lattice_vectors(sym)
+   linv = np.linalg.inv(lat)
+   f = wu.sym.sg_frames_dict[sym]
+   f2 = einsum('ij,fjk,kl->fil', lat, f[:, :3, :3], linv)
+   ax = wu.haxisof(wu.hconstruct(f2))
+   assert np.allclose([[1, 0, 0, 0], [0, 0, 1, 0], [0, 0, -1, 0]], ax)
+   assert np.allclose([0, np.pi * 2 / 3, np.pi * 2 / 3], wu.hangle_of(f2))
+
+   p = wu.hrandpoint(10, [10, 0, 0])
+
+   q = einsum('ij,fjk,kl,pl->fpi', lat, f[:, :3, :3], linv, p[:, :3])
+   q = wu.hpoint(q)
+   # q2 = einsum('ij,fjk,kl->fij', lat, f[:, :3, :3], linv)
+   # q2 = einsum('fij')
+   r = wu.hxformpts(wu.hrot([0, 0, 1], [0, 120, 240]), p)
+   assert np.allclose(q, r)
 
 def test_spacegroup_frames_order():
    f1 = wu.sym.sgframes('I213', cells=1)
@@ -109,7 +156,8 @@ def test_lattice_vectors():
        1.671566,   1.288705,  25.067297
    ''', flush=True)
    lvec = wu.sym.spacegroup.lattice_vectors('P1', [15.737, 15.887, 25.156, 85.93, 86.19, 69.86])
-   assert np.allclose(lvec, np.array([[15.737, 0., 0.], [5.47013594, 14.91557514, 0.], [1.67156711, 1.28870451, 25.06729822]]))
+   foo = np.array([[15.737, 0., 0.], [5.47013594, 14.91557514, 0.], [1.67156711, 1.28870451, 25.06729822]])
+   assert np.allclose(lvec, foo.T)
 
 def test_spacegroup_frames_P1():
    f = wu.sym.spacegroup.sgframes('P1', [15.737, 15.887, 25.156, 85.93, 86.19, 69.86], cells=3)
@@ -131,11 +179,16 @@ def test_spacegroup_frames_tounitcell(sgroup, cellgeom, ncell):
    # ic(fcell.shape)
    funit = wu.sym.spacegroup.sgframes(sgroup, cellgeom='unit', cells=ncell)
    # ic(funit.shape)
-   ftest = wu.sym.spacegroup.tounitframes(fcell, cellgeom, sgroup)
+   lattice = wu.sym.lattice_vectors(sgroup, cellgeom)
+   ftest2 = wu.sym.spacegroup.applylattice(lattice, funit)
+   assert np.allclose(fcell, ftest2)
+
+   ftest = wu.sym.spacegroup.tounitcell(cellgeom, fcell, sgroup)
    # ic(ftest.shape)
    # ic(funit)
    # ic(ftest)
-   assert np.allclose(funit, ftest)
+   assert np.allclose(funit[:, :3, :3], ftest[:, :3, :3])
+   assert np.allclose(funit[:, :3, 3], ftest[:, :3, 3])
 
 def test_two_iface():
    assert len(wu.sym.spacegroup_data.two_iface_spacegroups) == 31

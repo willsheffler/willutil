@@ -35,6 +35,7 @@ def _get_spacegroup_data():
 
    from willutil.sym import spacegroup_frames
    sg_improper = dict()
+   sg_n_std_cells = dict()
 
    for i, (sym, symtag) in enumerate(sg_tag.items()):
       if symtag in sg_lattice: sg_lattice[sym] = sg_lattice[symtag]
@@ -57,72 +58,72 @@ def _get_spacegroup_data():
       frames = sg_frames_dict[sym]
       # if not sg_imporper:
 
-      if sg_lattice[sym] == 'CUBIC' and sg_is_chiral(sym):
-         print('-' * 40, sym, '-' * 40)
-         frames4 = latticeframes(frames, np.eye(3), 4)
-         IERROR = -900_000_000
-         if sym not in sg_symelem_dict:
-            print(sym, 'detect symelems', flush=True)
-            sg_symelem_dict[sym] = _compute_symelems(sym, frames)
-            sg_symelem_dict[sym] = list(itertools.chain(*sg_symelem_dict[sym].values()))  # flatten
-            print('_find_compound_symelems', sym)
-            celems = _find_compound_symelems(sym, sg_symelem_dict[sym], frames4)
-            sg_symelem_dict[sym] += list(itertools.chain(*celems.values()))
-            for i, e in enumerate(sg_symelem_dict[sym]):
-               e.index = i
-            ic(sg_symelem_dict[sym])
+      # if not (sg_lattice[sym] == 'CUBIC' and sg_is_chiral(sym)): continue
+      if not sg_is_chiral(sym):
+         continue
 
-         # len(frames)*8 keeps only enough perm frames for 2x2x2 cell
-         if sym not in sg_permutations444_dict:
-            print(sym, 'compute permutations', flush=True)
-            sg_permutations444_dict[sym] = symframe_permutations_torch(frames4, maxcols=len(frames) * 8)
-         perms = sg_permutations444_dict[sym]
-         nops = len(sg_symelem_dict[sym])
+      print('-' * 40, sym, '-' * 40)
+      n_std_cells = 4
+      sg_n_std_cells[sym] = n_std_cells
+      stdframes = latticeframes(frames, np.eye(3), n_std_cells)
 
-         if sym not in sg_symelem_frame444_opcompids_dict:
-            print('rebuild symelem frameids', sym, flush=True)
-            sg_symelem_frame444_opids_dict[sym] = -np.ones((len(frames4), nops), dtype=np.int32)
-            sg_symelem_frame444_compids_dict[sym] = -np.ones((len(frames4), nops), dtype=np.int32)
-            sg_symelem_frame444_opcompids_dict[sym] = -np.ones((len(frames4), nops, nops), dtype=np.int32)
-            for ielem, elem in enumerate(sg_symelem_dict[sym]):
-               if not (elem.iscyclic or elem.isdihedral): continue
-               print(sym, elem, flush=True)
-               sg_symelem_frame444_opids_dict[sym][:, ielem] = elem.frame_operator_ids(frames4)
-               # try:
-               sg_symelem_frame444_compids_dict[sym][:, ielem] = elem.frame_component_ids(frames4, perms)
-               #except ComponentIDError:
-               #   print('!' * 80)
-               #   print('ERROR making component ids for symelem', sym, ielem)
-               #   print(elem)
-               #   print('probably not all SymElem operators contained in 2x2x2 cells')
-               #   print('this remains mysterious')
-               #   elem.issues.append('This element breaks standard component id system')
-               #   sg_symelem_frame444_compids_dict[sym][:, ielem] = IERROR
-               #   for jelem, se2 in enumerate(sg_symelem_dict[sym]):
-               #      sg_symelem_frame444_opcompids_dict[sym][:, ielem, jelem] = IERROR
-               #      IERROR += 1
-               #   continue
-               for jelem, elem2 in enumerate(sg_symelem_dict[sym]):
-                  fopid = sg_symelem_frame444_opids_dict[sym][:, ielem]
-                  fcompid = sg_symelem_frame444_compids_dict[sym][:, jelem]
-
-                  # if not elem.iscompound or not elem2.iscompound: continue
-                  # ic(elem, elem2)
-
-                  ids = fcompid.copy()
-                  for i in range(np.max(fopid)):
-                     fcids = fcompid[fopid == i]
-                     idx0 = fcompid == fcids[0]
-                     for fcid in fcids[1:]:
-                        idx = fcompid == fcid
-                        ids[idx] = min(min(ids[idx]), min(ids[idx0]))
-                  for i, id in enumerate(sorted(set(ids))):
-                     ids[ids == id] = i
-                  sg_symelem_frame444_opcompids_dict[sym][:, ielem, jelem] = ids
-
-                  opcompids = _make_operator_component_joint_ids(elem, elem2, frames4, fopid, fcompid)
-
-                  assert np.allclose(opcompids, sg_symelem_frame444_opcompids_dict[sym][:, ielem, jelem])
+      IERROR = -900_000_000
+      if sym not in sg_symelem_dict:
+         print(sym, 'detect symelems', flush=True)
+         sg_symelem_dict[sym] = _compute_symelems(sym, frames)
+         sg_symelem_dict[sym] = list(itertools.chain(*sg_symelem_dict[sym].values()))  # flatten
+         print('_find_compound_symelems', sym)
+         celems = _find_compound_symelems(sym, sg_symelem_dict[sym], stdframes)
+         sg_symelem_dict[sym] += list(itertools.chain(*celems.values()))
+         for i, e in enumerate(sg_symelem_dict[sym]):
+            e.index = i
+         ic(sg_symelem_dict[sym])
+      # len(frames)*8 keeps only enough perm frames for 2x2x2 cell
+      if sym not in sg_permutations444_dict:
+         print(sym, 'compute permutations', flush=True)
+         sg_permutations444_dict[sym] = symframe_permutations_torch(stdframes, maxcols=len(frames) * 8)
+      perms = sg_permutations444_dict[sym]
+      nops = len(sg_symelem_dict[sym])
+      if sym not in sg_symelem_frame444_opcompids_dict:
+         print('rebuild symelem frameids', sym, flush=True)
+         sg_symelem_frame444_opids_dict[sym] = -np.ones((len(stdframes), nops), dtype=np.int32)
+         sg_symelem_frame444_compids_dict[sym] = -np.ones((len(stdframes), nops), dtype=np.int32)
+         sg_symelem_frame444_opcompids_dict[sym] = -np.ones((len(stdframes), nops, nops), dtype=np.int32)
+         for ielem, elem in enumerate(sg_symelem_dict[sym]):
+            if not (elem.iscyclic or elem.isdihedral): continue
+            print(sym, elem, flush=True)
+            sg_symelem_frame444_opids_dict[sym][:, ielem] = elem.frame_operator_ids(stdframes)
+            # try:
+            sg_symelem_frame444_compids_dict[sym][:, ielem] = elem.frame_component_ids(stdframes, perms)
+            #except ComponentIDError:
+            #   print('!' * 80)
+            #   print('ERROR making component ids for symelem', sym, ielem)
+            #   print(elem)
+            #   print('probably not all SymElem operators contained in 2x2x2 cells')
+            #   print('this remains mysterious')
+            #   elem.issues.append('This element breaks standard component id system')
+            #   sg_symelem_frame444_compids_dict[sym][:, ielem] = IERROR
+            #   for jelem, se2 in enumerate(sg_symelem_dict[sym]):
+            #      sg_symelem_frame444_opcompids_dict[sym][:, ielem, jelem] = IERROR
+            #      IERROR += 1
+            #   continue
+            for jelem, elem2 in enumerate(sg_symelem_dict[sym]):
+               fopid = sg_symelem_frame444_opids_dict[sym][:, ielem]
+               fcompid = sg_symelem_frame444_compids_dict[sym][:, jelem]
+               # if not elem.iscompound or not elem2.iscompound: continue
+               # ic(elem, elem2)
+               ids = fcompid.copy()
+               for i in range(np.max(fopid)):
+                  fcids = fcompid[fopid == i]
+                  idx0 = fcompid == fcids[0]
+                  for fcid in fcids[1:]:
+                     idx = fcompid == fcid
+                     ids[idx] = min(min(ids[idx]), min(ids[idx0]))
+               for i, id in enumerate(sorted(set(ids))):
+                  ids[ids == id] = i
+               sg_symelem_frame444_opcompids_dict[sym][:, ielem, jelem] = ids
+               opcompids = _make_operator_component_joint_ids(elem, elem2, stdframes, fopid, fcompid)
+               assert np.allclose(opcompids, sg_symelem_frame444_opcompids_dict[sym][:, ielem, jelem])
 
    sgdata = dict(
       sg_frames_dict=sg_frames_dict,

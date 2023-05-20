@@ -5,31 +5,51 @@ from willutil.sym.spacegroup_data import *
 
 def applylattice(lattice, unitframes):
    origshape = unitframes.shape
-   if unitframes.ndim == 3: unitframes = unitframes.reshape(1, -1, 4, 4)
-   if lattice.ndim == 2: lattice = lattice.reshape(1, 3, 3)
-   latticeframes = unitframes.copy()
-   latticeframes[:, :, :3, 3] = einsum('nij,nkj->nki', lattice, latticeframes[:, :, :3, 3])
-   # latticeframes[:, :, :3, :3] = einsum('nij,nfjk->nfik', lattice, latticeframes[:, :, :3, :3])
+   assert lattice.shape == (3, 3)
+   assert unitframes.ndim == 3
+   lattice_inv = np.linalg.inv(lattice)
+   latticeframes = np.zeros_like(unitframes)
+   latticeframes[:, :3, :3] = einsum('ij,fjk,kl->fil', lattice, unitframes[:, :3, :3], lattice_inv)
+   latticeframes[:, :3, 3] = einsum('ij,fj->fi', lattice, unitframes[:, :3, 3])
+   latticeframes[:, 3, 3] = 1
+   return latticeframes
 
-   return latticeframes.reshape(origshape)
+def applylatticepts(lattice, unitpoints):
+   origshape = unitpoints.shape
+   unitpoints = unitpoints.reshape(-1, 4)
+   assert lattice.shape == (3, 3)
+   lattice_inv = np.linalg.inv(lattice)
+   latticepoints = np.ones_like(unitpoints)
+   latticepoints[:, :3] = einsum('ij,fj->fi', lattice, unitpoints[:, :3])
+   latticepoints = latticepoints.reshape(origshape)
+   return latticepoints
 
 def latticeframes(unitframes, lattice, cells=1):
-   latticeframes = applylattice(lattice, unitframes)
    cells = process_num_cells(cells)
-   xshift = wu.homog.htrans(cells @ lattice)
-   frames = wu.homog.hxformx(xshift, latticeframes, flat=True, improper_ok=True)
+   xshift = wu.homog.htrans(cells)
+   unitframes = wu.homog.hxformx(xshift, unitframes, flat=True, improper_ok=True)
+   frames = applylattice(lattice, unitframes)
    return frames.round(10)
 
-def tounitframes(frames, lattice, spacegroup=None):
+def tounitcell(lattice, frames, spacegroup=None):
    if not hasattr(lattice, 'shape') or lattice.shape != (3, 3):
       lattice = lattice_vectors(spacegroup, lattice)
-   uframes = frames.copy()
-   # cells = process_num_cells(cells)
-   # xshift = wu.hinv(wu.htrans(cells @ lattice))
-   uframes[:, :3, 3] = einsum('ij,jk->ik', uframes[:, :3, 3], np.linalg.inv(lattice))
-   # uframes = wu.hxform(xshift, uframes, flat=True)
+   unitframes = frames.copy()
+   lattinv = np.linalg.inv(lattice)
+   unitframes[:, :3, :3] = einsum('ij,fjk,kl->fil', lattinv, frames[:, :3, :3], lattice)
+   unitframes[:, :3, 3] = einsum('ij,fj->fi', lattinv, frames[:, :3, 3])
+   return unitframes.round(10)
 
-   return uframes.round(10)
+def tounitcellpts(lattice, points, spacegroup=None):
+   oshape = points.shape
+   points = points.reshape(-1, 4)
+   if not hasattr(lattice, 'shape') or lattice.shape != (3, 3):
+      lattice = lattice_vectors(spacegroup, lattice)
+   unitpoints = points.copy()
+   lattinv = np.linalg.inv(lattice)
+   unitpoints[:, :3] = einsum('ij,fj->fi', lattinv, points[:, :3])
+   unitpoints = unitpoints.reshape(oshape)
+   return unitpoints.round(10)
 
 def process_num_cells(cells):
    if cells is None:
@@ -119,6 +139,10 @@ def full_cellgeom(lattice, cellgeom, strict=True):
          assert len(p) < 6 or np.allclose(p[5], 120.0), f'invalid cell geometry {p}'
          assert np.allclose(p[0], p[1])
       p = [p[0], p[0], p[2], 90.0, 90.0, 120.0]
+   else:
+      ic(lattice)
+      ic(cellgeom)
+      assert 0
    return p
 
 def lattice_vectors(lattice, cellgeom=None):
@@ -128,6 +152,9 @@ def lattice_vectors(lattice, cellgeom=None):
       cellgeom = [1.0, 1.0, 1.0, 90.0, 90.0, 90.0]
       if lattice == 'HEXAGONAL':
          cellgeom = [1.0, 1.0, 1.0, 90.0, 90.0, 120.0]
+   elif cellgeom == 'nonsingular':
+      cellgeom = full_cellgeom(lattice, _sg_nonsingular_cellgeom, strict=False)
+      # ic('cellgeom nonsingular', cellgeom)
 
    a, b, c, A, B, C = full_cellgeom(lattice, cellgeom)
    cosA, cosB, cosC = [np.cos(np.radians(_)) for _ in (A, B, C)]
@@ -149,7 +176,7 @@ def lattice_vectors(lattice, cellgeom=None):
       0.0,
       0.0,
       c * sinB * np.sqrt(1.0 - ((cosB * cosC - cosA) / (sinB * sinC))**2),
-   ]]).T
+   ]])
    return lattice_vectors
 
 def cell_volume(spacegroup, cellgeom):
@@ -161,4 +188,8 @@ def cell_volume(spacegroup, cellgeom):
    return a * b * c * np.sqrt(1 - cosA**2 - cosB**2 - cosC**2 + 2 * cosA * cosB * cosC)
 
 def sg_is_chiral(sg):
-   return not any([sg.count(x) for x in 'm-c/n:baHd'])
+   return sg in sg_all_chiral
+   # if sg == '231': return False
+   # return not any([sg.count(x) for x in 'm-c/n:baHd'])
+
+_sg_nonsingular_cellgeom = [1.0, 1.3, 1.7, 66.0, 85.0, 104.0]

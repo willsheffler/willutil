@@ -4,6 +4,14 @@ import deferred_import
 
 import numpy as np
 
+def hconstruct(rot, trans=None):
+   x = np.zeros((rot.shape[:-2] + (4, 4)))
+   x[..., :3, :3] = rot[..., :3, :3]
+   if trans is not None:
+      x[..., :3, 3] = trans[..., :3]
+   x[..., 3, 3] = 1
+   return x
+
 def isarray(x):
    if isinstance(x, np.array):
       return True
@@ -1341,13 +1349,6 @@ def hcoherence(xforms, lever):
    dist = xforms.reshape(1, -1, 4, 4) - xforms.reshape(-1, 1, 4, 4)
    dist = np.sqrt(np.sum(dist**2) / 4 / len(xforms))
    return dist
-
-def hconstruct(rot, trans):
-   x = np.zeros((rot.shape[:-2] + (4, 4)))
-   x[..., :3, :3] = rot[..., :3, :3]
-   x[..., :3, 3] = trans[..., :3]
-   x[..., 3, 3] = 1
-   return x
 
 def hmean(xforms):
    q = rot_to_quat(xforms)
