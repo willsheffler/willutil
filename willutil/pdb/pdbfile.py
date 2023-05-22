@@ -1,5 +1,5 @@
 from difflib import SequenceMatcher
-import collections
+import collections, os
 import numpy as np
 import willutil as wu
 
@@ -183,10 +183,14 @@ class PDBFile:
       return models.index(m)
 
    def dump_pdb(self, fname, **kw):
-      with open(fname, 'w') as out:
-         for i, row in self.df.iterrows():
-            s = wu.pdb.pdbdump.pdb_format_atom_df(**row, **kw)
-            out.write(s)
+      out = open(fname, 'w') if isinstance(fname, (str, bytes)) else fname
+      if self.cryst1:
+         out.write(self.cryst1 + os.linesep)
+      for i, row in self.df.iterrows():
+         s = wu.pdb.pdbdump.pdb_format_atom_df(**row, **kw)
+         out.write(s)
+      if isinstance(fname, (str, bytes)):
+         out.close()
 
    dump = dump_pdb
 

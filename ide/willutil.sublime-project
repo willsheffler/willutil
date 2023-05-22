@@ -6,6 +6,10 @@
 			"shell_cmd": "cd $folder; python willutil/runtests.py --projname willutil $file &> log/sublime_build.log"
 		},
 		{
+			"name": "test_mmcif.py",
+			"shell_cmd": "cd $folder; python willutil/tests/pdb/test_mmcif.py &> log/sublime_build.log"
+		},
+		{
 			"name": "test_dumppdb.py",
 			"shell_cmd": "cd $folder; python willutil/tests/pdb/test_pdbdump.py &> log/sublime_build.log"
 		},

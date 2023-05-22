@@ -898,8 +898,8 @@ def symfit_mc_play(
    symdupframes = frames
    symerr = symframes_coherence(symdupframes)
 
-   os.system('yes | ffmpeg -i symfit_movie/symdup_%04d.png -c:v libx264 -r 30 -pix_fmt yuv420p symdup.mp4')
-   os.system('yes | ffmpeg -i symfit_movie/symops_%04d.png -c:v libx264 -r 30 -pix_fmt yuv420p symops.mp4')
+   # os.system('yes | ffmpeg -i symfit_movie/symdup_%04d.png -c:v libx264 -r 30 -pix_fmt yuv420p symdup.mp4')
+   # os.system('yes | ffmpeg -i symfit_movie/symops_%04d.png -c:v libx264 -r 30 -pix_fmt yuv420p symops.mp4')
    # print(f'symfit_mc_play SEED {seed:15} ERR {symfit.weighted_err:7.3}')
 
    # if showme:
