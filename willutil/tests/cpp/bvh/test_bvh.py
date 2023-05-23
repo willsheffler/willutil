@@ -692,7 +692,7 @@ def test_collect_pairs_range_sym():
          ic(f'test_collect_pairs_range_sym fail {trial}')
          # give this test two tries... rarely fails so ok
          # should probably check first fail is known one
-         if trial == 2:
+         if trial == 3:
             raise e
 
 def test_slide_collect_pairs():

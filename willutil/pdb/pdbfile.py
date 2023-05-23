@@ -25,7 +25,12 @@ class PDBFile:
       self.meta = meta.copy()
       self.code = meta.code
       self.resl = meta.resl
-      self.cryst1 = meta.cryst1
+      self.cryst1, self.spacegroup, self.cellgeom = meta.cryst1, None, None
+      if self.cryst1:
+         s = self.cryst1.split()
+         self.cellgeom = np.array([float(x) for x in s[1:7]])
+         self.spacegroup = ' '.join(s[7:])
+
       # ic(self.cryst1)
       df = df.copy()
       df.reset_index(inplace=True, drop=True)
@@ -45,9 +50,13 @@ class PDBFile:
       self.nchain = len(self.chainseq)
       self.fname = meta.fname
       self.aamask = self.atommask('CA', aaonly=False)
+      self.mmcif_info = dict()
 
    def copy(self, **kw):
       return PDBFile(self.df, self.meta, self.original_contents, **kw)
+
+   def set_cif_info(self, cifdict, **kw):
+      self.mmcif_info.update(cifdict)
 
    def __getattr__(self, k):
       'allow dot access for fields of self.df from self'
@@ -349,11 +358,29 @@ class PDBFile:
       return nfold
 
    def xformed(self, xform):
-      crd = self.coords
-      crd2 = wu.hxform(xform, crd)
-      pdb = self.copy()
-      pdb.coords = crd2
-      return pdb
+      if xform.squeeze().shape == (4, 4):
+         crd = self.coords
+         crd2 = wu.hxform(xform, crd)
+         pdb = self.copy()
+         pdb.coords = crd2
+         return pdb
+      else:
+         import pandas as pd
+         assert xform.ndim == 3
+         xforms = xform.copy()
+         isident = np.all(np.isclose(xform, np.eye(4)), axis=(1, 2))
+         if np.any(isident):
+            assert np.sum(isident) == 1
+            xforms[isident] = xforms[0]
+            xforms[0] = np.eye(4)
+         chains = set(self.df.ch)
+         newpdbs = [self.xformed(x) for x in xform]
+         for imodel, pdb in enumerate(newpdbs):
+            for ich, ch in enumerate(chains):
+               newch = wu.pdb.all_pymol_chains[ich + imodel * len(chains)].encode()
+               pdb.df.loc[pdb.df.ch == ch, 'ch'] = newch
+         df = pd.concat([pdb.df for pdb in newpdbs])
+         return PDBFile(df, meta=self.meta, original_contents=self.original_contents)
 
    @property
    def coords(self):

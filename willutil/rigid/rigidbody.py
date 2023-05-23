@@ -387,6 +387,11 @@ class RigidBody:
       isect = wu.cpp.bvh.bvh_isect(self.bvh, other.bvh, self.position, other.position, clashdis)
       return isect
 
+   def intersects(self, other, otherpos, mindis=10):
+      self.bvhopcount += 1
+      isect = wu.cpp.bvh.bvh_isect_vec(self.bvh, other.bvh, self.position, otherpos, mindis)
+      return isect
+
    def point_contact_count(self, other, contactdist=8):
       self.bvhopcount += 1
       p = self.interactions(other, contactdist=contactdist)

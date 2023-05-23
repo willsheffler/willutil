@@ -55,7 +55,7 @@ cpp = deferred_import('willutil.cpp')
 # figure things in homog starting with h should't pollute namespace too bad
 from willutil.sym.symfit import compute_symfit
 
-from willutil.pdb import dumppdb, readpdb
+from willutil.pdb import dumppdb, readpdb, readfile, readcif
 
 from willutil.homog import (
    # I,

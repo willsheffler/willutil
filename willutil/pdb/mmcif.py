@@ -28,6 +28,7 @@ def readcif(fname):
    pdb_io.save(strfile)
 
    pdb = wu.readpdb(strfile.getvalue())
+   pdb.set_cif_info(mmcif_dict)
 
    return pdb
 

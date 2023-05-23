@@ -5,6 +5,12 @@ from willutil.pdb.pdbfile import PDBFile
 
 log = logging.getLogger(__name__)
 
+def readfile(fname, **kw):
+   if fname.endswith('.cif'):
+      return wu.readcif(fname, **kw)
+   else:
+      return wu.readpdb(fname, **kw)
+
 ##@timed
 def readpdb(fname_or_buf, indatabase=False, **kw):
    pdbatoms, meta, original_contents = read_pdb_atoms(fname_or_buf)

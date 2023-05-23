@@ -5,10 +5,17 @@ import willutil as wu
 print(wu.__file__)
 
 def makesym(fname, arch, **kw):
+   kw = wu.Bunch(kw)
    print('-' * 80)
    print(fname, flush=True)
-   if arch.lower().startswith('c'):
+   if arch.lower() == 'crystal_contacts':
+      return makextal(fname, **kw)
+   elif arch.lower().startswith('c'):
       return makecx(fname, arch)
+   else:
+      makearch(fname, arch, **kw)
+
+def makearch(fname, arch, **kw):
    tgtaxis, nfold, frames = get_tgtaxis_frames(arch, **kw)
    pdb = wu.readpdb(fname, removehet=True)
    componentinfo = pdb.syminfo(**kw)
@@ -18,6 +25,21 @@ def makesym(fname, arch, **kw):
    tag = os.path.basename(fname)
    dump_transformed_samples(pdbaln, compaxis, frames, tag=tag, arch=arch, **kw)
    print('-' * 80, flush=True)
+
+def makextal(fname, **kw):
+   kw = wu.Bunch(kw)
+   pdb = wu.readfile(fname)
+   frames = wu.sym.sgframes(pdb.spacegroup, pdb.cellgeom, cells=(-2, 2))
+   body = wu.RigidBody(pdb.ca())
+   isect = body.intersects(body, frames, mindis=kw.contact_distance)
+   frames = frames[isect]
+   pdb2 = pdb.xformed(frames)
+   if fname.endswith('.cif'):
+      newfname = f'{os.path.basename(fname)}.xtal.cif'
+      wu.pdb.dumpcif(newfname, pdb2)
+   else:
+      newfname = f'{os.path.basename(fname)}.xtal.pdb'
+      wu.pdb.dumppdb(newfname, pdb2)
 
 def makecx(fname, arch):
    frames = wu.sym.frames(arch)
@@ -74,12 +96,16 @@ def dump_transformed_samples(pdb, compaxis, frames, radius, angle, arch='', outp
 
 def main():
    kw = get_cli_config()
-   for fname in kw.inputs:
-      try:
+   if kw.test:
+      for fname in kw.inputs:
          makesym(fname, **kw)
-      except ValueError as e:
-         print(f'Input {fname} failed, reason:')
-         print(e, flush=True)
+   else:
+      for fname in kw.inputs:
+         try:
+            makesym(fname, **kw)
+         except ValueError as e:
+            print(f'Input {fname} failed, reason:')
+            print(e, flush=True)
 
 def get_cli_config():
 
@@ -161,6 +187,17 @@ def get_cli_config():
       default=0.5,
       type=float,
       help='max allowed shift along sym axis for "symmetric" chains',
+   )
+   parser.add_argument(
+      '--contact_distance',
+      default=10.0,
+      type=float,
+      help='max CA-CA distance to be considered in contact',
+   )
+   parser.add_argument(
+      '--test',
+      action='store_true',
+      help='don\'t catch and handle exceptions',
    )
    parser.add_argument(
       '--reconcile_method',
