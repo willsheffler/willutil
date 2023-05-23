@@ -94,7 +94,7 @@ def process_num_cells(cells):
 
    return cells
 
-def full_cellgeom(lattice, cellgeom, strict=True):
+def full_cellgeom(lattice: str, cellgeom, strict=True):
    if isinstance(cellgeom, (int, float)):
       cellgeom = [cellgeom]
    if isinstance(lattice, str) and lattice in sg_lattice:
@@ -140,20 +140,20 @@ def full_cellgeom(lattice, cellgeom, strict=True):
          assert np.allclose(p[0], p[1])
       p = [p[0], p[0], p[2], 90.0, 90.0, 120.0]
    else:
-      ic(lattice)
-      ic(cellgeom)
-      assert 0
+      raise ValueError(f'unknown lattice type {lattice} specified with cellgeom {cellgeom}')
    return p
 
 def lattice_vectors(lattice, cellgeom=None):
    if lattice in sg_lattice:
       lattice = sg_lattice[lattice]
    if cellgeom is None:
+      # if lattice != 'CUBIC':
+      raise ValueError(f'no cellgeom specified for lattice type {lattice}')
       cellgeom = [1.0, 1.0, 1.0, 90.0, 90.0, 90.0]
       if lattice == 'HEXAGONAL':
          cellgeom = [1.0, 1.0, 1.0, 90.0, 90.0, 120.0]
    elif cellgeom == 'nonsingular':
-      cellgeom = full_cellgeom(lattice, _sg_nonsingular_cellgeom, strict=False)
+      cellgeom = full_cellgeom(lattice, sg_nonsingular_cellgeom, strict=False)
       # ic('cellgeom nonsingular', cellgeom)
 
    a, b, c, A, B, C = full_cellgeom(lattice, cellgeom)
@@ -192,4 +192,9 @@ def sg_is_chiral(sg):
    # if sg == '231': return False
    # return not any([sg.count(x) for x in 'm-c/n:baHd'])
 
-_sg_nonsingular_cellgeom = [1.0, 1.3, 1.7, 66.0, 85.0, 104.0]
+def sg_pymol_name(spacegroup):
+   if spacegroup == 'R3': return 'H3'
+   if spacegroup == 'R32': return 'H32'
+   return spacegroup
+
+sg_nonsingular_cellgeom = [1.0, 1.3, 1.7, 66.0, 85.0, 104.0]

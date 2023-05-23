@@ -61,7 +61,7 @@ def test_spacegroup_frames_sanity_check():
 
 def test_spacegroup_lattice_transpose_bug():
    sym = 'P3'
-   lat = wu.sym.lattice_vectors(sym)
+   lat = wu.sym.lattice_vectors(sym, cellgeom='nonsingular')
    linv = np.linalg.inv(lat)
    f = wu.sym.sg_frames_dict[sym]
    f2 = einsum('ij,fjk,kl->fil', lat, f[:, :3, :3], linv)
@@ -79,11 +79,11 @@ def test_spacegroup_lattice_transpose_bug():
    assert np.allclose(q, r)
 
 def test_spacegroup_frames_order():
-   f1 = wu.sym.sgframes('I213', cells=1)
-   f2 = wu.sym.sgframes('I213', cells=2)
-   f3 = wu.sym.sgframes('I213', cells=3)
-   f4 = wu.sym.sgframes('I213', cells=4)
-   f5 = wu.sym.sgframes('I213', cells=5)
+   f1 = wu.sym.sgframes('I213', cells=1, cellgeom='unit')
+   f2 = wu.sym.sgframes('I213', cells=2, cellgeom='unit')
+   f3 = wu.sym.sgframes('I213', cells=3, cellgeom='unit')
+   f4 = wu.sym.sgframes('I213', cells=4, cellgeom='unit')
+   f5 = wu.sym.sgframes('I213', cells=5, cellgeom='unit')
    assert np.allclose(f1, f2[:len(f1)])
    assert np.allclose(f2, f3[:len(f2)])
    assert np.allclose(f3, f4[:len(f3)])
@@ -133,7 +133,7 @@ def test_lattice_cellgeom():
 
 def helper_test_spacegroup_frames(sg):
    f1 = wu.sym.sgframes(sg, [1, 1, 1])
-   f2 = wu.sym.frames(sg, cells=1, ontop=None)
+   f2 = wu.sym.frames(sg, cells=1, ontop=None, cellgeom='nonsingular')
    assert f1.shape == f2.shape
    f2[np.where(np.abs(f2) < 0.0001)] = 0
    f2[f2[:, 0, 3] > 0.999, 0, 3] = 0  # mod1

@@ -49,11 +49,13 @@ def main():
 def test_symelems_P3():
 
    sym = 'P3'
-   frames = wu.sym.sgframes(sym, cellgeom='nonsingular', cells=3)
+   frames = wu.sym.sgframes(sym, cellgeom='unit', cells=3)
 
-   ic(frames.shape)
    elems = _compute_symelems(sym)
-   ic(elems)
+   for k, v in elems.items():
+      print(k)
+      for e in v:
+         print(e)
    assert elems == {
       'C3': [
          SymElem(3, axis=[0, 0, 1], cen=[0, 0, 0.0], label='C3'),

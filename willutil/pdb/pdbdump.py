@@ -120,7 +120,7 @@ def dump_pdb_from_points(
    frames=None,
    dumppdbscale=1,
    spacegroup=None,
-   cellsize=None,
+   cellgeom=None,
    skipval=9999.999,
    **kw,
 ):
@@ -162,9 +162,10 @@ def dump_pdb_from_points(
       assert len(resnames) == nres
 
    if spacegroup is not None:
-      if not isinstance(cellsize, (int, float)):
-         raise ValueError(f'bad cellsize {cellsize}')
-      cryst1 = wu.sym.cryst1_pattern % (*(dumppdbscale * cellsize, ) * 3, spacegroup)
+      cellgeom = wu.sym.full_cellgeom(spacegroup, cellgeom)
+      # ic(cellgeom)
+      sgpdb = wu.sym.sg_pymol_name(spacegroup)
+      cryst1 = wu.sym.cryst1_pattern_full % (*(dumppdbscale * cellgeom[:3]), *cellgeom[3:6], sgpdb)
       header += cryst1 + os.linesep
    pts = np.clip(pts, -999.999, 9999.999)
    atomconut = 1

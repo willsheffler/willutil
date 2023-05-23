@@ -145,7 +145,7 @@ def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=No
 def _find_compound_symelems(sym, se=None, frames=None):
    if se is None: se = wu.sym.symelems(sym, asdict=False, screws=False)
    se = [e for e in se if e.iscyclic]
-   if frames is None: frames = wu.sym.sgframes(sym, cells=3)
+   if frames is None: frames = wu.sym.sgframes(sym, cells=3, cellgeom='nonsingular')
    isects = defaultdict(set)
    for e1, e2 in it.product(se, se):
       # if e1.id == e2.id: continue

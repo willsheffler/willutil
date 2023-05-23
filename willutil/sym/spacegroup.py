@@ -27,7 +27,7 @@ def sgframes(
    **kw,
 ):
    spacegroup = spacegroup_canonical_name(spacegroup)
-   if cellgeom not in ('unit', 'nonsingular', None):
+   if isinstance(cellgeom, np.ndarray) or cellgeom not in ('unit', 'nonsingular', None):
       cellgeom = tuple(round(x, roundgeom) for x in cellgeom)
    cells = process_num_cells(cells)
    key = spacegroup, cellgeom, tuple(cells.flat), sortframes
