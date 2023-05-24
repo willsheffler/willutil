@@ -2,6 +2,54 @@ import json, gzip, lzma, pickle, os
 import willutil as wu
 
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
+_compression_extensions = ('gz', 'tgz', 'xz', 'txz')
+
+def fname_extensions(fname):
+   '''split fname dir/base.ext.compression into parts'''
+   d, b = os.path.split(fname)
+   s = b.split('.')
+   if len(s) == 1:
+      d, f, e, c = d, b, '', ''
+   elif len(s) == 2:
+      if s[1] in _compression_extensions:
+         d, f, e, c = d, s[0], '', s[1]
+      else:
+         d, f, e, c = d, s[0], s[1], ''
+   elif len(s) == 3:
+      ext1, ext2 = s[-2:]
+      if ext2 in _compression_extensions:
+         if ext1 == 'tar':
+            d, f, e, c = d, '.'.join(s[:-2]), '', 'tar.' + ext2
+         else:
+            d, f, e, c = d, '.'.join(s[:-2]), ext1, ext2
+      else:
+         d, f, e, c = d, '.'.join(s[:-1]), ext2, ''
+   elif len(s) > 3:
+      ext1, ext2, ext3 = s[-3:]
+      if ext2 == 'tar':
+         d, f, e, c = d, '.'.join(s[:-3]), ext1, 'tar.' + ext3
+      elif ext3 in _compression_extensions:
+         d, f, e, c = d, '.'.join(s[:-2]), ext2, ext3
+      else:
+         d, f, e, c = d, '.'.join(s[:-1]), ext3, ''
+   else:
+      assert 0
+
+   # ic(e)
+   # ic(f'{b}.{e}' if e else b)
+   directory = f'{d}/' if d else ''
+   base = f
+   ext = f'.{e}' if e else ''
+   compression = f'.{c}' if c else ''
+   basename = b
+   baseext = f'{f}.{e}' if e else f
+   extcomp = ''
+   if e and c: extcomp = f'.{e}.{c}'
+   elif e: extcomp = f'.{e}'
+   elif c: extcomp = f'.{c}'
+   uncomp = f'{directory}{baseext}'
+
+   return wu.Bunch(directory=directory, base=base, ext=ext, compression=compression, basename=basename, baseext=baseext, extcomp=extcomp, uncomp=uncomp)
 
 def package_data_path(fname, emptyok=True):
    if os.path.exists(os.path.join(data_dir, fname)):
@@ -105,8 +153,10 @@ def load_pickle(fname, add_dotpickle=True, assume_lzma=False, **kw):
    return stuff
 
 def save(stuff, fname, **kw):
-   ic(fname)
-   if fname.endswith('.nc'):
+   finfo = fname_extensions(fname)
+   if finfo.ext in ('.pdb', '.cif'):
+      wu.pdb.dumpstruct(fname, stuff, **kw)
+   elif finfo.ext == '.nc':
       import xarray
       if not isinstance(stuff, xarray.Dataset):
          raise ValueError('can only save xarray.Dataset as .nc file')

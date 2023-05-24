@@ -2,12 +2,12 @@ import os, argparse
 import numpy as np
 import willutil as wu
 
-print(wu.__file__)
+# ic.configureOutput(includeContext=True, contextAbsPath=True)
 
 def makesym(fname, arch, **kw):
    kw = wu.Bunch(kw)
    print('-' * 80)
-   print(fname, flush=True)
+   print('makesym', fname, flush=True)
    if arch.lower() == 'crystal_contacts':
       return makextal(fname, **kw)
    elif arch.lower().startswith('c'):
@@ -29,17 +29,14 @@ def makearch(fname, arch, **kw):
 def makextal(fname, **kw):
    kw = wu.Bunch(kw)
    pdb = wu.readfile(fname)
+   finfo = wu.storage.fname_extensions(fname)
    frames = wu.sym.sgframes(pdb.spacegroup, pdb.cellgeom, cells=(-2, 2))
    body = wu.RigidBody(pdb.ca())
    isect = body.intersects(body, frames, mindis=kw.contact_distance)
    frames = frames[isect]
-   pdb2 = pdb.xformed(frames)
-   if fname.endswith('.cif'):
-      newfname = f'{os.path.basename(fname)}.xtal.cif'
-      wu.pdb.dumpcif(newfname, pdb2)
-   else:
-      newfname = f'{os.path.basename(fname)}.xtal.pdb'
-      wu.pdb.dumppdb(newfname, pdb2)
+   sympdb = pdb.xformed(frames)
+   newfname = f'{finfo.base}.xtal{finfo.extcomp}'
+   wu.dumpstruct(newfname, sympdb)
 
 def makecx(fname, arch):
    frames = wu.sym.frames(arch)
@@ -226,7 +223,7 @@ def get_cli_config():
    )
    args.arch = args.architecture
 
-   print(args.tolerances)
+   # print(args.tolerances)
 
    assert not args.template
 

@@ -33,10 +33,8 @@ def sgframes(
    key = spacegroup, cellgeom, tuple(cells.flat), sortframes
    if not key in _memoized_frames:
       unitframes = sg_frames_dict[spacegroup]
-      if cellgeom == 'unit':
-         latticevec = np.eye(3)
-      else:
-         latticevec = lattice_vectors(spacegroup, cellgeom)
+      if cellgeom == 'unit': latticevec = np.eye(3)
+      else: latticevec = lattice_vectors(spacegroup, cellgeom)
       frames = latticeframes(unitframes, latticevec, cells)
 
       frames = prune_frames(frames, asucen, xtalrad, xtalcen)

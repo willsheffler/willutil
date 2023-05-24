@@ -38,6 +38,9 @@ def _get_spacegroup_data():
    sg_n_std_cells = dict()
 
    for i, (sym, symtag) in enumerate(sg_tag.items()):
+
+      if sym != 'P3': continue
+
       if symtag in sg_lattice: sg_lattice[sym] = sg_lattice[symtag]
       else: sg_lattice[symtag] = sg_lattice[sym]
 
@@ -65,7 +68,8 @@ def _get_spacegroup_data():
       print('-' * 40, sym, '-' * 40)
       n_std_cells = 4
       sg_n_std_cells[sym] = n_std_cells
-      stdframes = latticeframes(frames, np.eye(3), n_std_cells)
+      latticevec = lattice_vectors(sym, 'nonsingular')
+      stdframes = latticeframes(frames, latticevec, n_std_cells)
 
       IERROR = -900_000_000
       if sym not in sg_symelem_dict:
@@ -92,9 +96,9 @@ def _get_spacegroup_data():
          for ielem, elem in enumerate(sg_symelem_dict[sym]):
             if not (elem.iscyclic or elem.isdihedral): continue
             print(sym, elem, flush=True)
-            sg_symelem_frame444_opids_dict[sym][:, ielem] = elem.frame_operator_ids(stdframes)
+            sg_symelem_frame444_opids_dict[sym][:, ielem] = elem.frame_operator_ids(stdframes, latticevec)
             # try:
-            sg_symelem_frame444_compids_dict[sym][:, ielem] = elem.frame_component_ids(stdframes, perms)
+            sg_symelem_frame444_compids_dict[sym][:, ielem] = elem.frame_component_ids(stdframes, perms, latticevec)
             #except ComponentIDError:
             #   print('!' * 80)
             #   print('ERROR making component ids for symelem', sym, ielem)

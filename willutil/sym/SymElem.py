@@ -3,6 +3,7 @@ import numpy as np
 import willutil as wu
 from willutil.sym.symframes import tetrahedral_frames, octahedral_frames
 from willutil.homog.hgeom import halign2, halign, htrans, hinv, hnorm
+from willutil.sym.spacegroup_util import tounitcellpts, applylatticepts
 
 class ScrewError(Exception):
    pass
@@ -99,6 +100,11 @@ class SymElem:
          try:
             iframematch = perm[iframematch0]
          except IndexError:
+            # from willutil.viz.pymol_viz import showme
+            # import willutil.viz.viz_xtal
+            # showme(self, scale=10)
+            # showme(frames, scale=10)
+            # assert 0
             raise ComponentIDError
          iframematch = iframematch[iframematch >= 0]
          centest = einsum('fij,j->fi', frames[iframematch], self.cen)
@@ -148,16 +154,16 @@ class SymElem:
       # assert 0
       return compid
 
-   def tolattice(self, lattice):
-      newcen = wu.sym.applylatticepts(lattice, self.cen)
-      newhel = wu.sym.applylatticepts(lattice, self.cen + self.axis * self.hel)
-      newhel = wu.hnorm(newhel - newcen)
+   def tolattice(self, latticevec):
+      newcen = applylatticepts(latticevec, self.cen)
+      newhel = applylatticepts(latticevec, self.cen + self.axis * self.hel)
+      newhel = hnorm(newhel - newcen)
       return SymElem(self.nfold, self.axis, newcen, self.axis2, hel=newhel)
 
-   def tounit(self, lattice):
-      newcen = wu.sym.tounitcellpts(lattice, self.cen)
-      newhel = wu.sym.tounitcellpts(lattice, self.cen + self.axis * self.hel)
-      newhel = wu.hnorm(newhel - newcen)
+   def tounit(self, latticevec):
+      newcen = tounitcellpts(latticevec, self.cen)
+      newhel = tounitcellpts(latticevec, self.cen + self.axis * self.hel)
+      newhel = hnorm(newhel - newcen)
       return SymElem(self.nfold, self.axis, newcen, self.axis2, hel=newhel)
 
    def matching_frames(self, frames):
@@ -165,9 +171,15 @@ class SymElem:
       match = np.isclose(frames[None], self.operators[:, None])
       match = np.any(np.all(match, axis=(2, 3)), axis=0)
       match = np.where(match)[0]
-      # ic(frames.shape)
-      # ic(match)
-      assert len(match) == len(self.operators)
+      if len(match) != len(self.operators):
+         raise ComponentIDError
+         ic(frames.shape)
+         ic(match)
+         from willutil.viz.pymol_viz import showme
+         import willutil.viz.viz_xtal
+         showme(frames, scale=10)
+         showme(self, scale=10)
+         assert len(match) == len(self.operators)
       return match
 
       # symaxs = einsum('fij,j->fi', frames, self.axis)

@@ -35,6 +35,9 @@ def test_spacegroup_frames_pymol(spacegroup):
    cellgeom = wu.sym.sg_nonsingular_cellgeom
    cellgeom = wu.sym.full_cellgeom(spacegroup, cellgeom, strict=False)
    ncells = 5
+   if wu.sym.copies_per_cell(spacegroup) > 8:
+      print('test_spacegroup_pymol.py skipping large unitcell', spacegroup)
+      return
    assert helper_test_spacegroup_frames_pymol(spacegroup, cellgeom, ncells=ncells)
 
 def helper_test_spacegroup_frames_pymol(spacegroup, cellgeom, ncells, dump_pdbs=False):

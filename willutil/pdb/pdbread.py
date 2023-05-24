@@ -6,10 +6,15 @@ from willutil.pdb.pdbfile import PDBFile
 log = logging.getLogger(__name__)
 
 def readfile(fname, **kw):
-   if fname.endswith('.cif'):
+   if not os.path.exists(fname):
+      raise FileNotFoundError(f'no file {fname}')
+   finfo = wu.storage.fname_extensions(fname)
+   if finfo.ext == '.cif':
       return wu.readcif(fname, **kw)
-   else:
+   elif finfo.ext == '.pdb':
       return wu.readpdb(fname, **kw)
+   else:
+      raise ValueError(f'don\'t know how to read {fname}')
 
 ##@timed
 def readpdb(fname_or_buf, indatabase=False, **kw):

@@ -6,6 +6,23 @@ import numpy as np
 
 all_pymol_chains = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz" * 100)
 
+def dumpstruct(fname, pdb, **kw):
+   finfo = wu.storage.fname_extensions(fname)
+
+   # save
+   if finfo.ext == '.pdb':
+      wu.pdb.dumppdb(finfo.uncomp, pdb)
+   elif finfo.ext == '.cif':
+      wu.pdb.dumpcif(finfo.uncomp, pdb)
+   else:
+      raise ValueError(f'dumpstruct doesn\'t know what to do with {fname}')
+
+   # compress
+   if finfo.compression == '.gz':
+      os.system(f'gzip -f {finfo.uncomp}')
+   elif finfo.compression == '.xz':
+      os.system(f'xz -f {finfo.uncomp}')
+
 def pdb_format_atom_df(
    ai=0,
    ri=0,

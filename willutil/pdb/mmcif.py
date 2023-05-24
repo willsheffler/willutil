@@ -1,4 +1,4 @@
-import io, gzip
+import os, io, tempfile
 
 from Bio.PDB.MMCIF2Dict import MMCIF2Dict
 from Bio.PDB.PDBParser import PDBParser
@@ -9,9 +9,21 @@ from Bio.PDB.mmcifio import MMCIFIO
 import willutil as wu
 
 def readcif(fname):
+   finfo = wu.storage.fname_extensions(fname)
    parser = MMCIFParser()
-   mmcif_dict = MMCIF2Dict(fname)
-   struct = parser.get_structure('????', fname)
+   with tempfile.TemporaryDirectory() as td:
+      readfname = f'{td}/tmp.cif'
+      if finfo.compression == '.gz':
+         os.system(f'zcat {fname} > {td}/tmp.cif')
+      elif finfo.compression == '.xz':
+         os.system(f'xzcat {fname} > {td}/tmp.cif')
+      else:
+         readfname = fname
+         assert not finfo.compression
+      # ic(readfname)
+      # os.system(f'du -h {td}/tmp.cif')
+      mmcif_dict = MMCIF2Dict(readfname)
+      struct = parser.get_structure('????', readfname)
    cryst1 = wu.sym.cryst1_pattern_full % (
       float(mmcif_dict['_cell.length_a'][0]),
       float(mmcif_dict['_cell.length_b'][0]),
@@ -38,6 +50,9 @@ def dumpcif(fname, pdb, cifdict=None):
    to get structural info in the dict format. kinda dumb, but not
    clear how to add annotations to a biopython Structure
    '''
+   finfo = wu.storage.fname_extensions(fname)
+   if not finfo.ext == '.cif': fname += '.cif'
+
    pdbout = io.StringIO()
    pdb.dump_pdb(pdbout)
    struct = PDBParser().get_structure('????', io.StringIO(pdbout.getvalue()))

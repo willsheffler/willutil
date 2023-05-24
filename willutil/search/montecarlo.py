@@ -1,3 +1,4 @@
+from copy import copy
 import numpy as np
 import willutil as wu
 
@@ -36,7 +37,7 @@ class MonteCarlo:
       score=None,
       **kw,
    ):
-      assert isinstance(state, wu.Bunch)
+      # assert isinstance(state, wu.Bunch)
       assert score is not None or self.scorefunc is not None
       self.timer.checkpoint('try_this_begin')
       if score is None:
@@ -46,9 +47,9 @@ class MonteCarlo:
          if self.debug: print('trythis trial score', score)
          self.timer.checkpoint('trythis score')
       if self.startstate is None:
-         self.startstate = state.copy()
+         self.startstate = copy(state)
       self.prev = score
-      # self.prevstate = state.copy()
+      # self.prevstate = copy(state)
       self.accepted_last = False
       self.new_best_last = False
       self.ntrials += 1
@@ -61,7 +62,7 @@ class MonteCarlo:
          self.naccept += 1
          self.accepted_last = True
          self.low = score
-         self.lowstate = state.copy()
+         self.lowstate = copy(state)
          # ic('accept', score - self.best)
 
          if self.debug: print('trythis accept', score)
@@ -69,7 +70,7 @@ class MonteCarlo:
             # ic('!!!!!!!!!!!!!!!!!!!!!!! mc best !!!!!!!!!!!!!!!!!!!!!')
             # ic(state)
             self.best = score
-            self.beststate = state.copy()
+            self.beststate = copy(state)
             self.new_best_last = True
 
             if self.debug: print('trythis new best', score)

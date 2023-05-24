@@ -132,17 +132,27 @@ def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=No
    # in a particular lattice configuration
    newelems = defaultdict(list)
    for psym, elems in symelems.items():
-      for e in elems:
-         e2 = e.tounit(lattice)
-         newelems[psym].append(e2)
-         assert e2.tolattice(lattice) == e
+      if elems[0].iscyclic:
+         for e in elems:
+            unitelem = e.tounit(lattice)
+            assert unitelem.iscyclic
+            elem = _pick_alternate_elems(spacegroup, lattice, unitelem, f4cel, f2cel)
+            newelems[psym].append(elem)
+         # ic(newelems[psym])
+         newelems[psym] = [e for s, e in sorted(newelems[psym])]
+         # ic(newelems[psym])
+      else:
+         for e in elems:
+            assert not e.iscyclic
+            unitelem = e.tounit(lattice)
+            newelems[psym].append(unitelem)
    symelems = newelems
 
    if aslist:
       symelems = list(itertools.chain(*symelems.values()))
    return symelems
 
-def _find_compound_symelems(sym, se=None, frames=None):
+def _find_compound_symelems(sym, se=None, frames=None, aslist=False):
    if se is None: se = wu.sym.symelems(sym, asdict=False, screws=False)
    se = [e for e in se if e.iscyclic]
    if frames is None: frames = wu.sym.sgframes(sym, cells=3, cellgeom='nonsingular')
@@ -226,6 +236,9 @@ def _find_compound_symelems(sym, se=None, frames=None):
    # for psym, elems in compound.items():
    #    newcompound[psym] = [_to_central_symelem(frames, e, [0.6, 0.6, 0.6]) for e in elems]
    # compound = newcompound
+
+   if aslist:
+      compound = list(itertools.chain(*compound.values()))
 
    return compound
 
@@ -421,3 +434,44 @@ def _symelem_remove_ambiguous_syms(symelems):
                newc2.append(s2)
          symelems[sym1] = newc2
    return symelems
+
+def _pick_alternate_elems(sym, lattice, unitelem, frames, frames2):
+   # checked_elems = list()
+   # for i, unitelem in enumerate(elems):
+   # alternate_elem_frames = elems[0].tolattice(lattice).operators
+
+   best, argbest = 999999999, None
+   for j, elemframe in enumerate(frames2):
+      if j == 0: assert np.allclose(elemframe, np.eye(4))
+      elem = unitelem.tolattice(lattice).xformed(elemframe)
+      try:
+         m = np.max(elem.matching_frames(frames))
+         if m < best:
+            ic(j, m)
+            best, argbest = m, elem
+      except ComponentIDError:
+         continue
+
+   return best, argbest.tounit(lattice)
+
+   # for j, elemframe in enumerate(frames2):
+   #    if j == 0: assert np.allclose(elemframe, np.eye(4))
+   #    elem = unitelem.tolattice(lattice).xformed(elemframe)
+   #    try:
+   #       m = elem.matching_frames(frames)
+   #       if np.any(m >= len(frames2)): raise ComponentIDError
+   #       # compids = elem.frame_component_ids(frames, perms, sanitycheck=True)
+   #       # opids = elem.frame_operator_ids(frames, sanitycheck=True)
+   #       # opcompids = _make_operator_component_joint_ids(elem, elem, frames, opids, compids, sanitycheck=True)
+   #    except ComponentIDError:
+   #       print(f'{sym} checking alternate elem')
+   #       continue
+   #    return elem.tounit(lattice)
+   #    # checked_elems.append(elem.tounit(lattice))
+   #    # ic('success')
+   #    # break
+   # else:
+   #    assert 0
+
+# assert len(checked_elems) == len(elems)
+# return checked_elems

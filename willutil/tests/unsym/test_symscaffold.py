@@ -1,14 +1,17 @@
+import pytest
 import willutil as wu
 import numpy as np
 
-def main():
-   test_symscaffold_cyclic_nbrs()
-   test_symscaffold_vis()
+numba = pytest.importorskip('numba')
 
-# def test_symscaffold():
+def main():
+   run_symscaffold_cyclic_nbrs()
+   run_symscaffold_vis()
+
+# def run_symscaffold():
 # assert 0
 
-def test_symscaffold_cyclic_nbrs():
+def run_symscaffold_cyclic_nbrs():
    scaff = wu.unsym.SymScaffIcos()
    n2, n3a, n3b = scaff.nbr2, scaff.nbr3a, scaff.nbr3b
    n5a, n5b, n5c, n5d = scaff.nbr5a, scaff.nbr5b, scaff.nbr5c, scaff.nbr5d
@@ -27,7 +30,7 @@ def test_symscaffold_cyclic_nbrs():
    assert np.all(n5c[n5b] == np.arange(60))
    assert np.all(n5a[n5b][n5b] == np.arange(60))
 
-def test_symscaffold_vis():
+def run_symscaffold_vis():
    scaff = wu.unsym.SymScaffIcos()
    nplaced, keep = list(), list()
    best = 0, None

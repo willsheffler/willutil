@@ -27,10 +27,10 @@ class PDBFile:
       self.resl = meta.resl
       self.cryst1, self.spacegroup, self.cellgeom = meta.cryst1, None, None
       if self.cryst1:
-         s = self.cryst1.split()
+         # cut off at 66 chars, avoid end of line nsub or whatever it is
+         s = self.cryst1[:66].split()
          self.cellgeom = np.array([float(x) for x in s[1:7]])
          self.spacegroup = ' '.join(s[7:])
-
       # ic(self.cryst1)
       df = df.copy()
       df.reset_index(inplace=True, drop=True)
@@ -211,9 +211,12 @@ class PDBFile:
       an = atomname.encode() if isinstance(atomname, str) else atomname
       an = an.upper()
       mask = list()
-
+      # ic(self.df.iloc[0])
       for i, (ri, g) in enumerate(self.df.groupby(['ri', 'ch'])):
-         assert np.sum(g.an == an) <= 1
+         if np.sum(g.an == an) > 1:
+            ic(g)
+            ic(g.an)
+            assert np.sum(g.an == an) <= 1
          # assert np.sum(g.an == an) <= np.sum(g.an == b'CA') # e.g. O in HOH
          hasatom = np.sum(g.an == an) > 0
          mask.append(hasatom)
@@ -357,7 +360,8 @@ class PDBFile:
             self.df.loc[self.df.ri == res[ires], 'ch'] = 'ABCDEFGHIJ'[ich].encode()
       return nfold
 
-   def xformed(self, xform):
+   def xformed(self, xform, **kw):
+      kw = wu.Bunch(kw)
       if xform.squeeze().shape == (4, 4):
          crd = self.coords
          crd2 = wu.hxform(xform, crd)
@@ -373,12 +377,13 @@ class PDBFile:
             assert np.sum(isident) == 1
             xforms[isident] = xforms[0]
             xforms[0] = np.eye(4)
-         chains = set(self.df.ch)
+         chains = list(sorted(set(self.df.ch)))
          newpdbs = [self.xformed(x) for x in xform]
          for imodel, pdb in enumerate(newpdbs):
             for ich, ch in enumerate(chains):
                newch = wu.pdb.all_pymol_chains[ich + imodel * len(chains)].encode()
                pdb.df.loc[pdb.df.ch == ch, 'ch'] = newch
+               pdb.camask()
          df = pd.concat([pdb.df for pdb in newpdbs])
          return PDBFile(df, meta=self.meta, original_contents=self.original_contents)
 
