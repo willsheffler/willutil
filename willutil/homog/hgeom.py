@@ -1099,11 +1099,16 @@ def halign(a, b, doto=None):
 def halign2(a1, a2, b1, b2, doto=None):
    "minimizes angular error"
    a1, a2, b1, b2 = (hnormalized(v) for v in (a1, a2, b1, b2))
-   aaxis = (a1 + a2) / 2.0
-   baxis = (b1 + b2) / 2.0
-   Xmiddle = hrot((aaxis + baxis) / 2, np.pi)
+   aaxis = hnormalized(a1 + a2)
+   baxis = hnormalized(b1 + b2)
+   # baxis = np.where(hangle(aaxis, baxis) > , baxis, -baxis)
+   spinaxis = (aaxis + baxis) / 2
+   arbitrary = _axis_ang_cen_magic_points_numpy[0]
+   spinaxis = np.where(hnorm(spinaxis) > 0.00001, spinaxis, hcross(aaxis, arbitrary))
+   Xmiddle = hrot(spinaxis, np.pi)
    Xaround = align_around_axis(baxis, Xmiddle @ a1, b1)
    X = Xaround @ Xmiddle
+   # ic(angle(b1, a1), angle(b2, a2), angle(b1, X @ a1), angle(b2, X @ a2))
    assert (angle(b1, a1) + angle(b2, a2)) + 0.001 >= (angle(b1, X @ a1) + angle(b2, X @ a2))
    return X if doto is None else wu.hxform(x, doto)
 

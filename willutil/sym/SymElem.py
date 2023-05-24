@@ -2,7 +2,7 @@ import copy
 import numpy as np
 import willutil as wu
 from willutil.sym.symframes import tetrahedral_frames, octahedral_frames
-from willutil.homog.hgeom import halign2, halign, htrans, hinv, hnorm
+from willutil.homog.hgeom import halign2, halign, htrans, hinv, hnorm, hxform
 from willutil.sym.spacegroup_util import tounitcellpts, applylatticepts
 
 class ScrewError(Exception):
@@ -54,6 +54,7 @@ class SymElem:
       self.issues = []
 
    def _set_nfold(self, nfold):
+      self._init_nfold = nfold
       if isinstance(nfold, str):
          self.label = nfold[:-2]  # strip componend nfolds
          if nfold[0] in 'CD':
@@ -158,13 +159,21 @@ class SymElem:
       newcen = applylatticepts(latticevec, self.cen)
       newhel = applylatticepts(latticevec, self.cen + self.axis * self.hel)
       newhel = hnorm(newhel - newcen)
-      return SymElem(self.nfold, self.axis, newcen, self.axis2, hel=newhel)
+      newelem = SymElem(self._init_nfold, self.axis, newcen, self.axis2, hel=newhel)
+      assert self.operators.shape == newelem.operators.shape
+      return newelem
 
    def tounit(self, latticevec):
       newcen = tounitcellpts(latticevec, self.cen)
       newhel = tounitcellpts(latticevec, self.cen + self.axis * self.hel)
       newhel = hnorm(newhel - newcen)
-      return SymElem(self.nfold, self.axis, newcen, self.axis2, hel=newhel)
+      newelem = SymElem(self._init_nfold, self.axis, newcen, self.axis2, hel=newhel)
+      if not self.operators.shape == newelem.operators.shape:
+         ic(self.cen)
+         ic(newcen)
+         ic(newelem.cen)
+         assert self.operators.shape == newelem.operators.shape
+      return newelem
 
    def matching_frames(self, frames):
       'find frames related by self.operators that are closest to cen'
@@ -302,6 +311,8 @@ class SymElem:
       if not self.isdihedral:
          self.origin = htrans(self.cen) @ halign([0, 0, 1], self.axis)
       else:
+         # ic(self.axis)
+         # ic(self.axis2)
          self.origin = htrans(self.cen) @ halign2([0, 0, 1], [1, 0, 0], self.axis, self.axis2)
 
       return ops
@@ -324,10 +335,10 @@ class SymElem:
          # if self.axis2 is not None: other.axis2 = wu.hxform(x, self.axis2)
          # other.cen = wu.hxform(x, self.cen)
          # other.make_operators()
-         axis = wu.hxform(x, self.axis)
-         axis2 = None if self.axis2 is None else wu.hxform(x, self.axis2)
-         cen = wu.hxform(x, self.cen)
-         other = SymElem(self.nfold, axis, cen, axis2, self.label, self.vizcol, 1.0)  #self.scale)
+         axis = hxform(x, self.axis)
+         axis2 = None if self.axis2 is None else hxform(x, self.axis2)
+         cen = hxform(x, self.cen)
+         other = SymElem(self._init_nfold, axis, cen, axis2, self.label, self.vizcol, 1.0)  #self.scale)
          result.append(other)
       if single:
          result = result[0]

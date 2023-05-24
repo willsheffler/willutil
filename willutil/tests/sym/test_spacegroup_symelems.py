@@ -9,7 +9,16 @@ def main():
 
    test_symelems_P3()
 
-   assert 0
+   test_compound_elems_P213()
+   test_compound_elems_I23()
+   test_compound_elems_F23()
+   test_compound_elems_P23()
+   test_compound_elems_P4132()
+   test_compound_elems_P432()
+   test_compound_elems_I432()
+   test_compound_elems_F432()
+   test_compound_elems_I4132()
+   test_compound_elems_F4132()
 
    test_symelems_P23()
    test_symelems_I213()
@@ -27,17 +36,6 @@ def main():
    # test_symelems_P4332()
 
    test_screw_elem()
-
-   test_compound_elems_P213()
-   test_compound_elems_I23()
-   test_compound_elems_F23()
-   test_compound_elems_P23()
-   test_compound_elems_P4132()
-   test_compound_elems_P432()
-   test_compound_elems_I432()
-   test_compound_elems_F432()
-   test_compound_elems_I4132()
-   test_compound_elems_F4132()
 
    ic('PASS test_spacegroup_symelems')
 
@@ -81,8 +79,8 @@ def test_compound_elems_P4132(showme=False):
    if showme: showsymelems(sym, elems)
    if showme: showsymelems(sym, celems)
 
-   # print(repr(celems), flush=True)
-   assert celems == {'D3': [SymElem(3, axis=[1, 1, 1], axis2=[0.0, -1.0, 1.0], cen=[0.375, 0.375, 0.375], label='D3')]}
+   print(repr(celems), flush=True)
+   assert celems == {'D3': [SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, 0.0], cen=[0.375, 0.375, 0.375], label='D3')]}
 
 def test_compound_elems_P432(showme=False):
    ic('test_compound_elems_P432')
@@ -98,14 +96,14 @@ def test_compound_elems_P432(showme=False):
    if showme: showsymelems(sym, elems)
    if showme: showsymelems(sym, celems)
 
-   # print(repr(celems), flush=True)
+   print(repr(celems), flush=True)
    assert celems == {
       'O': [
          SymElem('O43', axis=[0, 0, 1], axis2=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0], label='O'),
-         SymElem('O43', axis=[0, 0, 1], axis2=[1.0, 1.0, 1.0], cen=[0.5, 0.5, 0.5], label='O'),
+         SymElem('O43', axis=[1, 0, 0], axis2=[1.0, 1.0, 1.0], cen=[0.5, 0.5, 0.5], label='O'),
       ],
       'D4': [
-         SymElem(4, axis=[1, 0, 0], axis2=[0.0, 1.0, 1.0], cen=[0.5, 0.0, 0.0], label='D4'),
+         SymElem(4, axis=[1, 0, 0], axis2=[0.0, 1.0, 0.0], cen=[0.5, 0.0, 0.0], label='D4'),
          SymElem(4, axis=[0, 0, 1], axis2=[1.0, 0.0, 0.0], cen=[0.5, 0.5, 0.0], label='D4'),
       ],
    }
@@ -124,12 +122,12 @@ def test_compound_elems_I432(showme=False):
    if showme: showsymelems(sym, elems)
    if showme: showsymelems(sym, celems)
 
-   # print(repr(celems), flush=True)
+   print(repr(celems), flush=True)
    assert celems == {
       'O': [SymElem('O43', axis=[0, 0, 1], axis2=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0], label='O')],
-      'D2': [SymElem(2, axis=[1, 0, 1], axis2=[0.0, 1.0, 0.0], cen=[0.5, 0.25, 0.0], label='D2')],
-      'D4': [SymElem(4, axis=[1, 0, 0], axis2=[0.0, 0.0, 1.0], cen=[0.5, 0.0, 0.0], label='D4')],
-      'D3': [SymElem(3, axis=[1, 1, 1], axis2=[0.0, -1.0, 1.0], cen=[0.25, 0.25, 0.25], label='D3')],
+      'D2': [SymElem(2, axis=[0, 1, 0], axis2=[-1.0, 0.0, 1.0], cen=[0.5, 0.25, 0.0], label='D2')],
+      'D4': [SymElem(4, axis=[1, 0, 0], axis2=[0.0, 1.0, 0.0], cen=[0.5, 0.0, 0.0], label='D4')],
+      'D3': [SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, 0.0], cen=[0.25, 0.25, 0.25], label='D3')],
    }
 
 def test_compound_elems_F4132(showme=False):
@@ -146,8 +144,11 @@ def test_compound_elems_F4132(showme=False):
    if showme: showsymelems(sym, elems)
    if showme: showsymelems(sym, celems)
 
-   # print(repr(celems), flush=True)
-   assert celems == {'T': [SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.0], label='T')], 'D3': [SymElem(3, axis=[1, 1, 1], axis2=[0.0, -1.0, 1.0], cen=[0.125, 0.125, 0.125], label='D3')]}
+   print(repr(celems), flush=True)
+   assert celems == {
+      'T': [SymElem('T32', axis=[1, 1, 1], axis2=[1.0, 0.0, 0.0], cen=[0.0, 0.0, 0.0], label='T')],
+      'D3': [SymElem(3, axis=[1, 1, 1], axis2=[0.0, -1.0, 1.0], cen=[0.125, 0.125, 0.125], label='D3')],
+   }
 
 def test_compound_elems_F432(showme=False):
    ic('test_compound_elems_F432')
@@ -163,16 +164,20 @@ def test_compound_elems_F432(showme=False):
    if showme: showsymelems(sym, elems)
    if showme: showsymelems(sym, celems)
    # print(repr(celems), flush=True)
+   for k, v in celems.items():
+      ic(k)
+      for e in v:
+         ic(e)
    assert celems == {
       'D2': [
          SymElem(2, axis=[1, 1, 0], axis2=[0.0, 0.0, 1.0], cen=[0.25, 0.25, 0.0], label='D2'),
       ],
       'O': [
          SymElem('O43', axis=[0, 0, 1], axis2=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0], label='O'),
-         SymElem('O43', axis=[1, 1, 1], axis2=[1.0, 0.0, 1.0], cen=[0.5, 0.0, 0.0], label='O'),
+         SymElem('O43', axis=[1, -1, 1], axis2=[1.0, 0.0, 1.0], cen=[0.5, 0.0, 0.0], label='O'),
       ],
       'T': [
-         SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.25, 0.25, 0.25], label='T'),
+         SymElem('T32', axis=[1, 1, 1], axis2=[1.0, 0.0, 0.0], cen=[0.25, 0.25, 0.25], label='T'),
       ],
    }
 
@@ -190,14 +195,18 @@ def test_compound_elems_I4132(showme=False):
    # if showme: showsymelems(sym, elems)
    if showme: showsymelems(sym, celems)
    # print(repr(celems), flush=True)
+   for k, v in celems.items():
+      ic(k)
+      for e in v:
+         ic(e)
    assert celems == {
       'D2': [
-         SymElem(2, axis=[1, 0, 1], axis2=[0.0, 1.0, 0.0], cen=[0.25, 0.125, 0.0], label='D2'),
-         SymElem(2, axis=[0, 0, 1], axis2=[-1.0, 1.0, 0.0], cen=[0.5, 0.25, 0.375], label='D2'),
+         SymElem(2, axis=[-1, 1, 0], axis2=[0.0, 0.0, 1.0], cen=[0.5, 0.25, 0.375], label='D2'),
+         SymElem(2, axis=[1, 0, 1], axis2=[-1.0, 0.0, 1.0], cen=[0.25, 0.125, 0.0], label='D2'),
       ],
       'D3': [
-         SymElem(3, axis=[1, 1, 1], axis2=[0.0, -1.0, 1.0], cen=[0.125, 0.125, 0.125], label='D3'),
-         SymElem(3, axis=[1, 1, 1], axis2=[0.0, -1.0, 1.0], cen=[0.375, 0.375, 0.375], label='D3'),
+         SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, 0.0], cen=[0.125, 0.125, 0.125], label='D3'),
+         SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, 0.0], cen=[0.375, 0.375, 0.375], label='D3'),
       ],
    }
 
@@ -222,7 +231,7 @@ def test_compound_elems_P23(showme=False):
       ],
       'T': [
          SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.0]),
-         SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.5, 0.5, 0.5]),
+         SymElem('T32', axis=[1, 1, 1], axis2=[1.0, 0.0, 0.0], cen=[0.5, 0.5, 0.5]),
       ],
    }
 
@@ -256,9 +265,9 @@ def test_compound_elems_I23(showme=False):
    if showme: showsymelems(sym, elems)
    if showme: showsymelems(sym, celems)
 
-   print(repr(celems))
+   print(repr(celems), flush=True)
    assert celems == {
-      'D2': [SymElem(2, axis=[1, 0, 0], axis2=[0.0, 0.0, 1.0], cen=[0.5, 0.0, 0.0], label='D2')],
+      'D2': [SymElem(2, axis=[1, 0, 0], axis2=[0, 1, 0], cen=[0.5, 0.0, 0.0], label='D2')],
       'T': [SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.0], label='T')],
    }
 
@@ -280,7 +289,7 @@ def test_compound_elems_F23(showme=False):
    assert celems == {
       'T': [
          SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.0], label='T'),
-         SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.25, 0.25, 0.25], label='T'),
+         SymElem('T32', axis=[1, 1, 1], axis2=[1.0, 0.0, 0.0], cen=[0.25, 0.25, 0.25], label='T'),
       ]
    }
 

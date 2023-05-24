@@ -28,10 +28,15 @@ def _get_spacegroup_data():
 
    #
 
+   del sg_symelem_dict['F432']
+   del sg_permutations444_dict['F432']
+   del sg_symelem_frame444_opcompids_dict['F432']
+
    # sg_symelem_dict = dict()
    # sg_symelem_frame444_opcompids_dict = dict()
 
    #
+   # assert 0, 'F432 has extra D3'
 
    from willutil.sym import spacegroup_frames
    sg_improper = dict()
@@ -39,7 +44,7 @@ def _get_spacegroup_data():
 
    for i, (sym, symtag) in enumerate(sg_tag.items()):
 
-      if sym != 'P3': continue
+      # if sym != 'R32': continue
 
       if symtag in sg_lattice: sg_lattice[sym] = sg_lattice[symtag]
       else: sg_lattice[symtag] = sg_lattice[sym]
@@ -65,40 +70,42 @@ def _get_spacegroup_data():
       if not sg_is_chiral(sym):
          continue
 
-      print('-' * 40, sym, '-' * 40)
+      print('-' * 40, sym, '-' * 40, flush=True)
       n_std_cells = 4
       sg_n_std_cells[sym] = n_std_cells
       latticevec = lattice_vectors(sym, 'nonsingular')
       stdframes = latticeframes(frames, latticevec, n_std_cells)
+      stdframes2 = latticeframes(frames, latticevec, n_std_cells - 2)
 
       IERROR = -900_000_000
       if sym not in sg_symelem_dict:
-         print(sym, 'detect symelems', flush=True)
+         # print(sym, 'detect symelems', flush=True)
          sg_symelem_dict[sym] = _compute_symelems(sym, frames)
          sg_symelem_dict[sym] = list(itertools.chain(*sg_symelem_dict[sym].values()))  # flatten
-         print('_find_compound_symelems', sym)
-         celems = _find_compound_symelems(sym, sg_symelem_dict[sym], stdframes)
+         # print('_find_compound_symelems', sym)
+         celems = _find_compound_symelems(sym, sg_symelem_dict[sym], stdframes, stdframes2)
          sg_symelem_dict[sym] += list(itertools.chain(*celems.values()))
          for i, e in enumerate(sg_symelem_dict[sym]):
             e.index = i
-         ic(sg_symelem_dict[sym])
+            print(f'{i:2}', e.label, e, flush=True)
       # len(frames)*8 keeps only enough perm frames for 2x2x2 cell
       if sym not in sg_permutations444_dict:
-         print(sym, 'compute permutations', flush=True)
+         # print(sym, 'compute permutations', flush=True)
          sg_permutations444_dict[sym] = symframe_permutations_torch(stdframes, maxcols=len(frames) * 8)
       perms = sg_permutations444_dict[sym]
       nops = len(sg_symelem_dict[sym])
       if sym not in sg_symelem_frame444_opcompids_dict:
-         print('rebuild symelem frameids', sym, flush=True)
+         # print('rebuild symelem frameids', sym, flush=True)
          sg_symelem_frame444_opids_dict[sym] = -np.ones((len(stdframes), nops), dtype=np.int32)
          sg_symelem_frame444_compids_dict[sym] = -np.ones((len(stdframes), nops), dtype=np.int32)
          sg_symelem_frame444_opcompids_dict[sym] = -np.ones((len(stdframes), nops, nops), dtype=np.int32)
-         for ielem, elem in enumerate(sg_symelem_dict[sym]):
+         for ielem, unitelem in enumerate(sg_symelem_dict[sym]):
+            elem = unitelem.tolattice(latticevec)
             if not (elem.iscyclic or elem.isdihedral): continue
-            print(sym, elem, flush=True)
-            sg_symelem_frame444_opids_dict[sym][:, ielem] = elem.frame_operator_ids(stdframes, latticevec)
+            # print(sym, elem, flush=True)
+            sg_symelem_frame444_opids_dict[sym][:, ielem] = elem.frame_operator_ids(stdframes)
             # try:
-            sg_symelem_frame444_compids_dict[sym][:, ielem] = elem.frame_component_ids(stdframes, perms, latticevec)
+            sg_symelem_frame444_compids_dict[sym][:, ielem] = elem.frame_component_ids(stdframes, perms)
             #except ComponentIDError:
             #   print('!' * 80)
             #   print('ERROR making component ids for symelem', sym, ielem)

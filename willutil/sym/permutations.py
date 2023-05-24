@@ -16,8 +16,8 @@ def symframe_permutations_torch(frames, maxcols=None):
    frames = torch.tensor(frames, device='cuda').to(torch.float32)
    perm = list()
    for i, frame in enumerate(frames):
-      if i % 100 == 0:
-         ic(i, len(frames))
+      # if i % 100 == 0:
+      # ic(i, len(frames))
       local_frames = einsum('ij,fjk->fik', torch.linalg.inv(frame), frames)
       dist2 = torch.sum((local_frames[None] - frames[:, None])**2, axis=(2, 3))
       idx = torch.argmin(dist2, axis=1)[:maxcols]
@@ -29,8 +29,8 @@ def symframe_permutations_torch(frames, maxcols=None):
    return perm.to('cpu').numpy().astype(np.int32)
 
 def symperm1(i, frames):
-   if i % 100 == 0:
-      ic(i, len(frames))
+   # if i % 100 == 0:
+   # ic(i, len(frames))
    local_frames = wu.hxform(wu.hinv(frames[i]), frames)
    dist = wu.hdiff(frames, local_frames, lever=3)
    idx = np.argmin(dist, axis=1)

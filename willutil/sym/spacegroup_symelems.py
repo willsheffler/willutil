@@ -18,7 +18,7 @@ def _flipaxs(a):
       a[:3] *= -1
    return a
 
-def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=None, aslist=False):
+def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=None, aslist=False, find_alternates=True):
    if torch_device:
       try:
          import torch
@@ -132,12 +132,26 @@ def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=No
    # in a particular lattice configuration
    newelems = defaultdict(list)
    for psym, elems in symelems.items():
-      if elems[0].iscyclic:
-         for e in elems:
+      if elems[0].iscyclic and find_alternates:
+         for ielem, e in enumerate(elems):
             unitelem = e.tounit(lattice)
             assert unitelem.iscyclic
             elem = _pick_alternate_elems(spacegroup, lattice, unitelem, f4cel, f2cel)
-            newelems[psym].append(elem)
+            if elem is None:
+               # newelems[psym].append((ielem - 9999, e))
+               print('!' * 80)
+               print(f'WARNING {spacegroup} failed to find matches for element:\n{e}\nWill be missing some symelements')
+               print('!' * 80, flush=True)
+               continue
+               from willutil.viz.pymol_viz import showme
+               import willutil.viz.viz_xtal
+               showme(e, scale=10)
+               showme(f2cel, scale=10)
+               # assert 0
+               assert 0
+
+            else:
+               newelems[psym].append(elem)
          # ic(newelems[psym])
          newelems[psym] = [e for s, e in sorted(newelems[psym])]
          # ic(newelems[psym])
@@ -152,10 +166,15 @@ def _compute_symelems(spacegroup, unitframes=None, lattice=None, torch_device=No
       symelems = list(itertools.chain(*symelems.values()))
    return symelems
 
-def _find_compound_symelems(sym, se=None, frames=None, aslist=False):
-   if se is None: se = wu.sym.symelems(sym, asdict=False, screws=False)
+def _find_compound_symelems(spacegroup, se=None, frames=None, frames2=None, aslist=False):
+   if se is None: se = wu.sym.symelems(spacegroup, asdict=False, screws=False)
    se = [e for e in se if e.iscyclic]
-   if frames is None: frames = wu.sym.sgframes(sym, cells=3, cellgeom='nonsingular')
+   if frames is None:
+      assert frames2 is None
+      frames = wu.sym.sgframes(spacegroup, cells=3, cellgeom='nonsingular')
+      frames2 = wu.sym.sgframes(spacegroup, cells=2, cellgeom='nonsingular')
+   lattice = lattice_vectors(spacegroup, cellgeom='nonsingular')
+
    isects = defaultdict(set)
    for e1, e2 in it.product(se, se):
       # if e1.id == e2.id: continue
@@ -219,12 +238,23 @@ def _find_compound_symelems(sym, se=None, frames=None, aslist=False):
    # assert 0
    compound = defaultdict(list)
    for psym in isects:
-      compound[psym] = [SymElem(t[0], t[4:7], t[1:4], t[7:10]) for t in isects[psym]]
+      seenit = list()
+      for t in isects[psym]:
+         nfold_, axis_, cen_, axis2_ = t[0], t[4:7], hpoint(t[1:4]), t[7:10]
+         if any([hnorm(cen_ - s) < 0.0001 for s in seenit]):
+            continue
+         seenit.append(cen_)
+         compound[psym].append(SymElem(nfold_, axis_, cen_, axis2_))
    newd2 = list()
    for ed2 in compound['D2']:
       if not np.any([np.allclose(ed2.cen, eto.cen) for eto in it.chain(compound['T'], compound['O'], compound['D4'])]):
          newd2.append(ed2)
    compound['D2'] = newd2
+   newd3 = list()
+   for ed3 in compound['D3']:
+      if not np.any([np.allclose(ed3.cen, eo.cen) for eo in compound['O']]):
+         newd3.append(ed3)
+   compound['D3'] = newd3
    newd4 = list()
    for ed4 in compound['D4']:
       if not np.any([np.allclose(ed4.cen, eo.cen) for eo in compound['O']]):
@@ -236,6 +266,26 @@ def _find_compound_symelems(sym, se=None, frames=None, aslist=False):
    # for psym, elems in compound.items():
    #    newcompound[psym] = [_to_central_symelem(frames, e, [0.6, 0.6, 0.6]) for e in elems]
    # compound = newcompound
+
+   newelems = defaultdict(list)
+   for psym, elems in compound.items():
+      success = True
+      for e in elems:
+         unitelem = e.tounit(lattice)
+         assert unitelem.iscompound
+         elem = _pick_alternate_elems(spacegroup, lattice, unitelem, frames, frames2)
+         if elem is None:
+            print(f'FAILED to find complete elems for {spacegroup}, {e}')
+            success = False
+            break
+         newelems[psym].append(elem)
+      if success:
+         # ic(newelems[psym])
+         newelems[psym] = [e for s, e in sorted(newelems[psym])]
+         # ic(newelems[psym])
+      else:
+         newelems[psym] = [e.tounit(lattice) for e in elems]
+   compound = newelems
 
    if aslist:
       compound = list(itertools.chain(*compound.values()))
@@ -420,7 +470,7 @@ def _pick_symelemtags(symtags, symelems):
 
 def _symelem_remove_ambiguous_syms(symelems):
    symelems = symelems.copy()
-   for sym1, sym2 in [('C2', 'C4'), ('C3', 'C6')]:
+   for sym1, sym2 in [('C2', 'C4'), ('C2', 'C6'), ('C3', 'C6')]:
       if sym2 in symelems:
          newc2 = list()
          for s2 in symelems[sym1]:
@@ -441,17 +491,26 @@ def _pick_alternate_elems(sym, lattice, unitelem, frames, frames2):
    # alternate_elem_frames = elems[0].tolattice(lattice).operators
 
    best, argbest = 999999999, None
+   seenit = list()
+   elem0 = unitelem.tolattice(lattice)
    for j, elemframe in enumerate(frames2):
       if j == 0: assert np.allclose(elemframe, np.eye(4))
-      elem = unitelem.tolattice(lattice).xformed(elemframe)
+      if elem0.iscompound:
+         cen = elemframe @ elem0.cen[:, None]
+         if np.any([hnorm(cen - s) < 0.0001 for s in seenit]):
+            continue
+         seenit.append(cen)
+      elem = elem0.xformed(elemframe)
       try:
-         m = np.max(elem.matching_frames(frames))
+         iframes = elem.matching_frames(frames)
+         m = np.max(iframes)
          if m < best:
-            ic(j, m)
+            # ic(iframes)
+            # ic(j, m)
             best, argbest = m, elem
       except ComponentIDError:
          continue
-
+   if argbest is None: return None
    return best, argbest.tounit(lattice)
 
    # for j, elemframe in enumerate(frames2):
