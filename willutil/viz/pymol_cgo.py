@@ -1,3 +1,4 @@
+import itertools
 import numpy as np
 import willutil as wu
 
@@ -308,6 +309,50 @@ def showcube(*args, **kw):
    cmd.load_cgo(mycgo, "CUBE")
    cmd.set_view(v)
 
+def showcell(*args, **kw):
+   cmd.delete('CELL')
+   v = cmd.get_view()
+   mycgo = cgo_cell(*args, **kw)
+   cmd.load_cgo(mycgo, 'CELL')
+   cmd.set_view(v)
+
+def cgo_cell(lattice, r=0.03):
+   ic(lattice)
+
+   a = [
+      [0, 0, 0],
+      [0, 0, 0],
+      [0, 0, 0],
+      lattice[0],
+      lattice[0],
+      lattice[1],
+      lattice[1],
+      lattice[2],
+      lattice[2],
+      lattice[0] + lattice[1],
+      lattice[0] + lattice[2],
+      lattice[1] + lattice[2],
+   ]
+   b = [
+      lattice[0],
+      lattice[1],
+      lattice[2],
+      lattice[0] + lattice[1],
+      lattice[0] + lattice[2],
+      lattice[1] + lattice[0],
+      lattice[1] + lattice[2],
+      lattice[2] + lattice[0],
+      lattice[2] + lattice[1],
+      lattice[0] + lattice[1] + lattice[2],
+      lattice[0] + lattice[1] + lattice[2],
+      lattice[0] + lattice[1] + lattice[2],
+   ]
+
+   mycgo = [[cgo.CYLINDER, a[i][0], a[i][1], a[i][2], b[i][0], b[i][1], b[i][2], r, 1, 1, 1, 1, 1, 1] for i in range(len(a))]
+   mycgo = list(itertools.chain(*mycgo))
+
+   return mycgo
+
 def cgo_cube(lb=[-10, -10, -10], ub=[10, 10, 10], r=0.03, xform=np.eye(4)):
    if isinstance(lb, (float, int)): lb = [lb] * 3
    if isinstance(ub, (float, int)): ub = [ub] * 3
@@ -339,7 +384,9 @@ def cgo_cube(lb=[-10, -10, -10], ub=[10, 10, 10], r=0.03, xform=np.eye(4)):
       wu.homog.hxform(xform, [ub[0], lb[1], ub[2]]),
       wu.homog.hxform(xform, [ub[0], lb[1], lb[2]]),
    ]
-   mycgo = [cgo.CYLINDER, a[0][0], a[0][1], a[0][2], b[0][0], b[0][1], b[0][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[1][0], a[1][1], a[1][2], b[1][0], b[1][1], b[1][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[2][0], a[2][1], a[2][2], b[2][0], b[2][1], b[2][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[3][0], a[3][1], a[3][2], b[3][0], b[3][1], b[3][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[4][0], a[4][1], a[4][2], b[4][0], b[4][1], b[4][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[5][0], a[5][1], a[5][2], b[5][0], b[5][1], b[5][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[6][0], a[6][1], a[6][2], b[6][0], b[6][1], b[6][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[7][0], a[7][1], a[7][2], b[7][0], b[7][1], b[7][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[8][0], a[8][1], a[8][2], b[8][0], b[8][1], b[8][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[9][0], a[9][1], a[9][2], b[9][0], b[9][1], b[9][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[10][0], a[10][1], a[10][2], b[10][0], b[10][1], b[10][2], r, 1, 1, 1, 1, 1, 1, cgo.CYLINDER, a[11][0], a[11][1], a[11][2], b[11][0], b[11][1], b[11][2], r, 1, 1, 1, 1, 1, 1]
+   mycgo = [[cgo.CYLINDER, a[i][0], a[i][1], a[i][2], b[i][0], b[i][1], b[i][2], r, 1, 1, 1, 1, 1, 1] for i in range(len(a))]
+   mycgo = list(itertools.chain(*mycgo))
+
    # yapf: disable
    #   l=10#*sqrt(3)
    #   m=-l

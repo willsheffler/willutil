@@ -28,22 +28,23 @@ def _get_spacegroup_data():
 
    #
 
-   del sg_symelem_dict['F432']
-   del sg_permutations444_dict['F432']
-   del sg_symelem_frame444_opcompids_dict['F432']
+   # del sg_symelem_dict['P1211']
+   # del sg_permutations444_dict['P1211']
+   # del sg_symelem_frame444_opcompids_dict['P1211']
 
-   # sg_symelem_dict = dict()
+   sg_symelem_dict = dict()
    # sg_symelem_frame444_opcompids_dict = dict()
 
    #
-   # assert 0, 'F432 has extra D3'
 
    from willutil.sym import spacegroup_frames
    sg_improper = dict()
    sg_n_std_cells = dict()
 
+   seetit = set()
    for i, (sym, symtag) in enumerate(sg_tag.items()):
-
+      if sym in seenit: continue
+      seetit.add(sym)
       # if sym != 'R32': continue
 
       if symtag in sg_lattice: sg_lattice[sym] = sg_lattice[symtag]
@@ -82,6 +83,9 @@ def _get_spacegroup_data():
          # print(sym, 'detect symelems', flush=True)
          sg_symelem_dict[sym] = _compute_symelems(sym, frames)
          sg_symelem_dict[sym] = list(itertools.chain(*sg_symelem_dict[sym].values()))  # flatten
+
+         continue
+
          # print('_find_compound_symelems', sym)
          celems = _find_compound_symelems(sym, sg_symelem_dict[sym], stdframes, stdframes2)
          sg_symelem_dict[sym] += list(itertools.chain(*celems.values()))

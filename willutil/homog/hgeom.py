@@ -972,6 +972,7 @@ def axis_ang_cen_of_eig(xforms, debug=False):
    return axis, angle, cen
 
 def axis_ang_cen_of_planes(xforms, debug=False, ident_match_tol=1e-8):
+   '''if angle is 0, will return axis along translation'''
    origshape = xforms.shape[:-2]
    xforms = xforms.reshape(-1, 4, 4)
 
@@ -1002,6 +1003,11 @@ def axis_ang_cen_of_planes(xforms, debug=False, ident_match_tol=1e-8):
          cen = cen1
       else:
          cen[not_ident] = cen1
+
+   # by convention, if no rotation, make axis along translation.
+   trans = hcart(xforms)
+   istransonly = np.logical_and(np.isclose(0, angle), np.any(~np.isclose(0, trans[:, :3]), axis=1))
+   axis[istransonly] = wu.hnormalized(trans[istransonly])
 
    axis = axis.reshape(*origshape, 4)
    angle = angle.reshape(origshape)

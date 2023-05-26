@@ -168,6 +168,14 @@ class Bunch(dict):
             newbunch[k] = self[k]
       return newbunch
 
+   def without(self, *dropkeys):
+      newbunch = Bunch()
+      newbunch._special = self._special
+      for k in self.keys():
+         if not k in dropkeys:
+            newbunch[k] = self[k]
+      return newbunch
+
    def visit_remove_if(self, func, recurse=True, depth=0):
       toremove = list()
       for k, v in self.__dict__.items():
