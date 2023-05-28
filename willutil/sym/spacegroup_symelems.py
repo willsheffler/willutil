@@ -489,7 +489,8 @@ def _pick_symelemtags(symtags, symelems):
 def _symelem_remove_ambiguous_syms(symelems):
    symelems = symelems.copy()
    for sympair in ('c2/c4 c2/c6 c3/c6 c11/c21 c11/c31 c11/c32 c11/c41 c11/c42 c11/c43 '
-                   'c11/c61 c11/c62 c11/c63 c11/c64 c11/c65 c21/c41 c21/c42 c21/c43 c31/c61 '
+                   'c11/c61 c11/c62 c11/c63 c11/c64 c11/c65 c21/c41 c21/c42 c21/c43 c21/c61 '
+                   'c21/c62 c21/c63 c21/c64 c21/c65 c31/c61 '
                    'c31/c62 c31/c63 c31/c64 c31/c65 c32/c61 c32/c62 c32/c63 c32/c64 c32/c65 ').split():
 
       sym1, sym2 = sympair.upper().split('/')

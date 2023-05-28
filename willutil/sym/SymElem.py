@@ -251,19 +251,23 @@ class SymElem:
       assert not self.axis2
 
       hel0 = self.hel
+      # self.hel = float(self.hel)
 
       s2 = np.sqrt(2)
       s3 = np.sqrt(3)
       axtype = list(sorted(np.abs(self.axis[:3])))
+
       if np.allclose(axtype, [0, 0, 1]):
-         unitcellfrac = self.hel / 1.0
+         cellextent = 1.0
       elif np.allclose(axtype, [0, s2 / 2, s2 / 2]):
-         unitcellfrac = self.hel / s2
+         cellextent = s2
       elif np.allclose(axtype, [s3 / 3, s3 / 3, s3 / 3]):
-         unitcellfrac = self.hel / s3
+         cellextent = s3
       else:
          raise ScrewError(f'cant understand axis {self.axis}')
-         # raise ScrewError(f'incoherent screw values axis: {self.axis} hel: {self.hel} screw: {self.screw}')
+      unitcellfrac = self.hel / cellextent
+
+      # raise ScrewError(f'incoherent screw values axis: {self.axis} hel: {self.hel} screw: {self.screw}')
       # ic(unitcellfrac)
       # if not 0 < unitcellfrac < (1 if self.nfold > 1 else 1.001):
       # raise ScrewError(f'screw translation out of unit cell')
@@ -275,7 +279,14 @@ class SymElem:
          raise ScrewError(f'screw dosent match nfold')
 
       self.screw = int(round(self.screw))
-      if self.nfold > 1: self.screw = self.screw % self.nfold
+      if self.nfold > 1:
+         self.screw = self.screw % self.nfold
+         self.hel = self.hel % cellextent
+         # if unitcellfrac < -0.9:
+         # raise ScrewError(f'unitcellfrac below -0.9')
+         # ic(self.nfold, unitcellfrac)
+         if self.hel < 0:
+            assert 0
 
       # if self.screw == 3 and self.nfold == 4:
       # self.screw = self.nfold - self.screw
