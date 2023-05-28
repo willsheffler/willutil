@@ -2,7 +2,7 @@ import copy
 import numpy as np
 import willutil as wu
 from willutil.sym.symframes import tetrahedral_frames, octahedral_frames
-from willutil.homog.hgeom import halign2, halign, htrans, hinv, hnorm, hxform, hnormalized, hpoint, hvec, angle
+from willutil.homog.hgeom import halign2, halign, htrans, hinv, hnorm, hxform, hnormalized, hpoint, hvec, angle, hdot
 from willutil.sym.spacegroup_util import tounitcellpts, applylatticepts, lattice_vectors
 
 class ScrewError(Exception):
@@ -11,29 +11,36 @@ class ScrewError(Exception):
 class ComponentIDError(Exception):
    pass
 
+class OutOfUnitCellError(Exception):
+   pass
+
+_HACK_HASH = list()
+
 class SymElem:
    def __init__(
-         self,
-         nfold,
-         axis,
-         cen=[0, 0, 0],
-         axis2=None,
-         *,
-         label=None,
-         vizcol=None,
-         scale=1,
-         parent=None,
-         children=None,
-         hel=0,
-         lattice=np.eye(3),
-         screw=None,
-         adjust_cyclic_center=True,
+      self,
+      nfold,
+      axis,
+      cen=[0, 0, 0],
+      axis2=None,
+      *,
+      label=None,
+      vizcol=None,
+      scale=1,
+      parent=None,
+      children=None,
+      hel=0,
+      lattice=None,
+      screw=None,
+      adjust_cyclic_center=True,
+      frame=None,
+      isunit=None,
    ):
       self._init_args = wu.Bunch(vars()).without('self')
       self.vizcol = vizcol
       self.scale = scale
 
-      self._set_geometry(nfold, axis, cen, axis2, hel, lattice, adjust_cyclic_center)
+      self._set_geometry(frame, nfold, axis, cen, axis2, hel, lattice, isunit, adjust_cyclic_center)
       self._check_screw(screw)
       self._make_label(label)
       self._set_kind()
@@ -48,6 +55,13 @@ class SymElem:
 
       self.numeric_cleanup()
       self.issues = []
+
+   def __hash__(self):
+      global _HACK_HASH
+      for i, h in enumerate(_HACK_HASH):
+         if self == h: return i
+      _HACK_HASH.append(self)
+      return len(_HACK_HASH) - 1
 
    def numeric_cleanup(self):
       self.axis = self.axis.round(9)
@@ -167,16 +181,19 @@ class SymElem:
       # assert 0
       return compid
 
-   def tolattice(self, latticevec):
+   def tolattice(self, latticevec, tounit=False):
+      assert self.isunit is None or self.isunit != tounit
+      if tounit: assert latticevec[0, 0] <= 1
+      else: assert latticevec[0, 0] >= 1
       newcen = applylatticepts(latticevec, self.cen)
       newhel = applylatticepts(latticevec, self.cen + self.axis * self.hel)
       newhel = hnorm(newhel - newcen)
-      newelem = SymElem(self._init_args.nfold, self.axis, newcen, self.axis2, hel=newhel, screw=self.screw)
+      newelem = SymElem(self._init_args.nfold, self.axis, newcen, self.axis2, hel=newhel, screw=self.screw, isunit=tounit)
       assert self.operators.shape == newelem.operators.shape
       return newelem
 
    def tounit(self, latticevec):
-      return self.tolattice(np.linalg.inv(latticevec))
+      return self.tolattice(np.linalg.inv(latticevec), tounit=True)
 
    def matching_frames(self, frames):
       'find frames related by self.operators that are closest to cen'
@@ -230,63 +247,81 @@ class SymElem:
       if self.hel == 0.0:
          self.screw = 0
          return
+
       assert not self.axis2
 
-      self.screw = np.abs(self.axis) / self.hel
-      self.screw = 1 / self.screw[np.argmax(np.abs(self.screw))]
-      self.screw = self.nfold * self.screw
+      hel0 = self.hel
 
-      # ic(self.axis.round(3), self.hel)
-      if not all([
-            np.allclose(round(self.screw), self.screw),
-            self.screw <= self.nfold + 0.00001,
-            self.screw >= -self.nfold - 0.00001,
-            self.nfold == 1 or self.screw < self.nfold - 0.00001,
-      ]):
-         # ic('ScrewError')
-         # ic(self.nfold, self.axis, self.hel, self.screw)
-         raise ScrewError()
+      s2 = np.sqrt(2)
+      s3 = np.sqrt(3)
+      axtype = list(sorted(np.abs(self.axis[:3])))
+      if np.allclose(axtype, [0, 0, 1]):
+         unitcellfrac = self.hel / 1.0
+      elif np.allclose(axtype, [0, s2 / 2, s2 / 2]):
+         unitcellfrac = self.hel / s2
+      elif np.allclose(axtype, [s3 / 3, s3 / 3, s3 / 3]):
+         unitcellfrac = self.hel / s3
+      else:
+         raise ScrewError(f'cant understand axis {self.axis}')
+         # raise ScrewError(f'incoherent screw values axis: {self.axis} hel: {self.hel} screw: {self.screw}')
+      # ic(unitcellfrac)
+      # if not 0 < unitcellfrac < (1 if self.nfold > 1 else 1.001):
+      # raise ScrewError(f'screw translation out of unit cell')
+      self.screw = unitcellfrac * self.nfold
+      # ic(self.nfold, self.screw)
+      if not np.isclose(self.screw, round(self.screw)):
+         raise ScrewError(f'screw has non integer value {self.screw}')
+      if self.screw >= max(2, self.nfold):  # C11 is ok
+         raise ScrewError(f'screw dosent match nfold')
 
-      assert np.isclose(self.screw, round(self.screw))
       self.screw = int(round(self.screw))
+      if self.nfold > 1: self.screw = self.screw % self.nfold
 
-      if self.screw < 0: self.screw += self.nfold
+      # if self.screw == 3 and self.nfold == 4:
+      # self.screw = self.nfold - self.screw
+      # self.axis = -self.axis
+      # self.hel = -self.hel
 
-      if self.screw == 3 and self.nfold == 4:
-         self.screw = self.nfold - self.screw
-         self.axis = -self.axis
-         self.hel = -self.hel
-
-      if self.nfold == 3:
-         if np.min(np.abs(self.axis)) < 0.1:
-            self.hel = self.hel % 1
-         else:
-            self.hel = self.hel % np.sqrt(3)
-      elif self.nfold == 4:
-         self.hel = self.hel % 1.0
-      elif self.nfold == 6:
-         self.hel = self.hel % 1.0
+      # if self.nfold == 3:
+      # if np.min(np.abs(self.axis)) < 0.1:
+      # self.hel = self.hel % 1
+      # else:
+      # self.hel = self.hel % np.sqrt(3)
+      # elif self.nfold == 4:
+      # self.hel = self.hel % 1.0
+      # elif self.nfold == 6:
+      # self.hel = self.hel % 1.0
       # assert self.screw <= self.nfold / 2
 
-   def _set_geometry(self, nfold, axis, cen, axis2, hel, lattice, adjust_cyclic_center):
-      axis = hpoint(axis)
+      # assert 0
+
+   def _set_geometry(self, frame, nfold, axis, cen, axis2, hel, lattice, isunit, adjust_cyclic_center):
+      axis = hvec(axis)
+      self.isunit = isunit
       cen = hpoint(cen)
       self._set_nfold(nfold)
       self.angle = np.pi * 2 / self.nfold
+      self.frame = frame
+      if frame is not None:
+         assert axis2 is None
+         a, an, c, h = wu.homog.axis_angle_cen_hel_of(frame)
+         ic(a, axis, c, cen, nfold, an, h, hel)
+         assert np.allclose(axis, a)
+         assert np.allclose(an, 0) or np.allclose(nfold, 2 * np.pi / an)
+         assert np.allclose(cen, c)
+         assert np.allclose(hel, h)
 
+      if lattice is None:
+         lattice = np.eye(3)
       invlattice = np.linalg.inv(lattice)
       self.axis = hnormalized(_mul3(invlattice, axis))
       self.cen = hpoint(_mul3(invlattice, hpoint(cen)))
       self.axis2 = None if axis2 is None else hnormalized(_mul3(invlattice, hvec(axis2)))
       heltrans = _mul3(invlattice, cen + hnormalized(axis) * hel) - _mul3(invlattice, cen)
-      self.hel = hnorm(heltrans)
+      self.hel = hdot(self.axis, heltrans)
 
-      # if not np.isclose(hel, 0) and nfold > 1:
-      # if np.allclose(self.axis, [0, 1, 0, 0]):
-      # ic(lattice)
-      # ic(self._init_args.hel)
-      # ic(hel, self.hel)
-      # assert 0
+      if hdot(self.axis, [1, 2, 3, 0]) < 0: self.axis = -self.axis
+      if axis2 is not None and hdot(self.axis2, [1, 2, 3, 0]) < 0: self.axis2 = -self.axis2
 
       if adjust_cyclic_center and axis2 is not None and np.isclose(hel, 0):  # cyclic
          dist = wu.homog.line_line_distance_pa(self.cen, self.axis, _cube_edge_cen * self.scale, _cube_edge_axis)
@@ -415,6 +450,7 @@ def showsymelems(
    allframes=True,
    colorbyelem=False,
    cells=3,
+   framecells=4,
    bounds=[-0.1, 1.1],
    scale=12,
    offset=0,
@@ -422,7 +458,8 @@ def showsymelems(
    scan=0,
    lattice=None,
    # onlyz=False,
-   # showframes=False,
+   showframes=True,
+   screwextraaxis=False,
 ):
    if isinstance(symelems, list):
       tmp = defaultdict(list)
@@ -431,29 +468,37 @@ def showsymelems(
       symelems = tmp
 
    import pymol
-   f = np.eye(4).reshape(1, 4, 4)
+   elemframes = np.eye(4).reshape(1, 4, 4)
    if lattice is None:
       lattice = lattice_vectors(sym, cellgeom='nonsingular')
+   cellgeom = wu.sym.cellgeom_from_lattice(lattice)
+   frames = wu.sym.sgframes(sym, cells=framecells, cellgeom=cellgeom)
+   # wu.showme(frames, scale=scale)
+   wu.showme(frames, bounds=bounds, lattice=lattice, name='frames', scale=scale)
+   # assert 0
    if allframes:
-      cellgeom = wu.sym.cellgeom_from_lattice(lattice)
-      f = wu.sym.sgframes(sym, cells=cells, cellgeom=cellgeom)
-   f = wu.hscaled(scale, f)
+      elemframes = wu.hscaled(scale, wu.sym.sgframes(sym, cells=cells, cellgeom=cellgeom))
+   if scan in (True, 1):
+      scan = scale * 2
 
    ii = 0
    labelcount = defaultdict(lambda: 0)
    for i, c in enumerate(symelems):
       for j, sunit in enumerate(symelems[c]):
+         assert sunit.isunit
          s = sunit.tolattice(lattice)
+         assert not s.isunit
+         # s = sunit
          # if colorbyelem: args.colors = [[(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, 0, 1), (0, 1, 1), (1, 1, 1)][ii]]
-         f2 = f
+         f2 = elemframes
          if scan and not s.iscompound:
-            f2 = f[:, None] @ wu.htrans(s.axis[None] * np.linspace(-scale * np.sqrt(3), scale * np.sqrt(3), scan)[:, None])[None]
-            ic(f2.shape)
+            f2 = elemframes[:, None] @ wu.htrans(s.axis[None] * np.linspace(-scale * np.sqrt(3), scale * np.sqrt(3), scan)[:, None])[None]
+            # ic(f2.shape)
             f2 = f2.reshape(-1, 4, 4)
-            ic(f2.shape)
+            # ic(f2.shape)
 
-         # shift = wu.htrans(s.cen * scale + offset * wu.hvec([0.1, 0.2, 0.3]))
-         shift = wu.htrans(s.cen * scale)
+         shift = wu.htrans(s.cen * scale + offset * wu.hvec([0.1, 0.2, 0.3]))
+         # shift = wu.htrans(s.cen * scale)
          # shift = np.eye(4)
 
          if s.istet:
@@ -480,23 +525,42 @@ def showsymelems(
                ((wu.hrot(s.axis, 45, s.cen) @ s.axis2, [1, 0, 0]), (s.axis, [0, 1, 0]), [0.7, 0, 0]),
                ((s.axis, [0, 0, 1]), (s.axis2, [1, 0, 0]), [0.0, 0, 0.9]),
             ]
+         elif s.label == 'C11':
+            continue
+            configs = [((s.axis, [1, 0, 0]), (None, None), [s.hel * scale, 0, 0])]
+            # ic(configs)
+            # assert 0
          elif s.nfold == 2:
-            configs = [((s.axis, [1, 0, 0]), (s.axis2, [0, 0, 1]), [1.0, 0.3, 0.6])]
+            configs = [[(s.axis, [1, 0, 0]), (s.axis2, [0, 0, 1]), [1.0, 0.3, 0.6]]]
          elif s.nfold == 3:
-            configs = [((s.axis, [0, 1, 0]), (s.axis2, [1, 0, 0]), [0.6, 1, 0.3])]
+            configs = [[(s.axis, [0, 1, 0]), (s.axis2, [1, 0, 0]), [0.6, 1, 0.3]]]
          elif s.nfold == 4:
-            configs = [((s.axis, [0, 0, 1]), (s.axis2, [1, 0, 0]), [0.6, 0.3, 1])]
+            configs = [[(s.axis, [0, 0, 1]), (s.axis2, [1, 0, 0]), [0.6, 0.3, 1]]]
          elif s.nfold == 6:
-            configs = [((s.axis, [1, 1, 1]), (s.axis2, [-1, 1, 0]), [1, 1, 1])]
+            configs = [[(s.axis, [1, 0, 0]), (s.axis2, [0, 0, 1]), [1, 0.3, 0.6]]]
          else:
             assert 0
          name = s.label + '_' + ('ABCDEFGH')[labelcount[s.label]]
 
          cgo = list()
          for (tax, ax), (tax2, ax2), xyzlen in configs:
-            onlyz = scan and not s.iscompound
+
             xyzlen = np.array(xyzlen)
-            if onlyz: xyzlen[xyzlen < .999] = 0
+            if scan:
+               if s.iscyclic:
+                  xyzlen[xyzlen < .999] = 0
+                  xyzlen[xyzlen == 1] = 2.0
+               if s.isscrew:
+                  if screwextraaxis:
+                     xyzlen[xyzlen == 1] = 0.4
+                     if s.label in 'C11 C21 C31 C41 C61 C62'.split():
+                        xyzlen[xyzlen == 0.6] = 0.1
+                     else:
+                        xyzlen[xyzlen == 0.3] = 0.1
+                  else:
+                     xyzlen[xyzlen < 0.99] = 0.0
+                     xyzlen[xyzlen > 0.99] = 0.15
+
             if s.isdihedral:
                origin = wu.halign2(ax, ax2, tax, tax2)
                xyzlen[xyzlen == 0.6] = 1
@@ -511,11 +575,15 @@ def showsymelems(
                make_cgo_only=True,
                weight=weight,
                colorset=labelcount[s.label],
+               lattice=lattice,
             )
          pymol.cmd.load_cgo(cgo, name)
          labelcount[s.label] += 1
          ii += 1
    from willutil.viz.pymol_viz import showcell, showcube
+   # ic(sym)
+   # ic(lattice)
+   # ic(cellgeom)
    showcell(scale * lattice)
    # showcube()
 

@@ -6,7 +6,7 @@ import willutil as wu
 from willutil.sym.spacegroup_data import *
 from willutil.sym.spacegroup_util import *
 from willutil.sym.SymElem import *
-from willutil.homog.hgeom import h_point_line_dist, hvec, hpoint, line_line_closest_points_pa, hnorm, angle, line_angle, hdot
+from willutil.homog.hgeom import h_point_line_dist, hvec, hpoint, line_line_closest_points_pa, hnorm, angle, line_angle, hdot, line_line_distance_pa
 
 def _inunit(p):
    x, y, z, w = p.T
@@ -24,36 +24,40 @@ def _compute_symelems(
    lattice=None,
    aslist=False,
    find_alternates=True,
+   profile=False,
 ):
+   t = wu.Timer()
+
    if unitframes is None:
       unitframes = wu.sym.sgframes(spacegroup, cellgeom='unit')
 
    if lattice is None:
       lattice = lattice_vectors(spacegroup, cellgeom='nonsingular')
 
-   ncell = 4 if len(unitframes) > 8 else 6
+   # ncell = 4 if len(unitframes) > 8 else 6
+   ncell = 4
    # if spacegroup == 'R32':      ncell = 6
    f2cel = latticeframes(unitframes, lattice, cells=ncell - 2)
    f4cel = latticeframes(unitframes, lattice, cells=ncell)
+   t.checkpoint('make_frames')
 
    # for f in f4cel:
    # if np.allclose(f[:3, :3], np.eye(3)) and f[0, 3] == 0 and f[2, 3] == 0:
    # print(f)
 
    # relframes = einsum('aij,bjk->abik', f2cel, wu.)
-   f2geom = wu.homog.axis_angle_cen_hel_of(f2cel)
-   axs, ang, cen, hel = f2geom
-   axs, cen, hel = axs[:, :3], cen[:, :3], hel[:, None]
-   flip = np.sum(axs * [3, 2, 1], axis=1) <= 0
-   axs[flip] = -axs[flip]
-   hel[flip] = -hel[flip]
-   # flip = np.stack([flip, flip, flip], axis=1)
-   # ic(flip.shape)
-   # axs = np.where(flip, axs, -axs)
-   # hel = np.where(flip[:, 0], hel, -hel)
-   # ic(axs.shape)
-   # ic(hel.shape)
-   tag0 = np.concatenate([axs, cen, hel], axis=1).round(10)
+   axs0, ang, cen0, hel0 = wu.homog.axis_angle_cen_hel_of(f2cel)
+   axs, cen, hel = axs0[:, :3], cen0[:, :3], hel0[:, None]
+   frameidx = np.arange(len(f2cel))[:, None]
+   tag0 = np.concatenate([axs, cen, hel, frameidx], axis=1).round(10)
+   t.checkpoint('make_tags')
+
+   # idx = np.isclose(ang, np.pi / 2)
+   # ic(axs0[idx])
+   # ic(ang[idx])
+   # ic(cen0[idx])
+   # ic(hel0[idx] / 1.7)
+   # assert 0
 
    symelems = defaultdict(list)
    for nfold in [2, 3, 4, 6, -1, -2, -3, -4, -6]:
@@ -68,11 +72,10 @@ def _compute_symelems(
       if np.sum(idx) == 0: continue
 
       # ic(tag0[idx])
-
+      t.checkpoint('make_tags')
       nftag = tag0[idx]
       nftag = nftag[np.lexsort(-nftag.T, axis=0)]
       nftag = np.unique(nftag, axis=0)
-
       nftag = nftag[np.argsort(-nftag[:, 0], kind='stable')]
       nftag = nftag[np.argsort(-nftag[:, 1], kind='stable')]
       nftag = nftag[np.argsort(-nftag[:, 2], kind='stable')]
@@ -83,6 +86,7 @@ def _compute_symelems(
 
       d = np.sum(nftag[:, 3:6]**2, axis=1).round(6)
       nftag = nftag[np.argsort(d, kind='stable')]
+      t.checkpoint('sort_tags')
 
       # remove symmetric dups
       keep = nftag[:1]
@@ -90,28 +94,57 @@ def _compute_symelems(
          symtags = _make_symtags(tag, f4cel)
          seenit = np.all(np.isclose(keep[None], symtags[:, None], atol=0.001), axis=2)
          if np.any(seenit): continue
+         t.checkpoint('make_symtags')
+
          picktag = _pick_symelemtags(symtags, symelems)
+         t.checkpoint('_pick_symelemtags')
 
          # picktag = None
          if picktag is None:
             keep = np.concatenate([keep, tag[None]])
          else:
             keep = np.concatenate([keep, picktag[None]])
+      t.checkpoint('remove_symmetric_dups')
 
-      # ic((keep * 1000).astype('i'))
       for tag in keep:
          try:
-            se = SymElem(nfold, tag[:3], tag[3:6], hel=tag[6], lattice=lattice)
+            axs_, cen_, hel_, iframe = tag[:3], tag[3:6], tag[6], int(tag[7])
+            se = SymElem(nfold, axs_, cen_, hel=hel_, lattice=lattice, isunit=True)
             seenit = symelems[se.label].copy()
             if screw and se.label[:2] in symelems:
                seenit += symelems[se.label[:2]]
             if not any([_symelem_is_same(se, se2, f4cel) for se2 in seenit]):
                symelems[se.label].append(se)
-         except ScrewError:
+         except (ScrewError, OutOfUnitCellError):
             continue
+      t.checkpoint('make_symelems')
+
+   symelems = _shift_to_unitcell(symelems)
+   t.checkpoint('_shift_to_unitcell')
 
    symelems = _symelem_remove_ambiguous_syms(symelems)
+   t.checkpoint('_symelem_remove_ambiguous_syms')
 
+   symelems = _pick_best_related_symelems(symelems, spacegroup, lattice, f4cel, f2cel, find_alternates)
+   t.checkpoint('_pick_best_related_symelems')
+
+   symelems = _remove_redundant_translations(symelems)
+   t.checkpoint('_remove_redundant_translations')
+
+   symelems = _remove_redundant_screws(symelems, f4cel, lattice)
+   t.checkpoint('_remove_redundant_screws')
+
+   for k in list(symelems.keys()):
+      if not symelems[k]: del symelems[k]
+
+   if aslist:
+      symelems = list(itertools.chain(*symelems.values()))
+
+   if profile: t.report()
+
+   return symelems
+
+def _pick_best_related_symelems(symelems, spacegroup, lattice, f4cel, f2cel, find_alternates):
    # move back to unitcell postions, identical for cubic groups
    # 'nonsingular' lattice used to avoid cases where symelems only appear
    # in a particular lattice configuration
@@ -146,18 +179,7 @@ def _compute_symelems(
             assert not unitelem.iscyclic
             # unitelem = e.tounit(lattice)
             newelems[psym].append(unitelem)
-   symelems = newelems
-
-   symelems = _remove_redundant_translations(symelems)
-
-   symelems = _shift_to_unitcell(symelems)
-
-   for k in list(symelems.keys()):
-      if not symelems[k]: del symelems[k]
-
-   if aslist:
-      symelems = list(itertools.chain(*symelems.values()))
-   return symelems
+   return newelems
 
 def _find_compound_symelems(
    spacegroup,
@@ -247,7 +269,7 @@ def _find_compound_symelems(
          if any([hnorm(cen_ - s) < 0.0001 for s in seenit]):
             continue
          seenit.append(cen_)
-         compound[psym].append(SymElem(nfold_, axis_, cen_, axis2_, lattice=lattice))
+         compound[psym].append(SymElem(nfold_, axis_, cen_, axis2_, lattice=lattice), isunit=False)
    newd2 = list()
    for ed2 in compound['D2']:
       if not np.any([np.allclose(ed2.cen, eto.cen) for eto in it.chain(compound['T'], compound['O'], compound['D4'])]):
@@ -361,43 +383,11 @@ def _symelem_is_same(elem, elem2, frames):
    d = h_point_line_dist(elem.cen, cen, axis)
    return np.min(d) < 0.001
 
-'''
-ic| sym: 'I23'
-    symelems: defaultdict(<class 'list'>,
-                          {'C2': [SymElem(2, axis=[0.0, 0.0, 1.0], cen=[-0.0, -0.0, 0.0]),
-                                  SymElem(2, axis=[0.0, 0.0, 1.0], cen=[0.5, -0.0, 0.0]),
-                                  SymElem(2, axis=[0.0, 1.0, 0.0], cen=[0.5, 0.0, -0.0]),
-                                  SymElem(2, axis=[0.0, 0.0, 1.0], cen=[0.5, 0.5, 0.0])],
-                           'C21': [SymElem(2, axis=[0.0, 0.0, 1.0], cen=[0.25, 0.25, 0.0], hel=0.5)],
-                           'C3': [SymElem(3, axis=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0])]})
-ic| sym: 'P213'
-    symelems: defaultdict(<class 'list'>,
-                          {'C21': [SymElem(2, axis=[0.0, 0.0, 1.0], cen=[0.25, -0.0, 0.0], hel=0.5),
-                                   SymElem(2, axis=[0.0, 1.0, 0.0], cen=[0.5, 0.0, 0.25], hel=0.5)],
-                           'C3': [SymElem(3, axis=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0]),
-                                  SymElem(3, axis=[1.0, -1.0, -1.0], cen=[0.0, 0.0, 0.5])]})
-ic| sym: 'I213'
-    symelems: defaultdict(<class 'list'>,
-                          {'C2': [SymElem(2, axis=[0.0, 1.0, 0.0], cen=[0.25, 0.0, -0.0]),
-                                  SymElem(2, axis=[0.0, 1.0, 0.0], cen=[0.75, 0.0, -0.0])],
-                           'C21': [SymElem(2, axis=[0.0, 0.0, 1.0], cen=[0.25, -0.0, 0.0], hel=0.5),
-                                   SymElem(2, axis=[0.0, 0.0, -1.0], cen=[0.75, 0.0, 0.0], hel=0.5)],
-                           'C3': [SymElem(3, axis=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0])]})
-ic| sym: 'P432'
-    symelems: defaultdict(<class 'list'>,
-                          {'C2': [SymElem(2, axis=[0.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0]),
-                                  SymElem(2, axis=[0.0, 0.0, 1.0], cen=[0.5, -0.0, 0.0]),
-                                  SymElem(2, axis=[0.0, 1.0, 1.0], cen=[0.5, 0.0, -0.0])],
-                           'C3': [SymElem(3, axis=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0])],
-                           'C4': [SymElem(4, axis=[-0.0, -0.0, 1.0], cen=[0.0, 0.0, 0.0]),
-                                  SymElem(4, axis=[0.0, 0.0, 1.0], cen=[0.5, 0.5, 0.0])]})
-ic| 'PASS test_spacegroup_symelems'
-
-'''
-
 def _make_symtags(tag, frames):
    concat = np.concatenate
-   tax, tcen, thel = hvec(tag[:3]), hpoint(tag[3:6]), np.tile(tag[6], [len(frames), 1])
+   tax, tcen = hvec(tag[:3]), hpoint(tag[3:6])
+   thel = np.tile(tag[6], [len(frames), 1])
+   tif = np.tile(tag[6], [len(frames), 1])
 
    # if is 21, 42, 63 screw, allow reverse axis with same helical shift
    c1 = (frames @ tax)[:, :3]
@@ -405,14 +395,14 @@ def _make_symtags(tag, frames):
    if np.any(np.isclose(thel, [0.5, np.sqrt(2) / 2])):
       # if is 21, 42, 63 screw, allow reverse axis with same helical shift
       symtags = concat([
-         concat([c1, c2, +thel], axis=1),
-         concat([-c1, c2, -thel], axis=1),
-         concat([-c1, c2, +thel], axis=1),
+         concat([c1, c2, +thel, tif], axis=1),
+         concat([-c1, c2, -thel, tif], axis=1),
+         concat([-c1, c2, +thel, tif], axis=1),
       ])
    else:
       symtags = concat([
-         concat([c1, c2, +thel], axis=1),
-         concat([-c1, c2, -thel], axis=1),
+         concat([c1, c2, +thel, tif], axis=1),
+         concat([-c1, c2, -thel, tif], axis=1),
       ])
 
    return symtags
@@ -452,10 +442,11 @@ def _shift_to_unitcell(symelems):
       # if elems and not elems[0].ic: continue
       newelems = list()
       for e in elems:
+         assert e.isunit
          cen = e.cen
          cen[:3] = cen[:3] % 1
          cen[:3][cen[:3] > 0.9999] = 0
-         newelems.append(SymElem(e.nfold, e.axis, cen, hel=e.hel, screw=e.screw))
+         newelems.append(SymElem(e.nfold, e.axis, cen, hel=e.hel, screw=e.screw, frame=e.frame, isunit=True))
          # ic(e)
          # ax = list(sorted(np.abs(e.axis[:3])))
          # if np.allclose(ax, [0, 0, 1]):
@@ -499,8 +490,8 @@ def _symelem_remove_ambiguous_syms(symelems):
    symelems = symelems.copy()
    for sympair in ('c2/c4 c2/c6 c3/c6 c11/c21 c11/c31 c11/c32 c11/c41 c11/c42 c11/c43 '
                    'c11/c61 c11/c62 c11/c63 c11/c64 c11/c65 c21/c41 c21/c42 c21/c43 c31/c61 '
-                   'c31/c62 c31/c63 c31/c64 c31/c65 c32/c61 c32/c62 c32/c63 c32/c64 c32/c65 '
-                   'c32/c31 c43/c41 c65/c61').split():
+                   'c31/c62 c31/c63 c31/c64 c31/c65 c32/c61 c32/c62 c32/c63 c32/c64 c32/c65 ').split():
+
       sym1, sym2 = sympair.upper().split('/')
       if sym2 in symelems:
          newc2 = list()
@@ -527,6 +518,7 @@ def _pick_alternate_elems(sym, lattice, unitelem, frames, frames2):
 
    best, argbest = (999999999, ), None
    seenit = list()
+   assert unitelem.isunit
    elem0 = unitelem.tolattice(lattice)
    for j, elemframe in enumerate(frames2):
       if j == 0: assert np.allclose(elemframe, np.eye(4))
@@ -535,7 +527,10 @@ def _pick_alternate_elems(sym, lattice, unitelem, frames, frames2):
          if np.any([hnorm(cen - s) < 0.0001 for s in seenit]):
             continue
          seenit.append(cen)
-      elem = elem0.xformed(elemframe)
+      try:
+         elem = elem0.xformed(elemframe)
+      except OutOfUnitCellError:
+         continue
       try:
          iframes = elem.matching_frames(frames)
          # m = np.max(iframes)
@@ -588,3 +583,30 @@ def _remove_redundant_translations(symelems):
          newtrans.append(t)
    newsymelems['C11'] = newtrans
    return newsymelems
+
+def _remove_redundant_screws(symelems, frames, lattice):
+   debug = False
+   symelems = symelems.copy()
+   for k in list(symelems.keys()):
+      if not symelems[k]: del symelems[k]
+   for psym, elems in symelems.items():
+      if not elems[0].isscrew: continue
+      newelems = list()
+      elemssort = sorted(elems, key=lambda e: abs(e.hel))
+      for ie, eunit in enumerate(elemssort):
+         e = eunit.tolattice(lattice)
+         symaxis = wu.hxform(frames, e.axis)
+         symcen = wu.hxform(frames, e.cen)
+         if debug: wu.showme(symcen, scale=12, name=f'cen_{ie}')
+         if debug: wu.showme(e, scale=12, name=f'elem_{ie}')
+         for ie2, e2unit in enumerate(newelems):
+            e2 = e2unit.tolattice(lattice)
+            if debug: wu.showme(e2, scale=12, name=f'other_{ie}{ie2}')
+            d = line_line_distance_pa(symcen, symaxis, e2.cen, e2.axis)
+            # d = h_point_line_dist(symcen, e2.cen, e2.axis)
+            if np.any(np.isclose(0, d, atol=1e-3)):
+               break
+         else:
+            newelems.append(eunit)
+      symelems[psym] = newelems
+   return symelems

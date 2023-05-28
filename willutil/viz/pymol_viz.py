@@ -18,6 +18,7 @@ from willutil import homog as hm
 from willutil.viz.pymol_cgo import *
 from willutil.sym.symfit import RelXformInfo
 import willutil.viz.primitives as prim
+from willutil.sym.spacegroup_util import applylatticepts, tounitcellpts
 
 _showme_state = wu.Bunch(
    launched=0,
@@ -270,26 +271,27 @@ def get_cgo_name(name):
    # return name
 
 def pymol_visualize_xforms(
-   xforms,
-   state=_showme_state,
-   name='xforms',
-   randpos=0.0,
-   xyzlen=[5 / 4, 1, 4 / 5],
-   xyzscale=1.0,
-   scale=1.0,
-   weight=1.0,
-   spheres=0,
-   make_cgo_only=False,
-   center_weight=1.0,
-   center=None,
-   rays=0,
-   framecolors=None,
-   perturb=0,
-   addtocgo=None,
-   colors=None,
-   bounds=None,
-   colorset=0,
-   **kw,
+      xforms,
+      state=_showme_state,
+      name='xforms',
+      randpos=0.0,
+      xyzlen=[5 / 4, 1, 4 / 5],
+      xyzscale=1.0,
+      scale=1.0,
+      weight=1.0,
+      spheres=0,
+      make_cgo_only=False,
+      center_weight=1.0,
+      center=None,
+      rays=0,
+      framecolors=None,
+      perturb=0,
+      addtocgo=None,
+      colors=None,
+      bounds=None,
+      colorset=0,
+      lattice=np.eye(3),
+      **kw,
 ):
    kw = wu.Bunch(kw)
    if perturb != 0: raise NotImplementedError
@@ -331,8 +333,9 @@ def pymol_visualize_xforms(
       y = xform @ y0
       z = xform @ z0
       if bounds:
-         if np.any(cen < bounds[0] - 0.0001): continue
-         if np.any(cen > bounds[1] + 0.0001): continue
+         bcen = tounitcellpts(lattice * scale, cen)
+         if np.any(bcen < bounds[0] - 0.0001): continue
+         if np.any(bcen > bounds[1] + 0.0001): continue
       color = framecolors if colors is None else colors[ix % len(colors)]
       col1 = [1, 0, 0] if color is None else color
       col2 = [0, 1, 0] if color is None else color

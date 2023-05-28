@@ -34,7 +34,7 @@ def sgframes(
    if not key in _memoized_frames:
       unitframes = sg_frames_dict[spacegroup]
       if cellgeom == 'unit': latticevec = np.eye(3)
-      else: latticevec = lattice_vectors(spacegroup, cellgeom)
+      else: latticevec = lattice_vectors(spacegroup, cellgeom=cellgeom)
       frames = latticeframes(unitframes, latticevec, cells)
 
       frames = prune_frames(frames, asucen, xtalrad, xtalcen)
@@ -119,3 +119,12 @@ def sort_frames(frames, method):
       return frames
    if method == 'dist_to_asucen':
       assert 0
+
+def to_unitcell(spacegroup, cellgeom, coords):
+   spacegroup = spacegroup_canonical_name(spacegroup)
+   latt = lattice_vectors(spacegroup, cellgeom)
+   com = wu.hcom(coords)
+   unitcom = wu.sym.tounitcellpts(latt, com)
+   unitcom[:3] = unitcom[:3] % 1.0
+   newcom = wu.sym.applylatticepts(latt, unitcom)
+   return wu.htrans(newcom - com)

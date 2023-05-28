@@ -6,6 +6,8 @@ from willutil.homog.hgeom import *
 
 def main():
 
+   test_th_axis_angle_cen_hel_vec()
+
    test_th_vec()
    test_th_rog()
    # assert 0, 'DONE'
@@ -134,6 +136,16 @@ def test_axisangcenhel_roundtrip():
    assert np.allclose(hel.grad.detach(), [1], atol=1e-4)
 
    # assert 0
+
+def test_th_axis_angle_cen_hel_vec():
+   xforms = hrand(100)
+   xgeom = wu.homog.axis_angle_cen_hel_of(xforms)
+   for i, (x, a, an, c, h) in enumerate(zip(f2cel, *xgeom)):
+      a2, an2, c2, h2 = wu.homog.axis_angle_cen_hel_of(x)
+      assert np.allclose(a, a2)
+      assert np.allclose(an, an2)
+      assert np.allclose(c, c2)
+      assert np.allclose(h, h2)
 
 def test_th_rot_56789():
    torch = pytest.importorskip('torch')

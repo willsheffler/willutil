@@ -11,9 +11,9 @@ def dumpstruct(fname, pdb, **kw):
 
    # save
    if finfo.ext == '.pdb':
-      wu.pdb.dumppdb(finfo.uncomp, pdb)
+      wu.pdb.dumppdb(finfo.uncomp, pdb, **kw)
    elif finfo.ext == '.cif':
-      wu.pdb.dumpcif(finfo.uncomp, pdb)
+      wu.pdb.dumpcif(finfo.uncomp, pdb, **kw)
    else:
       raise ValueError(f'dumpstruct doesn\'t know what to do with {fname}')
 

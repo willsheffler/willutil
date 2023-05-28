@@ -195,7 +195,8 @@ class PDBFile:
       out = open(fname, 'w') if isinstance(fname, (str, bytes)) else fname
       if self.cryst1:
          out.write(self.cryst1 + os.linesep)
-      for i, row in self.df.iterrows():
+      df = self.df
+      for i, row in df.iterrows():
          s = wu.pdb.pdbdump.pdb_format_atom_df(**row, **kw)
          out.write(s)
       if isinstance(fname, (str, bytes)):
@@ -360,7 +361,7 @@ class PDBFile:
             self.df.loc[self.df.ri == res[ires], 'ch'] = 'ABCDEFGHIJ'[ich].encode()
       return nfold
 
-   def xformed(self, xform, **kw):
+   def xformed(self, xform, chainA_contacts_only=False, contact_distance=8, **kw):
       kw = wu.Bunch(kw)
       if xform.squeeze().shape == (4, 4):
          crd = self.coords
@@ -378,13 +379,23 @@ class PDBFile:
             xforms[isident] = xforms[0]
             xforms[0] = np.eye(4)
          chains = list(sorted(set(self.df.ch)))
-         newpdbs = [self.xformed(x) for x in xform]
-         for imodel, pdb in enumerate(newpdbs):
+         chainpdbs = self.splitchains()
+         keeppdbs = list()
+         if chainA_contacts_only:
+            chaincoords = self.ca(splitchains=True)
+            chainbodies = [wu.RigidBody(crd) for crd in chaincoords]
+            body = chainbodies[0]
+         for imodel, xform in enumerate(xform):
             for ich, ch in enumerate(chains):
-               newch = wu.pdb.all_pymol_chains[ich + imodel * len(chains)].encode()
-               pdb.df.loc[pdb.df.ch == ch, 'ch'] = newch
-               pdb.camask()
-         df = pd.concat([pdb.df for pdb in newpdbs])
+               if chainA_contacts_only:
+                  isect = body.intersects(chainbodies[ich], xforms[imodel], mindis=contact_distance)
+                  if not isect: continue
+               newch = wu.pdb.all_pymol_chains[len(keeppdbs)].encode()
+               xpdb = chainpdbs[ich].xformed(xform)
+               xpdb.df.loc[xpdb.df.ch == ch, 'ch'] = newch
+               xpdb.camask()
+               keeppdbs.append(xpdb)
+         df = pd.concat([pdb.df for pdb in keeppdbs])
          return PDBFile(df, meta=self.meta, original_contents=self.original_contents)
 
    @property

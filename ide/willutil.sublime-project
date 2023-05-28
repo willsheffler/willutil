@@ -27,7 +27,7 @@
 		},
 		{
 			"name": "makesym xtal",
-			"shell_cmd": "cd $folder; python willutil/app/makesym.py --architecture crystal_contacts /home/sheffler/zz/1zz1.cif.gz --contact_distance 8 --test &> log/sublime_build.log"
+			"shell_cmd": "cd $folder; python willutil/app/makesym.py --architecture crystal_contacts willutil/tests/testdata/pdb/5lrp.cif.gz --contact_distance 8 --chainA_contacts_only --move_to_unitcell --test &> log/sublime_build.log"
 		},
 		{
 			"name": "test_symscaffold.py",

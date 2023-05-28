@@ -44,7 +44,7 @@ def readcif(fname):
 
    return pdb
 
-def dumpcif(fname, pdb, cifdict=None):
+def dumpcif(fname, pdb, cifdict=None, **kw):
    '''creates a cif file from a PDBFile object
    uses biopython. first dumps a cif from biopython 'Structure"
    to get structural info in the dict format. kinda dumb, but not
@@ -54,7 +54,7 @@ def dumpcif(fname, pdb, cifdict=None):
    if not finfo.ext == '.cif': fname += '.cif'
 
    pdbout = io.StringIO()
-   pdb.dump_pdb(pdbout)
+   pdb.dump_pdb(pdbout, **kw)
    struct = PDBParser().get_structure('????', io.StringIO(pdbout.getvalue()))
 
    cifdict = cifdict or dict()

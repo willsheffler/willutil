@@ -14,6 +14,16 @@ def applylattice(lattice, unitframes):
    latticeframes[:, 3, 3] = 1
    return latticeframes
 
+def tounitcell(lattice, *a, **kw):  #, frames, spacegroup=None):
+   return applylattice(np.linalg.inv(lattice), *a, **kw)
+   # if not hasattr(lattice, 'shape') or lattice.shape != (3, 3):
+   # lattice = lattice_vectors(spacegroup, lattice)
+   # unitframes = frames.copy()
+   # lattinv = np.linalg.inv(lattice)
+   # unitframes[:, :3, :3] = einsum('ij,fjk,kl->fil', lattinv, frames[:, :3, :3], lattice)
+   # unitframes[:, :3, 3] = einsum('ij,fj->fi', lattinv, frames[:, :3, 3])
+   # return unitframes.round(10)
+
 def applylatticepts(lattice, unitpoints):
    origshape = unitpoints.shape
    unitpoints = unitpoints.reshape(-1, 4)
@@ -31,25 +41,17 @@ def latticeframes(unitframes, lattice, cells=1):
    frames = applylattice(lattice, unitframes)
    return frames.round(10)
 
-def tounitcell(lattice, frames, spacegroup=None):
-   if not hasattr(lattice, 'shape') or lattice.shape != (3, 3):
-      lattice = lattice_vectors(spacegroup, lattice)
-   unitframes = frames.copy()
-   lattinv = np.linalg.inv(lattice)
-   unitframes[:, :3, :3] = einsum('ij,fjk,kl->fil', lattinv, frames[:, :3, :3], lattice)
-   unitframes[:, :3, 3] = einsum('ij,fj->fi', lattinv, frames[:, :3, 3])
-   return unitframes.round(10)
-
-def tounitcellpts(lattice, points, spacegroup=None):
-   oshape = points.shape
-   points = points.reshape(-1, 4)
-   if not hasattr(lattice, 'shape') or lattice.shape != (3, 3):
-      lattice = lattice_vectors(spacegroup, lattice)
-   unitpoints = points.copy()
-   lattinv = np.linalg.inv(lattice)
-   unitpoints[:, :3] = einsum('ij,fj->fi', lattinv, points[:, :3])
-   unitpoints = unitpoints.reshape(oshape)
-   return unitpoints.round(10)
+def tounitcellpts(lattice, *a, **kw):
+   return applylatticepts(np.linalg.inv(lattice), *a, **kw)
+   # oshape = points.shape
+   # points = points.reshape(-1, 4)
+   # if not hasattr(lattice, 'shape') or lattice.shape != (3, 3):
+   # lattice = lattice_vectors(spacegroup, lattice)
+   # unitpoints = points.copy()
+   # lattinv = np.linalg.inv(lattice)
+   # unitpoints[:, :3] = einsum('ij,fj->fi', lattinv, points[:, :3])
+   # unitpoints = unitpoints.reshape(oshape)
+   # return unitpoints.round(10)
 
 def process_num_cells(cells):
    if cells is None:

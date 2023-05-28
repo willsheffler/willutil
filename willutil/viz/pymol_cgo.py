@@ -318,7 +318,7 @@ def showcell(*args, **kw):
 
 def cgo_cell(lattice, r=0.03):
    ic(lattice)
-
+   lattice = lattice.T
    a = [
       [0, 0, 0],
       [0, 0, 0],

@@ -26,17 +26,20 @@ def makearch(fname, arch, **kw):
    dump_transformed_samples(pdbaln, compaxis, frames, tag=tag, arch=arch, **kw)
    print('-' * 80, flush=True)
 
-def makextal(fname, **kw):
+def makextal(fname, move_to_unitcell=False, **kw):
    kw = wu.Bunch(kw)
-   pdb = wu.readfile(fname)
+   origpdb = wu.readfile(fname)
    finfo = wu.storage.fname_extensions(fname)
-   frames = wu.sym.sgframes(pdb.spacegroup, pdb.cellgeom, cells=(-2, 2))
-   body = wu.RigidBody(pdb.ca())
+   xtounit = wu.sym.to_unitcell(origpdb.spacegroup, origpdb.cellgeom, origpdb.ca())
+   unitpdb = origpdb.xformed(xtounit)
+   body = wu.RigidBody(unitpdb.ca())
+   ncells = 3 if wu.sym.copies_per_cell(unitpdb.spacegroup) > 8 else 5
+   frames = wu.sym.sgframes(unitpdb.spacegroup, unitpdb.cellgeom, cells=ncells)
    isect = body.intersects(body, frames, mindis=kw.contact_distance)
    frames = frames[isect]
-   sympdb = pdb.xformed(frames)
+   sympdb = unitpdb.xformed(frames, chainA_contacts_only=kw.chainA_contacts_only)
    newfname = f'{finfo.base}.xtal{finfo.extcomp}'
-   wu.dumpstruct(newfname, sympdb)
+   wu.dumpstruct(newfname, sympdb, xform=None if move_to_unitcell else wu.hinv(xtounit))
 
 def makecx(fname, arch):
    frames = wu.sym.frames(arch)
@@ -195,6 +198,16 @@ def get_cli_config():
       '--test',
       action='store_true',
       help='don\'t catch and handle exceptions',
+   )
+   parser.add_argument(
+      '--chainA_contacts_only',
+      action='store_true',
+      help='if multiple chains in ASU, only output contacts wtih chain A',
+   )
+   parser.add_argument(
+      '--move_to_unitcell',
+      action='store_true',
+      help='output moved to unitcell',
    )
    parser.add_argument(
       '--reconcile_method',
