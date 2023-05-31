@@ -430,7 +430,7 @@ def hinv(xforms):
 
 def hunique(xforms):
    if len(xforms) == 0: return True
-   diff = wu.hdiff(xforms, xforms)
+   diff = hdiff(xforms, xforms)
    np.fill_diagonal(diff, 9e9)
    # ic(diff.shape, np.min(diff))
    return 0.0001 < np.min(diff)
@@ -560,7 +560,7 @@ def hcentered(coords, singlecom=False):
    origshape = coords.shape[:-1]
    if singlecom: coords = coords.reshape(-1, coords.shape[-1])
    coords = hpoint(coords).copy()
-   com = wu.hcom(coords)
+   com = hcom(coords)
    delta = com[..., None, :3]
    coords[..., :3] -= delta
    return coords.reshape(*origshape, 4)
@@ -568,7 +568,7 @@ def hcentered(coords, singlecom=False):
 def hcentered3(coords, singlecom=False):
    origshape = coords.shape[:-1]
    if singlecom: coords = coords.reshape(-1, coords.shape[-1])
-   com = wu.hcom(coords)
+   com = hcom(coords)
    delta = com[..., None, :3]
    coords = coords[..., :3] - delta
    return coords.reshape(*origshape, 3)
@@ -622,7 +622,7 @@ def htrans(trans, dtype='f8', doto=None):
    tileshape = trans.shape[:-1] + (1, 1)
    t = np.tile(np.identity(4, dtype), tileshape)
    t[..., :trans.shape[-1], 3] = trans
-   return t if doto is None else wu.hxform(t, doto)
+   return t if doto is None else hxform(t, doto)
 
 def hdot(a, b, outerprod=False):
    a = np.asanyarray(a)
@@ -1007,7 +1007,7 @@ def axis_ang_cen_of_planes(xforms, debug=False, ident_match_tol=1e-8):
    # by convention, if no rotation, make axis along translation.
    trans = hcart(xforms)
    istransonly = np.logical_and(np.isclose(0, angle), np.any(~np.isclose(0, trans[:, :3]), axis=1))
-   axis[istransonly] = wu.hnormalized(trans[istransonly])
+   axis[istransonly] = hnormalized(trans[istransonly])
 
    axis = axis.reshape(*origshape, 4)
    angle = angle.reshape(origshape)
@@ -1100,7 +1100,7 @@ def halign(a, b, doto=None):
    tmp = align_around_axis(ax[ok], a, b)
    x[ok] = tmp
    # ic(x.shape)
-   return x if doto is None else wu.hxform(x, doto)
+   return x if doto is None else hxform(x, doto)
 
 def halign2(a1, a2, b1, b2, doto=None):
    "minimizes angular error"
@@ -1116,7 +1116,7 @@ def halign2(a1, a2, b1, b2, doto=None):
    X = Xaround @ Xmiddle
    # ic(angle(b1, a1), angle(b2, a2), angle(b1, X @ a1), angle(b2, X @ a2))
    assert (angle(b1, a1) + angle(b2, a2)) + 0.001 >= (angle(b1, X @ a1) + angle(b2, X @ a2))
-   return X if doto is None else wu.hxform(x, doto)
+   return X if doto is None else hxform(x, doto)
 
 def calc_dihedral_angle(p1, p2, p3, p4):
    p1, p2, p3, p4 = hpoint(p1), hpoint(p2), hpoint(p3), hpoint(p4)

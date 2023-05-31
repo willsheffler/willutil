@@ -14,34 +14,56 @@ class ComponentIDError(Exception):
 class OutOfUnitCellError(Exception):
    pass
 
+class SymElemAngErr(Exception):
+   pass
+
 _HACK_HASH = list()
 
+def symelem_of(frame, **kw):
+   a, an, c, h = wu.haxis_angle_cen_hel_of(frame)
+   if np.isclose(an, 0):
+      nfold = 1
+   else:
+      nfold = np.pi * 2 / an
+      ic(nfold, a, an, c, h)
+      if not np.allclose(nfold, nfold.round()):
+         raise SymElemAngErr(f'angle {an} implies nfold {nfold} which is non-integer')
+   # ic(int(nfold), a, c, h, kw)
+   return SymElem(int(nfold.round()), axis=a, cen=c, hel=h, **kw)
+
+def _round(val):
+   for v in [
+         0,
+         0.125,
+         1 / 6,
+         0.25,
+         1 / 3,
+         0.375,
+         0.5,
+         np.sqrt(3) / 3,
+         0.625,
+         2 / 3,
+         np.sqrt(2) / 2,
+         0.75,
+         5 / 6,
+         np.sqrt(3) / 3,
+         0.875,
+         1,
+   ]:
+      if isinstance(val, np.ndarray):
+         val[np.isclose(val, v, atol=0.0001)] = v
+      else:
+         if np.isclose(val, v): val = v
+   return val
+
 class SymElem:
-   def __init__(
-      self,
-      nfold,
-      axis,
-      cen=[0, 0, 0],
-      axis2=None,
-      *,
-      label=None,
-      vizcol=None,
-      scale=1,
-      parent=None,
-      children=None,
-      hel=0,
-      lattice=None,
-      screw=None,
-      adjust_cyclic_center=True,
-      frame=None,
-      isunit=None,
-   ):
+   def __init__(self, nfold, axis, cen=[0, 0, 0], axis2=None, *, label=None, vizcol=None, scale=1, parent=None, children=None, hel=0, lattice=None, screw=None, adjust_cyclic_center=True, frame=None, isunit=None, latticetype=None):
       self._init_args = wu.Bunch(vars()).without('self')
       self.vizcol = vizcol
       self.scale = scale
 
       self._set_geometry(frame, nfold, axis, cen, axis2, hel, lattice, isunit, adjust_cyclic_center)
-      self._check_screw(screw)
+      self._check_screw(screw, latticetype)
       self._make_label(label)
       self._set_kind()
 
@@ -64,17 +86,24 @@ class SymElem:
       return len(_HACK_HASH) - 1
 
    def numeric_cleanup(self):
-      self.axis = self.axis.round(9)
-      self.cen = self.cen.round(9)
-      if self.axis2 is not None: self.axis2 = self.axis2.round(9)
-      self.hel = self.hel.round(9)
-      self.axis[self.axis == -0] = 0
-      self.cen[self.cen == -0] = 0
+      # self.axis = self.axis.round(9)
+      # self.cen = self.cen.round(9)
+      # if self.axis2 is not None: self.axis2 = self.axis2.round(9)
+      # self.hel = self.hel.round(9)
+      # if hdot(self.axis, [3, 2, 1, 0]) < 0: self.axis = -self.axis
+      self.axis = _round(self.axis)
+      if self.axis2 is not None:
+         if hdot(self.axis2, [3, 2, 1, 0]) < 0:
+            self.axis2 = -self.axis2
+         self.axis2 = _round(self.axis2)
+      self.cen = _round(self.cen)
+      self.hel = _round(self.hel)
       # self.index = None
       if self.axis2 is not None:
          self.axis2 = wu.homog.hnormalized(self.axis2)
          self.axis2[self.axis2 == -0] = 0
-      if not self.isscrew:
+      # if not self.isscrew:
+      if True:
          if angle(self.axis, [1, 1.1, 1.2]) > np.pi / 2:
             self.axis = -self.axis
          if self.axis2 is not None and angle(self.axis2, [1, 1.1, 1.2]) > np.pi / 2:
@@ -234,13 +263,15 @@ class SymElem:
       if self.nfold != other.nfold: return False
       if not np.allclose(self.axis, other.axis): return False
       if self.axis2 is not None and not np.allclose(self.axis2, other.axis2): return False
+      # if not np.allclose(np.abs(self.axis), np.abs(other.axis)): return False
+      # if self.axis2 is not None and not np.allclose(np.abs(self.axis2), np.abs(other.axis2)): return False
       if not np.allclose(self.cen, other.cen): return False
       if not np.allclose(self.hel, other.hel): return False
       if not np.allclose(self.screw, other.screw): return False
       assert np.allclose(self.operators, other.operators)
       return True
 
-   def _check_screw(self, screw):
+   def _check_screw(self, screw, latticetype):
       if screw is not None:
          self.screw = screw
          return
@@ -261,8 +292,10 @@ class SymElem:
          cellextent = 1.0
       elif np.allclose(axtype, [0, s2 / 2, s2 / 2]):
          cellextent = s2
+         if latticetype in ['HEXAGONAL']: raise ScrewError()
       elif np.allclose(axtype, [s3 / 3, s3 / 3, s3 / 3]):
          cellextent = s3
+         if latticetype in ['HEXAGONAL']: raise ScrewError()
       else:
          raise ScrewError(f'cant understand axis {self.axis}')
       unitcellfrac = self.hel / cellextent
@@ -493,7 +526,7 @@ def showsymelems(
       scan = scale * 2
 
    ii = 0
-   labelcount = defaultdict(lambda: 0)
+   labelcount, colorcount = defaultdict(lambda: 0), defaultdict(lambda: 0)
    for i, c in enumerate(symelems):
       for j, sunit in enumerate(symelems[c]):
          assert sunit.isunit
@@ -585,11 +618,12 @@ def showsymelems(
                addtocgo=cgo,
                make_cgo_only=True,
                weight=weight,
-               colorset=labelcount[s.label],
+               colorset=colorcount[s.label[:2]],
                lattice=lattice,
             )
          pymol.cmd.load_cgo(cgo, name)
          labelcount[s.label] += 1
+         colorcount[s.label[:2]] += 1
          ii += 1
    from willutil.viz.pymol_viz import showcell, showcube
    # ic(sym)

@@ -337,20 +337,31 @@ def pymol_visualize_xforms(
          if np.any(bcen < bounds[0] - 0.0001): continue
          if np.any(bcen > bounds[1] + 0.0001): continue
       color = framecolors if colors is None else colors[ix % len(colors)]
-      col1 = [1, 0, 0] if color is None else color
-      col2 = [0, 1, 0] if color is None else color
-      col3 = [0, 0, 1] if color is None else color
-      col4 = [1, 0.5, 0.5] if color is None else color
-      if colorset == 1:
+      if colorset % 5 == 0:
+         col1 = [1, 0, 0] if color is None else color
+         col2 = [0, 1, 0] if color is None else color
+         col3 = [0, 0, 1] if color is None else color
+         col4 = [1, 0.5, 0.5] if color is None else color
+      elif colorset % 5 == 1:
          col1 = [1, 0.5, 0] if color is None else color
          col2 = [0, 1, 0.5] if color is None else color
          col3 = [0.5, 0, 1] if color is None else color
          col4 = [1, 0.75, 0.5] if color is None else color
-      if colorset == 2:
+      elif colorset % 5 == 2:
          col1 = [1, 0, 0.5] if color is None else color
          col2 = [0.5, 1, 0] if color is None else color
          col3 = [0, 0.5, 1] if color is None else color
          col4 = [1, 0.5, 0.5] if color is None else color
+      elif colorset % 5 == 3:
+         col1 = [1, 0.25, 0] if color is None else color
+         col2 = [0, 1, 0.25] if color is None else color
+         col3 = [0.25, 0, 1] if color is None else color
+         col4 = [1, 0.75, 0.25] if color is None else color
+      elif colorset % 5 == 4:
+         col1 = [1, 0, 0.25] if color is None else color
+         col2 = [0.25, 1, 0] if color is None else color
+         col3 = [0, 0.25, 1] if color is None else color
+         col4 = [1, 0.25, 0.25] if color is None else color
 
       mycgo.extend(cgo_cyl(cen, x, 0.05 * weight, col1))
       mycgo.extend(cgo_cyl(cen, y, 0.05 * weight, col2))

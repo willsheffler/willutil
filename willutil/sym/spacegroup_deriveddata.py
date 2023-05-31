@@ -41,10 +41,10 @@ def _get_spacegroup_data():
    sg_improper = dict()
    sg_n_std_cells = dict()
 
-   seetit = set()
+   seenit = set()
    for i, (sym, symtag) in enumerate(sg_tag.items()):
       if sym in seenit: continue
-      seetit.add(sym)
+      seenit.add(sym)
       # if sym != 'R32': continue
 
       if symtag in sg_lattice: sg_lattice[sym] = sg_lattice[symtag]

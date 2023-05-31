@@ -183,7 +183,7 @@ def test_spacegroup_frames_tounitcell(sgroup, cellgeom, ncell):
    ftest2 = wu.sym.spacegroup.applylattice(lattice, funit)
    assert np.allclose(fcell, ftest2)
 
-   ftest = wu.sym.spacegroup.tounitcell(cellgeom, fcell, sgroup)
+   ftest = wu.sym.spacegroup.tounitcell(lattice, fcell)
    # ic(ftest.shape)
    # ic(funit)
    # ic(ftest)

@@ -140,7 +140,7 @@ def test_axisangcenhel_roundtrip():
 def test_th_axis_angle_cen_hel_vec():
    xforms = hrand(100)
    xgeom = wu.homog.axis_angle_cen_hel_of(xforms)
-   for i, (x, a, an, c, h) in enumerate(zip(f2cel, *xgeom)):
+   for i, (x, a, an, c, h) in enumerate(zip(xforms, *xgeom)):
       a2, an2, c2, h2 = wu.homog.axis_angle_cen_hel_of(x)
       assert np.allclose(a, a2)
       assert np.allclose(an, an2)

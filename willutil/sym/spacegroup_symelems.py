@@ -31,12 +31,11 @@ def _compute_symelems(
    if unitframes is None:
       unitframes = wu.sym.sgframes(spacegroup, cellgeom='unit')
 
+   latticetype = sg_lattice[spacegroup]
    if lattice is None:
       lattice = lattice_vectors(spacegroup, cellgeom='nonsingular')
 
-   # ncell = 4 if len(unitframes) > 8 else 6
-   ncell = 4
-   # if spacegroup == 'R32':      ncell = 6
+   ncell = number_of_canonical_cells(spacegroup)
    f2cel = latticeframes(unitframes, lattice, cells=ncell - 2)
    f4cel = latticeframes(unitframes, lattice, cells=ncell)
    t.checkpoint('make_frames')
@@ -82,7 +81,6 @@ def _compute_symelems(
       nftag = nftag[np.argsort(-nftag[:, 5], kind='stable')]
       nftag = nftag[np.argsort(-nftag[:, 4], kind='stable')]
       nftag = nftag[np.argsort(-nftag[:, 3], kind='stable')]
-      # ic(nfold, screw, nftag.round(3))
 
       d = np.sum(nftag[:, 3:6]**2, axis=1).round(6)
       nftag = nftag[np.argsort(d, kind='stable')]
@@ -109,7 +107,7 @@ def _compute_symelems(
       for tag in keep:
          try:
             axs_, cen_, hel_, iframe = tag[:3], tag[3:6], tag[6], int(tag[7])
-            se = SymElem(nfold, axs_, cen_, hel=hel_, lattice=lattice, isunit=True)
+            se = SymElem(nfold, axs_, cen_, hel=hel_, lattice=lattice, isunit=True, latticetype=latticetype)
             seenit = symelems[se.label].copy()
             if screw and se.label[:2] in symelems:
                seenit += symelems[se.label[:2]]
@@ -269,7 +267,8 @@ def _find_compound_symelems(
          if any([hnorm(cen_ - s) < 0.0001 for s in seenit]):
             continue
          seenit.append(cen_)
-         compound[psym].append(SymElem(nfold_, axis_, cen_, axis2_, lattice=lattice), isunit=False)
+         compound[psym].append(SymElem(nfold_, axis_, cen_, axis2_, lattice=lattice, isunit=False))
+
    newd2 = list()
    for ed2 in compound['D2']:
       if not np.any([np.allclose(ed2.cen, eto.cen) for eto in it.chain(compound['T'], compound['O'], compound['D4'])]):
@@ -294,26 +293,71 @@ def _find_compound_symelems(
 
    newelems = defaultdict(list)
    for psym, elems in compound.items():
+
+      if psym != 'D2': continue
+
       success = True
       for e in elems:
          unitelem = e.tounit(lattice)
          assert unitelem.iscompound
-         elem = _pick_alternate_elems(spacegroup, lattice, unitelem, frames, frames2)
+
+         ic(unitelem.matching_frames(frames))
+         # wu.showme(frames[unitelem.matching_frames(frames)], scale=12, name='frames')
+         # wu.showme(unitelem, scale=12, name='elem')
+
+         best, argbest = (999999999, ), None
+         seenit = list()
+         assert unitelem.isunit
+         elem0 = unitelem.tolattice(lattice)
+         for j, elemframe in enumerate(frames2):
+            if j == 0: assert np.allclose(elemframe, np.eye(4))
+            try:
+               elem = elem0.xformed(elemframe)
+            except OutOfUnitCellError:
+               continue
+            try:
+               iframes = elem.matching_frames(frames)
+               # m = np.max(iframes)
+               m = tuple(sorted(iframes))
+               # ic(m)
+               if m < best:
+                  # ic(iframes)
+                  # ic(j, m)
+                  best, argbest = m, elem
+            except ComponentIDError:
+               continue
+
          if elem is None:
             print(f'FAILED to find complete elems for {spacegroup}, {e}')
             success = False
             break
          newelems[psym].append(elem)
+
       if success:
-         # ic(newelems[psym])
-         newelems[psym] = [e for s, e in sorted(newelems[psym])]
-         # ic(newelems[psym])
+
+         ic(newelems[psym])
+
+         newelems2 = list()
+         for idx, e in newelems[psym]:
+            if idx not in [_[0] for _ in newelems2]:
+               newelems2.append((idx, e))
+         # ic(newelems2)
+         newelems[psym] = [e for s, e in sorted(newelems2)]
+
+         ic(newelems[psym])
+
       else:
          newelems[psym] = [e.tounit(lattice) for e in elems]
+
+      if psym == 'D2': assert 0
+
    compound = newelems
 
    if aslist:
       compound = list(itertools.chain(*compound.values()))
+
+   ic(compound)
+   assert 0
 
    return compound
 
@@ -523,11 +567,6 @@ def _pick_alternate_elems(sym, lattice, unitelem, frames, frames2):
    elem0 = unitelem.tolattice(lattice)
    for j, elemframe in enumerate(frames2):
       if j == 0: assert np.allclose(elemframe, np.eye(4))
-      if elem0.iscompound:
-         cen = elemframe @ elem0.cen[:, None]
-         if np.any([hnorm(cen - s) < 0.0001 for s in seenit]):
-            continue
-         seenit.append(cen)
       try:
          elem = elem0.xformed(elemframe)
       except OutOfUnitCellError:
@@ -536,6 +575,7 @@ def _pick_alternate_elems(sym, lattice, unitelem, frames, frames2):
          iframes = elem.matching_frames(frames)
          # m = np.max(iframes)
          m = tuple(sorted(iframes))
+         # ic(m)
          if m < best:
             # ic(iframes)
             # ic(j, m)
@@ -592,12 +632,13 @@ def _remove_redundant_screws(symelems, frames, lattice):
       if not symelems[k]: del symelems[k]
    for psym, elems in symelems.items():
       if not elems[0].isscrew: continue
+      # if elems[0].nfold == 1: continue
       newelems = list()
       elemssort = sorted(elems, key=lambda e: abs(e.hel))
       for ie, eunit in enumerate(elemssort):
          e = eunit.tolattice(lattice)
-         symaxis = wu.hxform(frames, e.axis)
-         symcen = wu.hxform(frames, e.cen)
+         symaxis = hxform(frames, e.axis)
+         symcen = hxform(frames, e.cen)
          if debug: wu.showme(symcen, scale=12, name=f'cen_{ie}')
          if debug: wu.showme(e, scale=12, name=f'elem_{ie}')
          for ie2, e2unit in enumerate(newelems):
@@ -605,8 +646,8 @@ def _remove_redundant_screws(symelems, frames, lattice):
             if debug: wu.showme(e2, scale=12, name=f'other_{ie}{ie2}')
             d = line_line_distance_pa(symcen, symaxis, e2.cen, e2.axis)
             # d = h_point_line_dist(symcen, e2.cen, e2.axis)
-            if np.any(np.isclose(0, d, atol=1e-3)):
-               break
+            dup = np.logical_and(np.isclose(0, d, atol=1e-3), np.abs(hdot(symaxis, e2.axis)) > 0.999)
+            if np.any(dup): break
          else:
             newelems.append(eunit)
       symelems[psym] = newelems

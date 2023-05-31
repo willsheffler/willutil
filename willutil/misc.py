@@ -137,3 +137,46 @@ def generic_equals(this, that, checktypes=False, debug=False):
          print(this)
          print(that)
    return this == that
+
+class UnhashableSet:
+   def __init__(self, stuff, strict=True):
+      self.stuff = list()
+      for thing in stuff:
+         if thing not in self.stuff:
+            self.stuff.append(thing)
+         elif strict:
+            raise ValueError(f'UnhashableSet duplicate members {thing}')
+
+   def difference(a, b):
+      a = list(a)
+      b = list(b)
+      assert isinstance(b, a.__class__)
+      return [u for u in a if u not in b]
+
+   def intersection(a, b):
+      a = list(a)
+      b = list(b)
+      assert isinstance(b, a.__class__)
+      s = [u for u in a if u in b]
+      s = [u for u in b if u in s]
+      return s
+
+   def __iter__(self):
+      return iter(self.stuff)
+
+   def __eq__(a, b):
+      assert isinstance(b, a.__class__)
+      a = list(a)
+      b = list(b)
+      match1, match2 = True, True
+      for u in a:
+         m = False
+         for v in b:
+            if u == v: m = True
+         match1 = match1 and m
+      for u in b:
+         m = False
+         for v in a:
+            if u == v: m = True
+         match2 = match2 and m
+      return match1 and match2

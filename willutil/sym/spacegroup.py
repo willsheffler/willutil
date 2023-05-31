@@ -70,22 +70,6 @@ def symelems(spacegroup: str, psym=None, asdict=False, screws=True, cyclic=True)
       se = d
    return se
 
-def copies_per_cell(spacegroup):
-   spacegroup = spacegroup_canonical_name(spacegroup)
-   return len(sg_frames_dict[spacegroup])
-
-def spacegroup_canonical_name(spacegroup):
-   spacegroup = spacegroup.replace('p', 'P').replace('i', 'I').replace('f', 'F')
-   if spacegroup not in sg_lattice:
-      spacegroup = sg_from_pdbname[spacegroup]
-   return spacegroup
-
-def latticetype(spacegroup):
-   try:
-      return sg_lattice[spacegroup]
-   except KeyError:
-      return sg_lattice[sg_from_pdbname[spacegroup]]
-
 def cryst1_line(spacegroup, lattice):
    cellgeom = cellgeom_from_lattice(lattice)
    return wu.sym.cryst1_pattern_full % (*cellgeom, spacegroup)
@@ -98,6 +82,10 @@ def prune_frames(frames, asucen, xtalrad, center=None):
    dis = wu.hnorm(pos - center)
    frames = frames[dis <= xtalrad]
    return frames
+
+def copies_per_cell(spacegroup):
+   spacegroup = spacegroup_canonical_name(spacegroup)
+   return len(sg_frames_dict[spacegroup])
 
 def cellgeom_from_lattice(lattice, radians=False):
    u, v, w = lattice.T

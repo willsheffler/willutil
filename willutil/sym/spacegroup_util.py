@@ -3,6 +3,28 @@ import numpy as np
 import willutil as wu
 from willutil.sym.spacegroup_data import *
 
+def spacegroup_canonical_name(spacegroup):
+   spacegroup = spacegroup.replace('p', 'P').replace('i', 'I').replace('f', 'F')
+   if spacegroup not in sg_lattice:
+      spacegroup = sg_from_pdbname[spacegroup]
+   return spacegroup
+
+def number_of_canonical_cells(spacegroup):
+   spacegroup = spacegroup_canonical_name(spacegroup)
+   nframes_per_cell = sg_nframes[spacegroup]
+   ncell = 4
+   # if nframes_per_cell <= 4: ncell = 5
+   if spacegroup == 'P43212': return 5
+   if spacegroup == 'P21212': return 5
+   if spacegroup == 'P222': return 5
+   return ncell
+
+def latticetype(spacegroup):
+   try:
+      return sg_lattice[spacegroup]
+   except KeyError:
+      return sg_lattice[sg_from_pdbname[spacegroup]]
+
 def applylattice(lattice, unitframes):
    origshape = unitframes.shape
    assert lattice.shape == (3, 3)
@@ -13,16 +35,6 @@ def applylattice(lattice, unitframes):
    latticeframes[:, :3, 3] = einsum('ij,fj->fi', lattice, unitframes[:, :3, 3])
    latticeframes[:, 3, 3] = 1
    return latticeframes
-
-def tounitcell(lattice, *a, **kw):  #, frames, spacegroup=None):
-   return applylattice(np.linalg.inv(lattice), *a, **kw)
-   # if not hasattr(lattice, 'shape') or lattice.shape != (3, 3):
-   # lattice = lattice_vectors(spacegroup, lattice)
-   # unitframes = frames.copy()
-   # lattinv = np.linalg.inv(lattice)
-   # unitframes[:, :3, :3] = einsum('ij,fjk,kl->fil', lattinv, frames[:, :3, :3], lattice)
-   # unitframes[:, :3, 3] = einsum('ij,fj->fi', lattinv, frames[:, :3, 3])
-   # return unitframes.round(10)
 
 def applylatticepts(lattice, unitpoints):
    origshape = unitpoints.shape
@@ -40,6 +52,16 @@ def latticeframes(unitframes, lattice, cells=1):
    unitframes = wu.homog.hxformx(xshift, unitframes, flat=True, improper_ok=True)
    frames = applylattice(lattice, unitframes)
    return frames.round(10)
+
+def tounitcell(lattice, *a, **kw):  #, frames, spacegroup=None):
+   return applylattice(np.linalg.inv(lattice), *a, **kw)
+   # if not hasattr(lattice, 'shape') or lattice.shape != (3, 3):
+   # lattice = lattice_vectors(spacegroup, lattice)
+   # unitframes = frames.copy()
+   # lattinv = np.linalg.inv(lattice)
+   # unitframes[:, :3, :3] = einsum('ij,fjk,kl->fil', lattinv, frames[:, :3, :3], lattice)
+   # unitframes[:, :3, 3] = einsum('ij,fj->fi', lattinv, frames[:, :3, 3])
+   # return unitframes.round(10)
 
 def tounitcellpts(lattice, *a, **kw):
    return applylatticepts(np.linalg.inv(lattice), *a, **kw)
