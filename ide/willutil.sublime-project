@@ -6,6 +6,14 @@
 			"shell_cmd": "cd $folder; python willutil/runtests.py --projname willutil $file &> log/sublime_build.log"
 		},
 		{
+			"name": "test_notpose.py",
+			"shell_cmd": "cd $folder; python willutil/tests/rosetta/test_notpose.py &> log/sublime_build.log"
+		},
+		{
+			"name": "test_readpdb.py",
+			"shell_cmd": "cd $folder; python willutil/tests/pdb/test_pdbread.py &> log/sublime_build.log"
+		},
+		{
 			"name": "test_spacegroup_pymol.py",
 			"shell_cmd": "cd $folder; python willutil/tests/sym/test_spacegroup_pymol.py &> log/sublime_build.log"
 		},
@@ -52,10 +60,6 @@
 		{
 			"name": "test_spacegroup.py",
 			"shell_cmd": "cd $folder; python willutil/tests/sym/test_spacegroup.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_notpose.py",
-			"shell_cmd": "cd $folder; python willutil/tests/rosetta/test_notpose.py &> log/sublime_build.log"
 		},
 		{
 			"name": "test_homog_misc.py",

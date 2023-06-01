@@ -5,11 +5,31 @@ import willutil as wu
 # ic.configureOutput(includeContext=True, contextAbsPath=False)
 
 def main():
+   test_bug1()
    test_notpose_from_coords()
    test_notpose_has()
    test_notpose()
    test_notpose_sc_coords()
    ic('test_notpose.py DONE')
+
+def test_bug1():
+   f = '/home/sheffler/project/yang_asym_trimer/input/1coi.pdb'
+   pdb = wu.readpdb(f)
+   ic(pdb.getres(1))
+   ic(pdb.getres(30))
+   pdb.renumber_from_0(unique_chains=True)
+   ic(pdb.getres(1))
+   ic(pdb.getres(30))
+
+   assert 0
+
+   nopo = wu.NotPose(f)
+   ic(nopo.size())
+   ic(nopo.residue(30).natoms())
+
+   for i in range(29):
+      assert nopo.residue(i + 1).natoms() == nopo.residue(i + 30).natoms()
+   assert 0
 
 def test_notpose_from_coords():
    pdb = wu.readpdb(wu.tests.testdata.test_data_path('pdb/1pgx.pdb1.gz'))

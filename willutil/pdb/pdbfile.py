@@ -95,8 +95,16 @@ class PDBFile:
          return float(r.x[r.an == ia]), float(r.y[r.an == ia]), float(r.z[r.an == ia])
       raise ValueError(ia)
 
-   def renumber_from_0(self):
+   def renumber_from_0(self, unique_chains=True):
       assert np.all(self.het == np.sort(self.het))
+      if unique_chains:
+         chmap = dict()
+         for i, c in enumerate(sorted(set([c for c in wu.pdb.all_pymol_chains if not c.isnumeric()]))):
+            chmap[c.encode()] = i
+         # ic(chmap)
+         maxres = np.max(self.df.ri) + 1
+         resdelta = np.array([chmap[_] * maxres for _ in self.df.ch])
+         self.df.loc[:, 'ri'] = self.df.ri + resdelta
       d = {ri: i for i, ri in enumerate(np.unique(self.ri))}
       self.df['ri'] = [d[ri] for ri in self.df['ri']]
       return self
