@@ -132,6 +132,12 @@ def _compute_symelems(
    symelems = _remove_redundant_screws(symelems, f4cel, lattice)
    t.checkpoint('_remove_redundant_screws')
 
+   newc11 = list()
+   for e in symelems['C11']:
+      if e.hel < 1.0001:
+         newc11.append(e)
+   symelems['C11'] = newc11
+
    for k in list(symelems.keys()):
       if not symelems[k]: del symelems[k]
 
@@ -184,77 +190,96 @@ def _find_compound_symelems(
    se=None,
    frames=None,
    frames2=None,
+   frames1=None,
    aslist=False,
    lattice=None,
 ):
-   if se is None: se = wu.sym.symelems(spacegroup, asdict=False, screws=False)
+   timer = wu.Timer()
+   if se is None:
+      assert 0
+      se = wu.sym.symelems(spacegroup, asdict=False, screws=False)
    if lattice is None: lattice = lattice_vectors(spacegroup, cellgeom='nonsingular')
    se = [e.tolattice(lattice) for e in se if e.iscyclic]
    if frames is None:
       assert frames2 is None
       frames = wu.sym.sgframes(spacegroup, cells=3, cellgeom='nonsingular')
       frames2 = wu.sym.sgframes(spacegroup, cells=2, cellgeom='nonsingular')
-   else:
-      assert 0
+      frames1 = wu.sym.sgframes(spacegroup, cells=1, cellgeom='nonsingular')
    lattice = lattice_vectors(spacegroup, cellgeom='nonsingular')
-
+   timer.checkpoint('start')
    isects = defaultdict(set)
-   for e1, e2 in it.product(se, se):
-      # if e1.id == e2.id: continue
-      axis, cen = e1.axis, e1.cen
-      symcen = einsum('fij,j->fi', frames, e2.cen)
-      symcen = symcen
-      symaxis = einsum('fij,j->fi', frames, e2.axis)
-      taxis, tcen = [np.tile(x, (len(symcen), 1)) for x in (axis, cen)]
-      p, q = line_line_closest_points_pa(tcen, taxis, symcen, symaxis)
-      d = hnorm(p - q)
-      p = (p + q) / 2
-      ok = _inunit(p)
-      ok = np.logical_and(ok, d < 0.001)
-      if np.sum(ok) == 0: continue
-      axis2 = symaxis[ok][0]
-      cen = p[ok][0]
-      axis = einsum('fij,j->fi', frames, axis)
-      axis2 = einsum('fij,j->fi', frames, axis2)
-      cen = einsum('fij,j->fi', frames, cen)
-      axis = axis[_inunit(cen)]
-      axis2 = axis2[_inunit(cen)]
-      cen = cen[_inunit(cen)]
-      # ic(cen)
-      pick = np.argmin(hnorm(cen - [0.003, 0.002, 0.001, 1]))
-      axis = _flipaxs(axis[pick])
-      axis2 = _flipaxs(axis2[pick])
-      nf1, nf2 = e1.nfold, e2.nfold
-      # D np.pi/2
-      ang = angle(axis, axis2)
-      if e2.nfold > e1.nfold:
-         nf1, nf2 = e2.nfold, e1.nfold
-         axis, axis2 = axis2, axis
-      if np.isclose(ang, np.pi / 2):
-         psym = f'D{nf1}'
-      elif (nf1, nf2) == (3, 2) and np.isclose(ang, 0.9553166181245092):
-         psym = 'T'
-      elif any([
-         (nf1, nf2) == (3, 2) and np.isclose(ang, 0.6154797086703874),
-         (nf1, nf2) == (4, 3) and np.isclose(ang, 0.9553166181245092),
-         (nf1, nf2) == (4, 2) and np.isclose(ang, 0.7853981633974484),
-      ]):
-         psym = 'O'
-      # elif (nf1, nf2) in [(2, 2), (3, 3)]:
-      # continue
-      else:
-         # print('SKIP', nf1, nf2, ang, flush=True)
-         continue
-      cen = cen[pick]
-      t = tuple([f'{psym}{nf1}{nf2}', *cen[:3].round(9), *axis[:3].round(9), *axis2[:3].round(9)])
-      isects[psym].add(t)
 
-   for psym in isects:
-      isects[psym] = list(sorted(isects[psym]))
+   se_uniqaxisframes = _se_unique_axisline_frames(se, frames)
+   timer.checkpoint('uniqaxisframes')
 
-   # ic(isects['D2'])
+   for (i1, e1start), (i2, e2) in it.product(enumerate(se), enumerate(se)):
+      # seene1line = list()
+      for ifrm, frm in enumerate(se_uniqaxisframes[i1]):
+         timer.checkpoint('misc')
+         e1 = e1start.xformed(frm)
+         timer.checkpoint('xformed')
+         # for eseen in seene1line:
+         # if np.isclose(0, line_line_distance_pa(e1.cen, e1.axis, eseen.cen, eseen.axis)):
+         # ic('skip')
+         # break
+         # else:
+         # seene1line.append(e1)
+         # if e1.id == e2.id: continue
+         axis, cen = e1.axis, e1.cen
+         symcen = einsum('fij,j->fi', se_uniqaxisframes[i2], e2.cen)
+         symaxis = einsum('fij,j->fi', se_uniqaxisframes[i2], e2.axis)
+         taxis, tcen = [np.tile(x, (len(symcen), 1)) for x in (axis, cen)]
+         timer.checkpoint('symcenaxs')
+         p, q = line_line_closest_points_pa(tcen, taxis, symcen, symaxis)
+         timer.checkpoint('line_line_closest_points_pa')
+         d = hnorm(p - q)
+         p = (p + q) / 2
+         ok = _inunit(p)
+         ok = np.logical_and(ok, d < 0.001)
+         if np.sum(ok) == 0: continue
+         axis2 = symaxis[ok][0]
+         cen = p[ok][0]
+         axis = einsum('fij,j->fi', se_uniqaxisframes[i2], axis)
+         axis2 = einsum('fij,j->fi', se_uniqaxisframes[i2], axis2)
+         cen = einsum('fij,j->fi', se_uniqaxisframes[i2], cen)
+         axis = axis[_inunit(cen)]
+         axis2 = axis2[_inunit(cen)]
+         cen = cen[_inunit(cen)]
+         # ic(cen)
+         pick = np.argmin(hnorm(cen - [0.003, 0.002, 0.001, 1]))
+         axis = _flipaxs(axis[pick])
+         axis2 = _flipaxs(axis2[pick])
+         nf1, nf2 = e1.nfold, e2.nfold
+         # D np.pi/2
+         ang = angle(axis, axis2)
+         if e2.nfold > e1.nfold:
+            nf1, nf2 = e2.nfold, e1.nfold
+            axis, axis2 = axis2, axis
+         if np.isclose(ang, np.pi / 2):
+            psym = f'D{nf1}'
+         elif (nf1, nf2) == (3, 2) and np.isclose(ang, 0.9553166181245092):
+            psym = 'T'
+         elif any([
+            (nf1, nf2) == (3, 2) and np.isclose(ang, 0.6154797086703874),
+            (nf1, nf2) == (4, 3) and np.isclose(ang, 0.9553166181245092),
+            (nf1, nf2) == (4, 2) and np.isclose(ang, 0.7853981633974484),
+         ]):
+            psym = 'O'
+         # elif (nf1, nf2) in [(2, 2), (3, 3)]:
+         # continue
+         else:
+            # print('SKIP', nf1, nf2, ang, flush=True)
+            continue
+         cen = cen[pick]
+         t = tuple([f'{psym}{nf1}{nf2}', *cen[:3].round(9), *axis[:3].round(9), *axis2[:3].round(9)])
+         isects[psym].add(t)
+   timer.checkpoint('isects')
+   # ic(isects['T'])
+   # assert 0
+
    # remove redundant centers
    for psym in isects:
+      isects[psym] = list(sorted(isects[psym]))
       isects[psym] = list({t[1:4]: t for t in isects[psym]}.values())
 
    # ic(isects['D2'])
@@ -264,102 +289,116 @@ def _find_compound_symelems(
       seenit = list()
       for t in isects[psym]:
          nfold_, axis_, cen_, axis2_ = t[0], t[4:7], hpoint(t[1:4]), t[7:10]
-         if any([hnorm(cen_ - s) < 0.0001 for s in seenit]):
-            continue
+         if any([hnorm(cen_ - s) < 0.0001 for s in seenit]): continue
          seenit.append(cen_)
-         compound[psym].append(SymElem(nfold_, axis_, cen_, axis2_, lattice=lattice, isunit=False))
+         elem = SymElem(nfold_, axis_, cen_, axis2_, lattice=lattice, isunit=True)
+         compound[psym].append(elem)
 
-   newd2 = list()
-   for ed2 in compound['D2']:
-      if not np.any([np.allclose(ed2.cen, eto.cen) for eto in it.chain(compound['T'], compound['O'], compound['D4'])]):
-         newd2.append(ed2)
-   compound['D2'] = newd2
-   newd3 = list()
-   for ed3 in compound['D3']:
-      if not np.any([np.allclose(ed3.cen, eo.cen) for eo in compound['O']]):
-         newd3.append(ed3)
-   compound['D3'] = newd3
-   newd4 = list()
-   for ed4 in compound['D4']:
-      if not np.any([np.allclose(ed4.cen, eo.cen) for eo in compound['O']]):
-         newd4.append(ed4)
-   compound['D4'] = newd4
+   timer.checkpoint('prune1')
+   # newd2 = list()
+   # for ed2 in compound['D2']:
+   #    if not np.any([np.allclose(ed2.cen, eto.cen) for eto in it.chain(compound['T'], compound['O'], compound['D4'])]):
+   #       newd2.append(ed2)
+   # compound['D2'] = newd2
+   # newd3 = list()
+   # for ed3 in compound['D3']:
+   #    if not np.any([np.allclose(ed3.cen, eo.cen) for eo in compound['O']]):
+   #       newd3.append(ed3)
+   # compound['D3'] = newd3
+   # newd4 = list()
+   # for ed4 in compound['D4']:
+   #    if not np.any([np.allclose(ed4.cen, eo.cen) for eo in compound['O']]):
+   #       newd4.append(ed4)
+   # compound['D4'] = newd4
    compound = {k: v for k, v in compound.items() if len(v)}
 
-   # newcompound = dict()
-   # for psym, elems in compound.items():
-   #    newcompound[psym] = [_to_central_symelem(frames, e, [0.6, 0.6, 0.6]) for e in elems]
-   # compound = newcompound
-
-   newelems = defaultdict(list)
-   for psym, elems in compound.items():
-
-      if psym != 'D2': continue
-
-      success = True
-      for e in elems:
-         unitelem = e.tounit(lattice)
-         assert unitelem.iscompound
-
-         ic(unitelem.matching_frames(frames))
-         # wu.showme(frames[unitelem.matching_frames(frames)], scale=12, name='frames')
-         # wu.showme(unitelem, scale=12, name='elem')
-
-         best, argbest = (999999999, ), None
-         seenit = list()
-         assert unitelem.isunit
-         elem0 = unitelem.tolattice(lattice)
-         for j, elemframe in enumerate(frames2):
-            if j == 0: assert np.allclose(elemframe, np.eye(4))
-            try:
-               elem = elem0.xformed(elemframe)
-            except OutOfUnitCellError:
-               continue
-            try:
-               iframes = elem.matching_frames(frames)
-               # m = np.max(iframes)
-               m = tuple(sorted(iframes))
-               # ic(m)
-               if m < best:
-                  # ic(iframes)
-                  # ic(j, m)
-                  best, argbest = m, elem
-            except ComponentIDError:
-               continue
-
-         if elem is None:
-            print(f'FAILED to find complete elems for {spacegroup}, {e}')
-            success = False
-            break
-         newelems[psym].append(elem)
-
-      if success:
-
-         ic(newelems[psym])
-
-         newelems2 = list()
-         for idx, e in newelems[psym]:
-            if idx not in [_[0] for _ in newelems2]:
-               newelems2.append((idx, e))
-         # ic(newelems2)
-         newelems[psym] = [e for s, e in sorted(newelems2)]
-
-         ic(newelems[psym])
-
-      else:
-         newelems[psym] = [e.tounit(lattice) for e in elems]
-
-      if psym == 'D2': assert 0
-
-   compound = newelems
+   # returns unit elems
+   compound = _pick_bestframe_compound_elems(spacegroup, compound, lattice, frames, frames2)
+   timer.checkpoint('prune2')
 
    if aslist:
       compound = list(itertools.chain(*compound.values()))
 
-   ic(compound)
-   assert 0
+   # timer.report()
 
    return compound
+
+def _se_unique_axisline_frames(symelems, frames):
+   uniqaxisframes = list()
+   for ie, e in enumerate(symelems):
+      seenit = list()
+      xaxs = einsum('fij,j->fi', frames, e.axis)
+      xcen = einsum('fij,j->fi', frames, e.cen)
+      for ifrm, frame in enumerate(frames):
+         for f, saxs, scen in seenit:
+            d = line_line_distance_pa(xcen[ifrm], xaxs[ifrm], scen, saxs)
+            if np.isclose(0, d):
+               break
+         else:
+            seenit.append((frame, xaxs[ifrm], xcen[ifrm]))
+      uniqaxisframes.append(np.stack([f for f, a, c in seenit]))
+   return uniqaxisframes
+
+def _pick_bestframe_compound_elems(spacegroup, compound_elems, lattice, frames, frames2):
+   newelems = defaultdict(list)
+   allsyms = 'I O T D6 D4 D3 D2'.split()
+   assert all(psym in allsyms for psym in compound_elems.keys())
+
+   # remove overlapping elems in order of possible containment (e.g. D4 contains D2)
+   hasuniquecen = list()
+   for psym in 'I O T D6 D4 D3 D2'.split():
+      if psym not in compound_elems: continue
+      for uelem in compound_elems[psym]:
+         assert uelem.isunit
+         elem = uelem.tolattice(lattice)
+         symcen = einsum('fij,j', frames, elem.cen)
+         for elem2 in hasuniquecen:
+            d = hnorm(symcen[None] - elem2.cen.reshape(1, 4))
+            if np.isclose(0, np.min(d)): break
+         else:
+            # ic(elem)
+            hasuniquecen.append(elem)
+
+   bestplaced = list()
+   for ielem, elem in enumerate(hasuniquecen):
+      # try:
+      # elem.matching_frames(frames2)
+      # except ComponentIDError as cperr:
+      # print('NOT ALL MATCHING FRAMES FOR', elem, len(cperr.match), 'of', len(elem.operators))
+      # bestplaced.append(elem.tounit(lattice))
+      # continue
+      bestiframes, bestelem = [9e9], None
+      bestbadiframes, bestbadelem = [9e9], None
+      for iframe, elemframe in enumerate(frames):
+         movedelem = elem.xformed(elemframe)
+         try:
+            iframes = movedelem.matching_frames(frames2)
+            if np.max(iframes) < np.max(bestiframes):
+               bestiframes, bestelem = iframes, movedelem
+         except ComponentIDError as cperr:
+            # if elem.label == 'D2':
+            # ic(cperr.match)
+            if len(cperr.match) >= len(bestbadiframes):
+               if np.max(cperr.match) < np.max(bestbadiframes):
+                  bestbadiframes, bestbadelem = cperr.match, movedelem
+            continue
+      if bestelem is None:
+         print('NOT ALL MATCHING FRAMES FOR', elem, len(bestbadiframes), 'of', len(elem.operators), bestbadiframes)
+         bestelem = bestbadelem
+      bestelem = bestelem.tounit(lattice)
+      assert bestelem.isunit
+      bestplaced.append(bestelem)
+
+   # ic(bestplaced)
+   # assert 0
+
+   compound_elems = defaultdict(list)
+   for elem in bestplaced:
+      compound_elems[elem.label].append(elem)
+
+   # _printelems(spacegroup, compound_elems)
+
+   return compound_elems
 
 # def _to_central_symelem(frames, elem, cen):
 #    ic(elem)
@@ -652,3 +691,17 @@ def _remove_redundant_screws(symelems, frames, lattice):
             newelems.append(eunit)
       symelems[psym] = newelems
    return symelems
+
+def _printelems(sym, elems):
+   print('-' * 80)
+   print(sym)
+   # print(f'   assert set(elems.keys()) == set(\'{" ".join(elems.keys())}\'.split())')
+   print('   val = dict(')
+   for k, v in elems.items():
+      print(f'      {k}=[')
+      for e in v:
+         print(f'         {e},')
+      print('      ],')
+   print(')')
+
+   print('-' * 80, flush=True)

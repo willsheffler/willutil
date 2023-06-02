@@ -57,7 +57,26 @@ def _round(val):
    return val
 
 class SymElem:
-   def __init__(self, nfold, axis, cen=[0, 0, 0], axis2=None, *, label=None, vizcol=None, scale=1, parent=None, children=None, hel=0, lattice=None, screw=None, adjust_cyclic_center=True, frame=None, isunit=None, latticetype=None):
+   def __init__(
+      self,
+      nfold,
+      axis,
+      cen=[0, 0, 0],
+      axis2=None,
+      *,
+      label=None,
+      vizcol=None,
+      scale=1,
+      parent=None,
+      children=None,
+      hel=0,
+      lattice=None,
+      screw=None,
+      adjust_cyclic_center=False,
+      frame=None,
+      isunit=None,
+      latticetype=None,
+   ):
       self._init_args = wu.Bunch(vars()).without('self')
       self.vizcol = vizcol
       self.scale = scale
@@ -230,7 +249,9 @@ class SymElem:
       match = np.any(np.all(match, axis=(2, 3)), axis=0)
       match = np.where(match)[0]
       if len(match) != len(self.operators):
-         raise ComponentIDError
+         cperr = ComponentIDError()
+         cperr.match = match
+         raise cperr
          ic(frames.shape)
          ic(match)
          from willutil.viz.pymol_viz import showme
@@ -367,14 +388,13 @@ class SymElem:
       if hdot(self.axis, [1, 2, 3, 0]) < 0: self.axis = -self.axis
       if axis2 is not None and hdot(self.axis2, [1, 2, 3, 0]) < 0: self.axis2 = -self.axis2
 
-      if adjust_cyclic_center and axis2 is not None and np.isclose(hel, 0):  # cyclic
+      if adjust_cyclic_center and (axis2 is None) and np.isclose(hel, 0):  # cyclic
+         assert 0, 'this needs an audit'
          dist = wu.homog.line_line_distance_pa(self.cen, self.axis, _cube_edge_cen * self.scale, _cube_edge_axis)
          w = np.argmin(dist)
          newcen, _ = wu.homog.line_line_closest_points_pa(self.cen, self.axis, _cube_edge_cen[w] * self.scale, _cube_edge_axis[w])
-         # ic(cen, newcen)
          if not np.any(np.isnan(newcen)):
             self.cen = newcen
-            # ic(newcen)
 
    def _set_kind(self):
       self.iscyclic, self.isdihedral, self.istet, self.isoct, self.isscrew, self.iscompound = [False] * 6
@@ -457,10 +477,10 @@ class SymElem:
          ax = ax.astype('i')
       if self.istet:
          ax2 = (self.axis2 / np.max(np.abs(self.axis2))).round(6)
-         s = f'SymElem({self.label}, axis={list(ax[:3])}, axis2={list(ax2[:3])}, cen={list(self.cen[:3])}, label=\'{self.label}\')'
+         s = f'SymElem(\'{self._init_args.nfold}\', axis={list(ax[:3])}, axis2={list(ax2[:3])}, cen={list(self.cen[:3])}, label=\'{self.label}\')'
       elif self.isoct:
          ax2 = (self.axis2 / np.max(np.abs(self.axis2))).round(6)
-         s = f'SymElem({self.label}, axis={list(ax[:3])}, axis2={list(ax2[:3])}, cen={list(self.cen[:3])}, label=\'{self.label}\')'
+         s = f'SymElem(\'{self._init_args.nfold}\', axis={list(ax[:3])}, axis2={list(ax2[:3])}, cen={list(self.cen[:3])}, label=\'{self.label}\')'
       elif self.axis2 is None:
          if self.screw == 0:
             s = f'SymElem({self.nfold}, axis={list(ax[:3])}, cen={list(self.cen[:3])}, label=\'{self.label}\')'
@@ -584,17 +604,20 @@ def showsymelems(
             configs = [[(s.axis, [1, 0, 0]), (s.axis2, [0, 0, 1]), [1, 0.3, 0.6]]]
          else:
             assert 0
-         name = s.label + '_' + ('ABCDEFGH')[labelcount[s.label]]
+         name = s.label + '_' + ('ABCDEFGHIJKLMNOP')[labelcount[s.label]]
 
          cgo = list()
-         for (tax, ax), (tax2, ax2), xyzlen in configs:
 
+         for (tax, ax), (tax2, ax2), xyzlen in configs:
+            cylweight = weight
             xyzlen = np.array(xyzlen)
             if scan:
                if s.iscyclic:
                   xyzlen[xyzlen < .999] = 0
                   xyzlen[xyzlen == 1] = 2.0
+                  cylweight = weight / 4
                if s.isscrew:
+                  cylweight = weight / 4
                   if screwextraaxis:
                      xyzlen[xyzlen == 1] = 0.4
                      if s.label in 'C11 C21 C31 C41 C61 C62'.split():
@@ -617,7 +640,7 @@ def showsymelems(
                xyzlen=xyzlen,
                addtocgo=cgo,
                make_cgo_only=True,
-               weight=weight,
+               weight=cylweight,
                colorset=colorcount[s.label[:2]],
                lattice=lattice,
             )

@@ -1,4 +1,9 @@
+import os
 import pytest
+
+# os.environ['OMP_NUM_THREADS'] = '1'
+# os.environ['MKL_NUM_THREADS'] = '1'
+
 from willutil.tests import fixtures
 
 @pytest.fixture(scope='session')

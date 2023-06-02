@@ -2,13 +2,54 @@ import itertools, pytest, os
 import numpy as np
 import willutil as wu
 from willutil.sym.SymElem import SymElem, showsymelems
-from willutil.sym.spacegroup_symelems import _compute_symelems, _find_compound_symelems, _remove_redundant_screws
+from willutil.sym.spacegroup_symelems import _compute_symelems, _find_compound_symelems, _remove_redundant_screws, _printelems
 from numpy import array
 
-os.environ['OMP_NUM_THREADS'] = '1'
-os.environ['MKL_NUM_THREADS'] = '1'
-
 def main():
+
+   # test_symelems_P1()
+   # test_symelems_P41()
+   # test_symelems_P43()
+
+   # test_compound_elems_R32()
+   # test_compound_elems_P222()
+   # test_compound_elems_F23()
+   # test_compound_elems_P23()
+   # test_compound_elems_I23()
+   # test_compound_elems_P213()
+   # test_compound_elems_P4132()
+   # test_compound_elems_I4132()
+   # test_compound_elems_P432()
+   # test_compound_elems_I432()
+   # test_compound_elems_F432()
+   # test_compound_elems_F4132()
+
+   # test_compound_elems_P3121()
+   # test_compound_elems_P212121()
+   # test_compound_elems_P31()
+   # test_compound_elems_P32()
+   # test_compound_elems_P213()
+   # test_compound_elems_P3221()
+   # test_compound_elems_P41()
+   # test_compound_elems_P41212()
+   # test_compound_elems_P4232()
+   # test_compound_elems_P43()
+   # test_compound_elems_P43212()
+   # test_compound_elems_P4332()
+   # test_compound_elems_P6()
+   # test_compound_elems_P61()
+   # test_compound_elems_P6122()
+   # test_compound_elems_P62()
+   # test_compound_elems_P63()
+   # test_compound_elems_P64()
+   # test_compound_elems_P65()
+   # test_compound_elems_P6522()
+   # test_compound_elems_I213()
+   # test_compound_elems_I23()
+   # test_compound_elems_I4()
+   # test_compound_elems_I41()
+
+   assert 0
 
    # test_symelems_P1211()
    # test_symelems_P2221()
@@ -20,8 +61,6 @@ def main():
    # test_symelems_P23()
    # test_symelems_F23()
    # test_symelems_R32()
-
-   # assert 0
 
    # test_symelems_P3121()
    # test_symelems_P212121()
@@ -56,62 +95,285 @@ def main():
 
    # test_remove_redundant_screws()
 
-   test_compound_elems_P23()
-   assert 0
-   test_compound_elems_F23()
-   assert 0
-   test_compound_elems_P213()
-   test_compound_elems_I23()
-
-   test_compound_elems_P4132()
-   test_compound_elems_P432()
-   test_compound_elems_I432()
-   test_compound_elems_F432()
-   test_compound_elems_I4132()
-   test_compound_elems_F4132()
-
    ic('PASS test_spacegroup_symelems')
 
 # yapf: disable
 
+def test_compound_elems_R32(debug=False, **kw):
+   sym = 'R32'
+   val = dict(
+      D3=[
+         SymElem(3, axis=[0, 0, 1], axis2=[1.0, 1.0, 0.0], cen=[0.0, 0.0, 0.0], label='D3'),
+         SymElem(3, axis=[0, 0, 1], axis2=[0.0, 1.0, 0.0], cen=[0.0, 0.0, 0.5], label='D3'),
+      ],
+   )
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
 
-
-def test_compound_elems_P23(debug=False,**kw):
-   sym = 'P23'
-   val = {}
-   # SymElem(2, axis=[1, 0, 0], axis2=[0.0, 1.0, 0.0], cen=[0.5, 0.0, 0.0]),
-   # SymElem(2, axis=[1, 0, 0], axis2=[0.0, 0.0, 1.0], cen=[0.5, 0.5, 0.0]),
-   # ]
-   # assert elems['T'] == [
-   # SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.0]),
-   # SymElem('T32', axis=[1, 1, 1], axis2=[1.0, 0.0, 0.0], cen=[0.5, 0.5, 0.5]),
-   # ]
-
-   helper_test_symelem(sym,val,debug,compound=True,**kw)
-
-
-def test_compound_elems_I23(debug=False,**kw):
-   sym = 'I23'
+def test_compound_elems_P222(debug=False, **kw):
+   sym = 'P222'
    val = dict(
       D2=[
+         SymElem(2, axis=[1, 0, 0], axis2=[0.0, 1.0, 0.0], cen=[0.0, 0.0, 0.0], label='D2'),
+         SymElem(2, axis=[1, 0, 0], axis2=[0.0, 1.0, 0.0], cen=[0.0, 0.0, 0.5], label='D2'),
+         SymElem(2, axis=[1, 0, 0], axis2=[0.0, 1.0, 0.0], cen=[0.0, 0.5, 0.0], label='D2'),
+         SymElem(2, axis=[1, 0, 0], axis2=[0.0, 1.0, 0.0], cen=[0.0, 0.5, 0.5], label='D2'),
          SymElem(2, axis=[1, 0, 0], axis2=[0.0, 1.0, 0.0], cen=[0.5, 0.0, 0.0], label='D2'),
+         SymElem(2, axis=[1, 0, 0], axis2=[0.0, 1.0, 0.0], cen=[0.5, 0.0, 0.5], label='D2'),
+         SymElem(2, axis=[1, 0, 0], axis2=[0.0, 1.0, 0.0], cen=[0.5, 0.5, 0.0], label='D2'),
+         SymElem(2, axis=[1, 0, 0], axis2=[0.0, 1.0, 0.0], cen=[0.5, 0.5, 0.5], label='D2'),
       ],
+   )
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P3121(debug=False, **kw):
+   sym = 'P3121'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P212121(debug=False, **kw):
+   sym = 'P212121'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P31(debug=False, **kw):
+   sym = 'P31'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P32(debug=False, **kw):
+   sym = 'P32'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P213(debug=False, **kw):
+   sym = 'P213'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P3221(debug=False, **kw):
+   sym = 'P3221'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P41(debug=False, **kw):
+   sym = 'P41'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P41212(debug=False, **kw):
+   sym = 'P41212'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P4232(debug=False, **kw):
+   sym = 'P4232'
+   val = dict(
       T=[
          SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.0], label='T'),
       ],
+      D3=[
+         SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, -0.0], cen=[0.25, 0.25, 0.25], label='D3'),
+         SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, -0.0], cen=[0.75, 0.75, 0.75], label='D3'),
+      ],
+      D2=[
+         SymElem(2, axis=[1, 0, 0], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.5], label='D2'),
+         SymElem(2, axis=[0, 1, 1], axis2=[-0.0, -1.0, 1.0], cen=[0.25, 0.0, 0.5], label='D2'),
+         SymElem(2, axis=[1, 0, 1], axis2=[0.0, 1.0, 0.0], cen=[0.0, 0.25, 0.5], label='D2'),
+      ],
    )
-   helper_test_symelem(sym,val,debug,compound=True,**kw)
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
 
-def test_compound_elems_F23(debug=False,**kw):
+def test_compound_elems_P43(debug=False, **kw):
+   sym = 'P43'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+
+def test_compound_elems_P4332(debug=False, **kw):
+   sym = 'P4332'
+   val = dict(
+      D3=[
+         SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, -0.0], cen=[0.125, 0.125, 0.125], label='D3'),
+         SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, -0.0], cen=[0.625, 0.625, 0.625], label='D3'),
+      ],
+   )
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P6(debug=False, **kw):
+   sym = 'P6'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P61(debug=False, **kw):
+   sym = 'P61'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P6122(debug=False, **kw):
+   sym = 'P6122'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P62(debug=False, **kw):
+   sym = 'P62'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P63(debug=False, **kw):
+   sym = 'P63'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P64(debug=False, **kw):
+   sym = 'P64'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P65(debug=False, **kw):
+   sym = 'P65'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P6522(debug=False, **kw):
+   sym = 'P6522'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_I213(debug=False, **kw):
+   sym = 'I213'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+
+def test_compound_elems_I4(debug=False, **kw):
+   sym = 'I4'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_I41(debug=False, **kw):
+   sym = 'I41'
+   val = dict()
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P432(debug=False, **kw):
+   sym = 'P432'
+   val = dict(
+      O=[
+         SymElem('O43', axis=[0, 0, 1], axis2=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0], label='O'),
+         SymElem('O43', axis=[1, 0, 0], axis2=[1.0, 1.0, 1.0], cen=[0.5, 0.5, 0.5], label='O'),
+      ],
+      D4=[
+         SymElem(4, axis=[0, 0, 1], axis2=[1.0, 0.0, 0.0], cen=[0.0, 0.0, 0.5], label='D4'),
+         SymElem(4, axis=[1, 0, 0], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.5, 0.5], label='D4'),
+      ],
+   )
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_I432(debug=False, **kw):
+   sym = 'I432'
+   val = dict(
+      O=[
+         SymElem('O43', axis=[0, 0, 1], axis2=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0], label='O'),
+      ],
+      D4=[
+         SymElem(4, axis=[0, 0, 1], axis2=[1.0, 0.0, 0.0], cen=[0.0, 0.0, 0.5], label='D4'),
+      ],
+      D3=[
+         SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, -0.0], cen=[0.25, 0.25, 0.25], label='D3'),
+      ],
+      D2=[
+         SymElem(2, axis=[1, 0, 0], axis2=[-0.0, -1.0, 1.0], cen=[0.25, 0.0, 0.5], label='D2'),
+      ],
+   )
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_F432(debug=False, **kw):
+   sym = 'F432'
+   val = dict(
+      O=[
+         SymElem('O43', axis=[0, 0, 1], axis2=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0], label='O'),
+         SymElem('O43', axis=[1, 0, 0], axis2=[1.0, 1.0, 1.0], cen=[0.5, 0.5, 0.5], label='O'),
+      ],
+      T=[
+         SymElem('T32', axis=[1, 1, 1], axis2=[1.0, 0.0, 0.0], cen=[0.25, 0.25, 0.25], label='T'),
+      ],
+      D2=[
+         SymElem(2, axis=[1, 0, 0], axis2=[-0.0, -1.0, 1.0], cen=[0.0, 0.25, 0.25], label='D2'),
+      ],
+   )
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_F4132(debug=False, **kw):
+   sym = 'F4132'
+   val = dict(
+      T=[
+         SymElem('T32', axis=[1, 1, 1], axis2=[1.0, 0.0, 0.0], cen=[0.0, 0.0, 0.0], label='T'),
+         SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 1.0, 0.0], cen=[0.5, 0.5, 0.5], label='T'),
+      ],
+      D3=[
+         SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, -0.0], cen=[0.125, 0.125, 0.125], label='D3'),
+         SymElem(3, axis=[1, 1, 1], axis2=[-1.0, -0.0, 1.0], cen=[0.625, 0.625, 0.625], label='D3'),
+      ],
+   )
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_P23(debug=False, **kw):
+   sym = 'P23'
+   val = dict(
+      T=[
+         SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.0], label='T'),
+         SymElem('T32', axis=[1, 1, 1], axis2=[1.0, 0.0, 0.0], cen=[0.5, 0.5, 0.5], label='T'),
+      ],
+      D2=[
+         SymElem(2, axis=[1, 0, 0], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.5], label='D2'),
+         SymElem(2, axis=[0, 1, 0], axis2=[1.0, 0.0, 0.0], cen=[0.0, 0.5, 0.5], label='D2'),
+      ],
+   )
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_I23(debug=False, **kw):
+   sym = 'I23'
+   val = dict(
+      T=[
+         SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.0], label='T'),
+      ],
+      D2=[
+         SymElem(2, axis=[1, 0, 0], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.5], label='D2'),
+      ],
+   )
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
+
+def test_compound_elems_F23(debug=False, **kw):
    sym = 'F23'
-   val = {}
-   # assert elems['T'] == [
-   # SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.0], label='T'),
-   # SymElem('T32', axis=[1, 1, 1], axis2=[1.0, 0.0, 0.0], cen=[0.25, 0.25, 0.25], label='T'),
+   val = dict(T=[
+      SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 0.0, 1.0], cen=[0.0, 0.0, 0.0], label='T'),
+      SymElem('T32', axis=[1, 1, 1], axis2=[1.0, 0.0, 0.0], cen=[0.5, 0.5, 0.5], label='T'),
+      SymElem('T32', axis=[1, 1, 1], axis2=[1.0, 0.0, 0.0], cen=[0.25, 0.25, 0.25], label='T'),
+      SymElem('T32', axis=[1, 1, 1], axis2=[0.0, 1.0, 0.0], cen=[0.75, 0.75, 0.75], label='T'),
+   ], )
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
 
-   helper_test_symelem(sym,val,debug,compound=True,**kw)
+def test_compound_elems_P4132(debug=False, **kw):
+   sym = 'P4132'
+   val = dict(D3=[
+      SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, -0.0], cen=[0.375, 0.375, 0.375], label='D3'),
+      SymElem(3, axis=[1, 1, 1], axis2=[-0.0, -1.0, 1.0], cen=[0.875, 0.875, 0.875], label='D3'),
+   ], )
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
 
-
+def test_compound_elems_I4132(debug=False, **kw):
+   sym = 'I4132'
+   val = dict(
+      D3=[
+         SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, -0.0], cen=[0.125, 0.125, 0.125], label='D3'),
+         SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, -0.0], cen=[0.375, 0.375, 0.375], label='D3'),
+      ],
+      D2=[
+         SymElem(2, axis=[0, 1, 1], axis2=[1.0, 0.0, 0.0], cen=[0.125, 0.0, 0.25], label='D2'),
+         SymElem(2, axis=[1, 0, 1], axis2=[-1.0, -0.0, 1.0], cen=[0.25, 0.375, 0.5], label='D2'),
+      ],
+   )
+   helper_test_symelem(sym, val, debug, compound=True, **kw)
 
 # def test_compound_elems_P4132(showme=False):
 #    ic('test_compound_elems_P4132')
@@ -123,52 +385,6 @@ def test_compound_elems_F23(debug=False,**kw):
 #    # print(repr(celems), flush=True)
 #    assert set(elems.keys()) == set('D3'.split())
 #    assert celems['D3'] == [SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, 0.0], cen=[0.375, 0.375, 0.375], label='D3')]
-
-# def test_compound_elems_P432(showme=False):
-#    ic('test_compound_elems_P432')
-#    sym = 'P432'
-#    elems = wu.sym.symelems(sym, asdict=True)
-#    celems = _find_compound_symelems(sym)
-
-#    # for k, v in celems.items():
-#    #    print(k)
-#    #    for x in v:
-#    #       print(x, flush=True)
-
-#    if showme: showsymelems(sym, elems)
-#    if showme: showsymelems(sym, celems)
-
-#    print(repr(celems), flush=True)
-#    assert set(elems.keys()) == set('O D4'.split())
-#    assert elems['O'] == [
-#       SymElem('O43', axis=[0, 0, 1], axis2=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0], label='O'),
-#       SymElem('O43', axis=[1, 0, 0], axis2=[1.0, 1.0, 1.0], cen=[0.5, 0.5, 0.5], label='O'),
-#    ]
-#    assert elems['D4'] == [
-#       SymElem(4, axis=[1, 0, 0], axis2=[0.0, 1.0, 0.0], cen=[0.5, 0.0, 0.0], label='D4'),
-#       SymElem(4, axis=[0, 0, 1], axis2=[1.0, 0.0, 0.0], cen=[0.5, 0.5, 0.0], label='D4'),
-#    ]
-
-# def test_compound_elems_I432(showme=False):
-#    ic('test_compound_elems_I432')
-#    sym = 'I432'
-#    elems = wu.sym.symelems(sym, asdict=True)
-#    celems = _find_compound_symelems(sym)
-
-#    # for k, v in celems.items():
-#    #    print(k)
-#    #    for x in v:
-#    #       print(x, flush=True)
-
-#    if showme: showsymelems(sym, elems)
-#    if showme: showsymelems(sym, celems)
-
-#    print(repr(celems), flush=True)
-#    assert set(elems.keys()) == set('O D2 D3 D4'.split())
-#    assert elems['O'] == [SymElem('O43', axis=[0, 0, 1], axis2=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0], label='O')]
-#    assert elems['D2'] == [SymElem(2, axis=[0, 1, 0], axis2=[-1.0, 0.0, 1.0], cen=[0.5, 0.25, 0.0], label='D2')]
-#    assert elems['D4'] == [SymElem(4, axis=[1, 0, 0], axis2=[0.0, 1.0, 0.0], cen=[0.5, 0.0, 0.0], label='D4')]
-#    assert elems['D3'] == [SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, 0.0], cen=[0.25, 0.25, 0.25], label='D3')]
 
 # def test_compound_elems_F4132(showme=False):
 #    ic('test_compound_elems_F4132')
@@ -188,63 +404,6 @@ def test_compound_elems_F23(debug=False,**kw):
 #    assert elems['T'] == [SymElem('T32', axis=[1, 1, 1], axis2=[1.0, 0.0, 0.0], cen=[0.0, 0.0, 0.0], label='T')]
 #    assert elems['D3'] == [SymElem(3, axis=[1, 1, 1], axis2=[0.0, -1.0, 1.0], cen=[0.125, 0.125, 0.125], label='D3')]
 
-# def test_compound_elems_F432(showme=False):
-#    ic('test_compound_elems_F432')
-#    sym = 'F432'
-#    elems = wu.sym.symelems(sym, asdict=True)
-#    celems = _find_compound_symelems(sym)
-
-#    # for k, v in celems.items():
-#    #    print(k)
-#    #    for x in v:
-#    #       print(x, flush=True)
-
-#    if showme: showsymelems(sym, elems)
-#    if showme: showsymelems(sym, celems)
-#    # print(repr(celems), flush=True)
-#    for k, v in celems.items():
-#       ic(k)
-#       for e in v:
-#          ic(e)
-#    assert set(elems.keys()) == set('O D2 T'.split())
-#    assert elems['D2'] == [
-#       SymElem(2, axis=[1, 1, 0], axis2=[0.0, 0.0, 1.0], cen=[0.25, 0.25, 0.0], label='D2'),
-#    ]
-#    assert elems['O'] == [
-#       SymElem('O43', axis=[0, 0, 1], axis2=[1.0, 1.0, 1.0], cen=[0.0, 0.0, 0.0], label='O'),
-#       SymElem('O43', axis=[1, -1, 1], axis2=[1.0, 0.0, 1.0], cen=[0.5, 0.0, 0.0], label='O'),
-#    ]
-#    assert elems['T'] == [
-#       SymElem('T32', axis=[1, 1, 1], axis2=[1.0, 0.0, 0.0], cen=[0.25, 0.25, 0.25], label='T'),
-#    ]
-
-# def test_compound_elems_I4132(showme=False):
-#    ic('test_compound_elems_I4132')
-#    sym = 'I4132'
-#    elems = _find_compound_symelems(sym)
-
-#    # for k, v in celems.items():
-#    #    print(k)
-#    #    for x in v:
-#    #       print(x, flush=True)
-
-#    # if showme: showsymelems(sym, elems)
-#    if showme: showsymelems(sym, celems)
-#    # print(repr(celems), flush=True)
-#    for k, v in celems.items():
-#       ic(k)
-#       for e in v:
-#          ic(e)
-#    assert set(elems.keys()) == set('D2 D3'.split())
-#    assert elems['D2'] == [
-#       SymElem(2, axis=[-1, 1, 0], axis2=[0.0, 0.0, 1.0], cen=[0.5, 0.25, 0.375], label='D2'),
-#       SymElem(2, axis=[1, 0, 1], axis2=[-1.0, 0.0, 1.0], cen=[0.25, 0.125, 0.0], label='D2'),
-#    ]
-#    assert elems['D3'] == [
-#       SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, 0.0], cen=[0.125, 0.125, 0.125], label='D3'),
-#       SymElem(3, axis=[1, 1, 1], axis2=[-1.0, 1.0, 0.0], cen=[0.375, 0.375, 0.375], label='D3'),
-#    ]
-
 # def test_compound_elems_P213(showme=False):
 #    ic('test_compound_elems_P213')
 #    sym = 'P213'
@@ -260,21 +419,19 @@ def test_compound_elems_F23(debug=False,**kw):
 
 #    assert elems == {}
 
-
-def helper_test_symelem(sym, eref=None, debug=False,compound=False, **kw):
+def helper_test_symelem(sym, eref=None, debug=False, compound=False, **kw):
    if compound:
-      otherelems = wu.sym.symelems(sym, asdict=True)
-      # otherelems = _compute_symelems(sym, profile=debug, aslist=False)
+      # otherelems = wu.sym.symelems(sym, asdict=True)
+      otherelems = {}
       symelems = list(itertools.chain(*otherelems.values()))
       elems0 = _find_compound_symelems(sym, symelems)
-      assert 0
    else:
       otherelems = {}
       elems0 = _compute_symelems(sym, profile=debug)
 
    etst = elems0.copy()
    eref = eref.copy()
-   if 'C11' in etst:   del etst['C11']
+   if 'C11' in etst: del etst['C11']
    if 'C11' in eref: del eref['C11']
 
    ok = True
@@ -284,36 +441,145 @@ def helper_test_symelem(sym, eref=None, debug=False,compound=False, **kw):
       key = sorted(vkey.intersection(tkey))
       for k in vkey - tkey:
          ok = False
-         print('MISSING', k)
+         print(sym, 'MISSING', k)
       for k in tkey - vkey:
          ok = False
-         print('EXTRA', k)
+         print(sym, 'EXTRA', k)
       for k in key:
          tval = wu.misc.UnhashableSet(etst[k])
          vval = wu.misc.UnhashableSet(eref[k])
          x = vval.difference(tval)
          if x:
             ok = False
-            print(k, 'MISSING')
+            print(sym, k, 'MISSING')
             for v in x:
                print('  ', v)
          x = tval.difference(vval)
          if x:
             ok = False
-            print(k, 'EXTRA')
+            print(sym, k, 'EXTRA')
             for v in x:
                print('  ', v)
          x = tval.intersection(vval)
          if x:
-            print(k, 'COMMON')
+            print(sym, k, 'COMMON')
             for v in x:
                print('  ', v)
+
    if not ok or debug:
       _printelems(sym, etst)
-      showsymelems(sym, {**otherelems,**etst}, scale=12, scan=12, offset=0, **kw)
+      showsymelems(sym, {**otherelems, **elems0}, scale=12, scan=12, offset=0, **kw)
       assert ok
+
+   if not compound:
+      storedelems = wu.sym.symelems(sym, asdict=True)
+      # assert elems0 == storedelems
+
    assert not debug
 
+def test_symelems_F4132(debug=False, **kw):
+   val = dict(
+      C2=[
+         SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.0, 0.0], label='C2'),
+         SymElem(2, axis=[-1, 0, 1], cen=[0.25, 0.125, 0.0], label='C2'),
+      ],
+      C3=[
+         SymElem(3, axis=[1, 1, 1], cen=[0.0, 0.0, 0.0], label='C3'),
+      ],
+      C31=[
+         SymElem(3, axis=[-1, 1, 1], cen=[0.166666667, 0.166666667, 0.0], hel=0.577350269, label='C31'),
+      ],
+      C32=[
+         SymElem(3, axis=[-1, 1, 1], cen=[0.166666667, 0.0, 0.166666667], hel=1.154700538, label='C32'),
+      ],
+      C41=[
+         SymElem(4, axis=[0, 1, 0], cen=[0.25, 0.0, 0.0], hel=0.25, label='C41'),
+      ],
+      C43=[
+         SymElem(4, axis=[0, 0, 1], cen=[0.25, 0.0, 0.0], hel=0.75, label='C43'),
+      ],
+   )
+   helper_test_symelem('F4132', val, debug, **kw)
+
+def test_symelems_F432(debug=False, **kw):
+   val = dict(
+      C2=[
+         SymElem(2, axis=[1, 1, 0], cen=[0.0, 0.0, 0.0], label='C2'),
+         SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.25, 0.25], label='C2'),
+         SymElem(2, axis=[0, -1, 1], cen=[0.0, 0.0, 0.5], label='C2'),
+      ],
+      C3=[
+         SymElem(3, axis=[1, 1, 1], cen=[0.0, 0.0, 0.0], label='C3'),
+      ],
+      C4=[
+         SymElem(4, axis=[0, 0, 1], cen=[0.0, 0.0, 0.0], label='C4'),
+      ],
+      C21=[
+         SymElem(2, axis=[0, 0, 1], cen=[0.25, 0.0, 0.0], hel=0.5, label='C21'),
+      ],
+      C31=[
+         SymElem(3, axis=[-1, 1, 1], cen=[0.166666667, 0.166666667, 0.0], hel=0.577350269, label='C31'),
+      ],
+      C32=[
+         SymElem(3, axis=[-1, 1, 1], cen=[0.166666667, 0.0, 0.166666667], hel=1.154700538, label='C32'),
+      ],
+      C42=[
+         SymElem(4, axis=[0, 0, 1], cen=[0.25, 0.25, 0.0], hel=0.5, label='C42'),
+      ],
+   )
+   helper_test_symelem('F432', val, debug, **kw)
+
+def test_symelems_F23(debug=False, **kw):
+   val = dict(
+      C2=[
+         SymElem(2, axis=[0, 0, 1], cen=[0.0, 0.0, 0.0], label='C2'),
+         SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.25, 0.25], label='C2'),
+      ],
+      C3=[
+         SymElem(3, axis=[1, 1, 1], cen=[0.0, 0.0, 0.0], label='C3'),
+      ],
+      C21=[
+         SymElem(2, axis=[0, 0, 1], cen=[0.25, 0.0, 0.0], hel=0.5, label='C21'),
+         SymElem(2, axis=[0, 1, 0], cen=[0.25, 0.0, 0.0], hel=0.5, label='C21'),
+      ],
+      C31=[
+         SymElem(3, axis=[-1, 1, 1], cen=[0.16666666666666666, 0.16666666666666666, 0.0], hel=0.5773502691896257, label='C31'),
+      ],
+      C32=[
+         SymElem(3, axis=[-1, 1, 1], cen=[0.16666666666666666, 0.0, 0.16666666666666666], hel=1.154700538368877, label='C32'),
+      ],
+   )
+   helper_test_symelem('F23', val, debug, **kw)
+
+def test_symelems_I432(debug=False, **kw):
+   val = dict(
+      C2=[
+         SymElem(2, axis=[1, 1, 0], cen=[0.0, 0.0, 0.0], label='C2'),
+         SymElem(2, axis=[-1, 1, 0], cen=[0.0, 0.5, 0.25], label='C2'),
+         SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.0, 0.5], label='C2'),
+      ],
+      C3=[
+         SymElem(3, axis=[1, 1, 1], cen=[0.0, 0.0, 0.0], label='C3'),
+      ],
+      C4=[
+         SymElem(4, axis=[0, 0, 1], cen=[0.0, 0.0, 0.0], label='C4'),
+      ],
+      C21=[
+         SymElem(2, axis=[0, 0, 1], cen=[0.25, 0.25, 0.0], hel=0.5, label='C21'),
+         SymElem(2, axis=[0, 1, 1], cen=[0.25, 0.0, 0.0], hel=0.707106781, label='C21'),
+         SymElem(2, axis=[-1, 1, 0], cen=[0.5, 0.0, 0.0], hel=0.707106781, label='C21'),
+      ],
+      C31=[
+         SymElem(3, axis=[1, -1, 1], cen=[0.333333333, 0.333333333, 0.0], hel=0.577350269, label='C31'),
+      ],
+      C32=[
+         SymElem(3, axis=[1, 1, -1], cen=[0.333333333, 0.0, 0.333333333], hel=1.154700538, label='C32'),
+      ],
+      C42=[
+         SymElem(4, axis=[0, 1, 0], cen=[0.5, 0.0, 0.0], hel=0.5, label='C42'),
+      ],
+   )
+   helper_test_symelem('I432', val, debug, **kw)
 
 def test_symelems_R32(debug=False, **kw):
    val = dict(
@@ -401,32 +667,28 @@ def test_symelems_C121(debug=False, **kw):
    helper_test_symelem('C121', val, debug, **kw)
 
 def test_symelems_P3(debug=False, **kw):
-   val = dict(
-      C3=[
-         SymElem(3, axis=[0, 0, 1], cen=[0.0, 0.0, 0.0], label='C3'),
-         SymElem(3, axis=[0, 0, 1], cen=[-0.333333333, 0.333333335, 0.0], label='C3'),
-         SymElem(3, axis=[0, 0, 1], cen=[0.333333334, 0.666666666, 0.0], label='C3'),
-      ],
-   )
+   val = dict(C3=[
+      SymElem(3, axis=[0, 0, 1], cen=[0.0, 0.0, 0.0], label='C3'),
+      SymElem(3, axis=[0, 0, 1], cen=[-0.333333333, 0.333333335, 0.0], label='C3'),
+      SymElem(3, axis=[0, 0, 1], cen=[0.333333334, 0.666666666, 0.0], label='C3'),
+   ], )
    helper_test_symelem('P3', val, debug, **kw)
 
 def test_symelems_P222(debug=False, **kw):
-   val = dict(
-      C2=[
-         SymElem(2, axis=[0, 0, 1], cen=[0.0, 0.0, 0.0], label='C2'),
-         SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.0, 0.0], label='C2'),
-         SymElem(2, axis=[0, 1, 0], cen=[0.0, 0.0, 0.0], label='C2'),
-         SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.0, 0.5], label='C2'),
-         SymElem(2, axis=[0, 1, 0], cen=[0.0, 0.0, 0.5], label='C2'),
-         SymElem(2, axis=[0, 0, 1], cen=[0.0, 0.5, 0.0], label='C2'),
-         SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.5, 0.0], label='C2'),
-         SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.5, 0.5], label='C2'),
-         SymElem(2, axis=[0, 0, 1], cen=[0.5, 0.0, 0.0], label='C2'),
-         SymElem(2, axis=[0, 1, 0], cen=[0.5, 0.0, 0.0], label='C2'),
-         SymElem(2, axis=[0, 1, 0], cen=[0.5, 0.0, 0.5], label='C2'),
-         SymElem(2, axis=[0, 0, 1], cen=[0.5, 0.5, 0.0], label='C2'),
-      ],
-   )
+   val = dict(C2=[
+      SymElem(2, axis=[0, 0, 1], cen=[0.0, 0.0, 0.0], label='C2'),
+      SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.0, 0.0], label='C2'),
+      SymElem(2, axis=[0, 1, 0], cen=[0.0, 0.0, 0.0], label='C2'),
+      SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.0, 0.5], label='C2'),
+      SymElem(2, axis=[0, 1, 0], cen=[0.0, 0.0, 0.5], label='C2'),
+      SymElem(2, axis=[0, 0, 1], cen=[0.0, 0.5, 0.0], label='C2'),
+      SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.5, 0.0], label='C2'),
+      SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.5, 0.5], label='C2'),
+      SymElem(2, axis=[0, 0, 1], cen=[0.5, 0.0, 0.0], label='C2'),
+      SymElem(2, axis=[0, 1, 0], cen=[0.5, 0.0, 0.0], label='C2'),
+      SymElem(2, axis=[0, 1, 0], cen=[0.5, 0.0, 0.5], label='C2'),
+      SymElem(2, axis=[0, 0, 1], cen=[0.5, 0.5, 0.0], label='C2'),
+   ], )
    helper_test_symelem('P222', val, debug, **kw)
 
 def test_symelems_P23(debug=False, **kw):
@@ -448,28 +710,6 @@ def test_symelems_P23(debug=False, **kw):
       ],
    )
    helper_test_symelem('P23', val, debug, **kw)
-
-def test_symelems_F23(debug=False, **kw):
-   val = dict(
-      C2=[
-         SymElem(2, axis=[0, 0, 1], cen=[0.0, 0.0, 0.0], label='C2'),
-         SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.25, 0.25], label='C2'),
-      ],
-      C3=[
-         SymElem(3, axis=[1, 1, 1], cen=[0.0, 0.0, 0.0], label='C3'),
-      ],
-      C21=[
-         SymElem(2, axis=[0, 0, 1], cen=[0.25, 0.0, 0.0], hel=0.5, label='C21'),
-         SymElem(2, axis=[0, 1, 0], cen=[0.25, 0.0, 0.0], hel=0.5, label='C21'),
-      ],
-      C31=[
-         SymElem(3, axis=[-1, 1, 1], cen=[0.16666666666666666, 0.16666666666666666, 0.0], hel=0.5773502691896257, label='C31'),
-      ],
-      C32=[
-         SymElem(3, axis=[-1, 1, 1], cen=[0.16666666666666666, 0.0, 0.16666666666666666], hel=1.154700538368877, label='C32'),
-      ],
-   )
-   helper_test_symelem('F23', val, debug, **kw)
 
 def test_symelems_I41(debug=False, **kw):
    val = dict()
@@ -576,88 +816,6 @@ def test_symelems_I4132(debug=False, **kw):
       ],
    )
    helper_test_symelem('I4132', val, debug, **kw)
-
-def test_symelems_I432(debug=False, **kw):
-   val = dict(
-      C2=[
-         SymElem(2, axis=[1, 1, 0], cen=[0.0, 0.0, 0.0], label='C2'),
-         SymElem(2, axis=[-1, 1, 0], cen=[0.0, 0.5, 0.25], label='C2'),
-         SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.0, 0.5], label='C2'),
-      ],
-      C3=[
-         SymElem(3, axis=[1, 1, 1], cen=[0.0, 0.0, 0.0], label='C3'),
-      ],
-      C4=[
-         SymElem(4, axis=[0, 0, 1], cen=[0.0, 0.0, 0.0], label='C4'),
-      ],
-      C21=[
-         SymElem(2, axis=[0, 0, 1], cen=[0.25, 0.25, 0.0], hel=0.5, label='C21'),
-         SymElem(2, axis=[0, 1, 1], cen=[0.25, 0.0, 0.0], hel=0.707106781, label='C21'),
-         SymElem(2, axis=[-1, 1, 0], cen=[0.5, 0.0, 0.0], hel=0.707106781, label='C21'),
-      ],
-      C31=[
-         SymElem(3, axis=[1, -1, 1], cen=[0.333333333, 0.333333333, 0.0], hel=0.577350269, label='C31'),
-      ],
-      C32=[
-         SymElem(3, axis=[1, 1, -1], cen=[0.333333333, 0.0, 0.333333333], hel=1.154700538, label='C32'),
-      ],
-      C42=[
-         SymElem(4, axis=[0, 1, 0], cen=[0.5, 0.0, 0.0], hel=0.5, label='C42'),
-      ],
-   )
-   helper_test_symelem('I432', val, debug, **kw)
-
-def test_symelems_F4132(debug=False, **kw):
-   val = dict(
-      C2=[
-         SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.0, 0.0], label='C2'),
-         SymElem(2, axis=[-1, 0, 1], cen=[0.25, 0.125, 0.0], label='C2'),
-      ],
-      C3=[
-         SymElem(3, axis=[1, 1, 1], cen=[0.0, 0.0, 0.0], label='C3'),
-      ],
-      C31=[
-         SymElem(3, axis=[-1, 1, 1], cen=[0.166666667, 0.166666667, 0.0], hel=0.577350269, label='C31'),
-      ],
-      C32=[
-         SymElem(3, axis=[-1, 1, 1], cen=[0.166666667, 0.0, 0.166666667], hel=1.154700538, label='C32'),
-      ],
-      C41=[
-         SymElem(4, axis=[0, 1, 0], cen=[0.25, 0.0, 0.0], hel=0.25, label='C41'),
-      ],
-      C43=[
-         SymElem(4, axis=[0, 0, 1], cen=[0.25, 0.0, 0.0], hel=0.75, label='C43'),
-      ],
-   )
-   helper_test_symelem('F4132', val, debug, **kw)
-
-def test_symelems_F432(debug=False, **kw):
-   val = dict(
-      C2=[
-         SymElem(2, axis=[1, 1, 0], cen=[0.0, 0.0, 0.0], label='C2'),
-         SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.25, 0.25], label='C2'),
-         SymElem(2, axis=[0, -1, 1], cen=[0.0, 0.0, 0.5], label='C2'),
-      ],
-      C3=[
-         SymElem(3, axis=[1, 1, 1], cen=[0.0, 0.0, 0.0], label='C3'),
-      ],
-      C4=[
-         SymElem(4, axis=[0, 0, 1], cen=[0.0, 0.0, 0.0], label='C4'),
-      ],
-      C21=[
-         SymElem(2, axis=[0, 0, 1], cen=[0.25, 0.0, 0.0], hel=0.5, label='C21'),
-      ],
-      C31=[
-         SymElem(3, axis=[-1, 1, 1], cen=[0.166666667, 0.166666667, 0.0], hel=0.577350269, label='C31'),
-      ],
-      C32=[
-         SymElem(3, axis=[-1, 1, 1], cen=[0.166666667, 0.0, 0.166666667], hel=1.154700538, label='C32'),
-      ],
-      C42=[
-         SymElem(4, axis=[0, 0, 1], cen=[0.25, 0.25, 0.0], hel=0.5, label='C42'),
-      ],
-   )
-   helper_test_symelem('F432', val, debug, **kw)
 
 def test_symelems_R3(debug=False, **kw):
    val = dict(
@@ -1109,20 +1267,6 @@ def test_remove_redundant_screws():
          SymElem(2, axis=[0, 1, 0], cen=[0.0, 0.0, -0.25], hel=0.5, label='C21'),
       ]
    }
-
-def _printelems(sym, elems):
-   print('-' * 80)
-   print(sym)
-   # print(f'   assert set(elems.keys()) == set(\'{" ".join(elems.keys())}\'.split())')
-   print('   val = dict(')
-   for k, v in elems.items():
-      print(f'      {k}=[')
-      for e in v:
-         print(f'         {e},')
-      print('      ],')
-   print(')')
-
-   print('-' * 80, flush=True)
 
 if __name__ == '__main__':
    main()

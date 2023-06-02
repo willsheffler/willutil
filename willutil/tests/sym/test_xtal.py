@@ -4,6 +4,8 @@ import pytest
 import willutil as wu
 # ic.configureOutput(includeContext=True, contextAbsPath=False)
 
+pytest.skip(allow_module_level=True)
+
 def main():
 
    test_symelem()

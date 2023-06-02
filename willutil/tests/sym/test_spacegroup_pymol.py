@@ -65,7 +65,7 @@ def helper_test_spacegroup_frames_pymol(spacegroup, cellgeom, ncells, dump_pdbs=
       crdtst = einsum('fij,cj->fci', frames, asymcrd).reshape(-1, 4)
       ok = len(crdref) == 27 * len(asymcrd) * wu.sym.copies_per_cell(spacegroup)
       if not ok: return False
-      return True
+      # return True
       # assert len(crdtst) == 64 * len(asymcrd) * wu.sym.copies_per_cell(spacegroup)
       # assert len(crdtst) == 125 * len(asymcrd) * wu.sym.copies_per_cell(spacegroup)
 
@@ -77,7 +77,7 @@ def helper_test_spacegroup_frames_pymol(spacegroup, cellgeom, ncells, dump_pdbs=
       delta = np.sum((crdtst[None, :, :3] - crdref[:, None])**2, axis=-1)
       # ic(np.sum(~np.isclose(0, np.min(delta, axis=1))))
       ok = np.allclose(np.min(delta, axis=1), 0, atol=1e-4)
-      # if not ok:
+
       # print(np.max(np.min(delta, axis=1), 0))
       return ok
       # return np.allclose(np.min(delta, axis=1), 0)
