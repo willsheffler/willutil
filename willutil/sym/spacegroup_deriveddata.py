@@ -46,8 +46,6 @@ def _get_spacegroup_data():
       if sym in seenit: continue
       seenit.add(sym)
 
-      if sym == 'P622': continue
-
       if symtag in sg_lattice: sg_lattice[sym] = sg_lattice[symtag]
       else: sg_lattice[symtag] = sg_lattice[sym]
 
@@ -151,8 +149,9 @@ def _get_spacegroup_data():
                except ComponentIDError:
                   print('!' * 80)
                   print('ERROR checking operator component joint ids for symelem', sym, ielem, jelem)
+                  print('      could be issues with op/comp ids for elem pair:', sym, ielem, jelem)
                   print(elem)
-                  print(elem2)
+                  print(elem2, flush=True)
                   continue
 
       if update:

@@ -684,6 +684,7 @@ def _make_operator_component_joint_ids(elem1, elem2, frames, fopid, fcompid, san
          compframes = frames[opcompid == i]
          cens = einsum('fij,j->fi', compframes, elem2.origin[:, 3])
          if np.any(np.all(np.isclose(cens[None], seenit[:, None]), axis=2)):
+            raise ComponentIDError
             ic(elem1)
             ic(elem2)
             # for i in range(np.max(fopid)):

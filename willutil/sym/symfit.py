@@ -17,7 +17,7 @@ def align(coords, symelem, **kw):
 def aligncx(coords, symelem, rmsthresh=1, axistol=0.02, angtol=0.05, centol=1.0, **kw):
    '''leaves center at 0 regardless of symelem'''
    assert len(coords) == symelem.nfold
-   # ic(coords.shape)
+
    coords = coords.reshape(symelem.nfold, -1, *coords.shape[-2:])
    # ic(coords.shape)
    fitcoords = coords
@@ -35,7 +35,8 @@ def aligncx(coords, symelem, rmsthresh=1, axistol=0.02, angtol=0.05, centol=1.0,
    avgcen = np.mean(cen, axis=0)
    # ic(avgaxs, avgang, avgcen)
    coords = wu.htrans(-avgcen, doto=coords)
-   coords = wu.halign(avgaxs, symelem.axis, doto=coords)
+   if wu.hangle(avgaxs, symelem.axis) > 0.0001:
+      coords = wu.halign(avgaxs, symelem.axis, doto=coords)
    com = wu.hcom(coords, flat=True)
    delta = -wu.hproj(symelem.axis, wu.hvec(com))
    # delta += symelem.cen

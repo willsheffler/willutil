@@ -5,7 +5,15 @@ from willutil.sym.SymElem import SymElem, showsymelems
 from willutil.sym.spacegroup_symelems import _compute_symelems, _find_compound_symelems, _remove_redundant_screws, _printelems
 from numpy import array
 
+# ic.configureOutput(includeContext=True, contextAbsPath=False)
+# pytest.skip(allow_module_level=True)
+
 def main():
+   sym = 'P6322'
+   showsymelems(sym, wu.sym.symelems(sym), scan=20)
+   assert 0
+
+   test_symelems_P312()
 
    # test_symelems_P1()
    # test_symelems_P41()
@@ -13,7 +21,7 @@ def main():
 
    # test_compound_elems_R32()
    # test_compound_elems_P222()
-   # test_compound_elems_F23()
+   # test_compound_elems_F23(1)
    # test_compound_elems_P23()
    # test_compound_elems_I23()
    # test_compound_elems_P213()
@@ -98,6 +106,13 @@ def main():
    ic('PASS test_spacegroup_symelems')
 
 # yapf: disable
+
+
+def test_symelems_P312(debug=False, **kw):
+   val = dict(   )
+   helper_test_symelem('P312', val, debug, **kw)
+
+
 
 def test_compound_elems_R32(debug=False, **kw):
    sym = 'R32'
@@ -421,8 +436,8 @@ def test_compound_elems_I4132(debug=False, **kw):
 
 def helper_test_symelem(sym, eref=None, debug=False, compound=False, **kw):
    if compound:
-      # otherelems = wu.sym.symelems(sym, asdict=True)
-      otherelems = {}
+      otherelems = wu.sym.symelems(sym, asdict=True)
+      # otherelems = {}
       symelems = list(itertools.chain(*otherelems.values()))
       elems0 = _find_compound_symelems(sym, symelems)
    else:

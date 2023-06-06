@@ -40,6 +40,11 @@ def hvalid(stuff, is_points=None, strict=False, **kw):
       return True
    return False
 
+def hvalid_norm(x):
+   normok = np.allclose(1, np.linalg.norm(x[..., :3, :3], axis=-1))
+   normok &= np.allclose(1, np.linalg.norm(x[..., :3, :3], axis=-2))
+   return np.all(normok)
+
 def hvalid44(x, improper_ok=False, **kw):
    if x.shape[-2:] != (4, 4):
       return False
@@ -47,6 +52,7 @@ def hvalid44(x, improper_ok=False, **kw):
    if improper_ok:
       det = np.abs(det)
    detok = np.allclose(det, 1.0)
+
    return all([np.allclose(x[..., 3, 3], 1), np.allclose(x[..., 3, :3], 0), detok])
 
 def hscaled(scale, stuff, is_points=None):

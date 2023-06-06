@@ -70,7 +70,7 @@ def _compute_symelems(
          idx = np.logical_and(np.isclose(ang, nfang, atol=1e-6), np.isclose(0, hel[:, 0]))
       if np.sum(idx) == 0: continue
 
-      # ic(tag0[idx])
+      # ic(nfold, screw, tag0[idx])
       t.checkpoint('make_tags')
       nftag = tag0[idx]
       nftag = nftag[np.lexsort(-nftag.T, axis=0)]
@@ -141,6 +141,10 @@ def _compute_symelems(
    for k in list(symelems.keys()):
       if not symelems[k]: del symelems[k]
 
+   if spacegroup == 'P312':
+      e = SymElem(2, axis=[0.0, 1.0, 0.0], cen=[0.0, 0.0, 0.0], lattice=lattice)
+      symelems['C2'].append(e.tounit(lattice))
+
    if aslist:
       symelems = list(itertools.chain(*symelems.values()))
 
@@ -162,7 +166,7 @@ def _pick_best_related_symelems(symelems, spacegroup, lattice, f4cel, f2cel, fin
             if elem is None:
                # newelems[psym].append((ielem - 9999, e))
                print('!' * 80)
-               print(f'WARNING {spacegroup} failed to find matches for element:\n{e}\nWill be missing some symelements')
+               print(f'WARNING {spacegroup} failed to find matches for element:\n{unitelem}\nWill be missing some symelements')
                print('!' * 80, flush=True)
                continue
                from willutil.viz.pymol_viz import showme

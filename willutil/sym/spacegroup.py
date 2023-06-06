@@ -71,8 +71,9 @@ def symelems(spacegroup: str, psym=None, asdict=False, screws=True, cyclic=True)
    return se
 
 def cryst1_line(spacegroup, lattice):
+   pdb_sg = wu.sym.sg_pymol_name(spacegroup)
    cellgeom = cellgeom_from_lattice(lattice)
-   return wu.sym.cryst1_pattern_full % (*cellgeom, spacegroup)
+   return wu.sym.cryst1_pattern_full % (*cellgeom, pdb_sg)
 
 def prune_frames(frames, asucen, xtalrad, center=None):
    center = center or asucen

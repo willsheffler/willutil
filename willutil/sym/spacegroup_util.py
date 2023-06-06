@@ -5,6 +5,9 @@ from willutil.sym.spacegroup_data import *
 
 def spacegroup_canonical_name(spacegroup):
    spacegroup = spacegroup.replace('p', 'P').replace('i', 'I').replace('f', 'F')
+   if spacegroup.startswith('c'): spacegroup = 'C' + spacegroup[1:]
+   if spacegroup.startswith('r'): spacegroup = 'R' + spacegroup[1:]
+   # spacegroup = spacegroup.upper()
    if spacegroup not in sg_lattice:
       spacegroup = sg_from_pdbname[spacegroup]
    return spacegroup
@@ -17,6 +20,7 @@ def number_of_canonical_cells(spacegroup):
    if spacegroup == 'P43212': return 5
    if spacegroup == 'P21212': return 5
    if spacegroup == 'P222': return 5
+   # if spacegroup == 'P312': return 6
    return ncell
 
 def latticetype(spacegroup):
@@ -167,20 +171,20 @@ def full_cellgeom(lattice: str, cellgeom, strict=True):
       raise ValueError(f'unknown lattice type {lattice} specified with cellgeom {cellgeom}')
    return p
 
-def lattice_vectors(lattice, cellgeom=None):
+def lattice_vectors(lattice, cellgeom=None, strict=True):
    if lattice in sg_lattice:
       lattice = sg_lattice[lattice]
    if cellgeom is None:
       # if lattice != 'CUBIC':
       raise ValueError(f'no cellgeom specified for lattice type {lattice}')
-      cellgeom = [1.0, 1.0, 1.0, 90.0, 90.0, 90.0]
-      if lattice == 'HEXAGONAL':
-         cellgeom = [1.0, 1.0, 1.0, 90.0, 90.0, 120.0]
+      # cellgeom = [1.0, 1.0, 1.0, 90.0, 90.0, 90.0]
+      # if lattice == 'HEXAGONAL':
+      # cellgeom = [1.0, 1.0, 1.0, 90.0, 90.0, 120.0]
    elif cellgeom == 'nonsingular':
       cellgeom = full_cellgeom(lattice, sg_nonsingular_cellgeom, strict=False)
       # ic('cellgeom nonsingular', cellgeom)
 
-   a, b, c, A, B, C = full_cellgeom(lattice, cellgeom)
+   a, b, c, A, B, C = full_cellgeom(lattice, cellgeom, strict=strict)
    cosA, cosB, cosC = [np.cos(np.radians(_)) for _ in (A, B, C)]
    sinB, sinC = [np.sin(np.radians(_)) for _ in (B, C)]
 
