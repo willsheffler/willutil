@@ -126,6 +126,7 @@ def _get_spacegroup_data():
                for jelem, se2 in enumerate(sg_symelem_dict[sym]):
                   sg_symelem_frame444_opcompids_dict[sym][:, ielem, jelem] = IERROR
                   IERROR += 1
+               assert 0
                continue
 
             for jelem, elem2 in enumerate(sg_symelem_dict[sym]):
@@ -152,6 +153,7 @@ def _get_spacegroup_data():
                   print('      could be issues with op/comp ids for elem pair:', sym, ielem, jelem)
                   print(elem)
                   print(elem2, flush=True)
+                  assert 0
                   continue
 
       if update:

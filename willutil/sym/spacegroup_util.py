@@ -180,7 +180,7 @@ def lattice_vectors(lattice, cellgeom=None, strict=True):
       # cellgeom = [1.0, 1.0, 1.0, 90.0, 90.0, 90.0]
       # if lattice == 'HEXAGONAL':
       # cellgeom = [1.0, 1.0, 1.0, 90.0, 90.0, 120.0]
-   elif cellgeom == 'nonsingular':
+   elif isinstance(cellgeom, str) and cellgeom == 'nonsingular':
       cellgeom = full_cellgeom(lattice, sg_nonsingular_cellgeom, strict=False)
       # ic('cellgeom nonsingular', cellgeom)
 

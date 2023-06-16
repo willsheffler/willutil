@@ -410,6 +410,15 @@ class SymElem:
       else:
          self.kind, self.iscyclic = 'cyclic', True
 
+   def make_operators_screw(self):
+      if not self.isscrew:
+         return self.operators
+      return np.stack([
+         np.eye(4),
+         wu.htrans(self.axis[:3] * -self.hel),
+         wu.htrans(self.axis[:3] * self.hel),
+      ])
+
    def make_operators(self):
       # ic(self)
       if self.label == 'T':

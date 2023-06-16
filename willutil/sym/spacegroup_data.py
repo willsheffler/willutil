@@ -64,6 +64,8 @@ two_iface_spacegroups = [
    'F4132',
 ]
 
+sg_niface_dict = {'P212121': 2, 'P43212': 2, 'P3121': 2, 'P3221': 2, 'P6122': 2, 'P6522': 2, 'P41212': 2, 'I4': 2, 'P61': 2, 'R3': 2, 'P31': 2, 'P41': 2, 'P43': 2, 'P32': 2, 'P6': 2, 'P63': 2, 'P65': 2, 'I41': 2, 'P62': 2, 'P64': 2, 'P213': 2, 'I23': 2, 'I213': 2, 'P4132': 2, 'P4232': 2, 'P4332': 2, 'P432': 2, 'I432': 2, 'I4132': 2, 'F432': 2, 'F4132': 2, 'P121': 3, 'C121': 3, 'C2221': 3, 'P21212': 3, 'P1': 3, 'I222': 3, 'I212121': 3, 'P42212': 3, 'I422': 3, 'P3112': 3, 'P6422': 3, 'R32': 3, 'P4212': 3, 'P4122': 3, 'P4322': 3, 'I4122': 3, 'P321': 3, 'P3212': 3, 'P622': 3, 'P6222': 3, 'P6322': 3, 'P42': 3, 'P4': 3, 'P3': 3, 'P23': 3, 'F23': 3, 'P2221': 4, 'C222': 4, 'F222': 4, 'P1211': 4, 'P312': 4, 'P422': 4, 'P4222': 4, 'P222': 5}
+
 sg_triclinic = 'P1 P-1'.split()
 sg_monoclinic = 'P121 P1211 C121 P1m1 P1c1 C1m1 C1c1 P12/m1 P121/m1 C12/m1 P12/c1 P121/c1 P121/n1 231 C12/c1'.split()
 sg_orthorhombic = 'P222 P2221 P212S12 P21212 P212121 C2221 C222 F222 I222 I212121 Pmm2 Pmc21 Pcc2 Pma2 Pca21 Pnc2 Pmn21 Pba2 Pna21 Pnn2 Cmm2 Cmc21 Ccc2 Amm2 Abm2 Ama2 Aba2 Fmm2 Fdd2 Imm2 Iba2 Ima2 Pmmm Pnnn:2 Pccm Pban:2 Pmma Pnna Pmna Pcca Pbam Pccn Pbcm Pnnm Pmmn:2 Pbcn Pbca Pnma Cmcm Cmca Cmmm Cccm Cmma Ccca:2 Fmmm Fddd:2 Immm Ibam Ibca Imma'.split()

@@ -117,3 +117,6 @@ def to_unitcell(spacegroup, cellgeom, coords):
    unitcom[:3] = unitcom[:3] % 1.0
    newcom = wu.sym.applylatticepts(latt, unitcom)
    return wu.htrans(newcom - com)
+
+def spacegroups_with_symelem(label, **kw):
+   return [sg for sg in wu.sym.sg_all_chiral if any([e.label == label for e in wu.sym.symelems(sg)])]

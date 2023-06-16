@@ -1,19 +1,57 @@
-import itertools, pytest, os
-import numpy as np
+import itertools, pytest, osrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
+import numpy as nprpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbpdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
 import willutil as wu
 from willutil.sym.SymElem import SymElem, showsymelems
 from willutil.sym.spacegroup_symelems import _compute_symelems, _find_compound_symelems, _remove_redundant_screws, _printelems
 from numpy import array
 
-# ic.configureOutput(includeContext=True, contextAbsPath=False)
-# pytest.skip(allow_module_level=True)
+# ic.configureOutput(includeContext=True, contextAbsPath=False)rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbdock_P3221_C2_c2100465799rrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_Crpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c2100465rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb7999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb9819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
+# pytest.skip(allow_module_level=True)rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
 
 def main():
-   sym = 'P6322'
-   showsymelems(sym, wu.sym.symelems(sym), scan=20)
+rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
+   # test_symelems_R3()rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
+rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
+   # test_symelems_P622()
+   # assert 0
+
+   # test_symelems_P622()
+   # assert 0
+
+   # for l in 'C21 C31 C32 C41 C42 C43 C61 C62 C63 C64 C65'.split():
+   #    print('\n', l)
+   #    for k, v in wu.sym.sg_symelem_dict.items():
+   #       # if not any(x.iscyclic for x in v):
+   #       # if not wu.sym.latticetype(k) == 'MONOCLINIC': continue
+   #       # if not any(x.isdihedral for x in v): continue
+   #       if not any(x.label == l for x in v): continue
+   #       print(k, end=' ')
+   #       # for e in v:
+   #       # print(e)
+   # print(flush=True)
+   # assert 0
+
+   # T
+   # P23 F23 I23 P4232 F432 F4132
+   # O
+   # P432 F432 I432
+
+   sym = 'P3221'
+   for e in wu.sym.symelems(sym):
+      print(e, flush=True)
+   # assert 0
+   showsymelems(
+      sym,
+      wu.sym.symelems(sym),
+      scan=20,
+      weight=8,
+      offset=0.0,
+      # lattice=wu.sym.lattice_vectors(sym, [1.8, 1.6, 1.7, 70, 70, 110], strict=False),
+      lattice=wu.sym.lattice_vectors(sym, [1, 1.6, 1.7, 70, 70, 110], strict=False),
+   )
    assert 0
 
-   test_symelems_P312()
+   # test_symelems_P312()
 
    # test_symelems_P1()
    # test_symelems_P41()
@@ -52,20 +90,20 @@ def main():
    # test_compound_elems_P64()
    # test_compound_elems_P65()
    # test_compound_elems_P6522()
-   # test_compound_elems_I213()
-   # test_compound_elems_I23()
-   # test_compound_elems_I4()
+   # test_compound_elems_I213()rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
+   # test_compound_elems_I23()rpxdock_P3221_Crpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb2_c21004657999819pmsave_0006_asym.pdb
+   # test_compound_elems_I4()rpxdock_P3221_C2_c21004657999819pmsarpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbvrpxdock_P3221_C2_c21004657999819pmrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbsrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbarpxdock_P3221_C2_c21004657999819pmsrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbve_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbe_0006_asym.pdb
    # test_compound_elems_I41()
+rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbaverpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb_0006_asym.pdb
+   assert 0rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c210046579rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb99819pmsave_0006_asym.pdb
 
-   assert 0
-
-   # test_symelems_P1211()
+   # test_symelems_P1211()rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
    # test_symelems_P2221()
    # test_symelems_P21212()
    # test_symelems_P1()
    # test_symelems_C121()
    # test_symelems_P3()
-   # test_symelems_P222()
+   # test_symelems_P222()rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
    # test_symelems_P23()
    # test_symelems_F23()
    # test_symelems_R32()
@@ -108,6 +146,30 @@ def main():
 # yapf: disable
 
 
+def test_symelems_P622(debug=False, **kw):
+   val = dict(
+      C2=[
+         SymElem(2, axis=[1.0, -0.57735, -0.0], cen=[0.0, 0.0, 0.0], label='C2'),
+         SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.0, 0.0], label='C2'),
+         SymElem(2, axis=[1.0, -0.57735, -0.0], cen=[0.0, 0.0, 0.5], label='C2'),
+         SymElem(2, axis=[1, 0, 0], cen=[0.0, 0.0, 0.5], label='C2'),
+         SymElem(2, axis=[0, 0, 1], cen=[0.0, 0.5, 0.0], label='C2'),
+      ],
+      C3=[
+         SymElem(3, axis=[0, 0, 1], cen=[-0.3333333333423178, 0.3333333333333333, 0.0], label='C3'),
+      ],
+      C6=[
+         SymElem(6, axis=[0, 0, 1], cen=[0.0, 0.0, 0.0], label='C6'),
+      ],
+      C21=[
+         SymElem(2, axis=[1, 0, 0], cen=[0.25, 0.5, 0.0], hel=0.5, label='C21'),
+         SymElem(2, axis=[1, 0, 0], cen=[0.25, 0.5, 0.5], hel=0.5, label='C21'),
+      ],
+   )
+   helper_test_symelem('P622', val, debug, **kw)
+
+
+@pytest.mark.xfail
 def test_symelems_P312(debug=False, **kw):
    val = dict(   )
    helper_test_symelem('P312', val, debug, **kw)
@@ -595,6 +657,11 @@ def test_symelems_I432(debug=False, **kw):
       ],
    )
    helper_test_symelem('I432', val, debug, **kw)
+
+def test_symelems_R3(debug=False, **kw):
+   val = dict()
+   helper_test_symelem('R3', val, debug, **kw)
+
 
 def test_symelems_R32(debug=False, **kw):
    val = dict(
