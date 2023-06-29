@@ -88,6 +88,7 @@ def dumppdb(fname='willutil.pdb', stuff=None, *a, namereset=False, addtimestamp=
    global _dumppdb_seenit
    if stuff is None:
       raise ValueError(f'param "stuff" must be specified')
+   stuff = wu.misc.check_torch_to_numpy(stuff)
    if addtimestamp:
       fname = os.path.join(os.path.dirname(fname), wu.misc.datetimetag() + '_' + os.path.basename(fname))
    if not fname.endswith(('.pdb', '.pdb.gz')) or fname.count('%04i'):

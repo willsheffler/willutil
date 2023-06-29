@@ -7,7 +7,9 @@ def main():
    # complete = check_if_symelems_complete('P6', genelems)
 
    # minimal_spacegroup_cover_symelems('P6')
-   minimal_spacegroup_cover_symelems('I4132')
+
+   for sg in wu.sym.sg_all_chiral:
+      minimal_spacegroup_cover_symelems(sg)
 
    assert 0
 

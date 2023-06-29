@@ -21,16 +21,16 @@ def check_if_symelems_complete(spacegroup, symelems, depth=20, radius=5, trials=
    nunitcell_target = 8 * wu.sym.copies_per_cell(spacegroup)
 
    if nunitcell >= nunitcell_target * fudgefactor:
-      print(spacegroup)
+      # print('\t'.join(e.label for e in symelems))
       for e in symelems:
          print(e)
-      print(frames.shape, nunitcell, nunitcell_target, flush=True)
+      print(frames.shape, nunitcell, nunitcell_target)
       return True
    else:
       return False
 
 def minimal_spacegroup_cover_symelems(spacegroup):
-
+   wu.printheader('cover', spacegroup, padstart=10)
    allsymelems = wu.sym.symelems(spacegroup)
    max_combo = min(len(allsymelems), 5)
    generators = list()

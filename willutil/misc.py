@@ -6,6 +6,15 @@ _WARNINGS_ISSUED = set()
 def arraystr(array):
    return 'np.' + repr(array.round(10)).replace('\n', '').replace(' ', '').replace('.,', ',')
 
+def printheader(*strs, char='-', width=80, printme=True, flush=True, frac=0.5, padstart=None, **kw):
+   msg = ' '.join(str(s) for s in strs)
+   padstart = padstart or int(max(0, width - len(msg)) * frac)
+   padend = max(0, width - padstart - len(msg))
+   msg = f'{char * padstart} {msg} {char*padend}'
+   if printme:
+      print(msg, flush=flush, **kw)
+   return msg
+
 def WARNME(message, once=True):
    if once and message not in _WARNINGS_ISSUED:
       import traceback
@@ -16,6 +25,13 @@ def WARNME(message, once=True):
       print('-' * 80)
       return True
    return False
+
+def check_torch_to_numpy(stuff):
+   if 'torch' in sys.modules:
+      import torch
+      if torch.is_tensor(stuff):
+         stuff = stuff.detach().cpu().numpy()
+   return stuff
 
 class Tee:
    def __init__(self, fd1, fd2=sys.stdout):

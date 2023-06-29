@@ -8,6 +8,14 @@ import willutil as wu
 from willutil.homog.hgeom import _hxform_impl
 from willutil.homog.hgeom import rand_xform_small
 
+def th_construct(rot, trans=None):
+   x = torch.zeros((rot.shape[:-2] + (4, 4)))
+   x[..., :3, :3] = rot[..., :3, :3]
+   if trans is not None:
+      x[..., :3, 3] = trans[..., :3]
+   x[..., 3, 3] = 1
+   return x
+
 def th_mean_along(vecs, along=None):
    vecs = th_vec(vecs)
    assert vecs.ndim == 2
@@ -554,3 +562,14 @@ def is_broadcastable(shape1, shape2):
 
 def axis_ang_cen_magic_points_torch():
    return torch.from_numpy(wu.homog.hgeom._axis_ang_cen_magic_points_numpy).float()
+
+def th_frame(u, v, w, cen=None):
+   assert u.shape == v.shape == w.shape
+   if not cen: cen = u
+   assert cen.shape == u.shape
+   stubs = torch.empty(u.shape[:-1] + (4, 4))
+   stubs[..., :, 0] = th_normalized(u - v)
+   stubs[..., :, 2] = th_normalized(hcross(stubs[..., :, 0], w - v))
+   stubs[..., :, 1] = th_cross(stubs[..., :, 2], stubs[..., :, 0])
+   stubs[..., :, 3] = cen[..., :]
+   return stubs

@@ -193,7 +193,7 @@ def pymol_viz_list(
    cmd.set('suspend_updates', 'off')
 
 @pymol_load.register(np.ndarray)
-def _(
+def pymol_load_npndarray(
    toshow,
    state=_showme_state,
    kind=None,
@@ -204,13 +204,13 @@ def _(
    assert kind in (None, *'linestrip ncac line xform point vec'.split())
 
    if kind == 'linestrip': return show_ndarray_line_strip(toshow, state, **kw)
-   elif kind == 'ncac': return show_ndarray_n_ca_c(toshow[:, :3], state, **kw)
+   elif kind == 'ncac': return show_ndarray_n_ca_c(toshow[..., :3, :], state, **kw)
    elif kind == 'line': return show_ndarray_lines(toshow, state, **kw)
    elif kind == 'xform': return pymol_visualize_xforms(toshow, state, **kw)
    elif kind in ('point', 'vec'): return show_ndarray_point_or_vec(toshow, state, kind=kind, **kw)
 
-   if shape[-2:] in [(3, 4), (5, 4)]:
-      return show_ndarray_n_ca_c(toshow[:, :3], state, **kw)
+   if shape[-2:] in [(3, 4), (5, 4), (3, 3)]:
+      return show_ndarray_n_ca_c(toshow[..., :3, :], state, **kw)
    elif shape[-2:] == (4, 2):
       return show_ndarray_lines(toshow, state, **kw)
    elif len(shape) > 2 and shape[-2:] == (4, 4):
@@ -219,6 +219,21 @@ def _(
       return show_ndarray_point_or_vec(wu.homog.hpoint(toshow), state, **kw)
    else:
       raise NotImplementedError(f'cant understand np.ndarray type {type(toshow)} shape {toshow.shape}')
+
+try:
+   import torch
+
+   @pymol_load.register(torch.Tensor)
+   def _(
+      toshow,
+      *a,
+      **kw,
+   ):
+      np_array = toshow.cpu().detach().numpy()
+      # ic('showme torch.Tensor', np_array.shape)
+      pymol_load_npndarray(np_array, *a, **kw)
+except ImportError:
+   pass
 
 _nxforms = 0
 
@@ -578,20 +593,24 @@ def show_ndarray_n_ca_c(
 
    tmpdir = tempfile.mkdtemp()
    fname = tmpdir + "/" + name + ".pdb"
-   assert toshow.shape[-2:] == (3, 4)
-   with open(fname, "w") as out:
-      for i, a1 in enumerate(toshow.reshape(-1, 3, 4)):
-         for j, a in enumerate(a1):
-            line = format_atom(
-               atomi=3 * i + j,
-               resn="GLY",
-               resi=i,
-               atomn=(" N  ", " CA ", " C  ")[j],
-               x=a[0],
-               y=a[1],
-               z=a[2],
-            )
-            out.write(line)
+   assert toshow.shape[-2:] in [(3, 3), (3, 4)]
+   if toshow.shape[-1] == 3: toshow = wu.hpoint(toshow)
+   # ic(toshow.shape)
+
+   wu.dumppdb(fname, toshow)
+   # with open(fname, "w") as out:
+   # for i, a1 in enumerate(toshow.reshape(-1, 3, 4)):
+   # for j, a in enumerate(a1):
+   # line = format_atom(
+   # atomi=3 * i + j,
+   # resn="GLY",
+   # resi=i,
+   # atomn=(" N  ", " CA ", " C  ")[j],
+   # x=a[0],
+   # y=a[1],
+   # z=a[2],
+   # )
+   # out.write(line)
    pymol.cmd.load(fname)
 
 def iscgo(maybecgo):
