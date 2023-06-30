@@ -1,5 +1,8 @@
+import pytest
 import willutil as wu
-from willutil.sym.sym_template import apply_sym_template
+from willutil.motif.motif_manager import apply_sym_template
+
+torch = pytest.importorskip('torch')
 
 def main():
    test_apply_sym_template()
@@ -12,8 +15,8 @@ def test_apply_sym_template():
    # fname = '/home/sheffler/tmp/rf_diffusion_test_dat_rfmd_0017_MB18_trkmd.pickle'
    # fname = '/home/sheffler/tmp/rf_diffusion_test_dat_rfmd_0012_MB06_trkmd.pickle'
    # fname = '/home/sheffler/tmp/rf_diffusion_test_dat_rfmd_0002_MB30_trkmd.pickle'
-   fname = '/home/sheffler/tmp/rf_diffusion_test_dat_seed4_rfmd_0004_EB00_trkmd.pickle'
-   # fname = '/home/sheffler/tmp/rf_diffusion_test_dat_seed4_rfmd_0018_MB12_trkmd.pickle'
+   # fname = '/home/sheffler/tmp/rf_diffusion_test_dat_seed4_rfmd_0004_EB00_trkmd.pickle'
+   fname = '/home/sheffler/tmp/rf_diffusion_test_dat_seed4_rfmd_0018_MB12_trkmd.pickle'
    Rs, Ts, xyzorig, symmids, symmsub, symmRs, metasymm = wu.load(fname)
    t.checkpoint('Rs')
 

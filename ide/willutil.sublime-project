@@ -6,12 +6,16 @@
 			"shell_cmd": "cd $folder; python willutil/runtests.py --projname willutil $file &> log/sublime_build.log"
 		},
 		{
+			"name": "test_motif_manager",
+			"shell_cmd": "cd /home/sheffler/project/symmmotif_HE; rm -f *.pdb; rm -f symmmotif_HE_test1/*; rm -f symmmotif_HE_test1/traj/*;  sh input/test_motif_manager.sh &> $folder/log/sublime_build.log"
+		},
+		{
 			"name": "gm2306",
 			"shell_cmd": "cd $folder; python willutil/app/gm230612.py &> log/sublime_build.log"
 		},
 		{
-			"name": "test_sym_template.py",
-			"shell_cmd": "cd $folder; python willutil/tests/sym/test_sym_template.py &> log/sublime_build.log"
+			"name": "test_motif_manager.py",
+			"shell_cmd": "cd $folder; python willutil/tests/motif/test_motif_manager.py &> log/sublime_build.log"
 		},
 		{
 			"name": "test_spacegroup_contacts.py",

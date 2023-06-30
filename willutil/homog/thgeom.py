@@ -563,13 +563,16 @@ def is_broadcastable(shape1, shape2):
 def axis_ang_cen_magic_points_torch():
    return torch.from_numpy(wu.homog.hgeom._axis_ang_cen_magic_points_numpy).float()
 
-def th_frame(u, v, w, cen=None):
-   assert u.shape == v.shape == w.shape
-   if not cen: cen = u
-   assert cen.shape == u.shape
-   stubs = torch.empty(u.shape[:-1] + (4, 4))
-   stubs[..., :, 0] = th_normalized(u - v)
-   stubs[..., :, 2] = th_normalized(hcross(stubs[..., :, 0], w - v))
-   stubs[..., :, 1] = th_cross(stubs[..., :, 2], stubs[..., :, 0])
-   stubs[..., :, 3] = cen[..., :]
-   return stubs
+# def th_cross(u, v):
+#    return torch.linalg.cross(u[..., :3], v[..., :3])
+
+# def th_frame(u, v, w, cen=None):
+#    assert u.shape == v.shape == w.shape
+#    if not cen: cen = u
+#    assert cen.shape == u.shape
+#    stubs = torch.empty(u.shape[:-1] + (4, 4), device=u.device)
+#    stubs[..., :, 0] = th_normalized(u - v)
+#    stubs[..., :, 2] = th_normalized(th_cross(stubs[..., :, 0], w - v))
+#    stubs[..., :, 1] = th_cross(stubs[..., :, 2], stubs[..., :, 0])
+#    stubs[..., :, 3] = cen[..., :]
+#    return stubs
