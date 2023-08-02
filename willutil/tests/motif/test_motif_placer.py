@@ -9,31 +9,30 @@ def main():
 def test_motif_placer():
    pdb = wu.pdb.readpdb(wu.test_data_path('pdb/1pgx.pdb1.gz'))
    # pdb = wu.pdb.readpdb(wu.test_data_path('pdb/1pgx.pdb1.gz'))
-   xyz = torch.tensor(pdb.ncac(), device='cuda')
-
-   motif = make_test_motif(xyz, regions=[5, 6, 7], rnoise=4)
+   xyz = torch.tensor(pdb.ncac(), device='cpu')
+   # xyz = torch.tensor(pdb.ncac(), device='cuda')
+   nasym = 35
 
    t = wu.Timer()
-   fastdme = place_motif_dme_fast(xyz, motif)
-   t.checkpoint('fastdme')
-   t.report()
-   assert 0
-   doffset, dme, alldo, alldme = place_motif_dme_brute(xyz, motif)
+
+   motif, motifpos = make_test_motif(xyz, sizes=[7, 11], rnoise=1, nasym=nasym)
+   print(motifpos)
+   t.checkpoint('make_test_motif')
+
+   doffset, dme, alldo, alldme = place_motif_dme_brute(xyz, motif, nasym=nasym)
    t.checkpoint('dme_brute')
-   # roffset, rms, allro, allrms = place_motif_rms_brute(xyz, motif)
+
+   fastdme = place_motif_dme_fast(xyz, motif, nasym=nasym)
+   t.checkpoint('fastdme')
+
+   x = fastdme[tuple(alldo.T)]
+   assert torch.allclose(x, alldme)
+
+   # roffset, rms, allro, allrms = place_motif_rms_brute(xyz, motif, nasym=nasym)
    # t.checkpoint('rms_brute')
    t.report()
 
-   # ic(fastdme.shape)
-   ic(torch.min(alldo, axis=0))
-   ic(torch.max(alldo, axis=0))
-   ic(fastdme.shape)
-   # assert 0
-   x = fastdme[tuple(alldo.T)]
-   assert torch.allclose(x, alldme)
-   # ic(x.shape)
-
-   assert 0
+   assert 0, 'PASS'
 
    ok = torch.logical_and(allrms < 10, alldme < 10)
    wu.viz.scatter(allrms[ok], alldme[ok])
