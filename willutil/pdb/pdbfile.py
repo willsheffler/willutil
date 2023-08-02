@@ -199,8 +199,8 @@ class PDBFile:
       models = self.models()
       return models.index(m)
 
-   def dump_pdb(self, fname, **kw):
-      out = open(fname, 'w') if isinstance(fname, (str, bytes)) else fname
+   def dump_pdb(self, fname, filemode='w', **kw):
+      out = open(fname, filemode) if isinstance(fname, (str, bytes)) else fname
       if self.cryst1:
          out.write(self.cryst1 + os.linesep)
       df = self.df
@@ -208,6 +208,7 @@ class PDBFile:
          s = wu.pdb.pdbdump.pdb_format_atom_df(**row, **kw)
          out.write(s)
       if isinstance(fname, (str, bytes)):
+         out.write('TER\n')
          out.close()
 
    dump = dump_pdb

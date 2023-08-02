@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 import willutil as wu
+from opt_einsum import contract as einsum
 
 def main():
    # _test_spacegroup_symelems()

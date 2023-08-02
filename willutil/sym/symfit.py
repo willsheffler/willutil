@@ -19,6 +19,7 @@ def aligncx(coords, symelem, rmsthresh=1, axistol=0.02, angtol=0.05, centol=1.0,
    assert len(coords) == symelem.nfold
 
    coords = coords.reshape(symelem.nfold, -1, *coords.shape[-2:])
+   origcoords = coords.copy()
    # ic(coords.shape)
    fitcoords = coords
    if coords.ndim > 3:  # ca only
@@ -41,7 +42,12 @@ def aligncx(coords, symelem, rmsthresh=1, axistol=0.02, angtol=0.05, centol=1.0,
    delta = -wu.hproj(symelem.axis, wu.hvec(com))
    # delta += symelem.cen
    coords = wu.htrans(delta, doto=coords)
-   return coords
+
+   xfit = wu.htrans(delta) @ wu.halign(avgaxs, symelem.axis) @ wu.htrans(-avgcen)
+   coords2 = wu.hxform(xfit, origcoords)
+   assert np.allclose(coords2, coords)
+
+   return coords, xfit
 
 def compute_symfit(
    sym,

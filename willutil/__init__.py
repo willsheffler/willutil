@@ -8,12 +8,13 @@ ic.install()
 
 import builtins, opt_einsum, collections
 
-setattr(builtins, 'einsum', opt_einsum.contract)
-setattr(builtins, 'defaultdict', collections.defaultdict)
-
 from willutil.bunch import Bunch, bunchify, unbunchify
 from willutil.timer import Timer, timed, checkpoint
-from willutil.viz import showme
+
+# from willutil.viz import showme
+def showme(*a, **kw):
+   from willutil.viz import showme as viz_showme
+   viz_showme(*a, **kw)
 
 from willutil.rigid.rigidbody import RigidBody, RigidBodyFollowers
 from willutil.search.montecarlo import MonteCarlo
@@ -35,7 +36,8 @@ from willutil import tests
 # from willutil import format
 from willutil import homog
 from willutil import sym
-from willutil import viz
+# from willutil import viz
+viz = deferred_import('willutil.viz')
 from willutil import rigid
 from willutil import rosetta
 # from willutil import unsym

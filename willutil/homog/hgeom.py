@@ -756,7 +756,7 @@ def rand_xform_aac(shape=(), axis=None, ang=None, cen=None, seed=None):
    if seed is not None: np.random.set_state(randstate)
    return hrot(axis, ang, cen)
 
-def hrandsmall(shape=(), cart_sd=0.001, rot_sd=0.001, centers=None, seed=None):
+def hrandsmall(shape=(), cart_sd=0.001, rot_sd=0.001, centers=None, seed=None, doto=None):
    if seed is not None:
       randstate = np.random.get_state()
       np.random.seed(seed)
@@ -767,9 +767,9 @@ def hrandsmall(shape=(), cart_sd=0.001, rot_sd=0.001, centers=None, seed=None):
    else: assert centers.shape[:-1] == shape
    x = hrot(axis, ang, centers, degrees=False).squeeze()
    trans = np.random.normal(0, cart_sd, shape + (3, ))
-   x[..., :3, 3] = trans
+   x[..., :3, 3] += trans
    if seed is not None: np.random.set_state(randstate)
-   return x.squeeze()
+   return x.squeeze() if doto is None else hxform(x, doto)
 
 rand_xform_small = hrandsmall
 

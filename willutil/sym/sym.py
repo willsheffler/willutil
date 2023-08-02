@@ -32,7 +32,7 @@ def frames(
    sym = map_sym_abbreviation(sym)
    sym = sym.lower()
 
-   okexe = (SystemExit, ) if sgonly else (KeyError, )
+   okexe = (SystemExit, ) if sgonly else (KeyError, AttributeError)
    try:
       return wu.sym.sgframes(sym, ontop=ontop, **kw)
    except okexe:
@@ -94,7 +94,7 @@ def frames(
       # f = wu.hrot([0, 1, 0], 90) @ f @ wu.hrot([0, 1, 0], -90)
       f = wu.hinv(xaln) @ f @ xaln
       # wu.showme(f)
-      # assert 0
+      assert 0, 'this is bugged?'
       wu.checkpoint('frames axis')
 
    if sortframes:

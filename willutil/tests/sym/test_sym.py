@@ -3,13 +3,43 @@ import numpy as np
 import willutil as wu
 
 def main():
-   test_subframes()
+   test_symmetrize_frames()
    assert 0
+
+   test_subframes()
    test_frames_asym_of()
    test_frames_asym_remove_sameaxis()
    test_remove_if_same_axis()
    test_sym()
    test_sym_frames()
+
+def test_symmetrize_frames():
+   from opt_einsum import contract as einsum
+   R = np.load('/home/sheffler/project/symmmotif_HE/R.npy')
+   T = np.load('/home/sheffler/project/symmmotif_HE/T.npy')
+   x = np.load('/home/sheffler/project/symmmotif_HE/xyzorig_in.npy')
+   x = x[0]
+   symmsub = np.load('/home/sheffler/project/symmmotif_HE/symmsub.npy')
+   symmRs = np.load('/home/sheffler/project/symmmotif_HE/symmRs.npy')
+   N = 5
+   R = np.stack([R[:N], R[100:100 + N], R[200:200 + N], R[300:300 + N]])
+   T = np.stack([T[:N], T[100:100 + N], T[200:200 + N], T[300:300 + N]])
+   ic(x.shape)
+   x = np.stack([x[:N], x[100:100 + N], x[200:200 + N], x[300:300 + N]])
+
+   RT = wu.hconstruct(R, T)
+   # wu.showme(RT)
+
+   crd = np.stack([[0, 0, 0, 1], [2, 0, 0, 1], [0, 2, 0, 1]])
+   crd = wu.hxform(RT, crd)
+   ic(crd.shape)
+   wu.dumppdb('test.pdb', crd)
+
+   ic(R.shape, x.shape)
+   wu.dumppdb('xyzorig.pdb', x + T[:, :, None, :])
+   wu.dumppdb('RT_x.pdb', einsum('srij,sraj->srai', R, x) + T[:, :, None, :])
+
+   assert 0
 
 @pytest.mark.skip
 def test_subframes():

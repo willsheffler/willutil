@@ -308,7 +308,7 @@ def th_xform(xform, stuff, homogout='auto', **kw):
       result = result[..., :3]
 
    if result.shape[-1] == 4 and not wu.hvalid(result.detach().numpy(), **kw):
-      ic(result[:10])
+      # ic(result[:10])
       # this is a bad copout.. should make this check handle nans correctly
       if not stuff.shape[-2:] == (4, 1):
          raise ValueError(f'malformed homogeneous coords with shape {stuff.shape}, if points and shape is (...,4,4) try is_points=True')
