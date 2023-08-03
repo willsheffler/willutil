@@ -5,21 +5,19 @@ import torch
 
 def main():
    test_remove_symmdup_offsets()
-   # test_check_offsets_overlap_containment()
+   test_check_offsets_overlap_containment()
    test_motif_placer()
    print('test_motif_placer PASS', flush=True)
 
 def test_remove_symmdup_offsets():
-   RSO = remove_symmdup_offsets
-   AC = np.allclose
-   assert AC([(0, 0)], RSO([(0, 0), (0, 10)], nasym=10))
+   AC, T, F, RSO = np.allclose, True, False, remove_symmdup_offsets
+   assert AC([T, F], RSO([(0, 0), (0, 10)], nasym=10))
 
 def test_check_offsets_overlap_containment():
-   AC = np.allclose
-   F = check_offsets_overlap_containment
-   assert AC([1, 0, 0], F([0, 1, 2], sizes=[10], nres=30, nasym=10))
-   assert AC([1, 1, 0], F([0, 10, 11], sizes=[10], nres=40, nasym=20))
-   assert AC([1, 1, 0, 0], F([0, 10, 11, 20], sizes=[10], nres=40, nasym=20))
+   AC, T, F, COOC = np.allclose, True, False, check_offsets_overlap_containment
+   assert AC([T, F, F], COOC([0, 1, 2], sizes=[10], nres=30, nasym=10))
+   assert AC([T, T, F], COOC([0, 10, 11], sizes=[10], nres=40, nasym=20))
+   assert AC([T, T, F, F], COOC([0, 10, 11, 20], sizes=[10], nres=40, nasym=20))
 
 def test_motif_placer(showme=False):
    t = wu.Timer()
@@ -28,23 +26,31 @@ def test_motif_placer(showme=False):
    # pdb = wu.pdb.readpdb(wu.test_data_path('pdb/1pgx.pdb1.gz'))
    xyz = torch.tensor(pdb.ncac(), device='cpu')
    # xyz = torch.tensor(pdb.ncac(), device='cuda')
-   nres, nasym = len(xyz), 35
-   cbreaks = get_symm_cbreaks(nres, nasym, cbreaks=[0])
+   nres, nasym = len(xyz), None
+   cbreaks = get_symm_cbreaks(nres, nasym, cbreaks=[])
+   corners = 10
+   sizes = [12, 13, 14]
+   ic(sum(sizes))
    ic(cbreaks)
 
-   motif, motifpos = make_test_motif(xyz, sizes=[14, 15, 16, 17], rnoise=1, nasym=nasym, cbreaks=cbreaks)
+   motif, motifpos = make_test_motif(xyz, sizes, rnoise=0.1, nasym=nasym, cbreaks=cbreaks)
    ic(motifpos)
    t.checkpoint('make_test_motif')
+
+   fastdme = place_motif_dme_fast(xyz, motif, nasym=nasym, cbreaks=cbreaks, corners=corners)
+   t.checkpoint('fastdme')
+   # ic(fastdme.element_size() * fastdme.nelement() / 1_000_000)
+   # t.report()
+   # return
 
    doffset, dme, alldo, alldme = place_motif_dme_brute(xyz, motif, nasym=nasym, cbreaks=cbreaks)
    t.checkpoint('dme_brute')
 
-   fastdme = place_motif_dme_fast(xyz, motif, nasym=nasym, cbreaks=cbreaks)
-   t.checkpoint('fastdme')
-
    x = fastdme[tuple(alldo.T)]
-   assert torch.allclose(x, alldme)
-
+   if all([corners * 2 >= s for s in sizes]):
+      assert torch.allclose(x, alldme)
+   # else:
+   # wu.viz.scatter(alldme, x)
    # roffset, rms, allro, allrms = place_motif_rms_brute(xyz, motif, nasym=nasym)
    # t.checkpoint('rms_brute')
    # print(rms)
