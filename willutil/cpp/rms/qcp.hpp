@@ -5,9 +5,10 @@ namespace willutil {
 namespace rms {
 namespace qcp {
 
+using std::cout;
+using std::endl;
 using namespace Eigen;
 
-template <typename F> using Vx = Matrix<F, 1, Dynamic>;
 template <typename F> using RowMatrixX = Matrix<F, Dynamic, Dynamic, RowMajor>;
 
 using F = float;
@@ -215,25 +216,59 @@ int FastCalcRMSDAndRotation(double *rot, double *A, double *rmsd, double E0,
   return (1);
 }
 template <typename F>
-F qcp_rmsd_rotation(RowMatrixX<F> xyz1, RowMatrixX<F> xyz2,
-                    double *rot = nullptr) {
-  xyz1.rowwise() -= xyz1.colwise().mean();
-  xyz2.rowwise() -= xyz2.colwise().mean();
+F qcp_rmsd_impl(RowMatrixX<F> xyz1_in, RowMatrixX<F> xyz2_in,
+                double *rot = nullptr, double *cen1 = nullptr,
+                double *cen2 = nullptr, bool showme = false) {
+
+  Matrix<F, Dynamic, 3> xyz1 = xyz1_in.block(0, 0, xyz1_in.rows(), 3);
+  Matrix<F, Dynamic, 3> xyz2 = xyz2_in.block(0, 0, xyz2_in.rows(), 3);
+
+  auto m1 = xyz1.colwise().mean();
+  auto m2 = xyz2.colwise().mean();
+  Matrix<F, 1, 3> _cen1(m1);
+  Matrix<F, 1, 3> _cen2(m2);
+  xyz1.rowwise() -= m1;
+  xyz2.rowwise() -= m2;
+
+  // cout << "REF xyz1" << endl;
+  // cout << xyz1 << endl;
+  // cout << "-----------" << endl;
+
   auto iprod = xyz1.transpose() * xyz2;
+
   double E0 = (xyz1.array().square().sum() + xyz2.array().square().sum()) / 2;
   double A[9];
   for (int ii = 0; ii < 3; ++ii)
     for (int jj = 0; jj < 3; ++jj)
       A[3 * ii + jj] = iprod(ii, jj);
   double rmsd;
+
+  if (showme) {
+    cout << "REF CEN1 " << _cen1 << endl;
+    cout << "REF CEN2 " << _cen2 << endl;
+    cout << "REF IPROD" << endl;
+    cout << iprod << endl;
+    cout << "REF sqnorm1 " << xyz1.array().square().sum() << endl;
+    cout << "REF sqnorm2 " << xyz2.array().square().sum() << endl;
+    cout << "REF E0 " << E0 << " xyz1.rows() " << xyz1.rows() << endl;
+  }
+
   FastCalcRMSDAndRotation(rot, A, &rmsd, E0, xyz1.rows(), -1);
+
+  if (cen1 != nullptr)
+    for (int i = 0; i < 3; ++i) {
+      cen1[i] = _cen1[i];
+    }
+  if (cen2 != nullptr)
+    for (int i = 0; i < 3; ++i)
+      cen2[i] = _cen2[i];
 
   return rmsd;
 }
 
 template <typename F> F qcp_rmsd(RowMatrixX<F> xyz1, RowMatrixX<F> xyz2) {
-  double rot[9];
-  return qcp_rmsd_rotation(xyz1, xyz2, rot);
+  double rot[9], c1[3], c2[3];
+  return qcp_rmsd_impl(xyz1, xyz2, rot, c1, c2);
 }
 
 } // namespace qcp

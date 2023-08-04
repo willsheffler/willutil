@@ -65,9 +65,18 @@ int main(int argc, char *argv[]) {
   xyz2(6, 1) = -10.001;
   xyz2(6, 2) = 17.996;
 
-  auto rms = qcp_rmsd(xyz1, xyz2);
+  auto rms = qcp_rmsd_impl(xyz1, xyz2);
 
   cout << "rms " << rms << " should == 0.719106" << endl;
+
+  double rot[9], cen1[3], cen2[3];
+  auto rms2 = qcp_rmsd_impl(xyz1, xyz2, rot, cen1, cen2);
+  for (int i = 0; i < 9; ++i)
+    cout << "rot " << i << " " << rot[i] << endl;
+  for (int i = 0; i < 3; ++i)
+    cout << "cen1 " << i << " " << cen1[i] << endl;
+  for (int i = 0; i < 3; ++i)
+    cout << "cen2 " << i << " " << cen2[i] << endl;
 
   std::cout << "qcptest.cpp DONE" << std::endl;
   return 0;
