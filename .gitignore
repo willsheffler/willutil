@@ -103,3 +103,5 @@ tmp
 *.pse
 *.mp4
 *.bk
+
+./pymol_saves

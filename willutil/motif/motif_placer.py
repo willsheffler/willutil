@@ -22,11 +22,13 @@ def remove_symmdup_offsets(offsets, nasym):
    mul = torch.cumprod(torch.cat([torch.tensor([1]), torch.max(asymofst[:, :-1], axis=0).values + 1]), dim=0)
    uid = torch.sum(mul * asymofst, axis=1)
    uniq_idx = uid.unique(return_inverse=True)[1]
-   ok = torch.zeros(len(offsets), dtype=bool)
-   ok[uniq_idx.unique()] = True
-   return ok
+   isdup = torch.zeros(len(offsets), dtype=bool)
+   isdup[uniq_idx.unique()] = True
+   return isdup
 
 def check_offsets_overlap_containment(offsets, sizes, nres, nasym=None, cbreaks=None, minsep=0, minbeg=0, minend=0):
+   t = wu.Timer()
+
    offsets = torch.as_tensor(offsets)
    if offsets.ndim == 1: offsets = offsets.unsqueeze(1)
    cbreaks = get_symm_cbreaks(nres, nasym, cbreaks)
@@ -38,6 +40,7 @@ def check_offsets_overlap_containment(offsets, sizes, nres, nasym=None, cbreaks=
          mn = torch.minimum(lbi, lbj)
          mx = torch.maximum(ubi, ubj)
          ok &= mx - mn >= sizes[i] + sizes[j] + minsep
+      t.checkpoint('olap')
       for lbs, ubs in cbreaks.unfold(0, 2, 1):
          # for j in range(nres // nasym):
          # lbs, ubs = j * nasym, (j + 1) * nasym
@@ -45,9 +48,12 @@ def check_offsets_overlap_containment(offsets, sizes, nres, nasym=None, cbreaks=
             torch.logical_and(lbs <= lbi, ubi <= ubs),
             torch.logical_or(ubs <= lbi, ubi <= lbs),
          )
+      t.checkpoint('containment')
    if nasym != nres:
-      ok &= remove_symmdup_offsets(offsets, nasym)
+      ok[ok.clone()] &= remove_symmdup_offsets(offsets[ok], nasym)
 
+   t.checkpoint('symmdups')
+   t.report()
    return ok
 
 def make_floating_offsets(sizes, nres, nasym, cbreaks, minsep=0, minbeg=0, minend=0):
@@ -114,7 +120,7 @@ def place_motif_dme_brute(xyz, motif, topk=10, minsep=0, nasym=None, cbreaks=[0]
    val, idx = torch.topk(dme, topk, largest=False)
    return MotifPlacement(offsets[idx], dme[idx], offsets, dme)
 
-def place_motif_dme_fast(xyz, motif, nasym=None, cbreaks=[], nrmsalign=100, nolapcheck=50_000, minsep=0, minbeg=0, minend=0, corners=0):
+def place_motif_dme_fast(xyz, motif, nasym=None, cbreaks=[], nrmsalign=100, nolapcheck=500_000, minsep=0, minbeg=0, minend=0, corners=0):
    sizes = [len(m) for m in motif]
    dmotif = list()
    for ichain, icrd in enumerate(motif):
@@ -135,7 +141,7 @@ def place_motif_dme_fast(xyz, motif, nasym=None, cbreaks=[], nrmsalign=100, nola
    offsets = offsets[ok]
 
    # ic(torch.min(alldme))
-   # ic(offsets.shape, len(ok))
+   ic(offsets.shape, len(ok))
    ic(alldme[tuple(offsets.T)][:8])
 
    return alldme

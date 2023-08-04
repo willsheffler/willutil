@@ -4,8 +4,15 @@ import numpy as np
 import torch
 
 def main():
-   test_remove_symmdup_offsets()
-   test_check_offsets_overlap_containment()
+   # a = torch.rand(10000) < 0.5
+   # b = torch.rand(10000) < 0.5
+   # c = a * b
+   # a[a.clone()] = b[a]
+   # assert torch.all(a == c)
+   # assert 0, 'PASS'
+
+   # test_remove_symmdup_offsets()
+   # test_check_offsets_overlap_containment()
    test_motif_placer()
    print('test_motif_placer PASS', flush=True)
 
@@ -26,10 +33,10 @@ def test_motif_placer(showme=False):
    # pdb = wu.pdb.readpdb(wu.test_data_path('pdb/1pgx.pdb1.gz'))
    xyz = torch.tensor(pdb.ncac(), device='cpu')
    # xyz = torch.tensor(pdb.ncac(), device='cuda')
-   nres, nasym = len(xyz), None
+   nres, nasym = len(xyz), 35
    cbreaks = get_symm_cbreaks(nres, nasym, cbreaks=[])
    corners = 10
-   sizes = [12, 13, 14]
+   sizes = [12, 13, 14, 15]
    ic(sum(sizes))
    ic(cbreaks)
 
@@ -38,10 +45,12 @@ def test_motif_placer(showme=False):
    t.checkpoint('make_test_motif')
 
    fastdme = place_motif_dme_fast(xyz, motif, nasym=nasym, cbreaks=cbreaks, corners=corners)
+   t.checkpoint('fastdme_init')
+   fastdme = place_motif_dme_fast(xyz, motif, nasym=nasym, cbreaks=cbreaks, corners=corners)
    t.checkpoint('fastdme')
-   # ic(fastdme.element_size() * fastdme.nelement() / 1_000_000)
-   # t.report()
-   # return
+   ic(fastdme.element_size() * fastdme.nelement() / 1_000_000)
+   t.report()
+   return
 
    doffset, dme, alldo, alldme = place_motif_dme_brute(xyz, motif, nasym=nasym, cbreaks=cbreaks)
    t.checkpoint('dme_brute')

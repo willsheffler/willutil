@@ -18,6 +18,14 @@
 			"shell_cmd": "cd $folder; python willutil/tests/motif/test_motif_manager.py &> log/sublime_build.log"
 		},
 		{
+			"name": "qcptest.cpp",
+			"shell_cmd": "cd $folder; g++  -O0 -I. -Iwillutil/cpp/extern -I/home/sheffler/.conda/envs/willutil_pymol/lib/python3.8/site-packages/pybind11/include -I/home/sheffler/.conda/envs/willutil_pymol/include/python3.8 willutil/cpp/rms/qcptest.cpp -o /tmp/qcptest &> log/sublime_build.log && /tmp/qcptest &>> log/sublime_build.log"
+		},
+		{
+			"name": "test_qcp.py",
+			"shell_cmd": "cd $folder; python willutil/tests/cpp/rms/test_qcp.py &> log/sublime_build.log"
+		},
+		{
 			"name": "test_motif_placer.py",
 			"shell_cmd": "cd $folder; python willutil/tests/motif/test_motif_placer.py &> log/sublime_build.log"
 		},
