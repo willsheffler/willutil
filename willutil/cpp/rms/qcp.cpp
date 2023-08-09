@@ -24,6 +24,7 @@ setup_pybind11(cfg)
 #include "willutil/cpp/rms/qcp.hpp"
 
 namespace py = pybind11;
+using namespace pybind11::literals;
 
 namespace willutil {
 namespace rms {
@@ -43,9 +44,61 @@ py::tuple qcp_rmsd_align(RowMatrixX<F> xyz1, RowMatrixX<F> xyz2) {
 }
 
 template <typename F, typename I>
+inline void add_to_center(Matrix<F, 1, 3> &cen,
+                          Matrix<F, Dynamic, 3> const &xyz, I offset, I size,
+                          int junct = 0) {
+  if (junct == 0 || size <= 2 * junct) {
+    cen += xyz.block(offset, 0, size, 3).colwise().sum();
+  } else {
+    cen += xyz.block(offset, 0, junct, 3).colwise().sum();
+    cen += xyz.block(offset + size - junct, 0, junct, 3).colwise().sum();
+  }
+}
+template <typename F, typename I>
+inline void add_to_sqnorm(F &sqnorm, Matrix<F, Dynamic, 3> const &xyz, I offset,
+                          I size, int junct = 0) {
+  if (junct == 0 || size <= 2 * junct) {
+    sqnorm += xyz.block(offset, 0, size, 3).array().square().sum();
+  } else {
+    sqnorm += xyz.block(offset, 0, junct, 3).array().square().sum();
+    sqnorm +=
+        xyz.block(offset + size - junct, 0, junct, 3).array().square().sum();
+  }
+}
+
+template <typename F, typename I>
+inline void add_to_iprod(Matrix<F, 3, 3> &iprod, F &sqnorm,
+                         Matrix<F, Dynamic, 3> const &xyz1,
+                         Matrix<F, Dynamic, 3> const &xyz2, I offset1,
+                         I offset2, I size, Matrix<F, 1, 3> cen1, int junct) {
+  if (junct == 0 || size <= 2 * junct) {
+    Matrix<F, Dynamic, 3> block1 =
+        xyz1.block(offset1, 0, size, 3).rowwise() - cen1;
+    Matrix<F, Dynamic, 3> block2 = xyz2.block(offset2, 0, size, 3);
+    iprod += block1.transpose() * block2;
+    sqnorm += block1.array().square().sum();
+  } else {
+    {
+      Matrix<F, Dynamic, 3> block1 =
+          xyz1.block(offset1, 0, junct, 3).rowwise() - cen1;
+      Matrix<F, Dynamic, 3> block2 = xyz2.block(offset2, 0, junct, 3);
+      iprod += block1.transpose() * block2;
+      sqnorm += block1.array().square().sum();
+    }
+    {
+      Matrix<F, Dynamic, 3> block1 =
+          xyz1.block(offset1 + size - junct, 0, junct, 3).rowwise() - cen1;
+      Matrix<F, Dynamic, 3> block2 =
+          xyz2.block(offset2 + size - junct, 0, junct, 3);
+      iprod += block1.transpose() * block2;
+      sqnorm += block1.array().square().sum();
+    }
+  }
+}
+template <typename F, typename I>
 py::array_t<F> qcp_rmsd_regions(RowMatrixX<F> xyz1_in, RowMatrixX<F> xyz2_in,
                                 Matrix<I, 1, Dynamic> sizes,
-                                RowMatrixX<I> offsets) {
+                                RowMatrixX<I> offsets, int junct = 0) {
   F *rms = new F[offsets.rows()];
   {
     Matrix<F, Dynamic, 3> xyz1 = xyz1_in.block(0, 0, xyz1_in.rows(), 3);
@@ -55,42 +108,47 @@ py::array_t<F> qcp_rmsd_regions(RowMatrixX<F> xyz1_in, RowMatrixX<F> xyz2_in,
     if (sizes.rows() != 1 || sizes.cols() != offsets.cols() ||
         sizes.sum() != xyz2.rows())
       throw std::runtime_error("bad sizes or offsets");
+    if (junct < 0)
+      throw std::runtime_error("junct must be >= 0");
 
     int nseg = sizes.cols();
-    xyz2.rowwise() -= xyz2.colwise().mean();
 
-    F sqnorm2 = xyz2.array().square().sum();
     Matrix<I, 1, Dynamic> offsets2(nseg);
     offsets2.fill(0);
     for (int i = 0; i < nseg - 1; ++i)
       offsets2(0, i + 1) = offsets2(0, i) + sizes(0, i);
 
-    for (int ioff = 0; ioff < offsets.rows(); ++ioff) {
-      Matrix<F, 1, 3> cen(0, 0, 0);
+    int ncrd = 0;
+    Matrix<F, 1, 3> cen2(0, 0, 0);
+    for (int iseg = 0; iseg < nseg; ++iseg) {
+      auto s = sizes(0, iseg);
+      ncrd += ((s > (2 * junct)) && junct > 0) ? 2 * junct : s;
+      add_to_center(cen2, xyz2, offsets2(0, iseg), sizes(0, iseg), junct);
+    }
+    cen2 /= ncrd; // xyz2.rows();
+    xyz2.rowwise() -= cen2;
+    F sqnorm2 = 0; // xyz2.array().square().sum();
+    for (int iseg = 0; iseg < nseg; ++iseg) {
+      add_to_sqnorm(sqnorm2, xyz2, offsets2(0, iseg), sizes(0, iseg), junct);
+    }
 
+    for (int ioff = 0; ioff < offsets.rows(); ++ioff) {
+      Matrix<F, 1, 3> cen1(0, 0, 0);
       for (int iseg = 0; iseg < nseg; ++iseg) {
-        cen += xyz1.block(offsets(ioff, iseg), 0, sizes(0, iseg), 3)
-                   .colwise()
-                   .sum();
+        add_to_center(cen1, xyz1, offsets(ioff, iseg), sizes(0, iseg), junct);
       }
-      cen /= xyz2.rows();
+      cen1 /= ncrd; // xyz2.rows();
+      // if (junct > 0) {
+      // cout << "cen2 " << cen2 << endl;
+      // cout << "cen1 " << cen1 << endl;
+      // }
 
       F sqnorm = 0;
       Matrix<F, 3, 3> iprod;
       iprod << 0, 0, 0, 0, 0, 0, 0, 0, 0;
       for (int iseg = 0; iseg < nseg; ++iseg) {
-        Matrix<F, Dynamic, 3> block1 =
-            xyz1.block(offsets(ioff, iseg), 0, sizes(0, iseg), 3).rowwise() -
-            cen;
-        // cout << "block " << iseg << " ---" << endl;
-        // cout << block1 << endl;
-        // cout << "------" << endl;
-        // cout << block1 << endl;
-        // cout << "------" << endl;
-        // std::exit(-1);
-        auto block2 = xyz2.block(offsets2(0, iseg), 0, sizes(0, iseg), 3);
-        iprod += block1.transpose() * block2;
-        sqnorm += block1.array().square().sum();
+        add_to_iprod(iprod, sqnorm, xyz1, xyz2, offsets(ioff, iseg),
+                     offsets2(0, iseg), sizes(0, iseg), cen1, junct);
       }
 
       double E0 = (sqnorm + sqnorm2) / 2;
@@ -99,11 +157,7 @@ py::array_t<F> qcp_rmsd_regions(RowMatrixX<F> xyz1_in, RowMatrixX<F> xyz2_in,
       for (int ii = 0; ii < 3; ++ii)
         for (int jj = 0; jj < 3; ++jj)
           A[3 * ii + jj] = iprod(ii, jj);
-      FastCalcRMSDAndRotation(NULL, A, &rmsd, E0, xyz2.rows(), -1);
-
-      // cout << "CEN1 " << cen << endl;
-      // cout << "sqnorm1 " << sqnorm << endl;
-      // cout << "sqnorm2 " << sqnorm2 << endl;
+      FastCalcRMSDAndRotation(NULL, A, &rmsd, E0, ncrd, -1);
 
       rms[ioff] = rmsd;
     }
@@ -114,9 +168,10 @@ py::array_t<F> qcp_rmsd_regions(RowMatrixX<F> xyz1_in, RowMatrixX<F> xyz2_in,
 }
 
 PYBIND11_MODULE(qcp, m) {
-  m.def("qcp_rms_float", &qcp_rmsd<float>);
+  m.def("qcp_rms_float", &qcp_rmsd<float>, "xyz1"_a, "xyz2"_a);
   m.def("qcp_rms_align_float", &qcp_rmsd_align<float>);
-  m.def("qcp_rms_regions_f4i4", &qcp_rmsd_regions<float, int32_t>);
+  m.def("qcp_rms_regions_f4i4", &qcp_rmsd_regions<float, int32_t>, "xyz1"_a,
+        "xyz2"_a, "sizes"_a, "offsets"_a, "junct"_a = 0);
   m.def("qcp_rms_double", &qcp_rmsd<double>);
   m.def("qcp_rms_align_double", &qcp_rmsd_align<double>);
 }

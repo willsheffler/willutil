@@ -15,20 +15,19 @@ def get_symm_cbreaks(nres, nasym=None, cbreaks=None):
    cbreaks = torch.tensor(sorted(cbreaks.union({nres})))
    return cbreaks
 
-def remove_symmdup_offsets(offsets, nasym):
-   offsets = torch.as_tensor(offsets)
-   if offsets.ndim == 1: offsets = offsets.unsqueeze(1)
-   asymofst = offsets % nasym
-   mul = torch.cumprod(torch.cat([torch.tensor([1]), torch.max(asymofst[:, :-1], axis=0).values + 1]), dim=0)
-   uid = torch.sum(mul * asymofst, axis=1)
-   uniq_idx = uid.unique(return_inverse=True)[1]
-   isdup = torch.zeros(len(offsets), dtype=bool)
-   isdup[uniq_idx.unique()] = True
-   return isdup
+#def remove_symmdup_offsets(offsets, nasym):
+#   assert 0
+#   offsets = torch.as_tensor(offsets)
+#   if offsets.ndim == 1: offsets = offsets.unsqueeze(1)
+#   asymofst = offsets % nasym
+#   mul = torch.cumprod(torch.cat([torch.tensor([1]), torch.max(asymofst[:, :-1], axis=0).values + 1]), dim=0)
+#   uid = torch.sum(mul * asymofst, axis=1)
+#   uniq_idx = uid.unique(return_inverse=True)[1]
+#   isdup = torch.zeros(len(offsets), dtype=bool)
+#   isdup[uniq_idx.unique()] = True
+#   return isdup
 
 def check_offsets_overlap_containment(offsets, sizes, nres, nasym=None, cbreaks=None, minsep=0, minbeg=0, minend=0):
-   t = wu.Timer()
-
    offsets = torch.as_tensor(offsets)
    if offsets.ndim == 1: offsets = offsets.unsqueeze(1)
    cbreaks = get_symm_cbreaks(nres, nasym, cbreaks)
@@ -40,7 +39,6 @@ def check_offsets_overlap_containment(offsets, sizes, nres, nasym=None, cbreaks=
          mn = torch.minimum(lbi, lbj)
          mx = torch.maximum(ubi, ubj)
          ok &= mx - mn >= sizes[i] + sizes[j] + minsep
-      t.checkpoint('olap')
       for lbs, ubs in cbreaks.unfold(0, 2, 1):
          # for j in range(nres // nasym):
          # lbs, ubs = j * nasym, (j + 1) * nasym
@@ -48,12 +46,9 @@ def check_offsets_overlap_containment(offsets, sizes, nres, nasym=None, cbreaks=
             torch.logical_and(lbs <= lbi, ubi <= ubs),
             torch.logical_or(ubs <= lbi, ubi <= lbs),
          )
-      t.checkpoint('containment')
-   if nasym != nres:
-      ok[ok.clone()] &= remove_symmdup_offsets(offsets[ok], nasym)
+   # if nasym != nres:
+   # ok[ok.clone()] &= remove_symmdup_offsets(offsets[ok], nasym)
 
-   t.checkpoint('symmdups')
-   t.report()
    return ok
 
 def make_floating_offsets(sizes, nres, nasym, cbreaks, minsep=0, minbeg=0, minend=0):
@@ -120,7 +115,7 @@ def place_motif_dme_brute(xyz, motif, topk=10, minsep=0, nasym=None, cbreaks=[0]
    val, idx = torch.topk(dme, topk, largest=False)
    return MotifPlacement(offsets[idx], dme[idx], offsets, dme)
 
-def place_motif_dme_fast(xyz, motif, nasym=None, cbreaks=[], nrmsalign=100, nolapcheck=500_000, minsep=0, minbeg=0, minend=0, corners=0):
+def place_motif_dme_fast(xyz, motif, nasym=None, cbreaks=[], nrmsalign=100, nolapcheck=250_000, minsep=0, minbeg=0, minend=0, junct=0):
    sizes = [len(m) for m in motif]
    dmotif = list()
    for ichain, icrd in enumerate(motif):
@@ -132,32 +127,30 @@ def place_motif_dme_fast(xyz, motif, nasym=None, cbreaks=[], nrmsalign=100, nola
    nres = len(d)
    nasym = nasym or nres
    # assert nasym == nres
-   alldme = compute_offset_dme_fast(xyz, motif, dmotif, d, nres, nasym, corners)
+   alldme = compute_offset_dme_fast(xyz, motif, dmotif, d, nres, nasym, junct)
 
    _, idx = torch.topk(alldme.flatten(), min(alldme.nelement(), nolapcheck), largest=False)
    offsets = torch.as_tensor(np.stack(np.unravel_index(idx.cpu().numpy(), alldme.shape), axis=1))
 
    ok = check_offsets_overlap_containment(offsets, sizes, nres, nasym, cbreaks, minsep, minbeg, minend)
    offsets = offsets[ok]
-
-   # ic(torch.min(alldme))
    ic(offsets.shape, len(ok))
    ic(alldme[tuple(offsets.T)][:8])
 
    return alldme
 
-def compute_dme_corners(dmat1, dmat2, corners=0, method='mse'):
+def compute_dme_corners(dmat1, dmat2, junct=0, method='mse'):
    assert dmat1.shape[-2:] == dmat2.shape
    m, n = dmat1.shape[-2:]
 
-   if not corners:
+   if not junct:
       diff = dmat1 - dmat2
    else:
-      assert corners > 0
-      if dmat1.ndim == 3 and m < 2 * corners:
+      assert junct > 0
+      if dmat1.ndim == 3 and m < 2 * junct:
          diff = dmat1 - dmat2
       elif dmat1.ndim == 3:
-         c = corners
+         c = junct
          d = m - c
          # assert 0
          diff = torch.stack([
@@ -167,7 +160,7 @@ def compute_dme_corners(dmat1, dmat2, corners=0, method='mse'):
             (dmat1[..., d:, d:] - dmat2[..., d:, d:]).flatten(1),
          ], axis=-1)
       elif dmat1.ndim == 4:
-         cm, cn, dm, dn = corners, corners, m - corners, n - corners
+         cm, cn, dm, dn = junct, junct, m - junct, n - junct
          if cm > dm: cm, dm = m // 2, m // 2
          if cn > dn: cn, dn = n // 2, n // 2
          # ic(m, cm, dm)
@@ -190,7 +183,7 @@ def compute_dme_corners(dmat1, dmat2, corners=0, method='mse'):
 
    return dme.sum(axis=(-1, -2))
 
-def compute_offset_dme_fast(xyz, motif, dmotif, d, nres, nasym, corners=0, method='mse'):
+def compute_offset_dme_fast(xyz, motif, dmotif, d, nres, nasym, junct=0, method='mse'):
    offsetshape = [len(d) - len(c) + 1 for c in motif]
    offsetshape[0] = nasym - len(motif[0]) + 1
    alldme = torch.zeros(offsetshape, device=xyz.device)  #, dtype=torch.float16)
@@ -198,14 +191,14 @@ def compute_offset_dme_fast(xyz, motif, dmotif, d, nres, nasym, corners=0, metho
       dtgt = dmotif[i][i].to(dtype=d.dtype)
       distmat = d[:nasym if i == 0 else nres]
       dunf = distmat.unfold(0, len(dtgt), 1).unfold(1, len(dtgt), 1).diagonal().permute(2, 0, 1)
-      dme1b = compute_dme_corners(dunf, dtgt, corners, method)
+      dme1b = compute_dme_corners(dunf, dtgt, junct, method)
       newshape = [1] * alldme.ndim
       newshape[i] = len(dme1b)
       alldme += dme1b.reshape(newshape)
       for j in range(i + 1, len(dmotif)):
          dtgt = dmotif[i][j].to(dtype=distmat.dtype)
          dunf = distmat.unfold(0, dtgt.shape[0], 1).unfold(1, dtgt.shape[1], 1)
-         dme2b = compute_dme_corners(dunf, dtgt, corners, method)
+         dme2b = compute_dme_corners(dunf, dtgt, junct, method)
          newshape = [1] * alldme.ndim
          newshape[i], newshape[j] = dme2b.shape
          alldme += 2 * dme2b.reshape(newshape)

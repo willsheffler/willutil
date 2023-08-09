@@ -220,6 +220,9 @@ F qcp_rmsd_impl(RowMatrixX<F> xyz1_in, RowMatrixX<F> xyz2_in,
                 double *rot = nullptr, double *cen1 = nullptr,
                 double *cen2 = nullptr, bool showme = false) {
 
+  if (xyz1_in.rows() != xyz2_in.rows())
+    throw std::runtime_error("xyz1 and xyz2 not same size");
+
   Matrix<F, Dynamic, 3> xyz1 = xyz1_in.block(0, 0, xyz1_in.rows(), 3);
   Matrix<F, Dynamic, 3> xyz2 = xyz2_in.block(0, 0, xyz2_in.rows(), 3);
 
