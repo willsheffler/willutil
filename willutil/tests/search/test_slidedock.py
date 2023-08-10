@@ -5,9 +5,9 @@ import numpy as np
 from willutil.search.slidedock import slide_dock_oligomer
 
 def main():
-   test_slidedock_onecomp()
+   _test_slidedock_onecomp()
 
-def test_slidedock_onecomp():
+def _test_slidedock_onecomp():
    # pdb = wu.readpdb('/home/sheffler/project/symmmotif_HE/input/test_trimer_icos_2.pdb')
    # xyz = pdb.ncac(splitchains=True)
    # np.save('/tmp/xyz.npy', xyz)

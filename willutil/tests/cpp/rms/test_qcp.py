@@ -16,7 +16,7 @@ def main():
    test_qcp(niter=10)
    test_qcp_align(niter=10)
 
-   test_qcp_regions_perf()
+   perftest_qcp_regions()
 
    print('test_qcp PASS', flush=True)
 
@@ -99,23 +99,26 @@ def compute_rms_offsets_brute(pts1, pts2, sizes, offsets, junct=0):
       rms[i] = qcp_rms_double(crd1, crd2)
    return rms
 
-def test_qcp_regions_perf():
+def perftest_qcp_regions():
    t = wu.Timer()
-   for i in range(100):
-      np.random.seed(0)
-      pts1 = wu.hrandpoint(100).astype(np.float32)
+   ncalc = 0
+   for i in range(30):
+      pts1 = wu.hrandpoint(200).astype(np.float32)
       pts2 = wu.hrandpoint(50).astype(np.float32)
-      sizes = _random_int_partition(50, 40)
-      offsets = _random_offsets(1000, len(pts1), sizes)
+      sizes = _random_int_partition(len(pts2), len(pts2) - 5)
+      offsets = _random_offsets(30_000, len(pts1), sizes)
       t.checkpoint('setup')
-      rms = qcp_rms_regions_f4i4(pts1, pts2, sizes, offsets)
+      rms = qcp_rms_regions_f4i4(pts1, pts2, sizes, offsets, junct=0)
+      ncalc += len(rms)
       t.checkpoint('qcp_rms_regions_f4i4')
    t.report()
+   rmspersec = ncalc / sum(t.checkpoints['qcp_rms_regions_f4i4'])
+   print(f'rms ncalc: {ncalc:,}, rate: {rmspersec:7.3}', flush=True)
 
-def helper_test_qcp_regions(noffset=1, junct=0):
-   pts1 = wu.hrandpoint(100).astype(np.float32)
-   pts2 = wu.hrandpoint(50).astype(np.float32)
-   sizes = _random_int_partition(50, 40)
+def helper_test_qcp_regions(noffset=1, junct=0, npts1=100, npts2=50):
+   pts1 = wu.hrandpoint(npts1).astype(np.float32)
+   pts2 = wu.hrandpoint(npts2).astype(np.float32)
+   sizes = _random_int_partition(npts2, npts2 - 5)
    offsets = _random_offsets(noffset, len(pts1), sizes)
    rmsref = compute_rms_offsets_brute(pts1, pts2, sizes, offsets, junct=junct)
    rms = qcp_rms_regions_f4i4(pts1, pts2, sizes, offsets, junct=junct)

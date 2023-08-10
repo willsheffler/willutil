@@ -2,10 +2,12 @@ import itertools
 import willutil as wu
 import numpy as np
 import torch
+from willutil.cpp.rms import qcp_rms_regions_f4i4
 
 from collections import namedtuple
 
 MotifPlacement = namedtuple('MotifPlacement', 'offset score alloffset allscore')
+FastDMEMotifPlacement = namedtuple('FastDMEMotifPlacement', 'offset rms drms alldme')
 
 def get_symm_cbreaks(nres, nasym=None, cbreaks=None):
    nasym = nasym or nres
@@ -115,7 +117,7 @@ def place_motif_dme_brute(xyz, motif, topk=10, minsep=0, nasym=None, cbreaks=[0]
    val, idx = torch.topk(dme, topk, largest=False)
    return MotifPlacement(offsets[idx], dme[idx], offsets, dme)
 
-def place_motif_dme_fast(xyz, motif, nasym=None, cbreaks=[], nrmsalign=100, nolapcheck=250_000, minsep=0, minbeg=0, minend=0, junct=0):
+def place_motif_dme_fast(xyz, motif, nasym=None, cbreaks=[], nrmsalign=100_000, nolapcheck=1_000_000, minsep=0, minbeg=0, minend=0, junct=0, return_alldme=False):
    sizes = [len(m) for m in motif]
    dmotif = list()
    for ichain, icrd in enumerate(motif):
@@ -133,11 +135,16 @@ def place_motif_dme_fast(xyz, motif, nasym=None, cbreaks=[], nrmsalign=100, nola
    offsets = torch.as_tensor(np.stack(np.unravel_index(idx.cpu().numpy(), alldme.shape), axis=1))
 
    ok = check_offsets_overlap_containment(offsets, sizes, nres, nasym, cbreaks, minsep, minbeg, minend)
-   offsets = offsets[ok]
-   ic(offsets.shape, len(ok))
-   ic(alldme[tuple(offsets.T)][:8])
+   offsets = offsets[ok][:nrmsalign]
 
-   return alldme
+   xyz_motif = torch.cat([m[:, 1] for m in motif])
+   rms = qcp_rms_regions_f4i4(xyz[:, 1].cpu(), xyz_motif.cpu(), sizes, offsets, junct=junct)
+   dme = alldme[tuple(offsets.T)].cpu().numpy()
+
+   if not return_alldme:
+      del alldme
+      alldme = None
+   return FastDMEMotifPlacement(offsets, rms, dme, alldme)
 
 def compute_dme_corners(dmat1, dmat2, junct=0, method='mse'):
    assert dmat1.shape[-2:] == dmat2.shape

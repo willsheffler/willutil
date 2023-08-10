@@ -3,7 +3,7 @@ import numpy as np
 import willutil as wu
 
 def main():
-   test_symmetrize_frames()
+   _test_symmetrize_frames()
    assert 0
 
    test_subframes()
@@ -13,7 +13,7 @@ def main():
    test_sym()
    test_sym_frames()
 
-def test_symmetrize_frames():
+def _test_symmetrize_frames():
    from opt_einsum import contract as einsum
    R = np.load('/home/sheffler/project/symmmotif_HE/R.npy')
    T = np.load('/home/sheffler/project/symmmotif_HE/T.npy')

@@ -766,7 +766,7 @@ def hrandsmall(shape=(), cart_sd=0.001, rot_sd=0.001, centers=None, seed=None, d
    if centers is None: centers = [0, 0, 0, 1]
    else: assert centers.shape[:-1] == shape
    x = hrot(axis, ang, centers, degrees=False).squeeze()
-   trans = np.random.normal(0, cart_sd, shape + (3, ))
+   trans = np.random.normal(0, cart_sd, x[..., :3, 3].shape)
    x[..., :3, 3] += trans
    if seed is not None: np.random.set_state(randstate)
    return x.squeeze() if doto is None else hxform(x, doto)

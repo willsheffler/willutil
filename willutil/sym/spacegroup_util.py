@@ -1,4 +1,5 @@
 import itertools
+from collections import defaultdict
 import numpy as np
 import willutil as wu
 from willutil.sym.spacegroup_data import *
