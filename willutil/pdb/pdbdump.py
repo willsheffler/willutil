@@ -140,6 +140,7 @@ def dump_pdb_from_points(
    spacegroup=None,
    cellgeom=None,
    skipval=9999.999,
+   filemode='w',
    **kw,
 ):
    chainstarts = [0]
@@ -154,6 +155,7 @@ def dump_pdb_from_points(
       mask = np.ones(pts.shape[:-1], dtype=bool)
    if not (pts.ndim in (2, 3, 4) and pts.shape[-1] in (3, 4)):
       raise ValueError(f'bad shape for points {pts.shape}')
+   filemode = filemode or 'w'
    shape = dump_pdb_nchain_nres_natom(pts.shape[:-1], nchain, nres, nresatom)
    assert len(shape) == 3
    pts = pts.reshape(*shape, pts.shape[-1])
@@ -187,7 +189,7 @@ def dump_pdb_from_points(
       header += cryst1 + os.linesep
    pts = np.clip(pts, -999.999, 9999.999)
    atomconut = 1
-   with open(fname, "w") as out:
+   with open(fname, filemode) as out:
       out.write(header)
       # for ic1, f in enumerate(pts):
       chain = -1

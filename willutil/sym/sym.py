@@ -94,7 +94,7 @@ def frames(
       # f = wu.hrot([0, 1, 0], 90) @ f @ wu.hrot([0, 1, 0], -90)
       f = wu.hinv(xaln) @ f @ xaln
       # wu.showme(f)
-      assert 0, 'this is bugged?'
+      # assert 0, 'this is bugged?'
       wu.checkpoint('frames axis')
 
    if sortframes:

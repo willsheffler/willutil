@@ -7,7 +7,6 @@ from willutil.cpp.rms import qcp_rms_regions_f4i4
 from collections import namedtuple
 
 MotifPlacement = namedtuple('MotifPlacement', 'offset score alloffset allscore')
-FastDMEMotifPlacement = namedtuple('FastDMEMotifPlacement', 'offset rms drms alldme')
 
 def get_symm_cbreaks(nres, nasym=None, cbreaks=None):
    nasym = nasym or nres
@@ -117,7 +116,10 @@ def place_motif_dme_brute(xyz, motif, topk=10, minsep=0, nasym=None, cbreaks=[0]
    val, idx = torch.topk(dme, topk, largest=False)
    return MotifPlacement(offsets[idx], dme[idx], offsets, dme)
 
+FastDMEMotifPlacement = namedtuple('FastDMEMotifPlacement', 'offset rms drms alldme')
+
 def place_motif_dme_fast(xyz, motif, nasym=None, cbreaks=[], nrmsalign=100_000, nolapcheck=1_000_000, minsep=0, minbeg=0, minend=0, junct=0, return_alldme=False):
+   assert xyz.shape[-2:] == (3, 3)
    sizes = [len(m) for m in motif]
    dmotif = list()
    for ichain, icrd in enumerate(motif):
@@ -139,6 +141,9 @@ def place_motif_dme_fast(xyz, motif, nasym=None, cbreaks=[], nrmsalign=100_000, 
 
    xyz_motif = torch.cat([m[:, 1] for m in motif])
    rms = qcp_rms_regions_f4i4(xyz[:, 1].cpu(), xyz_motif.cpu(), sizes, offsets, junct=junct)
+   order = np.argsort(rms)
+   rms = rms[order]
+   offsets = offsets[order]
    dme = alldme[tuple(offsets.T)].cpu().numpy()
 
    if not return_alldme:

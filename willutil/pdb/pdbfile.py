@@ -199,7 +199,8 @@ class PDBFile:
       models = self.models()
       return models.index(m)
 
-   def dump_pdb(self, fname, filemode='w', **kw):
+   def dump_pdb(self, fname, filemode=None, **kw):
+      filemode = filemode or 'w'
       out = open(fname, filemode) if isinstance(fname, (str, bytes)) else fname
       if self.cryst1:
          out.write(self.cryst1 + os.linesep)
@@ -370,13 +371,17 @@ class PDBFile:
             self.df.loc[self.df.ri == res[ires], 'ch'] = 'ABCDEFGHIJ'[ich].encode()
       return nfold
 
-   def xformed(self, xform, chainA_contacts_only=False, contact_distance=8, **kw):
+   def xformed(self, xform, chainA_contacts_only=False, contact_distance=8, startchain=0, **kw):
       kw = wu.Bunch(kw)
       if xform.squeeze().shape == (4, 4):
          crd = self.coords
          crd2 = wu.hxform(xform, crd)
          pdb = self.copy()
          pdb.coords = crd2
+         chains = list(sorted(set(self.df.ch)))
+         for ich, ch in enumerate(chains):
+            newch = wu.pdb.all_pymol_chains[startchain + ich].encode()
+            pdb.df.loc[pdb.df.ch == ch, 'ch'] = newch
          return pdb
       else:
          import pandas as pd
@@ -399,7 +404,7 @@ class PDBFile:
                if chainA_contacts_only:
                   isect = body.intersects(chainbodies[ich], xforms[imodel], mindis=contact_distance)
                   if not isect: continue
-               newch = wu.pdb.all_pymol_chains[len(keeppdbs)].encode()
+               newch = wu.pdb.all_pymol_chains[startchain + len(keeppdbs)].encode()
                xpdb = chainpdbs[ich].xformed(xform)
                xpdb.df.loc[xpdb.df.ch == ch, 'ch'] = newch
                xpdb.camask()
