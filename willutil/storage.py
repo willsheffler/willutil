@@ -1,4 +1,5 @@
 import json, gzip, lzma, pickle, os
+import numpy as np
 import willutil as wu
 
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
@@ -113,6 +114,8 @@ def load(fname, **kw):
    elif fname.endswith('.nc'):
       import xarray
       return xarray.load_dataset(fname, **kw)
+   elif fname.endswith('.npy'):
+      return np.load(fname, **kw)
    elif fname.endswith('.json'):
       with open(fname) as inp:
          return json.load(inp)
@@ -154,6 +157,7 @@ def load_pickle(fname, add_dotpickle=True, assume_lzma=False, **kw):
 
 def save(stuff, fname, **kw):
    finfo = fname_extensions(fname)
+   os.makedirs(finfo.directory, exist_ok=True)
    if finfo.ext in ('.pdb', '.cif'):
       wu.pdb.dumpstruct(fname, stuff, **kw)
    elif finfo.ext == '.nc':
@@ -161,6 +165,8 @@ def save(stuff, fname, **kw):
       if not isinstance(stuff, xarray.Dataset):
          raise ValueError('can only save xarray.Dataset as .nc file')
       stuff.to_netcdf(fname)
+   elif finfo.ext == '.npy':
+      np.save(fname, stuff)
    elif fname.count('.') == 0 or is_pickle_fname(fname):
       save_pickle(stuff, fname, **kw)
    elif fname.endswith('.json'):

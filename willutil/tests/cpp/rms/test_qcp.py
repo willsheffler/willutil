@@ -77,6 +77,7 @@ def test_qcp_regions_simple_Nseg():
 
 def compute_rms_offsets_brute(pts1, pts2, sizes, offsets, junct=0):
    rms = np.empty(len(offsets))
+
    offsets2 = np.cumsum([0] + list(sizes[:-1]))
    crd2 = list()
    for s, o in zip(sizes, offsets2):
@@ -94,8 +95,8 @@ def compute_rms_offsets_brute(pts1, pts2, sizes, offsets, junct=0):
          else:
             crd1.append(pts1[o:o + junct, :3])
             crd1.append(pts1[o + s - junct:o + s, :3])
-
       crd1 = np.concatenate(crd1)
+
       rms[i] = qcp_rms_double(crd1, crd2)
    return rms
 
