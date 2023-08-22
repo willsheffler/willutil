@@ -45,6 +45,7 @@ def place_motif_dme_fast(
 
    score, allocc = alldme, None
    if motif_occlusion_weight != 0:
+      assert 0, 'compute_offset_occlusion_tensor is bugged'
       contacts = motif_occlusion_dist > dist
       allocc = compute_offset_occlusion_tensor(contacts, sizes, nasym, minbeg, minend, dtype=dtype)
       score = alldme + motif_occlusion_weight * allocc
@@ -182,9 +183,12 @@ def compute_offset_occlusion_tensor(contacts, sizes, nasym=None, minbeg=0, minen
    offsetshape[0] = nasym - sizes[0] + 1 - minbeg - minend
    occ = torch.zeros(offsetshape, device=contacts.device, dtype=torch.float32)
    # ic(offsetshape)
+
    for i, (noff, size) in enumerate(zip(offsetshape, sizes)):
       stripesums = psum[size:, -1] - psum[:noff, -1]
       occ += stripesums.reshape(*[1] * i, noff, *[1] * (len(sizes) - i - 1))
+
+   # ic(occ)
 
    # s1, s2, s3 = sizes
    # for i1 in range(offsetshape[0]):
@@ -196,13 +200,17 @@ def compute_offset_occlusion_tensor(contacts, sizes, nasym=None, minbeg=0, minen
    for i1, (noff1, size1) in enumerate(zip(offsetshape, sizes)):
       for i2, (noff2, size2) in enumerate(zip(offsetshape, sizes)):
          blocksums = psum[size1:, size2:] + psum[:noff1, :noff2] - psum[size1:, :noff2] - psum[:noff1, size2:]
+         # for i in range(occ.shape[i1]):
+         #    for j in range(occ.shape[i2]):
+         #       assert blocksums[i, j] == contacts[i:i + size1, j:j + size2].sum()
          if i1 == i2: blocksums = torch.diagonal(blocksums)
+         ic(i1, i2, blocksums)
          newshape = [1] * len(sizes)
          newshape[i1] = offsetshape[i1]
          newshape[i2] = offsetshape[i2]
          occ -= blocksums.reshape(newshape)
 
-   occ /= sum(sizes)
+   # occ /= sum(sizes)
 
    return occ
 
@@ -212,14 +220,29 @@ def compute_offset_occlusion_brute(contacts, sizes, nasym=None, **kw):
    nasym = nasym or nres
    assert nasym == nres
    offsets = make_floating_offsets(sizes, nres, nasym, **kw)
+   # offsets = torch.tensor([[3, 0]])
+   # ic(offsets.shape)
    sizes = torch.as_tensor(sizes)
    occ = torch.zeros(len(offsets))
-   for offset0 in offsets:
+   for ioff, offset0 in enumerate(offsets):
       order = np.argsort(offset0)
-      offset = offset0[order]
-      osizes = sizes[order]
-
-   # assert 0
+      offset1 = offset0[order]
+      sizes1 = sizes[order]
+      # ic(ioff, offset1, sizes1)
+      for o2, s2 in zip(offset0, sizes):
+         slice1 = slice(o2, o2 + s2)
+         slice2 = slice(0, offset1[0])
+         # ic('B', slice2)
+         occ[ioff] += contacts[slice1, slice2].sum()
+         for i in range(1, len(offset1)):
+            slice2 = slice(offset1[i - 1] + sizes1[i - 1], offset1[i])
+            # ic(i, slice2)
+            occ[ioff] += contacts[slice1, slice2].sum()
+         slice2 = slice(offset1[-1] + sizes1[-1], len(contacts))
+         # ic('E', slice2)
+         occ[ioff] += contacts[slice1, slice2].sum()
+   # occ /= sum(sizes)
+   return occ, offsets
 
 def make_test_motif(xyz, sizes, minsep=0, minbeg=0, minend=0, ntries=3, rnoise=0, lever=10, nasym=None, cbreaks=[0]):
    nres = len(xyz)

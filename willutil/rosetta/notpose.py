@@ -211,7 +211,6 @@ def _init_NotPose_pdb(self, fname=None, pdb=None, chain=None, secstruct=None, **
    self.fname = fname
 
    if pdb is None:
-      ic(fname)
       assert isinstance(fname, str)
       pdb = wu.pdb.readpdb(fname, **kw)
    self.rawpdb = pdb

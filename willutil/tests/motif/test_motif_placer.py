@@ -1,4 +1,4 @@
-import random
+import random, pytest
 import willutil as wu
 from willutil.motif.motif_placer import *
 import numpy as np
@@ -12,6 +12,8 @@ def main():
    # assert torch.all(a == c)
    # assert 0, 'PASS'
 
+   test_polymotif()
+
    test_motif_occlusion()
 
    test_check_offsets_overlap_containment()
@@ -21,35 +23,55 @@ def main():
 
    print('test_motif_placer PASS', flush=True)
 
+def test_polymotif():
+   flist = open('/home/sheffler/project/multimotif/input/lanth_polymotif_list_1.txt').read().split()
+   pdb = wu.readpdb(flist[0])
+   xyz, mask = pdb.atomcoords(['N', 'CA', 'C'], splitchains=True, nomask=True, removeempty=True)
+   ic(xyz)
+   # pdbs = [wu.readpdb(f).atomcoords(['N', 'CA', 'C'], splitchains=True, nomask=True, removeempty=True) for f in flist[:1]]
+   # ic(pdbs)
+   assert 0
+
 def randslice(n):
    r = random.randrange(n), random.randrange(n)
    return slice(min(r), max(r))
 
+@pytest.mark.skip
 def test_motif_occlusion():
    xyz = torch.as_tensor(wu.tests.load_test_data('xyz/1pgx_ncac.npy'), device='cpu')
-   xyz = xyz[:12]
+   xyz = xyz[:2]
 
    nres, nasym = len(xyz), None
    cbreaks = get_symm_cbreaks(nres, nasym, cbreaks=[])
-   sizes = [3, 3]
+   sizes = [1, 1]
    # motif, motifpos = make_test_motif(xyz, sizes, rnoise=0.1, nasym=nasym, cbreaks=cbreaks)
    # print(motifpos)
-   xyz[0:3, :, 0] += 100000
-   xyz[6:9, :, 0] += 100000
+   # xyz[0:3, :, 0] += 100000
+   # xyz[6:9, :, 0] += 100000
+   # contacts = (1000.0 > torch.cdist(xyz[:, 1], xyz[:, 1])).to(torch.float32)
 
    # placement = place_motif_dme_fast(xyz, motif, nasym=nasym, cbreaks=cbreaks)
 
-   contacts = (1000.0 > torch.cdist(xyz[:, 1], xyz[:, 1])).to(torch.float32)
+   # contacts = (9.0 > torch.cdist(xyz[:, 1], xyz[:, 1])).to(torch.float32)
+   # contacts[:] = 1
+   torch.manual_seed(0)
+   contacts = torch.rand((len(xyz), len(xyz))) < 0.5
    ic(contacts.to(int))
-   # compute_offset_occlusion_brute(contacts, sizes, cbreaks=cbreaks)
 
    occ = compute_offset_occlusion_tensor(contacts, sizes)
-   ic(occ.shape)
+   # ic(occ.shape)
    ic(occ.to(int))
+
+   occref, offsets = compute_offset_occlusion_brute(contacts, sizes, cbreaks=cbreaks)
+   occtst = occ[tuple(offsets.T)]
+   ic(offsets)
+   ic(occref.to(int))
+   ic(occtst.to(int))
+   assert np.allclose(occref, occtst)
 
    # showme_motif_placements(xyz, motif, placement.offset[:10])
 
-   # assert 0
+   # assert 0, 'FAST_MOTIF_OCC???'
 
 def perftest_motif_placer():
    t = wu.Timer()

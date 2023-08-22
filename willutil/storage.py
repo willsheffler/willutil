@@ -157,7 +157,7 @@ def load_pickle(fname, add_dotpickle=True, assume_lzma=False, **kw):
 
 def save(stuff, fname, **kw):
    finfo = fname_extensions(fname)
-   os.makedirs(finfo.directory, exist_ok=True)
+   if finfo.directory: os.makedirs(finfo.directory, exist_ok=True)
    if finfo.ext in ('.pdb', '.cif'):
       wu.pdb.dumpstruct(fname, stuff, **kw)
    elif finfo.ext == '.nc':

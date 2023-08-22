@@ -172,6 +172,8 @@ class PDBFile:
          df = df.loc[~idx]
          df = pd.DataFrame(df.to_dict())
 
+      if len(df) == 0: return None
+
       df.reset_index(inplace=True, drop=True)
       # assert len(df) > 0
 
@@ -239,16 +241,19 @@ class PDBFile:
       return mask
 
    #@timed
-   def atomcoords(self, atomname=['N', 'CA', 'C', 'O', 'CB'], aaonly=True, splitchains=False, nomask=False, **kw):
+   def atomcoords(self, atomname=['N', 'CA', 'C', 'O', 'CB'], aaonly=True, splitchains=False, nomask=False, removeempty=False, **kw):
       if splitchains:
-         chains = self.splitchains()
+         chains = self.splitchains(aaonly=aaonly)
+         if removeempty:
+            chains = [c for c in chains if c is not None]
          return zip(*[c.atomcoords(atomname, aaonly, **kw) for c in chains])
       if atomname is None:
          atomname = self.df.an.unique()
-      if not self.isonlyaa():
-         self = self.subset(het=False)  # sketchy?
+      pdb = self
+      if not pdb.isonlyaa():
+         pdb = pdb.subset(het=False)
       if not isinstance(atomname, (str, bytes)):
-         coords, masks = zip(*[self.atomcoords(a, aaonly, nomask=nomask, **kw) for a in atomname])
+         coords, masks = zip(*[pdb.atomcoords(a, aaonly, nomask=nomask, **kw) for a in atomname])
          # ic(len(coords))
          # ic([len(_) for _ in coords])
          coords = np.stack(coords).swapaxes(0, 1)
@@ -341,10 +346,10 @@ class PDBFile:
    def num_chains(self):
       return len(self.chainseq)
 
-   def splitchains(self):
+   def splitchains(self, aaonly=True):
       chains = list()
       for ch in self.df.ch.unique():
-         chains.append(self.subset(chain=ch))
+         chains.append(self.subset(chain=ch, het=False if aaonly else None))
       return chains
 
    def guess_nfold(self):

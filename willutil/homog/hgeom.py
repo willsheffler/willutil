@@ -515,9 +515,21 @@ def hrot(axis, angle=None, center=None, dtype='f8', hel=0.0, **kw):
       axis = axis[..., 1]
    else:
       axis = axis
-      center = (np.array([0, 0, 0], dtype=dtype) if center is None else np.array(center, dtype=dtype))
+      center = (np.array([0, 0, 0], dtype=dtype) if center is None else np.asarray(center, dtype=dtype))
 
    r = rot(axis, angle, dtype=dtype, shape=(4, 4), **kw)
+   if center.ndim > 1:
+      rshape, cshape = r.shape, center.shape
+      r = np.tile(r, cshape[:-1] + (1, ) * len(rshape))
+      center = np.tile(center, rshape[:-2] + (1, ) * len(cshape))
+      assert center.ndim == 3
+      center = center.swapaxes(0, 1)
+      # ic(r.shape)
+      # ic(center.shape)
+      # x, y, z = center[..., 0], center[..., 1], center[..., 2]
+      # ic(x.shape)
+      # ic(r[..., 0, 3].shape)
+      # assert 0
    x, y, z = center[..., 0], center[..., 1], center[..., 2]
    r[..., 0, 3] = x - r[..., 0, 0] * x - r[..., 0, 1] * y - r[..., 0, 2] * z
    r[..., 1, 3] = y - r[..., 1, 0] * x - r[..., 1, 1] * y - r[..., 1, 2] * z
@@ -764,7 +776,7 @@ def hrandsmall(shape=(), cart_sd=0.001, rot_sd=0.001, centers=None, seed=None, d
    axis = rand_unit(shape)
    ang = np.random.normal(0, rot_sd, shape) * np.pi
    if centers is None: centers = [0, 0, 0, 1]
-   else: assert centers.shape[:-1] == shape
+   else: assert centers.shape[:-1] in ((), shape)
    x = hrot(axis, ang, centers, degrees=False).squeeze()
    trans = np.random.normal(0, cart_sd, x[..., :3, 3].shape)
    x[..., :3, 3] += trans

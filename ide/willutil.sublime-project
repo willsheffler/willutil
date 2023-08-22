@@ -6,8 +6,8 @@
 			"shell_cmd": "cd $folder; python willutil/runtests.py --projname willutil $file &> log/sublime_build.log"
 		},
 		{
-			"name": "test_motif_manager",
-			"shell_cmd": "cd /home/sheffler/project/symmmotif_HE; rm -f *.pdb; rm -f symmmotif_HE_test1/*; rm -f symmmotif_HE_test1/traj/*;  sh input/test_motif_manager.sh &> $folder/log/sublime_build.log"
+			"name": "run examples/db1.py",
+			"shell_cmd": "cd /home/sheffler/for/db/symexample; python symmetrize.py input/icos150.pdb --symmetry icos &> $folder/log/sublime_build.log"
 		},
 		{
 			"name": "gm2306",
