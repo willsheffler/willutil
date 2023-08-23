@@ -4,6 +4,8 @@ import willutil as wu
 from willutil.homog.thgeom import *
 from willutil.homog.hgeom import *
 
+# pytest.skip(allow_module_level=True)
+
 def main():
 
    test_th_axis_angle_cen_hel_vec()

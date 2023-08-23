@@ -6,8 +6,8 @@
 			"shell_cmd": "cd $folder; python willutil/runtests.py --projname willutil $file &> log/sublime_build.log"
 		},
 		{
-			"name": "run examples/db1.py",
-			"shell_cmd": "cd /home/sheffler/for/db/symexample; python symmetrize.py input/icos150.pdb --symmetry icos &> $folder/log/sublime_build.log"
+			"name": "run baker symmetrize.py",
+			"shell_cmd": "cd /home/sheffler/for/db/symexample; python symmetrize.py input/IRP_10-2_shifted.pdb --symmetry c2 --cart_sd 1 &> $folder/log/sublime_build.log"
 		},
 		{
 			"name": "gm2306",

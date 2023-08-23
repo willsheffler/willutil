@@ -12,7 +12,7 @@ def main():
    # assert torch.all(a == c)
    # assert 0, 'PASS'
 
-   test_polymotif()
+   debug_polymotif()
 
    test_motif_occlusion()
 
@@ -23,12 +23,21 @@ def main():
 
    print('test_motif_placer PASS', flush=True)
 
-def test_polymotif():
+def debug_polymotif():
    flist = open('/home/sheffler/project/multimotif/input/lanth_polymotif_list_1.txt').read().split()
-   pdb = wu.readpdb(flist[0])
-   xyz, mask = pdb.atomcoords(['N', 'CA', 'C'], splitchains=True, nomask=True, removeempty=True)
-   ic(xyz)
-   # pdbs = [wu.readpdb(f).atomcoords(['N', 'CA', 'C'], splitchains=True, nomask=True, removeempty=True) for f in flist[:1]]
+   # ic(xyz)
+   from collections import defaultdict
+   counter = defaultdict(lambda: 0)
+   for f in flist:
+      pdb = wu.readpdb(f)
+      xyz, mask = pdb.atomcoords(['N', 'CA', 'C'], splitchains=True, removeempty=True)
+      sizes = tuple(sorted([len(_) for _ in xyz]))
+      counter[sizes] += 1
+      # group into shapes
+      # read into fnames, coordstack, diststack
+      # create new drms func
+      # xyz, mask = wu.readpdb(f).atomcoords(['N', 'CA', 'C'], splitchains=True, nomask=True, removeempty=True)
+   ic(counter)
    # ic(pdbs)
    assert 0
 

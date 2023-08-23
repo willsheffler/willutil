@@ -518,7 +518,7 @@ def hrot(axis, angle=None, center=None, dtype='f8', hel=0.0, **kw):
       center = (np.array([0, 0, 0], dtype=dtype) if center is None else np.asarray(center, dtype=dtype))
 
    r = rot(axis, angle, dtype=dtype, shape=(4, 4), **kw)
-   if center.ndim > 1:
+   if center.ndim > 1 and axis.ndim == 1:
       rshape, cshape = r.shape, center.shape
       r = np.tile(r, cshape[:-1] + (1, ) * len(rshape))
       center = np.tile(center, rshape[:-2] + (1, ) * len(cshape))

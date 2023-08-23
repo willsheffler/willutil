@@ -410,12 +410,17 @@ class PDBFile:
                   isect = body.intersects(chainbodies[ich], xforms[imodel], mindis=contact_distance)
                   if not isect: continue
                newch = wu.pdb.all_pymol_chains[startchain + len(keeppdbs)].encode()
+               # ic(imodel, ich, ch, newch)
                xpdb = chainpdbs[ich].xformed(xform)
-               xpdb.df.loc[xpdb.df.ch == ch, 'ch'] = newch
+               # xpdb.df.loc[xpdb.df.ch == ch, 'ch'] = newch
+               assert len(set(xpdb.df.ch)) == 1
+               xpdb.df.ch = newch
                xpdb.camask()
                keeppdbs.append(xpdb)
+
          df = pd.concat([pdb.df for pdb in keeppdbs])
-         return PDBFile(df, meta=self.meta, original_contents=self.original_contents)
+         newpdb = PDBFile(df, meta=self.meta, original_contents=self.original_contents)
+         return newpdb
 
    @property
    def coords(self):
