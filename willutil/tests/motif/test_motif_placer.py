@@ -24,35 +24,52 @@ def main():
    print('test_motif_placer PASS', flush=True)
 
 def debug_polymotif():
+   fnames, coords = wu.load('/home/sheffler/project/multimotif/input/lanth_polymotif_2h_176_10x10.pickle')
+   coords = [torch.as_tensor(c) for c in coords]
+   # wu.showme(coords[0][0])
+   dist = [[None, None], [None, None]]
+   for i, j in [(0, 0), (0, 1), (1, 1)]:
+      dist[i][j] = torch.cdist(coords[i][:, :, 1], coords[j][:, :, 1])
+      assert torch.allclose(torch.cdist(coords[i][113, :, 1], coords[j][113, :, 1]), dist[i][j][113])
+
+def debug_polymotif_read():
    flist = open('/home/sheffler/project/multimotif/input/lanth_polymotif_list_1.txt').read().split()
    # ic(xyz)
    from collections import defaultdict
    counter = defaultdict(lambda: 0)
+   fnames = list()
+   coords = [list(), list()]
    for f in flist:
       pdb = wu.readpdb(f)
       xyz, mask = pdb.atomcoords(['N', 'CA', 'C'], splitchains=True, removeempty=True)
       sizes = tuple(sorted([len(_) for _ in xyz]))
       counter[sizes] += 1
+      if sizes == (10, 10):
+         fnames.append(f)
+         coords[0].append(xyz[0])
+         coords[1].append(xyz[1])
       # group into shapes
       # read into fnames, coordstack, diststack
       # create new drms func
       # xyz, mask = wu.readpdb(f).atomcoords(['N', 'CA', 'C'], splitchains=True, nomask=True, removeempty=True)
    ic(counter)
-   # ic(pdbs)
+
+   coords = [np.stack(c) for c in coords]
+   wu.save((fnames, coords), 'lanth_polymotif_2h_176_10x10.pickle')
+
    assert 0
 
 def randslice(n):
    r = random.randrange(n), random.randrange(n)
    return slice(min(r), max(r))
 
-@pytest.mark.skip
 def test_motif_occlusion():
    xyz = torch.as_tensor(wu.tests.load_test_data('xyz/1pgx_ncac.npy'), device='cpu')
-   xyz = xyz[:2]
+   xyz = xyz[:30]
 
    nres, nasym = len(xyz), None
    cbreaks = get_symm_cbreaks(nres, nasym, cbreaks=[])
-   sizes = [1, 1]
+   sizes = [7, 13]
    # motif, motifpos = make_test_motif(xyz, sizes, rnoise=0.1, nasym=nasym, cbreaks=cbreaks)
    # print(motifpos)
    # xyz[0:3, :, 0] += 100000
@@ -61,21 +78,21 @@ def test_motif_occlusion():
 
    # placement = place_motif_dme_fast(xyz, motif, nasym=nasym, cbreaks=cbreaks)
 
-   # contacts = (9.0 > torch.cdist(xyz[:, 1], xyz[:, 1])).to(torch.float32)
+   contacts = (10.0 > torch.cdist(xyz[:, 1], xyz[:, 1])).to(torch.float32)
    # contacts[:] = 1
-   torch.manual_seed(0)
-   contacts = torch.rand((len(xyz), len(xyz))) < 0.5
-   ic(contacts.to(int))
+   # torch.manual_seed(0)
+   # contacts = torch.rand((len(xyz), len(xyz))) < 0.5
+   # ic(contacts.to(int))
 
    occ = compute_offset_occlusion_tensor(contacts, sizes)
    # ic(occ.shape)
-   ic(occ.to(int))
+   # ic(occ.to(int))
 
    occref, offsets = compute_offset_occlusion_brute(contacts, sizes, cbreaks=cbreaks)
    occtst = occ[tuple(offsets.T)]
-   ic(offsets)
-   ic(occref.to(int))
-   ic(occtst.to(int))
+   # ic(offsets)
+   # ic(occref.to(int))
+   # ic(occtst.to(int))
    assert np.allclose(occref, occtst)
 
    # showme_motif_placements(xyz, motif, placement.offset[:10])
@@ -84,12 +101,12 @@ def test_motif_occlusion():
 
 def perftest_motif_placer():
    t = wu.Timer()
-   N = 100
+   N = 140
    xyz = torch.tensor(wu.hrandpoint(3 * N)[:, :3].reshape(N, 3, 3), dtype=torch.float32, device='cuda')
 
    nres, nasym = len(xyz), None
    cbreaks = get_symm_cbreaks(nres, nasym, cbreaks=[])
-   junct = 5
+   junct = 0
    sizes = [15, 15, 15, 15]
    # ic(sum(sizes))
    # ic(cbreaks)
@@ -109,8 +126,8 @@ def perftest_motif_placer():
       return_alldme=True,
       nolapcheck=1000,
       nrmsalign=1,
-      motif_occlusion_weight=1,
-      motif_occlusion_dist=13,
+      motif_occlusion_weight=0.1,
+      motif_occlusion_dist=10,
    )
    t.checkpoint('fastdme')
    # t.report()
