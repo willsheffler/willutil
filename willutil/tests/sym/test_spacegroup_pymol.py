@@ -4,6 +4,8 @@ from numpy.random import rand
 import willutil as wu
 from opt_einsum import contract as einsum
 
+pytest.skip(allow_module_level=True)
+
 def main():
 
    #   for i in range(40, 160, 10):

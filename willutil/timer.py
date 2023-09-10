@@ -123,6 +123,9 @@ class Timer:
          log.debug(f'{self.name} checkpoint {name} iter {len(self.checkpoints[name])}' + f'time {self.checkpoints[name][-1]}')
       return self
 
+   def elapsed(self):
+      return time.perf_counter() - self._start
+
    def __exit__(
       self,
       type=None,

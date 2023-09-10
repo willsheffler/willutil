@@ -46,6 +46,32 @@ class Bunch(dict):
          s += ')'
       return s
 
+   def printme(self):
+      def short(thing):
+         s = str(thing)
+         if len(s) > 80:
+            import numpy as np
+            if isinstance(thing, np.ndarray):
+               s = f'shape {thing.shape}'
+            else:
+               s = str(s)[:67].replace('\n', '') + '...'
+         return s
+
+      s = 'Bunch('
+      s += ', '.join([f'{k}={v}' for k, v in self.items()])
+
+      s += ')'
+      if len(s) > 120:
+         s = 'Bunch(' + os.linesep
+         if len(self) == 0:
+            return 'Bunch()'
+         w = int(min(40, max(len(str(k)) for k in self)))
+         for k, v in self.items():
+            s += f'  {k:{f"{w}"}} = {short(v)}' + os.linesep
+         s += ')'
+      print(s, flush=True)
+      return s
+
    def reduce(self, func, strict=True):
       'reduce all contained iterables using <func>'
       for k in self:

@@ -3,6 +3,7 @@ import willutil as wu
 from willutil.motif.motif_placer import *
 import numpy as np
 import torch
+from opt_einsum import contract as einsum
 
 def main():
    # a = torch.rand(10000) < 0.5
@@ -11,6 +12,11 @@ def main():
    # a[a.clone()] = b[a]
    # assert torch.all(a == c)
    # assert 0, 'PASS'
+
+   debug_symbridge_minfunc()
+   assert 0
+   test_rotation_point_match()
+   debug_symbridge_rot_point_match()
 
    debug_polymotif()
 
@@ -22,6 +28,176 @@ def main():
    perftest_motif_placer()
 
    print('test_motif_placer PASS', flush=True)
+
+def rotations_point_match(beg, end, angle, nsamp):
+   beg, end = wu.hpoint(beg), wu.hpoint(end)
+   assert beg.shape == (4, ) and end.shape == (4, )
+   if abs(angle) > 2 * np.pi: angle = np.radians(angle)
+   cen = (beg + end) / 2
+   dist = np.linalg.norm(end - beg)
+   dirn = wu.hnormalized(end - beg)
+   offset = np.tan(np.pi / 2 - angle / 2) * dist / 2
+   # ic(cen)
+   # ic(dirn)
+   # ic(dist)
+   # ic(offset)
+   # perpref = np.array([0.34034305, 0.30650766, 0.888943, 0.])
+   perpref = wu.hrandvec()
+   axis0 = wu.hnormalized(wu.hprojperp(dirn, perpref))
+   cen0 = wu.hrot(dirn, -np.pi / 2, cen) @ axis0
+   cen0 = offset * cen0 + cen
+   rots = wu.hrot(dirn, np.linspace(0, 2 * np.pi, nsamp), cen)
+   axs = wu.hxform(rots, axis0)
+   cen = wu.hxform(rots, cen0)
+   matchrots = wu.hrot(axs, angle, cen)
+   return matchrots, axs, cen
+
+def test_rotation_point_match():
+   for angle in range(60, 181, 10):
+      beg, end = wu.hrandpoint(2)
+      xptmatch, maxs, mcen = rotations_point_match(beg, end, angle, 10)
+      assert np.allclose(end, wu.hxform(xptmatch, beg))
+
+def _degbug_symbridge_make_test_coords(reg1, reg2, nfold, xsd=1, xyzsd=0):
+   reg2 = wu.th_xform(wu.th_rot([0, 0, 1], torch.pi * 2 / nfold), reg2)
+   x = torch.as_tensor(wu.hrandsmall(cart_sd=xsd, rot_sd=xsd / 15))
+   reg1cen, reg2cen = reg1.mean(axis=(0, 1)), reg2.mean(axis=(0, 1))
+   # reg1cen, reg2cen = torch.zeros(3), torch.zeros(3)
+   xyznoise1 = torch.as_tensor(wu.hrandpoint(reg1.shape[:-1], std=xyzsd)[..., :3])
+   xyznoise2 = torch.as_tensor(wu.hrandpoint(reg1.shape[:-1], std=xyzsd)[..., :3])
+   reg1 = wu.th_xform(x, reg1 - reg1cen) + reg1cen + xyznoise1
+   reg2 = wu.th_xform(x, reg2 - reg2cen) + reg2cen + xyznoise2
+   return [reg1, reg2]
+
+def cyclic_symbridge_rms(R0, T0, A0, C0, xyz, motif, nfold):
+   motif0 = einsum('ij,raj->rai', R0, motif[0]) + T0
+   motif1 = einsum('ij,raj->rai', R0, motif[1]) + T0
+   xsym = wu.th_rot(A0, torch.pi * 2 / nfold, C0)
+   motif1 = wu.th_xform(xsym, motif1)
+   rms = (xyz[0] - motif0).square().mean()
+   rms += (xyz[1] - motif1).square().mean()
+   return torch.sqrt(rms)
+
+def debug_symbridge_minfunc():
+   pdb = wu.readpdb('/home/sheffler/project/dborigami/input/pep_abc_motif_min.pdb')
+   cachains, _ = pdb.atomcoords(['N', 'CA', 'C'], splitchains=True)
+   motif0 = torch.tensor(cachains[0], dtype=torch.float32)
+   motif1 = torch.tensor(cachains[2], dtype=torch.float32)
+   motif2 = torch.tensor(cachains[1], dtype=torch.float32)
+
+   nfold = 3
+   xyz1, xyz2 = _degbug_symbridge_make_test_coords(motif0, motif1, nfold=nfold, xsd=4, xyzsd=0)
+   xyz2sym = wu.th_xform(wu.th_rot([0, 0, 1], -torch.pi * 2 / nfold), xyz2)
+
+   wu.showme(torch.cat([xyz1, xyz2, xyz2sym]), name='ref')
+   wu.showme(torch.cat([motif0, motif1]), name='motif')
+   assert 0
+
+   def Q2R(Q):
+      Qs = torch.cat((torch.ones((1), device=Q.device), Q), dim=-1)
+      Qs = normQ(Qs)
+      return Qs2Rs(Qs[None, :]).squeeze(0)
+
+   with torch.enable_grad():
+      T0 = torch.zeros(3, device=xyz1.device).requires_grad_(True)
+      Q0 = torch.zeros(3, device=xyz1.device).requires_grad_(True)
+      A0 = torch.tensor([0.0, 0.0, 1.0], device=xyz1.device).requires_grad_(True)
+      C0 = torch.zeros(3, device=xyz1.device).requires_grad_(True)
+
+   lbfgs = torch.optim.LBFGS([T0, Q0, A0, C0], history_size=10, max_iter=4, line_search_fn="strong_wolfe")
+
+   def closure():
+      lbfgs.zero_grad()
+      loss = cyclic_symbridge_rms(Q2R(Q0), T0, A0, C0, [xyz1, xyz2], [motif0, motif1], nfold)
+      # ic(A0, C0)
+      loss.backward()
+      return loss
+
+   # wu.showme(torch.cat([xyz1, xyz2, xyz2sym]), name='ref')
+   # wu.showme(torch.cat([motif0, motif1]), name='motif')
+
+   for i in range(40):
+      loss = lbfgs.step(closure)
+      ic(loss)
+      motif0b = einsum('ij,raj->rai', Q2R(Q0), motif0) + T0
+      motif1b = einsum('ij,raj->rai', Q2R(Q0), motif1) + T0
+      # wu.showme(torch.cat([motif0b, motif1b]), name=f'minmotif{i}')
+
+def debug_symbridge_rot_point_match():
+   pdb = wu.readpdb('/home/sheffler/project/dborigami/input/pep_abc_motif_min.pdb')
+   cachains, _ = pdb.atomcoords(['N', 'CA', 'C'], splitchains=True)
+   ic(len(cachains))
+   ic(cachains[0].shape)
+   ic(cachains[1].shape)
+   ic(cachains[2].shape)
+   # wu.showme(cachains[0])
+   # wu.showme(cachains[1])
+   # wu.showme(cachains[2])
+
+   SYMANG = 70
+   # for SYMANG in range(90, 181, 10):
+   reg1 = cachains[0][:9]
+   reg2 = cachains[2][:9]
+   target = wu.hxform(wu.hrot([0, 0, 1], SYMANG), reg2)
+   target[..., 0] += 20
+   target[..., 1] += 10
+   target[..., 2] += 30
+
+   targetcom = target.mean(axis=(0, 1))
+   reg2com = reg2.mean(axis=(0, 1))
+   xptmatch, maxs, mcen = rotations_point_match(reg2com, targetcom, SYMANG, 100)
+   assert np.allclose(targetcom, wu.hxform(xptmatch, reg2com))
+   wu.showme(mcen + maxs)
+   wu.showme(mcen)
+   _debug_helper_show_close_xforms(reg1, reg2, xptmatch, targetcom, thresh=1)
+   return
+
+   CENSD = 30
+   nsamp = 1_000_000
+   # AXISSD = 0.3
+   # randaxis = np.random.normal(size=(nsamp, 3)) * AXISSD
+   # randaxis[:, 2] = 1
+   randaxis = np.random.normal(size=(nsamp, 3))
+   randaxis = wu.hnormalized(randaxis)
+   totgt = (target.mean(axis=(0, 1)) - reg2.mean(axis=(0, 1)))
+   randaxis = wu.hnormalized(wu.hprojperp(totgt, randaxis))
+   randcen = wu.hpoint(np.random.normal(size=(nsamp, 3)) * CENSD)
+   ic(randcen.shape)
+   randcen[:, :3] += (target.mean(axis=(0, 1)) + reg2.mean(axis=(0, 1))) / 2
+   # ic(randcen.shape, randaxis.shape)
+   xformsrand = wu.hrot(randaxis, SYMANG, randcen)
+   # ic(xformsrand.shape)
+   _debug_helper_show_close_xforms(reg1, reg2, xformsrand, targetcom, randaxis, randcen)
+
+def _debug_helper_show_close_xforms(reg1, reg2, xformsrand, targetcom, randaxis=None, randcen=None, thresh=1, showall=False):
+
+   xreg2 = wu.hxform(xformsrand, reg2)
+
+   coms = xreg2.mean(axis=(1, 2))
+
+   # ic(targetcom)
+   # ic(coms[:3])
+   dist = np.linalg.norm(targetcom[:3] - coms, axis=-1)
+   # ic(dist)
+   isclose = dist < thresh
+   if showall: isclose[:] = True
+   # ic(isclose.shape, isclose.sum())
+   if randaxis is None or randcen is None:
+      axs, ang, cen = wu.haxis_ang_cen_of(xformsrand[isclose])
+   else:
+      axs = randaxis[isclose]
+      cen = randcen[isclose]
+
+   wu.showme(reg1, name='reg1')
+   from pymol import cmd
+   cmd.set('suspend_updates', 'on')
+   for samp, axs, cen in zip(xreg2[isclose], axs, cen):
+      # axvis = np.stack([cen, cen + axs, cen + 2 * axs])[None, :, :3]
+      # axsamp = np.concatenate([samp, axvis], axis=0)
+      axsamp = samp
+      wu.showme(axsamp, name='samp')
+   cmd.hide('car')
+   cmd.set('suspend_updates', 'off')
 
 def debug_polymotif():
    fnames, coords = wu.load('/home/sheffler/project/multimotif/input/lanth_polymotif_2h_176_10x10.pickle')
@@ -211,6 +387,61 @@ def test_motif_placer_minbeg_minend(showme=False):
          if all([junct * 2 >= s for s in sizes]):
             assert torch.allclose(x, alldme)
          assert np.allclose([m[0] for m in motifpos], fastdme.offset[0])
+
+def normQ(Q):
+   """normalize a quaternions
+    """
+   return Q / torch.linalg.norm(Q, keepdim=True, dim=-1)
+
+# ============================================================
+def avgQ(Qs):
+   """average a set of quaternions
+    input dims:
+    Qs - (B,N,R,4)
+    averages across 'N' dimension
+    """
+   def areClose(q1, q2):
+      return ((q1 * q2).sum(dim=-1) >= 0.0)
+
+   N = Qs.shape[1]
+   Qsum = Qs[:, 0] / N
+
+   for i in range(1, N):
+      mask = areClose(Qs[:, 0], Qs[:, i])
+      Qsum[mask] += Qs[:, i][mask] / N
+      Qsum[~mask] -= Qs[:, i][~mask] / N
+
+   return normQ(Qsum)
+
+def Rs2Qs(Rs):
+   Qs = torch.zeros((*Rs.shape[:-2], 4), device=Rs.device)
+
+   Qs[..., 0] = 1.0 + Rs[..., 0, 0] + Rs[..., 1, 1] + Rs[..., 2, 2]
+   Qs[..., 1] = 1.0 + Rs[..., 0, 0] - Rs[..., 1, 1] - Rs[..., 2, 2]
+   Qs[..., 2] = 1.0 - Rs[..., 0, 0] + Rs[..., 1, 1] - Rs[..., 2, 2]
+   Qs[..., 3] = 1.0 - Rs[..., 0, 0] - Rs[..., 1, 1] + Rs[..., 2, 2]
+   Qs[Qs < 0.0] = 0.0
+   Qs = torch.sqrt(Qs) / 2.0
+   Qs[..., 1] *= torch.sign(Rs[..., 2, 1] - Rs[..., 1, 2])
+   Qs[..., 2] *= torch.sign(Rs[..., 0, 2] - Rs[..., 2, 0])
+   Qs[..., 3] *= torch.sign(Rs[..., 1, 0] - Rs[..., 0, 1])
+
+   return Qs
+
+def Qs2Rs(Qs):
+   Rs = torch.zeros((*Qs.shape[:-1], 3, 3), device=Qs.device)
+
+   Rs[..., 0, 0] = Qs[..., 0] * Qs[..., 0] + Qs[..., 1] * Qs[..., 1] - Qs[..., 2] * Qs[..., 2] - Qs[..., 3] * Qs[..., 3]
+   Rs[..., 0, 1] = 2 * Qs[..., 1] * Qs[..., 2] - 2 * Qs[..., 0] * Qs[..., 3]
+   Rs[..., 0, 2] = 2 * Qs[..., 1] * Qs[..., 3] + 2 * Qs[..., 0] * Qs[..., 2]
+   Rs[..., 1, 0] = 2 * Qs[..., 1] * Qs[..., 2] + 2 * Qs[..., 0] * Qs[..., 3]
+   Rs[..., 1, 1] = Qs[..., 0] * Qs[..., 0] - Qs[..., 1] * Qs[..., 1] + Qs[..., 2] * Qs[..., 2] - Qs[..., 3] * Qs[..., 3]
+   Rs[..., 1, 2] = 2 * Qs[..., 2] * Qs[..., 3] - 2 * Qs[..., 0] * Qs[..., 1]
+   Rs[..., 2, 0] = 2 * Qs[..., 1] * Qs[..., 3] - 2 * Qs[..., 0] * Qs[..., 2]
+   Rs[..., 2, 1] = 2 * Qs[..., 2] * Qs[..., 3] + 2 * Qs[..., 0] * Qs[..., 1]
+   Rs[..., 2, 2] = Qs[..., 0] * Qs[..., 0] - Qs[..., 1] * Qs[..., 1] - Qs[..., 2] * Qs[..., 2] + Qs[..., 3] * Qs[..., 3]
+
+   return Rs
 
 if __name__ == '__main__':
    main()

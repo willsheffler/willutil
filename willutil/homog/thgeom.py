@@ -9,10 +9,11 @@ from willutil.homog.hgeom import _hxform_impl
 from willutil.homog.hgeom import rand_xform_small
 
 def th_construct(rot, trans=None):
+   rot = torch.as_tensor(rot)
    x = torch.zeros((rot.shape[:-2] + (4, 4)))
    x[..., :3, :3] = rot[..., :3, :3]
    if trans is not None:
-      x[..., :3, 3] = trans[..., :3]
+      x[..., :3, 3] = torch.as_tensor(trans)[..., :3]
    x[..., 3, 3] = 1
    return x
 

@@ -1,4 +1,5 @@
-from willutil.sym import (sym, symfit, symframes, rosetta_symdef, xtalinfo, xtalfit, asufit, asuslide, helix, helix_slide)
+from willutil.sym import (sym, symfit, symframes, rosetta_symdef, xtalinfo, xtalfit, asufit, asuslide, helix,
+                          helix_slide)
 from willutil.sym.sym import *
 from willutil.sym.symfit import *
 from willutil.sym.symframes import *

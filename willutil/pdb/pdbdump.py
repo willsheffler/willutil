@@ -84,21 +84,21 @@ def pdb_format_atom(
 
 _dumppdb_seenit = defaultdict(lambda: -1)
 
-def dumppdb(fname='willutil.pdb', stuff=None, *a, namereset=False, addtimestamp=False, **kw):
+def dumppdb(out='willutil.pdb', stuff=None, *a, namereset=False, addtimestamp=False, **kw):
    global _dumppdb_seenit
-   if stuff is None:
-      raise ValueError(f'param "stuff" must be specified')
+   if stuff is None: raise ValueError(f'param "stuff" must be specified')
    stuff = wu.misc.check_torch_to_numpy(stuff)
    if addtimestamp:
-      fname = os.path.join(os.path.dirname(fname), wu.misc.datetimetag() + '_' + os.path.basename(fname))
-   if not fname.endswith(('.pdb', '.pdb.gz')) or fname.count('%04i'):
-      if namereset: del _dumppdb_seenit[fname]
-      if not fname.count('%04i'): fname += '_%04i.pdb'
-      _dumppdb_seenit[fname] += 1
-      fname = fname % _dumppdb_seenit[fname]
-   if hasattr(stuff, 'dumppdb'): return stuff.dumppdb(fname, *a, **kw)
-   if hasattr(stuff, 'dump_pdb'): return stuff.dump_pdb(fname, *a, **kw)
-   else: return dump_pdb_from_points(fname, stuff, *a, **kw)
+      out = os.path.join(os.path.dirname(out), wu.misc.datetimetag() + '_' + os.path.basename(out))
+   if isinstance(out, (str, bytes)):
+      if not out.endswith(('.pdb', '.pdb.gz')) or out.count('%04i'):
+         if namereset: del _dumppdb_seenit[out]
+         if not out.count('%04i'): out += '_%04i.pdb'
+         _dumppdb_seenit[out] += 1
+         out = out % _dumppdb_seenit[out]
+   if hasattr(stuff, 'dumppdb'): return stuff.dumppdb(out, *a, **kw)
+   if hasattr(stuff, 'dump_pdb'): return stuff.dump_pdb(out, *a, **kw)
+   else: return dump_pdb_from_points(out, stuff, *a, **kw)
 
 def dump_pdb_nchain_nres_natom(shape=[], nchain=-1, nres=-1, nresatom=-1):
    if len(shape) == 3:
@@ -141,6 +141,7 @@ def dump_pdb_from_points(
    cellgeom=None,
    skipval=9999.999,
    filemode='w',
+   chain=None,
    **kw,
 ):
    chainstarts = [0]
@@ -155,13 +156,13 @@ def dump_pdb_from_points(
       mask = np.ones(pts.shape[:-1], dtype=bool)
    if not (pts.ndim in (2, 3, 4) and pts.shape[-1] in (3, 4)):
       raise ValueError(f'bad shape for points {pts.shape}')
-   filemode = filemode or 'w'
    shape = dump_pdb_nchain_nres_natom(pts.shape[:-1], nchain, nres, nresatom)
    assert len(shape) == 3
    pts = pts.reshape(*shape, pts.shape[-1])
    mask = mask.reshape(*shape)
-   if os.path.dirname(fname):
-      os.makedirs(os.path.dirname(fname), exist_ok=True)
+   if isinstance(fname, (str, bytes)):
+      if os.path.dirname(fname):
+         os.makedirs(os.path.dirname(fname), exist_ok=True)
 
    if nresatom == -1 and nres == -1 and pts.ndim == 3:
       if pts.shape[-2] < 30:  # assume nres not natom
@@ -189,30 +190,35 @@ def dump_pdb_from_points(
       header += cryst1 + os.linesep
    pts = np.clip(pts, -999.999, 9999.999)
    atomconut = 1
-   with open(fname, filemode) as out:
-      out.write(header)
-      # for ic1, f in enumerate(pts):
-      chain = -1
-      for ichain, chainpts in enumerate(pts):
-         for ires, respts in enumerate(chainpts):
-            if ires in chainstarts:
-               chain += 1
-               # ic('newchain', ires, chain)
-            for iatom, p in enumerate(respts):
-               if p[0] == skipval: continue
-               if mask[ichain, ires, iatom]:
-                  s = pdb_format_atom(
-                     ia=atomconut,
-                     x=p[0],
-                     y=p[1],
-                     z=p[2],
-                     ir=ires,
-                     rn=resnames[ires],
-                     an=anames[iatom],
-                     c=chain,
-                  )
-                  out.write(s)
-                  atomconut += 1
+
+   filemode = filemode or 'w'
+   out = open(fname, filemode) if isinstance(fname, (str, bytes)) else fname
+   # with open(fname, filemode) as out:
+   out.write(header)
+   # for ic1, f in enumerate(pts):
+   chain = -1 if chain is None else chain
+   for ichain, chainpts in enumerate(pts):
+      for ires, respts in enumerate(chainpts):
+         if ires in chainstarts and isinstance(chain, int):
+            chain += 1
+            # ic('newchain', ires, chain)
+         for iatom, p in enumerate(respts):
+            if p[0] == skipval: continue
+            if mask[ichain, ires, iatom]:
+               s = pdb_format_atom(
+                  ia=atomconut,
+                  x=p[0],
+                  y=p[1],
+                  z=p[2],
+                  ir=ires,
+                  rn=resnames[ires],
+                  an=anames[iatom],
+                  c=chain,
+               )
+               out.write(s)
+               atomconut += 1
+   if isinstance(fname, (str, bytes)):
+      out.close()
 
 def dump_pdb_from_ncac_points(fname, pts, nchain=1):
    if os.path.dirname(fname):

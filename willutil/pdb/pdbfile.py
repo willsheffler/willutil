@@ -49,7 +49,10 @@ class PDBFile:
       self.nreshet = len(self.seqhet)
       self.nchain = len(self.chainseq)
       self.fname = meta.fname
-      self.aamask = self.atommask('CA', aaonly=False)
+      try:
+         self.aamask = self.atommask('CA', aaonly=False, quiet=True)
+      except:
+         pass
       self.mmcif_info = dict()
 
    def copy(self, **kw):
@@ -217,7 +220,7 @@ class PDBFile:
    dump = dump_pdb
 
    #@timed
-   def atommask(self, atomname, aaonly=True, splitchains=False, **kw):
+   def atommask(self, atomname, aaonly=True, splitchains=False, quiet=False, **kw):
       assert not splitchains
       if not isinstance(atomname, (str, bytes)):
          return np.stack([self.atommask(a) for a in atomname]).T
@@ -227,8 +230,9 @@ class PDBFile:
       # ic(self.df.iloc[0])
       for i, (ri, g) in enumerate(self.df.groupby(['ri', 'ch'])):
          if np.sum(g.an == an) > 1:
-            ic(g)
-            ic(g.an)
+            if not quiet:
+               ic(g)
+               ic(g.an)
             assert np.sum(g.an == an) <= 1
          # assert np.sum(g.an == an) <= np.sum(g.an == b'CA') # e.g. O in HOH
          hasatom = np.sum(g.an == an) > 0
@@ -241,12 +245,13 @@ class PDBFile:
       return mask
 
    #@timed
-   def atomcoords(self, atomname=['N', 'CA', 'C', 'O', 'CB'], aaonly=True, splitchains=False, nomask=False, removeempty=False, **kw):
+   def atomcoords(self, atomname=['N', 'CA', 'C', 'O', 'CB'], aaonly=True, splitchains=False, nomask=False,
+                  removeempty=False, **kw):
       if splitchains:
          chains = self.splitchains(aaonly=aaonly)
          if removeempty:
             chains = [c for c in chains if c is not None]
-         return zip(*[c.atomcoords(atomname, aaonly, **kw) for c in chains])
+         return tuple(zip(*[c.atomcoords(atomname, aaonly, nomask=nomask, **kw) for c in chains]))
       if atomname is None:
          atomname = self.df.an.unique()
       pdb = self
@@ -526,4 +531,6 @@ def _get_nfold_angle(ang, tolerances, candidates=[2, 3, 4, 5, 6], **kw):
       angnf = 2 * np.pi / nfold
       if angnf - tolerances.angle < ang < angnf + tolerances.angle:
          return nfold, ang
-   raise ValueError(f'Angle {np.degrees(ang)} deviates from any nfold in {candidates} by more than {np.degrees(tolerances.angle)} degrees')
+   raise ValueError(
+      f'Angle {np.degrees(ang)} deviates from any nfold in {candidates} by more than {np.degrees(tolerances.angle)} degrees'
+   )

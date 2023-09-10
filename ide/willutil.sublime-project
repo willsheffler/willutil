@@ -6,8 +6,12 @@
 			"shell_cmd": "cd $folder; python willutil/runtests.py --projname willutil $file &> log/sublime_build.log"
 		},
 		{
+			"name": "test_subsym.py",
+			"shell_cmd": "cd $folder; python willutil/tests/sym/test_subsym.py &> log/sublime_build.log"
+		},
+		{
 			"name": "run baker symmetrize.py",
-			"shell_cmd": "cd /home/sheffler/for/db/symexample; python symmetrize.py input/IRP_10-2_shifted.pdb --symmetry c2 --cart_sd 1 &> $folder/log/sublime_build.log"
+			"shell_cmd": "cd /home/sheffler/for/db/symexample; rm -f *.pdb; python symmetrize.py input/IRP_10-2_shifted.pdb --symmetry c6 --cart_sd 10 --nsamp 3 &> $folder/log/sublime_build.log"
 		},
 		{
 			"name": "gm2306",
