@@ -207,14 +207,14 @@ py::array_t<F> qcp_rmsd_vec(RowMatrixX<F> const &pts1,
 }
 
 PYBIND11_MODULE(qcp, m) {
-  // m.def("qcp_rms_float", &qcp_rmsd<float>, "xyz1"_a, "xyz2"_a);
-  // m.def("qcp_rms_vec_float", &qcp_rmsd<float>, "xyz1"_a, "xyz2"_a);
-  // m.def("qcp_rms_align_float", &qcp_rmsd_align<float>);
-  // m.def("qcp_rms_regions_f4i4", &qcp_rmsd_regions<float, int32_t>,
-  // "xyz1"_a, "xyz2"_a, "sizes"_a, "offsets"_a, "junct"_a = 0);
+  m.def("qcp_rms_float", &qcp_rmsd<float>, "xyz1"_a, "xyz2"_a);
+  m.def("qcp_rms_vec_float", &qcp_rmsd<float>, "xyz1"_a, "xyz2"_a);
+  m.def("qcp_rms_align_float", &qcp_rmsd_align<float>);
+  m.def("qcp_rms_regions_f4i4", &qcp_rmsd_regions<float, int32_t>, "xyz1"_a,
+        "xyz2"_a, "sizes"_a, "offsets"_a, "junct"_a = 0);
   m.def("qcp_rms_double", &qcp_rmsd<double>);
   m.def("qcp_rms_vec_double", &qcp_rmsd_vec<double>);
-  // m.def("qcp_rms_align_double", &qcp_rmsd_align<double>);
+  m.def("qcp_rms_align_double", &qcp_rmsd_align<double>);
 }
 
 } // namespace qcp

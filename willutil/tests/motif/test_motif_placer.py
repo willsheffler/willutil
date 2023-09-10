@@ -1,4 +1,5 @@
-import random, pytest
+from collections import defaultdict
+import random, pytest, os
 import willutil as wu
 from willutil.motif.motif_placer import *
 import numpy as np
@@ -13,12 +14,12 @@ def main():
    # assert torch.all(a == c)
    # assert 0, 'PASS'
 
-   debug_symbridge_minfunc()
+   debug_polymotif_c3()
    assert 0
+   debug_symbridge_minfunc()
+   debug_polymotif()
    test_rotation_point_match()
    debug_symbridge_rot_point_match()
-
-   debug_polymotif()
 
    test_motif_occlusion()
 
@@ -28,6 +29,39 @@ def main():
    perftest_motif_placer()
 
    print('test_motif_placer PASS', flush=True)
+
+def debug_polymotif_c3():
+   # xyz, fnames = list(), list()
+   # with open('/home/sheffler/project/multimotif/input/lanthC3motifs.txt') as inp:
+   #    for ifname, fname in enumerate(inp.read().split()):
+   #       ic(ifname)
+   #       fname = '/home/sheffler/project/multimotif/input/lanthC3motifs/' + os.path.basename(fname)
+   #       pdb = wu.readpdb(fname)
+   #       crd, mask = pdb.atomcoords(['N', 'CA', 'C'], splitchains=True, removeempty=True)
+   #       xyz.append(crd)
+   #       fnames.append(fname)
+   # wu.save((xyz, fnames), '/tmp/xyz_fnames.pickle')
+   xyzsin, fnamesin = wu.load('/tmp/xyz_fnames.pickle')
+   xyzs, fnames = list(), list()
+   for xyz, fname in zip(xyzsin, fnamesin):
+      xyz = np.concatenate(xyz)
+      if 24 != len(xyz): continue
+      cndist = wu.hnorm(xyz[2, 2] - xyz[3, 0])
+      if cndist < 5.0: continue
+      xyzs.append(xyz)
+      fnames.append(fname)
+   xyz = np.stack(xyzs)
+   motifinfo = dict()
+   motifinfo['reg'] = np.array([[0, 3], [3, 8]])
+   motifinfo['xyz'] = xyz
+   motifinfo['files'] = fnames
+   assert len(fnames) == len(xyz)
+   wu.save(motifinfo, '/home/sheffler/project/multimotif/input/lanthC3motifs_3_5.pickle')
+   # ic(xyz.shape)
+   # for i in range(20):
+   # wu.showme(xyz[i])
+   # ic(len(fnames))
+   # ic(wu.hnorm(n - c))
 
 def rotations_point_match(beg, end, angle, nsamp):
    beg, end = wu.hpoint(beg), wu.hpoint(end)
@@ -169,7 +203,8 @@ def debug_symbridge_rot_point_match():
    # ic(xformsrand.shape)
    _debug_helper_show_close_xforms(reg1, reg2, xformsrand, targetcom, randaxis, randcen)
 
-def _debug_helper_show_close_xforms(reg1, reg2, xformsrand, targetcom, randaxis=None, randcen=None, thresh=1, showall=False):
+def _debug_helper_show_close_xforms(reg1, reg2, xformsrand, targetcom, randaxis=None, randcen=None, thresh=1,
+                                    showall=False):
 
    xreg2 = wu.hxform(xformsrand, reg2)
 
@@ -380,9 +415,12 @@ def test_motif_placer_minbeg_minend(showme=False):
          cbreaks = get_symm_cbreaks(nres, nasym, cbreaks=[20, 40, 60])
          junct = 10
          sizes = [12, 13]
-         motif, motifpos = make_test_motif(xyz, sizes, rnoise=0.1, nasym=nasym, cbreaks=cbreaks, minbeg=minbeg, minend=minend)
-         fastdme = place_motif_dme_fast(xyz, motif, nasym=nasym, cbreaks=cbreaks, junct=junct, return_alldme=True, minbeg=minbeg, minend=minend)
-         doffset, dme, alldo, alldme = place_motif_dme_brute(xyz, motif, nasym=nasym, cbreaks=cbreaks, minbeg=minbeg, minend=minend)
+         motif, motifpos = make_test_motif(xyz, sizes, rnoise=0.1, nasym=nasym, cbreaks=cbreaks, minbeg=minbeg,
+                                           minend=minend)
+         fastdme = place_motif_dme_fast(xyz, motif, nasym=nasym, cbreaks=cbreaks, junct=junct, return_alldme=True,
+                                        minbeg=minbeg, minend=minend)
+         doffset, dme, alldo, alldme = place_motif_dme_brute(xyz, motif, nasym=nasym, cbreaks=cbreaks, minbeg=minbeg,
+                                                             minend=minend)
          x = fastdme.alldme[tuple(alldo.T - minbeg)]
          if all([junct * 2 >= s for s in sizes]):
             assert torch.allclose(x, alldme)
