@@ -1,10 +1,13 @@
 import willutil as wu
-from willutil.cpp.rms import qcp_rms_double, qcp_rms_align_double, qcp_rms_regions_f4i4
+# from willutil.cpp.rms import qcp_rms_double, qcp_rms_vec_double, qcp_rms_align_double, qcp_rms_regions_f4i4
+from willutil.cpp.rms import qcp_rms_double, qcp_rms_vec_double
 import numpy as np
 
 def main():
+   test_qcp_vec()
+   assert 0
+
    test_qcp_regions_junct_simple()
-   # assert 0
 
    test_qcp_regions()
    test_qcp_regions_junct()
@@ -19,6 +22,15 @@ def main():
    perftest_qcp_regions()
 
    print('test_qcp PASS', flush=True)
+
+def test_qcp_vec(niter=100, npts=(100000, 10)):
+   pts1 = wu.hrandpoint(npts[1])[:, :3].copy()
+   pts2 = wu.hrandpoint(npts)[:, :, :3].copy()
+   with wu.Timer():
+      rms = qcp_rms_vec_double(pts1, pts2)
+   with wu.Timer():
+      rms2 = [qcp_rms_double(pts1, p2) for p2 in pts2]
+   assert np.allclose(rms, rms2)
 
 def test_qcp_regions_simple_1seg():
    N = 100
