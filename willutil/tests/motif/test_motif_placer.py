@@ -14,7 +14,8 @@ def main():
    # assert torch.all(a == c)
    # assert 0, 'PASS'
 
-   debug_polymotif_c3()
+   debug_polymotif_c2()
+   # debug_polymotif_c3()
    assert 0
    debug_symbridge_minfunc()
    debug_polymotif()
@@ -29,6 +30,20 @@ def main():
    perftest_motif_placer()
 
    print('test_motif_placer PASS', flush=True)
+
+def debug_polymotif_c2():
+   fnames = [
+      '/home/sheffler/project/multimotif/input/dimer20N_1.pdb', '/home/sheffler/project/multimotif/input/dimer20N_2.pdb'
+   ]
+   pdbs = [wu.readpdb(f) for f in fnames]
+   xyz = np.stack([p.ncac() for p in pdbs])
+
+   motifinfo = dict()
+   motifinfo['reg'] = np.array([[0, 20]])
+   motifinfo['xyz'] = xyz
+   motifinfo['files'] = fnames
+   assert len(fnames) == len(xyz)
+   wu.save(motifinfo, '/home/sheffler/project/multimotif/input/dimer20N.pickle')
 
 def debug_polymotif_c3():
    # xyz, fnames = list(), list()

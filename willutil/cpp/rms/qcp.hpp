@@ -13,8 +13,8 @@ template <typename F> using RowMatrixX = Matrix<F, Dynamic, Dynamic, RowMajor>;
 
 using F = float;
 
-int FastCalcRMSDAndRotation(double *rot, double *A, double *rmsd, double E0,
-                            double len, double minScore) {
+int qcp_calc_rmsd_maybe_rotation(double *rot, double *A, double *rmsd,
+                                 double E0, double len, double minScore) {
   double Sxx, Sxy, Sxz, Syx, Syy, Syz, Szx, Szy, Szz;
   double Szz2, Syy2, Sxx2, Sxy2, Syz2, Sxz2, Syx2, Szy2, Szx2, SyzSzymSyySzz2,
       Sxx2Syy2Szz2Syz2Szy2, Sxy2Sxz2Syx2Szx2, SxzpSzx, SyzpSzy, SxypSyx,
@@ -256,7 +256,7 @@ F qcp_rmsd_impl(RowMatrixX<F> xyz1_in, RowMatrixX<F> xyz2_in,
     cout << "REF E0 " << E0 << " xyz1.rows() " << xyz1.rows() << endl;
   }
 
-  FastCalcRMSDAndRotation(rot, A, &rmsd, E0, xyz1.rows(), -1);
+  qcp_calc_rmsd_maybe_rotation(rot, A, &rmsd, E0, xyz1.rows(), -1);
 
   if (cen1 != nullptr)
     for (int i = 0; i < 3; ++i) {

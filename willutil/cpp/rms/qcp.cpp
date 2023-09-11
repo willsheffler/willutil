@@ -157,7 +157,7 @@ py::array_t<F> qcp_rmsd_regions(RowMatrixX<F> xyz1_in, RowMatrixX<F> xyz2_in,
       for (int ii = 0; ii < 3; ++ii)
         for (int jj = 0; jj < 3; ++jj)
           A[3 * ii + jj] = iprod(ii, jj);
-      FastCalcRMSDAndRotation(NULL, A, &rmsd, E0, ncrd, -1);
+      qcp_calc_rmsd_maybe_rotation(NULL, A, &rmsd, E0, ncrd, -1);
 
       rms[ioff] = rmsd;
     }
@@ -168,8 +168,8 @@ py::array_t<F> qcp_rmsd_regions(RowMatrixX<F> xyz1_in, RowMatrixX<F> xyz2_in,
 }
 
 template <typename F>
-py::array_t<F> qcp_rmsd_vec(RowMatrixX<F> const &pts1,
-                            py::array_t<F> const &pts2) {
+py::array_t<double> qcp_rmsd_vec(RowMatrixX<F> const &pts1,
+                                 py::array_t<F> const &pts2) {
   if (pts2.ndim() != 3)
     throw std::runtime_error("ndim must be 3");
   if (pts1.rows() != pts2.shape()[1])
@@ -199,22 +199,84 @@ py::array_t<F> qcp_rmsd_vec(RowMatrixX<F> const &pts1,
       for (int jj = 0; jj < 3; ++jj)
         A[3 * ii + jj] = iprod(ii, jj);
     double *rot = nullptr;
-    FastCalcRMSDAndRotation(rot, A, &rms[i], E0, xyz1.rows(), -1);
+    double rmstmp;
+    qcp_calc_rmsd_maybe_rotation(rot, A, &rmstmp, E0, xyz1.rows(), -1);
+    rms[i] = rmstmp;
   }
   py::capsule free_when_done(
       rms, [](void *f) { delete[] reinterpret_cast<F *>(f); });
   return py::array_t<F>({M}, {sizeof(F)}, rms, free_when_done);
 }
 
+template <typename F>
+py::tuple qcp_rmsd_align_vec(RowMatrixX<F> const &pts1,
+                             py::array_t<F> const &pts2) {
+  if (pts2.ndim() != 3)
+    throw std::runtime_error("ndim must be 3");
+  if (pts1.rows() != pts2.shape()[1])
+    throw std::runtime_error("arrays must be same size");
+  int M = pts2.shape()[0];
+  int N = pts2.shape()[1];
+  F *ptr = (F *)pts2.request().ptr;
+  F *rms = new F[M];
+  F *rot = new F[M * 3 * 3];
+  F *trans = new F[M * 3];
+
+  for (int i = 0; i < M; ++i) {
+    size_t ofst = i * pts2.strides()[0] / sizeof(F);
+    Map<RowMatrixX<F>> xyz2_in(ptr + ofst, N, 3);
+    if (pts1.rows() != xyz2_in.rows())
+      throw std::runtime_error("xyz1 and xyz2 not same size");
+    Matrix<F, Dynamic, 3> xyz1 = pts1.block(0, 0, pts1.rows(), 3);
+    Matrix<F, Dynamic, 3> xyz2 = xyz2_in.block(0, 0, xyz2_in.rows(), 3);
+    auto m1 = xyz1.colwise().mean();
+    auto m2 = xyz2.colwise().mean();
+    Matrix<F, 1, 3> _cen1(m1);
+    Matrix<F, 1, 3> _cen2(m2);
+    xyz1.rowwise() -= m1;
+    xyz2.rowwise() -= m2;
+    auto iprod = xyz1.transpose() * xyz2;
+    double E0 = (xyz1.array().square().sum() + xyz2.array().square().sum()) / 2;
+    double A[9];
+    for (int ii = 0; ii < 3; ++ii)
+      for (int jj = 0; jj < 3; ++jj)
+        A[3 * ii + jj] = iprod(ii, jj);
+    double rottmp[9];
+    double rmstmp;
+    qcp_calc_rmsd_maybe_rotation(&rottmp[0], A, &rmstmp, E0, xyz1.rows(), -1);
+    rms[i] = rmstmp;
+    for (int j = 0; j < 9; ++j)
+      rot[i * 9 + j] = rottmp[j];
+    Map<Matrix<F, 3, 3>> Rtmp(rot + i * 9);
+    auto Ttmp = Rtmp * -_cen1.transpose() + _cen2.transpose();
+    trans[i * 3 + 0] = Ttmp[0];
+    trans[i * 3 + 1] = Ttmp[1];
+    trans[i * 3 + 2] = Ttmp[2];
+  }
+  py::capsule freerms(rms, [](void *f) { delete[] reinterpret_cast<F *>(f); });
+  auto pyrms = py::array_t<F>({M}, {sizeof(F)}, rms, freerms);
+  py::capsule freerot(rot, [](void *f) { delete[] reinterpret_cast<F *>(f); });
+  auto pyrot = py::array_t<F>(
+      {M, 3, 3}, {3 * 3 * sizeof(F), sizeof(F), 3 * sizeof(F)}, rot, freerot);
+  py::capsule freetrans(trans,
+                        [](void *f) { delete[] reinterpret_cast<F *>(f); });
+  auto pytrans =
+      py::array_t<F>({M, 3}, {3 * sizeof(F), sizeof(F)}, trans, freetrans);
+  return py::make_tuple(pyrms, pyrot, pytrans);
+}
+
 PYBIND11_MODULE(qcp, m) {
   m.def("qcp_rms_float", &qcp_rmsd<float>, "xyz1"_a, "xyz2"_a);
-  m.def("qcp_rms_vec_float", &qcp_rmsd<float>, "xyz1"_a, "xyz2"_a);
+  m.def("qcp_rms_vec_float", &qcp_rmsd_vec<float>, "xyz1"_a, "xyz2"_a);
+  m.def("qcp_rms_align_vec_float", &qcp_rmsd_align_vec<float>, "xyz1"_a,
+        "xyz2"_a);
   m.def("qcp_rms_align_float", &qcp_rmsd_align<float>);
   m.def("qcp_rms_regions_f4i4", &qcp_rmsd_regions<float, int32_t>, "xyz1"_a,
         "xyz2"_a, "sizes"_a, "offsets"_a, "junct"_a = 0);
   m.def("qcp_rms_double", &qcp_rmsd<double>);
   m.def("qcp_rms_vec_double", &qcp_rmsd_vec<double>);
   m.def("qcp_rms_align_double", &qcp_rmsd_align<double>);
+  m.def("qcp_rms_align_vec_double", &qcp_rmsd_align_vec<double>);
 }
 
 } // namespace qcp
