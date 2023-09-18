@@ -1,15 +1,15 @@
 import willutil as wu
 from willutil.cpp.rms import qcp_rms_double, qcp_rms_vec_double, qcp_rms_align_double, qcp_rms_regions_f4i4
-from willutil.cpp.rms import qcp_rms_align_vec_double, qcp_rms_align_vec_float, qcp_rms_align_float
+from willutil.cpp.rms import qcp_rms_align_vec_double, qcp_rms_align_vec_float, qcp_rms_align_float, qcp_rms_vec_float
 import numpy as np
 
 def main():
-   # test_qcp_vec()
+   test_qcp_vec()
    # test_qcp_align(niter=10)
    # assert 0
    # test_qcp_align()
    test_qcp_align_vec()
-   assert 0
+   # assert 0
 
    test_qcp_regions_junct_simple()
 
@@ -27,20 +27,25 @@ def main():
 
    print('test_qcp PASS', flush=True)
 
-def test_qcp_vec(npts=(10000, 10)):
-   pts1 = wu.hrandpoint(npts[1])[:, :3].copy()
-   pts2 = wu.hrandpoint(npts)[:, :, :3].copy()
+def test_qcp_vec(npts=(1000, 10)):
+   pts1 = wu.hrandpoint(npts)[:, :, :3].copy()
+   pts2 = wu.hrandpoint(npts[1])[:, :3].copy()
    with wu.Timer():
       rms = qcp_rms_vec_double(pts1, pts2)
    with wu.Timer():
-      rms2 = [qcp_rms_double(pts1, p2) for p2 in pts2]
-   assert np.allclose(rms, rms2)
-
-def test_qcp_align_vec(npts=(100000, 10)):
-   pts1 = wu.hrandpoint(npts[1])[:, :3].copy()
-   pts2 = wu.hrandpoint(npts)[:, :, :3].copy()
+      rms2 = [qcp_rms_double(p1, pts2) for p1 in pts1]
+   pts1 = pts1.astype(np.float32)
+   pts2 = pts2.astype(np.float32)
    with wu.Timer():
-      rms2, R2, T2 = zip(*[qcp_rms_align_double(pts1, p2) for p2 in pts2])
+      rms3 = qcp_rms_vec_float(pts1, pts2)
+   assert np.allclose(rms, rms2)
+   assert np.allclose(rms, rms3)
+
+def test_qcp_align_vec(npts=(1000, 10)):
+   pts1 = wu.hrandpoint(npts)[:, :, :3].copy()
+   pts2 = wu.hrandpoint(npts[1])[:, :3].copy()
+   with wu.Timer():
+      rms2, R2, T2 = zip(*[qcp_rms_align_double(p1, pts2) for p1 in pts1])
    rms, R, T = np.stack(rms2), np.stack(R2), np.stack(T2)
    with wu.Timer():
       rms2, R2, T2 = qcp_rms_align_vec_double(pts1, pts2)

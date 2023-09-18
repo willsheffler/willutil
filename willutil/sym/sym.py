@@ -193,6 +193,9 @@ def min_symaxis_angle(sym):
 
 def axes(sym, nfold=None, all=False, cellsize=1, **kw):
    sym = sym.lower()
+   if sym == 't': sym = 'tet'
+   if sym == 'o': sym = 'oct'
+   if sym == 'i': sym = 'icos'
    try:
       if wu.sym.is_known_xtal(sym):
          x = xtal(sym)
@@ -278,7 +281,11 @@ tetrahedral_axes = {
    '3b': hnormalized([1, 1, _])  # other c3
 }
 octahedral_axes = {2: hnormalized([1, 1, 0]), 3: hnormalized([1, 1, 1]), 4: hnormalized([1, 0, 0])}
-icosahedral_axes = {2: hnormalized([1, 0, 0]), 3: hnormalized([0.934172, 0.000000, 0.356822]), 5: hnormalized([0.850651, 0.525731, 0.000000])}
+icosahedral_axes = {
+   2: hnormalized([1, 0, 0]),
+   3: hnormalized([0.934172, 0.000000, 0.356822]),
+   5: hnormalized([0.850651, 0.525731, 0.000000])
+}
 
 tetrahedral_axes_all = {
    2: hnormalized([
@@ -307,7 +314,8 @@ tetrahedral_axes_all = {
    ]),
 }
 octahedral_axes_all = {
-   2: hnormalized([
+   2:
+   hnormalized([
       [1, 1, 0],
       [0, 1, 1],
       [1, 0, 1],
@@ -321,7 +329,8 @@ octahedral_axes_all = {
       # [0, _, _],
       # [_, 0, _],
    ]),
-   3: hnormalized([
+   3:
+   hnormalized([
       [1, 1, 1],
       [_, 1, 1],
       [1, _, 1],
@@ -331,7 +340,8 @@ octahedral_axes_all = {
       # [1, _, _],
       # [_, _, _],
    ]),
-   4: hnormalized([
+   4:
+   hnormalized([
       [1, 0, 0],
       [0, 1, 0],
       [0, 0, 1],
@@ -502,7 +512,7 @@ sym_frames['d2'] = np.stack([
 ])
 
 symaxes['d2'] = {
-   '2a': np.array([1, 0, 0, 0]),
+   2: np.array([1, 0, 0, 0]),
    '2b': np.array([0, 1, 0, 0]),
    '2c': np.array([0, 0, 1, 0]),
 }

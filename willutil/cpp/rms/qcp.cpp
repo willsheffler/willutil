@@ -168,24 +168,24 @@ py::array_t<F> qcp_rmsd_regions(RowMatrixX<F> xyz1_in, RowMatrixX<F> xyz2_in,
 }
 
 template <typename F>
-py::array_t<double> qcp_rmsd_vec(RowMatrixX<F> const &pts1,
-                                 py::array_t<F> const &pts2) {
-  if (pts2.ndim() != 3)
+py::array_t<double> qcp_rmsd_vec(py::array_t<F> const &a,
+                                 RowMatrixX<F> const &b) {
+  if (a.ndim() != 3)
     throw std::runtime_error("ndim must be 3");
-  if (pts1.rows() != pts2.shape()[1])
+  if (b.rows() != a.shape()[1])
     throw std::runtime_error("arrays must be same size");
-  int M = pts2.shape()[0];
-  int N = pts2.shape()[1];
-  F *ptr = (F *)pts2.request().ptr;
+  int M = a.shape()[0];
+  int N = a.shape()[1];
+  F *ptr = (F *)a.request().ptr;
   F *rms = new F[M];
 
   for (int i = 0; i < M; ++i) {
-    size_t ofst = i * pts2.strides()[0] / sizeof(F);
+    size_t ofst = i * a.strides()[0] / sizeof(F);
     Map<RowMatrixX<F>> xyz2_in(ptr + ofst, N, 3);
-    if (pts1.rows() != xyz2_in.rows())
+    if (b.rows() != xyz2_in.rows())
       throw std::runtime_error("xyz1 and xyz2 not same size");
-    Matrix<F, Dynamic, 3> xyz1 = pts1.block(0, 0, pts1.rows(), 3);
-    Matrix<F, Dynamic, 3> xyz2 = xyz2_in.block(0, 0, xyz2_in.rows(), 3);
+    Matrix<F, Dynamic, 3> xyz1 = xyz2_in.block(0, 0, xyz2_in.rows(), 3);
+    Matrix<F, Dynamic, 3> xyz2 = b.block(0, 0, b.rows(), 3);
     auto m1 = xyz1.colwise().mean();
     auto m2 = xyz2.colwise().mean();
     Matrix<F, 1, 3> _cen1(m1);
@@ -209,26 +209,25 @@ py::array_t<double> qcp_rmsd_vec(RowMatrixX<F> const &pts1,
 }
 
 template <typename F>
-py::tuple qcp_rmsd_align_vec(RowMatrixX<F> const &pts1,
-                             py::array_t<F> const &pts2) {
-  if (pts2.ndim() != 3)
+py::tuple qcp_rmsd_align_vec(py::array_t<F> const &a, RowMatrixX<F> const &b) {
+  if (a.ndim() != 3)
     throw std::runtime_error("ndim must be 3");
-  if (pts1.rows() != pts2.shape()[1])
+  if (b.rows() != a.shape()[1])
     throw std::runtime_error("arrays must be same size");
-  int M = pts2.shape()[0];
-  int N = pts2.shape()[1];
-  F *ptr = (F *)pts2.request().ptr;
+  int M = a.shape()[0];
+  int N = a.shape()[1];
+  F *ptr = (F *)a.request().ptr;
   F *rms = new F[M];
   F *rot = new F[M * 3 * 3];
   F *trans = new F[M * 3];
 
   for (int i = 0; i < M; ++i) {
-    size_t ofst = i * pts2.strides()[0] / sizeof(F);
+    size_t ofst = i * a.strides()[0] / sizeof(F);
     Map<RowMatrixX<F>> xyz2_in(ptr + ofst, N, 3);
-    if (pts1.rows() != xyz2_in.rows())
+    if (b.rows() != xyz2_in.rows())
       throw std::runtime_error("xyz1 and xyz2 not same size");
-    Matrix<F, Dynamic, 3> xyz1 = pts1.block(0, 0, pts1.rows(), 3);
-    Matrix<F, Dynamic, 3> xyz2 = xyz2_in.block(0, 0, xyz2_in.rows(), 3);
+    Matrix<F, Dynamic, 3> xyz1 = xyz2_in.block(0, 0, xyz2_in.rows(), 3);
+    Matrix<F, Dynamic, 3> xyz2 = b.block(0, 0, b.rows(), 3);
     auto m1 = xyz1.colwise().mean();
     auto m2 = xyz2.colwise().mean();
     Matrix<F, 1, 3> _cen1(m1);
