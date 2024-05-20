@@ -2,9 +2,9 @@ import functools
 import concurrent.futures as cf
 import numpy as np
 import willutil as wu
+from opt_einsum import contract as einsum
 
 def symframe_permutations(frames, **kw):
-
    func = functools.partial(symperm1, frames=frames)
    with cf.ThreadPoolExecutor(max_workers=8) as exe:
       perm = exe.map(func, range(len(frames)))

@@ -2,14 +2,33 @@
 	"build_systems":
 	[
 		{
+			"name": "test_pseudo_t.py",
+			"shell_cmd": "cd $folder; python willutil/tests/sym/test_pseudo_t.py &> log/sublime_build.log"
+		},
+		{
 			"name": "runtests.py",
 			"shell_cmd": "cd $folder; python willutil/runtests.py --projname willutil $file &> log/sublime_build.log"
+		},
+		{
+			"name": "makesym dihedral",
+			"shell_cmd": "cd $folder; python willutil/app/makesym.py /home/sheffler/project/george/makesym/input/5u52.pdb --architecture d33 --radius 80 120 10 --angle -15 15 10 --rms_tolerance 1 --translation_tolerance 1 --angle_tolerance 1.0 &> log/sublime_build.log"
+		},
+		{
+			"name": "makesym",
+			"shell_cmd": "cd $folder; python willutil/app/makesym.py /home/sheffler/project/george/makesym/input/5u52.pdb --architecture oct4 --radius 80 120 10 --angle -15 15 10 --rms_tolerance 1 --translation_tolerance 1 --angle_tolerance 1.0 &> log/sublime_build.log"
+		},
+		{
+			"name": "symm_onto_template.py",
+			"shell_cmd": "cd $folder; python examples/symm_onto_template.py &> log/sublime_build.log"
 		},
 		{
 			"name": "test_subsym.py",
 			"shell_cmd": "cd $folder; python willutil/tests/sym/test_subsym.py &> log/sublime_build.log"
 		},
 		{
+			"name": "run misc.py",
+			"shell_cmd": "cd $folder; python examples/misc.py &> $folder/log/sublime_build.log"
+		},		{
 			"name": "run baker symmetrize.py",
 			"shell_cmd": "cd /home/sheffler/for/db/symexample; rm -f *.pdb; python symmetrize.py input/IRP_10-2_shifted.pdb --symmetry c6 --cart_sd 10 --nsamp 3 &> $folder/log/sublime_build.log"
 		},
@@ -68,10 +87,6 @@
 		{
 			"name": "test_xtal",
 			"shell_cmd": "cd $folder; python willutil/tests/sym/test_xtal.py &> log/sublime_build.log"
-		},
-		{
-			"name": "makesym",
-			"shell_cmd": "cd $folder; python willutil/app/makesym.py /home/sheffler/project/george/makesym/input/5u52.pdb --radius 80 120 10 --angle -15 15 10 --rms_tolerance 1 --translation_tolerance 1 --angle_tolerance 1.0 &> log/sublime_build.log"
 		},
 		{
 			"name": "makesym xtal",

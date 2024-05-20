@@ -5,10 +5,23 @@ import numpy as np
 
 torch = deferred_import.deferred_import('torch')
 import willutil as wu
+from willutil.homog.hgeom import *
 from willutil.homog.hgeom import _hxform_impl
-from willutil.homog.hgeom import rand_xform_small
 
-def th_construct(rot, trans=None):
+def torch_min(func, iters=4, history_size=10, max_iter=4, line_search_fn="strong_wolfe", **kw):
+   import functools
+   lbfgs = torch.optim.LBFGS(
+      kw['indep'],
+      history_size=history_size,
+      max_iter=max_iter,
+      line_search_fn=line_search_fn,
+   )
+   closure = functools.partial(func, lbfgs=lbfgs, **kw)
+   for iter in range(iters):
+      loss = lbfgs.step(closure)
+   return loss
+
+def thconstruct(rot, trans=None):
    rot = torch.as_tensor(rot)
    x = torch.zeros((rot.shape[:-2] + (4, 4)))
    x[..., :3, :3] = rot[..., :3, :3]
@@ -17,64 +30,64 @@ def th_construct(rot, trans=None):
    x[..., 3, 3] = 1
    return x
 
-def th_mean_along(vecs, along=None):
-   vecs = th_vec(vecs)
+def thmean_along(vecs, along=None):
+   vecs = thvec(vecs)
    assert vecs.ndim == 2
    if not along:
       along = vecs[0]
-   along = th_vec(along)
-   sign = torch.sign(th_dot(along, vecs))
+   along = thvec(along)
+   sign = torch.sign(thdot(along, vecs))
    flipped = (vecs.T * sign).T
    tot = torch.sum(flipped, axis=0)
-   return th_normalized(tot)
+   return thnormalized(tot)
 
-def th_com_flat(points, closeto=None, closefrac=0.5):
+def thcom_flat(points, closeto=None, closefrac=0.5):
    if closeto != None:
-      dist = th_norm(points - closeto)
+      dist = thnorm(points - closeto)
       close = torch.argsort(dist)[:closefrac * len(dist)]
       points = points[close]
    return torch.mean(points, axis=-2)
 
-def th_com(points, **kw):
-   points = th_point(points)
+def thcom(points, **kw):
+   points = thpoint(points)
    oshape = points.shape
    points = points.reshape(-1, oshape[-2], 4)
-   com = th_com_flat(points)
+   com = thcom_flat(points)
    com = com.reshape(*oshape[:-2], 4)
    return com
 
-def th_rog_flat(points):
-   com = th_com_flat(points).reshape(-1, 1, 4)
+def throg_flat(points):
+   com = thcom_flat(points).reshape(-1, 1, 4)
    delta = torch.linalg.norm(points - com, dim=2)
    rg = torch.sqrt(torch.mean(delta**2, dim=1))
    return rg
 
-def th_rog(points, aboutaxis=None):
-   points = th_point(points)
+def throg(points, aboutaxis=None):
+   points = thpoint(points)
    oshape = points.shape
    points = points.reshape(-1, *oshape[-2:])
    if aboutaxis != None:
-      aboutaxis = th_vec(aboutaxis)
-      points = th_projperp(aboutaxis, points)
-   rog = th_rog_flat(points)
+      aboutaxis = thvec(aboutaxis)
+      points = thprojperp(aboutaxis, points)
+   rog = throg_flat(points)
    rog = rog.reshape(oshape[:-2])
    return rog
 
-def th_proj(u, v):
-   u = th_vec(u)
-   v = th_point(v)
-   return th_dot(u, v)[..., None] / th_norm2(u)[..., None] * u
+def thproj(u, v):
+   u = thvec(u)
+   v = thpoint(v)
+   return thdot(u, v)[..., None] / thnorm2(u)[..., None] * u
 
-def th_projperp(u, v):
-   u = th_vec(u)
-   v = th_point(v)
-   return v - th_proj(u, v)
+def thprojperp(u, v):
+   u = thvec(u)
+   v = thpoint(v)
+   return v - thproj(u, v)
 
-def th_axis_angle_cen(xforms, ident_match_tol=1e-8):
+def thaxis_angle_cen(xforms, ident_match_tol=1e-8):
    # ic(xforms.dtype)
    origshape = xforms.shape[:-2]
    xforms = xforms.reshape(-1, 4, 4)
-   axis, angle = th_axis_angle(xforms)
+   axis, angle = thaxis_angle(xforms)
    not_ident = torch.abs(angle) > ident_match_tol
    cen = torch.tile(
       torch.tensor([0, 0, 0, 1]),
@@ -88,15 +101,15 @@ def th_axis_angle_cen(xforms, ident_match_tol=1e-8):
    p1, p2 = axis_ang_cen_magic_points_torch()
    p1 = p1.to(xforms.dtype)
    p2 = p2.to(xforms.dtype)
-   tparallel = th_dot(axis, xforms[..., :, 3])[..., None] * axis
+   tparallel = thdot(axis, xforms[..., :, 3])[..., None] * axis
    q1 = xforms @ p1 - tparallel
    q2 = xforms @ p2 - tparallel
-   n1 = th_normalized(q1 - p1).reshape(-1, 4)
-   n2 = th_normalized(q2 - p2).reshape(-1, 4)
+   n1 = thnormalized(q1 - p1).reshape(-1, 4)
+   n2 = thnormalized(q2 - p2).reshape(-1, 4)
    c1 = (p1 + q1) / 2.0
    c2 = (p2 + q2) / 2.0
 
-   isect, norm, status = th_intersect_planes(c1, n1, c2, n2)
+   isect, norm, status = thintersect_planes(c1, n1, c2, n2)
    cen1 = isect[..., :]
    if len(cen) == len(cen1):
       cen = cen1
@@ -108,11 +121,11 @@ def th_axis_angle_cen(xforms, ident_match_tol=1e-8):
    cen = cen.reshape(*origshape, 4)
    return axis, angle, cen
 
-def th_rot(axis, angle, center=None, hel=None, squeeze=True):
+def throt(axis, angle, center=None, hel=None, squeeze=True):
    if center is None: center = torch.tensor([0, 0, 0, 1], dtype=torch.float)
    angle = torch.as_tensor(angle)
-   axis = th_vec(axis)
-   center = th_point(center)
+   axis = thvec(axis)
+   center = thpoint(center)
    if hel is None: hel = torch.tensor([0], dtype=torch.float)
    if axis.ndim == 1: axis = axis[None, ]
    if angle.ndim == 0: angle = angle[None, ]
@@ -135,22 +148,24 @@ def th_rot(axis, angle, center=None, hel=None, squeeze=True):
    if r.shape == (1, 4, 4): r = r.reshape(4, 4)
    return r
 
-def th_rand_point(*a, **kw):
+def thrand_point(*a, **kw):
    return rand_point(*a, **kw)
 
-def th_rand_vec(*a, **kw):
+def thrand_vec(*a, **kw):
    return torch.from_numpy(rand_vec(*a, **kw))
 
-def th_rand_xform_small(*a, **kw):
-   return torch.from_numpy(rand_xform_small(*a, **kw))
+def thrand_xform_small(*a, **kw):
+   return torch.from_numpy(hrand_xform_small(*a, **kw))
 
-def th_rand_xform(*a, **kw):
-   return torch.from_numpy(rand_xform(*a, **kw))
+def thrand_xform(*a, **kw):
+   return torch.from_numpy(hrand(*a, **kw))
 
-def th_rand_quat(*a, **kw):
+def thrand_quat(*a, **kw):
    return torch.from_numpy(rand_quat(*a, **kw))
 
-def th_rot_to_quat(xform):
+thrand = thrand_xform
+
+def throt_to_quat(xform):
    raise NotImplemented
    x = np.asarray(xform)
    t0, t1, t2 = x[..., 0, 0], x[..., 1, 1], x[..., 2, 2]
@@ -189,13 +204,13 @@ def th_rot_to_quat(xform):
 
    return quat_to_upper_half(quat)
 
-th_xform_to_quat = th_rot_to_quat
+thxform_to_quat = throt_to_quat
 
-def th_is_valid_quat_rot(quat):
+def this_valid_quat_rot(quat):
    assert quat.shape[-1] == 4
    return np.isclose(1, torch.linalg.norm(quat, axis=-1))
 
-def th_quat_to_upper_half(quat):
+def thquat_to_upper_half(quat):
    ineg0 = (quat[..., 0] < 0)
    ineg1 = (quat[..., 0] == 0) * (quat[..., 1] < 0)
    ineg2 = (quat[..., 0] == 0) * (quat[..., 1] == 0) * (quat[..., 2] < 0)
@@ -206,9 +221,9 @@ def th_quat_to_upper_half(quat):
    # ic(ineg3.shape)
    ineg = ineg0 + ineg1 + ineg2 + ineg3
    quat2 = torch.where(ineg, -quat, quat)
-   return th_normalized(quat2)
+   return thnormalized(quat2)
 
-def th_homog(rot, trans=None, **kw):
+def thhomog(rot, trans=None, **kw):
    if trans is None:
       trans = torch.as_tensor([0, 0, 0, 0], **kw)
    trans = torch.as_tensor(trans)
@@ -223,31 +238,35 @@ def th_homog(rot, trans=None, **kw):
    h = torch.cat([rot[:, :3], trans[:, None]], axis=1)
    return h
 
-def th_quat_to_rot(quat):
+def thquat_to_rot(quat):
    assert quat.shape[-1] == 4
    qr = quat[..., 0]
    qi = quat[..., 1]
    qj = quat[..., 2]
    qk = quat[..., 3]
 
-   rot = torch.cat([torch.tensor([[
-      1 - 2 * (qj**2 + qk**2),
-      2 * (qi * qj - qk * qr),
-      2 * (qi * qk + qj * qr),
-   ]]), torch.tensor([[
-      2 * (qi * qj + qk * qr),
-      1 - 2 * (qi**2 + qk**2),
-      2 * (qj * qk - qi * qr),
-   ]]), torch.tensor([[
-      2 * (qi * qk - qj * qr),
-      2 * (qj * qk + qi * qr),
-      1 - 2 * (qi**2 + qj**2),
-   ]])])
+   rot = torch.cat([
+      torch.tensor([[
+         1 - 2 * (qj**2 + qk**2),
+         2 * (qi * qj - qk * qr),
+         2 * (qi * qk + qj * qr),
+      ]]),
+      torch.tensor([[
+         2 * (qi * qj + qk * qr),
+         1 - 2 * (qi**2 + qk**2),
+         2 * (qj * qk - qi * qr),
+      ]]),
+      torch.tensor([[
+         2 * (qi * qk - qj * qr),
+         2 * (qj * qk + qi * qr),
+         1 - 2 * (qi**2 + qj**2),
+      ]])
+   ])
    # ic(rot.shape)
    return rot
 
-def th_quat_to_xform(quat, dtype='f8'):
-   r = th_quat_to_rot(quat, dtype)
+def thquat_to_xform(quat, dtype='f8'):
+   r = thquat_to_rot(quat, dtype)
    r = torch.cat([r])
    return r
 
@@ -263,7 +282,7 @@ def t_rot(axis, angle, shape=(3, 3), squeeze=True):
    if axis.shape and angle.shape and not is_broadcastable(axis.shape[:-1], angle.shape):
       raise ValueError(f'axis/angle not compatible: {axis.shape} {angle.shape}')
    zero = torch.zeros(*angle.shape)
-   axis = th_normalized(axis)
+   axis = thnormalized(axis)
    a = torch.cos(angle / 2.0)
    tmp = axis * -torch.sin(angle / 2)[..., None]
    b, c, d = tmp[..., 0], tmp[..., 1], tmp[..., 2]
@@ -292,31 +311,33 @@ def t_rot(axis, angle, shape=(3, 3), squeeze=True):
    if squeeze and rot.shape == (1, 4, 4): rot = rot.reshape(4, 4)
    return rot
 
-def th_rms(a, b):
+def thrms(a, b):
    assert a.shape == b.shape
    return torch.sqrt(torch.sum(torch.square(a - b)) / len(a))
 
-def th_xformpts(xform, stuff, **kw):
-   return th_xform(xform, stuff, is_points=True, **kw)
+def thxformpts(xform, stuff, **kw):
+   return thxform(xform, stuff, is_points=True, **kw)
 
-def th_xform(xform, stuff, homogout='auto', **kw):
+def thxform(xform, stuff, homogout='auto', **kw):
    xform = torch.as_tensor(xform).to(stuff.dtype)
    nothomog = stuff.shape[-1] == 3
    if stuff.shape[-1] == 3:
-      stuff = th_point(stuff)
+      stuff = thpoint(stuff)
    result = _hxform_impl(xform, stuff, **kw)
    if homogout is False or homogout == 'auto' and nothomog:
       result = result[..., :3]
 
-   if result.shape[-1] == 4 and not wu.hvalid(result.detach().numpy(), **kw):
-      # ic(result[:10])
-      # this is a bad copout.. should make this check handle nans correctly
-      if not stuff.shape[-2:] == (4, 1):
-         raise ValueError(f'malformed homogeneous coords with shape {stuff.shape}, if points and shape is (...,4,4) try is_points=True')
+   #if result.shape[-1] == 4 and not wu.hvalid(result.cpu().detach().numpy(), **kw):
+   #   # ic(result[:10])
+   #   # this is a bad copout.. should make this check handle nans correctly
+   #   if not stuff.shape[-2:] == (4, 1):
+   #      raise ValueError(
+   #         f'malformed homogeneous coords with shape {stuff.shape}, if points and shape is (...,4,4) try is_points=True'
+   #      )
 
    return result
 
-def th_rmsfit(mobile, target):
+def thrmsfit(mobile, target):
    '''use kabsch method to get rmsd fit'''
    assert mobile.shape == target.shape
    assert mobile.ndim > 1
@@ -339,36 +360,36 @@ def th_rmsfit(mobile, target):
       # V[:, -1] = -V[:, -1]
       # ic(V - V1)
       # assert 0
-   rot_m2t = th_homog(V @ W).T
+   rot_m2t = thhomog(V @ W).T
    trans_m2t = target_cen - rot_m2t @ mobile_cen
-   xform_mobile_to_target = th_homog(rot_m2t, trans_m2t)
+   xform_mobile_to_target = thhomog(rot_m2t, trans_m2t)
 
    mobile = mobile + mobile_cen
    target = target + target_cen
-   mobile_fit_to_target = th_xform(xform_mobile_to_target, mobile)
-   rms = th_rms(target, mobile_fit_to_target)
+   mobile_fit_to_target = thxform(xform_mobile_to_target, mobile)
+   rms = thrms(target, mobile_fit_to_target)
 
    return rms, mobile_fit_to_target, xform_mobile_to_target
 
-def th_randpoint(shape=(), cen=[0, 0, 0], std=1, dtype=None):
+def thrandpoint(shape=(), cen=[0, 0, 0], std=1, dtype=None):
    dtype = dtype or torch.float32
    cen = torch.as_tensor(cen)
    if isinstance(shape, int): shape = (shape, )
-   p = th_point(torch.randn(*(shape) + (3, )) * std + cen)
+   p = thpoint(torch.randn(*(shape) + (3, )) * std + cen)
    return p
 
-def th_randvec(shape=(), std=1, dtype=None):
+def thrandvec(shape=(), std=1, dtype=None):
    dtype = dtype or torch.float32
    if isinstance(shape, int): shape = (shape, )
-   return th_vec(torch.randn(*(shape + (3, ))) * std)
+   return thvec(torch.randn(*(shape + (3, ))) * std)
 
-def th_randunit(shape=(), cen=[0, 0, 0], std=1):
+def thrandunit(shape=(), cen=[0, 0, 0], std=1):
    dtype = dtype or torch.float32
    if isinstance(shape, int): shape = (shape, )
-   v = th_normalized(torch.randn(*(shape + (3, ))) * std)
+   v = thnormalized(torch.randn(*(shape + (3, ))) * std)
    return v
 
-def th_point(point, **kw):
+def thpoint(point, **kw):
    point = torch.as_tensor(point)
    shape = point.shape[:-1]
    points = torch.cat([point[..., :3], torch.ones(shape + (1, ), device=point.device)], axis=-1)
@@ -376,7 +397,7 @@ def th_point(point, **kw):
       points = points.to(torch.float32)
    return points
 
-def th_vec(vec):
+def thvec(vec):
    vec = torch.as_tensor(vec)
    if (vec.dtype not in (torch.float32, torch.float64)):
       vec = vec.to(torch.float32)
@@ -391,7 +412,7 @@ def th_vec(vec):
    else:
       raise ValueError('vec must len 3 or 4')
 
-def th_normalized(a):
+def thnormalized(a):
    return torch.nn.functional.normalize(a, dim=-1)
    # a = torch.as_tensor(a)
    # if (not a.shape and len(a) == 3) or (a.shape and a.shape[-1] == 3):
@@ -399,61 +420,63 @@ def th_normalized(a):
    #    a[..., :3] = tmp
    # a2 = a[:]
    # a2[..., 3] = 0
-   # return a2 / th_norm(a2)[..., None]
+   # return a2 / thnorm(a2)[..., None]
 
-def th_norm(a):
+def thnorm(a):
    a = torch.as_tensor(a)
    return torch.sqrt(torch.sum(a[..., :3] * a[..., :3], axis=-1))
 
-def th_norm2(a):
+def thnorm2(a):
    a = torch.as_tensor(a)
    return torch.sum(a[..., :3] * a[..., :3], axis=-1)
 
-def th_axis_angle_hel(xforms):
-   axis, angle = th_axis_angle(xforms)
-   hel = th_dot(axis, xforms[..., :, 3])
+def thaxis_angle_hel(xforms):
+   axis, angle = thaxis_angle(xforms)
+   hel = thdot(axis, xforms[..., :, 3])
    return axis, angle, hel
 
-def th_axis_angle_cen_hel(xforms):
-   axis, angle, cen = th_axis_angle_cen(xforms)
-   hel = th_dot(axis, xforms[..., :, 3])
+def thaxis_angle_cen_hel(xforms):
+   axis, angle, cen = thaxis_angle_cen(xforms)
+   hel = thdot(axis, xforms[..., :, 3])
    return axis, angle, cen, hel
 
-def th_axis_angle(xforms):
-   axis = th_axis(xforms)
-   angl = th_angle(xforms)
+def thaxis_angle(xforms):
+   axis = thaxis(xforms)
+   angl = thangle(xforms)
    return axis, angl
 
-def th_axis(xforms):
+def thaxis(xforms):
    if xforms.shape[-2:] == (4, 4):
-      return th_normalized(torch.stack((
-         xforms[..., 2, 1] - xforms[..., 1, 2],
-         xforms[..., 0, 2] - xforms[..., 2, 0],
-         xforms[..., 1, 0] - xforms[..., 0, 1],
-         torch.zeros(xforms.shape[:-2]),
-      ), axis=-1))
+      return thnormalized(
+         torch.stack((
+            xforms[..., 2, 1] - xforms[..., 1, 2],
+            xforms[..., 0, 2] - xforms[..., 2, 0],
+            xforms[..., 1, 0] - xforms[..., 0, 1],
+            torch.zeros(xforms.shape[:-2]),
+         ), axis=-1))
    if xforms.shape[-2:] == (3, 3):
-      return th_normalized(torch.stack((
-         xforms[..., 2, 1] - xforms[..., 1, 2],
-         xforms[..., 0, 2] - xforms[..., 2, 0],
-         xforms[..., 1, 0] - xforms[..., 0, 1],
-      ), axis=-1))
+      return thnormalized(
+         torch.stack((
+            xforms[..., 2, 1] - xforms[..., 1, 2],
+            xforms[..., 0, 2] - xforms[..., 2, 0],
+            xforms[..., 1, 0] - xforms[..., 0, 1],
+         ), axis=-1))
    else:
       raise ValueError('wrong shape for xform/rotation matrix: ' + str(xforms.shape))
 
-def th_angle(xforms):
+def thangle(xforms):
    tr = xforms[..., 0, 0] + xforms[..., 1, 1] + xforms[..., 2, 2]
    cos = (tr - 1.0) / 2.0
    angl = torch.arccos(torch.clip(cos, -1, 1))
    return angl
 
-def th_point_line_dist2(point, cen, norm):
+def thpoint_line_dist2(point, cen, norm):
    point = point - cen
    hproj = norm * torch.sum(norm * point) / torch.sum(norm * norm)
    perp = point - hproj
    return torch.sum(perp**2)
 
-def th_dot(a, b, outerprod=False):
+def thdot(a, b, outerprod=False):
    if outerprod:
       shape1 = a.shape[:-1]
       shape2 = b.shape[:-1]
@@ -461,16 +484,16 @@ def th_dot(a, b, outerprod=False):
       b = b.reshape(shape2 + (1, ) * len(shape1) + (-1, ))
    return torch.sum(a[..., :3] * b[..., :3], axis=-1)
 
-def th_point_in_plane(point, normal, pt):
-   inplane = torch.abs(th_dot(normal[..., :3], pt[..., :3] - point[..., :3]))
+def thpoint_in_plane(point, normal, pt):
+   inplane = torch.abs(thdot(normal[..., :3], pt[..., :3] - point[..., :3]))
    return inplane < 0.00001
 
-def th_ray_in_plane(point, normal, p1, n1):
-   inplane1 = th_point_in_plane(point, normal, p1)
-   inplane2 = th_point_in_plane(point, normal, p1 + n1)
+def thray_in_plane(point, normal, p1, n1):
+   inplane1 = thpoint_in_plane(point, normal, p1)
+   inplane2 = thpoint_in_plane(point, normal, p1 + n1)
    return inplane1 and inplane2
 
-def th_intersect_planes(p1, n1, p2, n2):
+def thintersect_planes(p1, n1, p2, n2):
    """
    intersect_Planes: find the 3D intersection of two planes
       Input:  two planes represented (point, normal) as (p1,n1), (p2,n2)
@@ -482,9 +505,9 @@ def th_intersect_planes(p1, n1, p2, n2):
    """
    """intersect two planes
    :param plane1: first plane represented by ray
-   :type plane2: np.array shape=(..., 4, 2) 
+   :type plane2: np.array shape=(..., 4, 2)
    :param plane1: second planes represented by rays
-   :type plane2: np.array shape=(..., 4, 2) 
+   :type plane2: np.array shape=(..., 4, 2)
    :return: line: np.array shape=(...,4,2), status: int (0 = intersection returned, 1 = no intersection, 2 = the two planes coincide)
    """
    origshape = p1.shape
@@ -502,12 +525,12 @@ def th_intersect_planes(p1, n1, p2, n2):
    u = torch.cross(n1[..., :3], n2[..., :3])
    abs_u = torch.abs(u)
    planes_parallel = torch.sum(abs_u, axis=-1) < 0.000001
-   p2_in_plane1 = th_point_in_plane(p1, n1, p2)
+   p2_in_plane1 = thpoint_in_plane(p1, n1, p2)
    status = torch.zeros(N)
    status[planes_parallel] = 1
    status[planes_parallel * p2_in_plane1] = 2
-   d1 = -th_dot(n1, p1)
-   d2 = -th_dot(n2, p2)
+   d1 = -thdot(n1, p1)
+   d2 = -thdot(n2, p2)
 
    amax = torch.argmax(abs_u, axis=-1)
    sel = amax == 0, amax == 1, amax == 2
@@ -548,7 +571,7 @@ def th_intersect_planes(p1, n1, p2, n2):
    isect_pt = isect_pt[perminv]
    isect_pt = isect_pt.reshape(origshape)
 
-   isect_dirn = th_normalized(torch.cat([u, torch.zeros(N, 1)], axis=-1))
+   isect_dirn = thnormalized(torch.cat([u, torch.zeros(N, 1)], axis=-1))
    isect_dirn = isect_dirn.reshape(origshape)
 
    return isect_pt, isect_dirn, status
@@ -564,16 +587,56 @@ def is_broadcastable(shape1, shape2):
 def axis_ang_cen_magic_points_torch():
    return torch.from_numpy(wu.homog.hgeom._axis_ang_cen_magic_points_numpy).float()
 
-# def th_cross(u, v):
+def thdiff(x, y, lever=10.0):
+   shape1 = x.shape[:-2]
+   shape2 = y.shape[:-2]
+   a = x.reshape(shape1 + (1, ) * len(shape1) + (4, 4))
+   b = y.reshape((1, ) * len(shape2) + shape2 + (4, 4))
+
+   axyz = a[..., :3, :3] * lever + a[..., :3, 3, None]
+   bxyz = b[..., :3, :3] * lever + b[..., :3, 3, None]
+
+   diff = torch.norm(axyz - bxyz, dim=-1)
+   diff = torch.mean(diff, dim=-1)
+
+   return diff
+
+# def thcross(u, v):
 #    return torch.linalg.cross(u[..., :3], v[..., :3])
 
-# def th_frame(u, v, w, cen=None):
+# def thframe(u, v, w, cen=None):
 #    assert u.shape == v.shape == w.shape
 #    if not cen: cen = u
 #    assert cen.shape == u.shape
 #    stubs = torch.empty(u.shape[:-1] + (4, 4), device=u.device)
-#    stubs[..., :, 0] = th_normalized(u - v)
-#    stubs[..., :, 2] = th_normalized(th_cross(stubs[..., :, 0], w - v))
-#    stubs[..., :, 1] = th_cross(stubs[..., :, 2], stubs[..., :, 0])
+#    stubs[..., :, 0] = thnormalized(u - v)
+#    stubs[..., :, 2] = thnormalized(thcross(stubs[..., :, 0], w - v))
+#    stubs[..., :, 1] = thcross(stubs[..., :, 2], stubs[..., :, 0])
 #    stubs[..., :, 3] = cen[..., :]
 #    return stubs
+
+def Qs2Rs(Qs):
+   Rs = torch.zeros((*Qs.shape[:-1], 3, 3), device=Qs.device)
+
+   Rs[..., 0, 0] = Qs[..., 0] * Qs[..., 0] + Qs[..., 1] * Qs[..., 1] - Qs[..., 2] * Qs[..., 2] - Qs[..., 3] * Qs[..., 3]
+   Rs[..., 0, 1] = 2 * Qs[..., 1] * Qs[..., 2] - 2 * Qs[..., 0] * Qs[..., 3]
+   Rs[..., 0, 2] = 2 * Qs[..., 1] * Qs[..., 3] + 2 * Qs[..., 0] * Qs[..., 2]
+   Rs[..., 1, 0] = 2 * Qs[..., 1] * Qs[..., 2] + 2 * Qs[..., 0] * Qs[..., 3]
+   Rs[..., 1, 1] = Qs[..., 0] * Qs[..., 0] - Qs[..., 1] * Qs[..., 1] + Qs[..., 2] * Qs[..., 2] - Qs[..., 3] * Qs[..., 3]
+   Rs[..., 1, 2] = 2 * Qs[..., 2] * Qs[..., 3] - 2 * Qs[..., 0] * Qs[..., 1]
+   Rs[..., 2, 0] = 2 * Qs[..., 1] * Qs[..., 3] - 2 * Qs[..., 0] * Qs[..., 2]
+   Rs[..., 2, 1] = 2 * Qs[..., 2] * Qs[..., 3] + 2 * Qs[..., 0] * Qs[..., 1]
+   Rs[..., 2, 2] = Qs[..., 0] * Qs[..., 0] - Qs[..., 1] * Qs[..., 1] - Qs[..., 2] * Qs[..., 2] + Qs[..., 3] * Qs[..., 3]
+
+   return Rs
+
+# ============================================================
+def normQ(Q):
+   """normalize a quaternions
+    """
+   return Q / torch.linalg.norm(Q, keepdim=True, dim=-1)
+
+def Q2R(Q):
+   Qs = torch.cat((torch.ones((len(Q), 1), device=Q.device, dtype=Q.dtype), Q), dim=-1)
+   Qs = normQ(Qs)
+   return Qs2Rs(Qs[None, :]).squeeze(0)

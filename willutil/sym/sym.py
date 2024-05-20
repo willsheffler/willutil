@@ -165,6 +165,15 @@ def put_frames_on_top(frames, ontop, strict=True, allowcellshift=False, cellsize
    wu.checkpoint(kw)
    return f
 
+def make(sym, x, **kw):
+   return wu.hxform(frames(sym, **kw), x)
+
+def makepts(sym, x, **kw):
+   return wu.hxformpts(frames(sym, **kw), x)
+
+def makex(sym, x, **kw):
+   return wu.hxformx(frames(sym, **kw), x)
+
 def map_sym_abbreviation(sym):
    if sym == 'I': return 'icos'
    if sym == 'O': return 'oct'

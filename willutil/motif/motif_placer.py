@@ -6,7 +6,7 @@ from willutil.cpp.rms import qcp_rms_regions_f4i4
 
 from collections import namedtuple
 
-FastDMEMotifPlacement = namedtuple('FastDMEMotifPlacement', 'offset rms dme occ alldme')
+# FastDMEMotifPlacement = namedtuple('FastDMEMotifPlacement', 'offset rms dme occ alldme')
 
 def place_motif_dme_fast(
    xyz,
@@ -40,14 +40,34 @@ def place_motif_dme_fast(
    nres = len(dist)
    nasym = nasym or nres
    # assert nasym == nres
-   alldme = compute_offset_dme_tensor(xyz, motif, dmotif, dist, nasym, junct, minbeg=minbeg, minend=minend, minsep=minsep, dtype=dtype)
+   alldme = compute_offset_dme_tensor(
+      xyz,
+      motif,
+      dmotif,
+      dist,
+      nasym,
+      junct,
+      minbeg=minbeg,
+      minend=minend,
+      minsep=minsep,
+      dtype=dtype,
+   )
    if debug: ic(alldme.shape, alldme.min(), alldme.mean(), alldme.max())
 
    score, allocc = alldme, None
    if motif_occlusion_weight != 0:
       # assert 0, 'compute_offset_occlusion_tensor is bugged'
       contacts = motif_occlusion_dist > dist
-      allocc = compute_offset_occlusion_tensor(contacts, sizes, nasym, minbeg, minend, dtype=dtype)
+      allocc = compute_offset_occlusion_tensor(
+         contacts,
+         sizes,
+         nasym,
+         minbeg,
+         minend,
+         dtype=dtype,
+      )
+      assert alldme.shape == allocc.shape
+      ic(alldme.shape, allocc.shape)
       score = alldme + motif_occlusion_weight * allocc
 
    _, idx = torch.topk(score.flatten(), min(score.nelement(), nolapcheck), largest=False)
@@ -75,7 +95,8 @@ def place_motif_dme_fast(
          del allocc
          allocc = None
 
-   return FastDMEMotifPlacement(offsets, rms, dme, occ, alldme)
+   # return FastDMEMotifPlacement(offsets=offsets, rms=rms, dme=dme, occ=occ, alldme=alldme)
+   return wu.Bunch(offset=offsets, rms=rms, dme=dme, occ=occ, alldme=alldme)
 
 def compute_dme_corners(dmat1, dmat2, junct=0, method='mse'):
    assert dmat1.shape[-2:] == dmat2.shape
@@ -196,7 +217,7 @@ def compute_offset_occlusion_tensor(contacts, sizes, nasym=None, minbeg=0, minen
          newshape = [1] * len(sizes)
          newshape[i1] = offsetshape[i1]
          newshape[i2] = offsetshape[i2]
-         if i1 > i2: blocksums = blocksums.T  # goddammit.... is this really the fix?
+         if i1 > i2: blocksums = blocksums.T
          occ -= blocksums.reshape(newshape)
 
    occ /= sum(sizes)
@@ -240,7 +261,8 @@ def make_test_motif(xyz, sizes, minsep=0, minbeg=0, minend=0, ntries=3, rnoise=0
    pos = None
    for itry in range(ntries):
       N = 1000 * 10**itry
-      offsets = torch.stack([torch.randint((nasym if il == 0 else nres) - l + 1, (N, )) for il, l in enumerate(sizes)], axis=1)
+      offsets = torch.stack([torch.randint((nasym if il == 0 else nres) - l + 1, (N, )) for il, l in enumerate(sizes)],
+                            axis=1)
       ok = check_offsets_overlap_containment(offsets, sizes, nres, nasym, cbreaks, minsep, minbeg, minend)
       if torch.any(ok):
          offsets = offsets[ok]
@@ -254,7 +276,7 @@ def make_test_motif(xyz, sizes, minsep=0, minbeg=0, minend=0, ntries=3, rnoise=0
       crd = xyz[lb:ub]
       com = wu.hcom(crd.cpu(), flat=True)
       x = wu.hrandsmall(cart_sd=rnoise * 0.707, rot_sd=0.707 * rnoise / lever, centers=com)
-      motif.append(wu.th_xform(x, crd.cpu()).to(xyz.device))
+      motif.append(wu.thxform(x, crd.cpu()).to(xyz.device))
 
    return motif, pos
 
@@ -320,13 +342,13 @@ def make_floating_offsets(sizes, nres, nasym, cbreaks, minsep=0, minbeg=0, minen
 def place_motif_rms_brute(xyz, motif, topk=10, nasym=None, **kw):
    import torch
    nasym = nasym or nres
-   ca = wu.th_point(xyz[:, 1])
-   mcrd = wu.th_point(torch.cat(motif)[:, 1])
+   ca = wu.thpoint(xyz[:, 1])
+   mcrd = wu.thpoint(torch.cat(motif)[:, 1])
    offsets = make_floating_offsets([len(m) for m in motif], nres, nasym, **kw)
    rms = torch.zeros(len(offsets))
    for i, offset in enumerate(offsets):
       scrd = torch.cat([ca[o:o + len(m)] for o, m in zip(offset, motif)])
-      rms[i], _, _ = wu.th_rmsfit(mcrd, scrd)
+      rms[i], _, _ = wu.thrmsfit(mcrd, scrd)
    val, idx = torch.topk(rms, topk, largest=False)
    return MotifPlacement(offsets[idx], rms[idx], offsets, rms)
 
@@ -341,8 +363,8 @@ def place_motif_dme_brute(xyz, motif, topk=10, nasym=None, **kw):
 
    nres = len(xyz)
    nasym = nasym or nres
-   ca = wu.th_point(xyz[:, 1])
-   mcrd = wu.th_point(torch.cat(motif)[:, 1])
+   ca = wu.thpoint(xyz[:, 1])
+   mcrd = wu.thpoint(torch.cat(motif)[:, 1])
    mdist = torch.cdist(mcrd, mcrd)
    offsets = make_floating_offsets([len(m) for m in motif], nres, nasym, **kw)
    assert torch.all(offsets[:, 0] <= nasym)

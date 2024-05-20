@@ -21,7 +21,7 @@ def torchscorefunc(xtal, scom, cellsize, cartshift, grad=True):
       axis = torch.tensor(s.axis[:3], requires_grad=grad)
       newcom = com + cartshift[:3]
       newcen = cen * cellsize
-      dis2 = dis2 + wu.homog.thgeom.th_point_line_dist2(newcom, newcen, axis)
+      dis2 = dis2 + wu.homog.thgeom.thpoint_line_dist2(newcom, newcen, axis)
    err = torch.sqrt(torch.sum(dis2))
    return err
 

@@ -79,9 +79,12 @@ def align_to_axis(pdb, axis, componentinfo, cenaxis=None, autoset_rotational_ori
    if autoset_rotational_origin:
       assert cenaxis is not None
       newcom = wu.hxform(xalign, com)
-      towardscom = wu.hprojperp(axis, newcom)
+      # ic(axis, cenaxis)
       towardscen = wu.hprojperp(axis, cenaxis)
-      xalign = wu.halign2(axis, towardscom, axis, towardscen) @ xalign  # rotate asu com around symaxis
+      towardscom = wu.hprojperp(axis, newcom)
+      # ic(axis, towardscen, towardscom)
+      if wu.hnorm(towardscen) > 0.001:
+         xalign = wu.halign2(axis, towardscom, axis, towardscen) @ xalign  # rotate asu com around symaxis
    pdbaln = wu.hxform(xalign, pdb)
    return pdbaln
 

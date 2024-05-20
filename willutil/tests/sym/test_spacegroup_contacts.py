@@ -8,10 +8,28 @@ def main():
 
    # minimal_spacegroup_cover_symelems('P6')
 
+   covers = wu.load('spacegroup_covers_2elem.pickle')
    for sg in wu.sym.sg_all_chiral:
-      minimal_spacegroup_cover_symelems(sg)
+      if sg in covers: continue
+      covers[sg] = minimal_spacegroup_cover_symelems(sg, maxelems=2)
+      # ic(covers)
+      wu.save(covers, 'spacegroup_covers_2elem.pickle')
+      # minimal_spacegroup_cover_symelems(sg, maxelems=2, noscrew=True, nocompound=True)
 
-   assert 0
+   for sg, elemslist in covers.items():
+      elemslist = [
+         elems for elems in elemslist if all([
+            # all(e.iscyclic for e in elems),
+            any(e.iscyclic for e in elems),
+            any(e.isscrew for e in elems),
+         ])
+      ]
+      if elemslist:
+         wu.printheader(sg)
+      for elems in elemslist:
+         for e in elems:
+            print(e)
+         print()
 
 # def test_sg_color_symel
 

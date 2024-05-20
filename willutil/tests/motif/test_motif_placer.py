@@ -14,13 +14,13 @@ def main():
    # assert torch.all(a == c)
    # assert 0, 'PASS'
 
-   debug_polymotif_c2()
+   # debug_polymotif_c2()
    # debug_polymotif_c3()
-   assert 0
-   debug_symbridge_minfunc()
-   debug_polymotif()
-   test_rotation_point_match()
-   debug_symbridge_rot_point_match()
+   # assert 0
+   # debug_symbridge_minfunc()
+   # debug_polymotif()
+   # test_rotation_point_match()
+   # debug_symbridge_rot_point_match()
 
    test_motif_occlusion()
 
@@ -108,21 +108,21 @@ def test_rotation_point_match():
       assert np.allclose(end, wu.hxform(xptmatch, beg))
 
 def _degbug_symbridge_make_test_coords(reg1, reg2, nfold, xsd=1, xyzsd=0):
-   reg2 = wu.th_xform(wu.th_rot([0, 0, 1], torch.pi * 2 / nfold), reg2)
+   reg2 = wu.thxform(wu.throt([0, 0, 1], torch.pi * 2 / nfold), reg2)
    x = torch.as_tensor(wu.hrandsmall(cart_sd=xsd, rot_sd=xsd / 15))
    reg1cen, reg2cen = reg1.mean(axis=(0, 1)), reg2.mean(axis=(0, 1))
    # reg1cen, reg2cen = torch.zeros(3), torch.zeros(3)
    xyznoise1 = torch.as_tensor(wu.hrandpoint(reg1.shape[:-1], std=xyzsd)[..., :3])
    xyznoise2 = torch.as_tensor(wu.hrandpoint(reg1.shape[:-1], std=xyzsd)[..., :3])
-   reg1 = wu.th_xform(x, reg1 - reg1cen) + reg1cen + xyznoise1
-   reg2 = wu.th_xform(x, reg2 - reg2cen) + reg2cen + xyznoise2
+   reg1 = wu.thxform(x, reg1 - reg1cen) + reg1cen + xyznoise1
+   reg2 = wu.thxform(x, reg2 - reg2cen) + reg2cen + xyznoise2
    return [reg1, reg2]
 
 def cyclic_symbridge_rms(R0, T0, A0, C0, xyz, motif, nfold):
    motif0 = einsum('ij,raj->rai', R0, motif[0]) + T0
    motif1 = einsum('ij,raj->rai', R0, motif[1]) + T0
-   xsym = wu.th_rot(A0, torch.pi * 2 / nfold, C0)
-   motif1 = wu.th_xform(xsym, motif1)
+   xsym = wu.throt(A0, torch.pi * 2 / nfold, C0)
+   motif1 = wu.thxform(xsym, motif1)
    rms = (xyz[0] - motif0).square().mean()
    rms += (xyz[1] - motif1).square().mean()
    return torch.sqrt(rms)
@@ -136,7 +136,7 @@ def debug_symbridge_minfunc():
 
    nfold = 3
    xyz1, xyz2 = _degbug_symbridge_make_test_coords(motif0, motif1, nfold=nfold, xsd=4, xyzsd=0)
-   xyz2sym = wu.th_xform(wu.th_rot([0, 0, 1], -torch.pi * 2 / nfold), xyz2)
+   xyz2sym = wu.thxform(wu.throt([0, 0, 1], -torch.pi * 2 / nfold), xyz2)
 
    wu.showme(torch.cat([xyz1, xyz2, xyz2sym]), name='ref')
    wu.showme(torch.cat([motif0, motif1]), name='motif')
@@ -417,9 +417,9 @@ def showme_motif_placements(xyz, motif, offsets):
    wu.showme(xyz, name='ref')
    for i, ofst in enumerate(offsets):
       scrd = torch.cat([xyz[o:o + len(m), 1] for o, m in zip(ofst, motif)])
-      mcrd = wu.th_point(torch.cat(motif)[:, 1])
-      rms, _, x = wu.th_rmsfit(mcrd, wu.th_point(scrd))
-      wu.showme(wu.th_xform(x, torch.cat(motif)), name=f'rms{rms}')
+      mcrd = wu.thpoint(torch.cat(motif)[:, 1])
+      rms, _, x = wu.thrmsfit(mcrd, wu.thpoint(scrd))
+      wu.showme(wu.thxform(x, torch.cat(motif)), name=f'rms{rms}')
 
 def test_motif_placer_minbeg_minend(showme=False):
    for minbeg in [0, 3]:

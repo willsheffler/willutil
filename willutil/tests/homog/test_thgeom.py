@@ -31,39 +31,39 @@ def main():
 
 def test_th_vec():
    torch = pytest.importorskip('torch')
-   v = th_randvec(10)
+   v = thrandvec(10)
    # ic(v)
-   v2 = th_vec(v)
+   v2 = thvec(v)
    assert v is v2
-   p = th_randpoint(10)
-   v3 = th_vec(p)
+   p = thrandpoint(10)
+   v3 = thvec(p)
    assert torch.allclose(p[..., :3], v3[..., :3])
    assert torch.allclose(v3[..., 3], torch.tensor(0.0))
 
-   v4 = th_vec(p[..., :3])
+   v4 = thvec(p[..., :3])
    assert torch.allclose(p[..., :3], v4[..., :3])
    assert torch.allclose(v4[..., 3], torch.tensor(0.0))
 
 def test_th_rog():
    torch = pytest.importorskip('torch')
-   points = th_randpoint(10)
-   rg = th_rog(points)
-   rgx = th_rog(points, aboutaxis=[1, 0, 0])
+   points = thrandpoint(10)
+   rg = throg(points)
+   rgx = throg(points, aboutaxis=[1, 0, 0])
    assert rg >= rgx
    points[..., 0] = 0
-   rg = th_rog(points)
+   rg = throg(points)
    assert np.allclose(rg, rgx)
 
 def test_axisangcenhel_roundtrip():
    torch = pytest.importorskip('torch')
 
    axis0 = torch.tensor([1., 0, 0, 0], requires_grad=True)
-   axis = th_normalized(axis0)
+   axis = thnormalized(axis0)
    ang = torch.tensor([2.0], requires_grad=True)
    cen = torch.tensor([1, 2, 3, 1.], requires_grad=True)
    hel = torch.tensor([1.], requires_grad=True)
-   x = th_rot(axis, ang, cen, hel)
-   axis2, ang2, cen2, hel2 = th_axis_angle_cen_hel(x)
+   x = throt(axis, ang, cen, hel)
+   axis2, ang2, cen2, hel2 = thaxis_angle_cen_hel(x)
 
    ang2.backward()
    assert np.allclose(axis0.grad.detach(), [0, 0, 0, 0])
@@ -72,12 +72,12 @@ def test_axisangcenhel_roundtrip():
    assert np.allclose(hel.grad.detach(), [0])
 
    axis0 = torch.tensor([1., 0, 0, 0], requires_grad=True)
-   axis = th_normalized(axis0)
+   axis = thnormalized(axis0)
    ang = torch.tensor([2.0], requires_grad=True)
    cen = torch.tensor([1, 2, 3, 1.], requires_grad=True)
    hel = torch.tensor([1.], requires_grad=True)
-   x = th_rot(axis, ang, cen, hel)
-   axis2, ang2, cen2, hel2 = th_axis_angle_cen_hel(x)
+   x = throt(axis, ang, cen, hel)
+   axis2, ang2, cen2, hel2 = thaxis_angle_cen_hel(x)
    axis2[0].backward()
    assert np.allclose(axis0.grad.detach(), [0, 0, 0, 0])
    assert np.allclose(ang.grad.detach(), [0])
@@ -85,12 +85,12 @@ def test_axisangcenhel_roundtrip():
    assert np.allclose(hel.grad.detach(), [0])
 
    axis0 = torch.tensor([1., 0, 0, 0], requires_grad=True)
-   axis = th_normalized(axis0)
+   axis = thnormalized(axis0)
    ang = torch.tensor([2.0], requires_grad=True)
    cen = torch.tensor([1, 2, 3, 1.], requires_grad=True)
    hel = torch.tensor([1.], requires_grad=True)
-   x = th_rot(axis, ang, cen, hel)
-   axis2, ang2, cen2, hel2 = th_axis_angle_cen_hel(x)
+   x = throt(axis, ang, cen, hel)
+   axis2, ang2, cen2, hel2 = thaxis_angle_cen_hel(x)
    axis2[1].backward()
    assert np.allclose(axis0.grad.detach(), [0, 1, 0, 0])
    assert np.allclose(ang.grad.detach(), [0])
@@ -98,12 +98,12 @@ def test_axisangcenhel_roundtrip():
    assert np.allclose(hel.grad.detach(), [0])
 
    axis0 = torch.tensor([1., 0, 0, 0], requires_grad=True)
-   axis = th_normalized(axis0)
+   axis = thnormalized(axis0)
    ang = torch.tensor([2.0], requires_grad=True)
    cen = torch.tensor([1, 2, 3, 1.], requires_grad=True)
    hel = torch.tensor([1.], requires_grad=True)
-   x = th_rot(axis, ang, cen, hel)
-   axis2, ang2, cen2, hel2 = th_axis_angle_cen_hel(x)
+   x = throt(axis, ang, cen, hel)
+   axis2, ang2, cen2, hel2 = thaxis_angle_cen_hel(x)
    axis2[2].backward()
    assert np.allclose(axis0.grad.detach(), [0, 0, 1, 0])
    assert np.allclose(ang.grad.detach(), [0])
@@ -111,12 +111,12 @@ def test_axisangcenhel_roundtrip():
    assert np.allclose(hel.grad.detach(), [0])
 
    axis0 = torch.tensor([1., 0, 0, 0], requires_grad=True)
-   axis = th_normalized(axis0)
+   axis = thnormalized(axis0)
    ang = torch.tensor([2.0], requires_grad=True)
    cen = torch.tensor([1, 2, 3, 1.], requires_grad=True)
    hel = torch.tensor([1.], requires_grad=True)
-   x = th_rot(axis, ang, cen, hel)
-   axis2, ang2, cen2, hel2 = th_axis_angle_cen_hel(x)
+   x = throt(axis, ang, cen, hel)
+   axis2, ang2, cen2, hel2 = thaxis_angle_cen_hel(x)
    cen2[1].backward()
    # ic(axis0.grad)
    assert np.allclose(axis0.grad.detach(), [0, -1, 0, 0], atol=1e-4)
@@ -125,12 +125,12 @@ def test_axisangcenhel_roundtrip():
    assert np.allclose(hel.grad.detach(), [0], atol=1e-4)
 
    axis0 = torch.tensor([1., 0, 0, 0], requires_grad=True)
-   axis = th_normalized(axis0)
+   axis = thnormalized(axis0)
    ang = torch.tensor([2.0], requires_grad=True)
    cen = torch.tensor([1, 2, 3, 1.], requires_grad=True)
    hel = torch.tensor([1.], requires_grad=True)
-   x = th_rot(axis, ang, cen, hel)
-   axis2, ang2, cen2, hel2 = th_axis_angle_cen_hel(x)
+   x = throt(axis, ang, cen, hel)
+   axis2, ang2, cen2, hel2 = thaxis_angle_cen_hel(x)
    hel2.backward()
    assert np.allclose(axis0.grad.detach(), [0, 0, 0, 0], atol=1e-4)
    assert np.allclose(ang.grad.detach(), [0], atol=1e-4)
@@ -167,7 +167,7 @@ def test_th_rot_56789():
    rot2 = wu.homog.rot(axis0.detach(), ang0.detach(), shape=(4, 4))
    assert np.allclose(rot.detach(), rot2, atol=1e-5)
 
-   rot = th_rot(axis0, ang0, cen0, hel=None)
+   rot = throt(axis0, ang0, cen0, hel=None)
    rot2 = wu.homog.hrot(axis0.detach(), ang0.detach(), cen0.detach())
    assert np.allclose(rot.detach(), rot2, atol=1e-5)
 
@@ -191,7 +191,7 @@ def test_th_rot_single():
    rot2 = wu.homog.rot(axis0.detach(), ang0.detach(), shape=(4, 4))
    assert np.allclose(rot.detach(), rot2, atol=1e-5)
 
-   rot = th_rot(axis0, ang0, cen0, hel=None)
+   rot = throt(axis0, ang0, cen0, hel=None)
    rot2 = wu.homog.hrot(axis0.detach(), ang0.detach(), cen0.detach())
    assert np.allclose(rot.detach(), rot2, atol=1e-5)
 
@@ -222,7 +222,7 @@ def test_th_axis_angle_cen_rand():
    # ic(hel0.shape)
 
    # rot = t_rot(axis0, ang0, dim=4)
-   rot = th_rot(axis0, ang0, cen0, hel0)
+   rot = throt(axis0, ang0, cen0, hel0)
    # ic(rot.shape)
    # assert 0
 
@@ -236,7 +236,7 @@ def test_th_axis_angle_cen_rand():
    assert np.allclose(cenhel, cenhat, rtol=1e-4, atol=1e-4)
 
    # ic(rot.shape)
-   axis2, ang2, cen2, hel2 = th_axis_angle_cen_hel(rot)
+   axis2, ang2, cen2, hel2 = thaxis_angle_cen_hel(rot)
    assert np.allclose(axis2.detach(), axis)
    assert np.allclose(ang2.detach(), ang)
    assert np.allclose(cen2.detach(), cen)
@@ -250,7 +250,7 @@ def test_th_intersect_planes():
    n1 = torch.tensor([1., 0, 0, 0], requires_grad=True)
    p2 = torch.tensor([0., 0, 0, 1], requires_grad=True)
    n2 = torch.tensor([0., 1, 0, 0], requires_grad=True)
-   isct, norm, status = th_intersect_planes(p1, n1, p2, n2)
+   isct, norm, status = thintersect_planes(p1, n1, p2, n2)
    assert status == 0
    assert isct[2] == 0
    assert np.allclose(abs(norm[:3].detach()), (0, 0, 1))
@@ -264,7 +264,7 @@ def test_th_intersect_planes():
    n1 = torch.tensor([1., 0, 0, 0], requires_grad=True)
    p2 = torch.tensor([0., 0, 0, 1], requires_grad=True)
    n2 = torch.tensor([0., 0, 1, 0], requires_grad=True)
-   isct, norm, status = th_intersect_planes(p1, n1, p2, n2)
+   isct, norm, status = thintersect_planes(p1, n1, p2, n2)
    assert status == 0
    assert isct[1] == 0
    assert np.allclose(abs(norm[:3].detach()), (0, 1, 0))
@@ -273,7 +273,7 @@ def test_th_intersect_planes():
    n1 = torch.tensor([0., 1, 0, 0], requires_grad=True)
    p2 = torch.tensor([0., 0, 0, 1], requires_grad=True)
    n2 = torch.tensor([0., 0, 1, 0], requires_grad=True)
-   isct, norm, status = th_intersect_planes(p1, n1, p2, n2)
+   isct, norm, status = thintersect_planes(p1, n1, p2, n2)
    assert status == 0
    assert isct[0] == 0
    assert np.allclose(abs(norm[:3].detach()), (1, 0, 0))
@@ -282,7 +282,7 @@ def test_th_intersect_planes():
    n1 = torch.tensor([1., 0, 0, 0], requires_grad=True)
    p2 = torch.tensor([0., 9, 0, 1], requires_grad=True)
    n2 = torch.tensor([0., 1, 0, 0], requires_grad=True)
-   isct, norm, status = th_intersect_planes(p1, n1, p2, n2)
+   isct, norm, status = thintersect_planes(p1, n1, p2, n2)
    assert status == 0
    assert np.allclose(isct[:3].detach(), [7, 9, 0])
    assert np.allclose(abs(norm.detach()), [0, 0, 1, 0])
@@ -291,7 +291,7 @@ def test_th_intersect_planes():
    n1 = torch.tensor([1., 1, 0, 0], requires_grad=True)
    p2 = torch.tensor([0., 0, 0, 1], requires_grad=True)
    n2 = torch.tensor([0., 1, 1, 0], requires_grad=True)
-   isct, norm, status = th_intersect_planes(p1, n1, p2, n2)
+   isct, norm, status = thintersect_planes(p1, n1, p2, n2)
    assert status == 0
    assert np.allclose(abs(norm.detach()), hnormalized([1, 1, 1, 0]))
 
@@ -303,10 +303,10 @@ def test_th_intersect_planes():
    n1 = torch.tensor([-0.80966465, -0.18557869, 0.55677976, 0.])
    p2 = torch.tensor([0.14790894, -1.333329, 0.45396509, 1.])
    n2 = torch.tensor([-0.92436319, -0.0221499, 0.38087016, 0.])
-   isct, norm, sts = th_intersect_planes(p1, n1, p2, n2)
+   isct, norm, sts = thintersect_planes(p1, n1, p2, n2)
    assert sts == 0
-   assert torch.all(th_ray_in_plane(p1, n1, isct, norm))
-   assert torch.all(th_ray_in_plane(p2, n2, isct, norm))
+   assert torch.all(thray_in_plane(p1, n1, isct, norm))
+   assert torch.all(thray_in_plane(p2, n2, isct, norm))
    assert np.allclose(isct.detach(), isct2)
    assert np.allclose(norm.detach(), norm2)
 
@@ -314,15 +314,15 @@ def test_th_intersect_planes():
    n1 = torch.tensor([1., 0, 0, 0], requires_grad=True)
    p2 = torch.tensor([0., 0, 0, 1], requires_grad=True)
    n2 = torch.tensor([0., 0, 1, 0], requires_grad=True)
-   isct, norm, status = th_intersect_planes(p1, n1, p2, n2)
+   isct, norm, status = thintersect_planes(p1, n1, p2, n2)
 
    assert status == 0
-   assert abs(th_dot(n1, norm)) < 0.0001
-   assert abs(th_dot(n2, norm)) < 0.0001
-   assert torch.all(th_point_in_plane(p1, n1, isct))
-   assert torch.all(th_point_in_plane(p2, n2, isct))
-   assert torch.all(th_ray_in_plane(p1, n1, isct, norm))
-   assert torch.all(th_ray_in_plane(p2, n2, isct, norm))
+   assert abs(thdot(n1, norm)) < 0.0001
+   assert abs(thdot(n2, norm)) < 0.0001
+   assert torch.all(thpoint_in_plane(p1, n1, isct))
+   assert torch.all(thpoint_in_plane(p2, n2, isct))
+   assert torch.all(thray_in_plane(p1, n1, isct, norm))
+   assert torch.all(thray_in_plane(p2, n2, isct, norm))
 
 def test_th_axis_angle_cen_hel():
    torch = pytest.importorskip('torch')
@@ -332,8 +332,8 @@ def test_th_axis_angle_cen_hel():
    ang0 = torch.tensor(0.9398483, requires_grad=True)
    cen0 = torch.tensor([1., 2, 3, 1], requires_grad=True)
    h0 = torch.tensor(2.443, requires_grad=True)
-   x = th_rot(axis0, ang0, cen0, h0)
-   axis, ang, cen, hel = th_axis_angle_cen_hel(x)
+   x = throt(axis0, ang0, cen0, h0)
+   axis, ang, cen, hel = thaxis_angle_cen_hel(x)
    ax2, an2, cen2 = axis_ang_cen_of(x.detach().numpy())
    assert np.allclose(ax2, axis.detach())
    assert np.allclose(an2, ang.detach())
@@ -357,7 +357,7 @@ def test_torch_quat():
 
    for v in (1., -1.):
       q0 = torch.tensor([v, 0., 0., 0.], requires_grad=True)
-      q = th_quat_to_upper_half(q0)
+      q = thquat_to_upper_half(q0)
       assert np.allclose(q.detach(), [1, 0, 0, 0])
       s = torch.sum(q)
       s.backward()
@@ -369,17 +369,17 @@ def test_torch_rmsfit(trials=10):
    torch.autograd.set_detect_anomaly(True)
 
    for _ in range(trials):
-      p = th_randpoint(10, std=10)
-      q = th_randpoint(10, std=10)
+      p = thrandpoint(10, std=10)
+      q = thrandpoint(10, std=10)
       # ic(p)
-      rms0 = th_rms(p, q)
-      rms, qhat, xpqhat = th_rmsfit(p, q)
+      rms0 = thrms(p, q)
+      rms, qhat, xpqhat = thrmsfit(p, q)
       assert rms0 > rms
       # ic(float(rms0), float(rms))
-      assert np.allclose(th_rms(qhat, q), rms)
+      assert np.allclose(thrms(qhat, q), rms)
       for i in range(10):
-         qhat2 = th_xform(th_rand_xform_small(1, 0.01, 0.001), qhat)
-         rms2 = th_rms(q, qhat2)
+         qhat2 = thxform(thrand_xform_small(1, 0.01, 0.001), qhat)
+         rms2 = thrms(q, qhat2)
 
          if rms2 < rms - 0.001:
             print(float(rms), float(rms2))
@@ -411,12 +411,12 @@ def test_torch_rmsfit_grad():
          for i in range(nstep):
             p = torch.tensor(points1, requires_grad=True)
             q = torch.tensor(points2, requires_grad=True)
-            p2, q2 = th_point(p), th_point(q)
+            p2, q2 = thpoint(p), thpoint(q)
             assert p2.shape == (npts, 4)
 
-            rms, qhat, xpqhat = th_rmsfit(p2, q2)
-            rms2 = th_rms(qhat, q)
-            assert torch.allclose(qhat, th_xformpts(xpqhat, p), atol=0.0001)
+            rms, qhat, xpqhat = thrmsfit(p2, q2)
+            rms2 = thrms(qhat, q)
+            assert torch.allclose(qhat, thxformpts(xpqhat, p), atol=0.0001)
             # ic(rms, rms2)
             assert torch.allclose(rms, rms2, atol=0.0001)
 
@@ -438,7 +438,7 @@ def test_th_axis_angle():
 
    axis0 = torch.tensor([10., 10., 10., 0], requires_grad=True)
    ang0 = torch.tensor(0.4, requires_grad=True)
-   x = th_rot(axis0, ang0)
+   x = throt(axis0, ang0)
    assert x.shape == (4, 4)
    assert x[1, 3] == 0.
    assert x[3, 1] == 0.
@@ -449,8 +449,8 @@ def test_th_axis_angle():
 
    axis0 = torch.tensor(hnormalized(np.array([1., 1, 1, 0])), requires_grad=True)
    ang0 = torch.tensor(0.8483, requires_grad=True)
-   x = th_rot(axis0, ang0)
-   ax, an, h = th_axis_angle_hel(x)
+   x = throt(axis0, ang0)
+   ax, an, h = thaxis_angle_hel(x)
    assert np.allclose(an.detach(), ang0.detach())
    assert np.allclose(h.detach(), 0)
    ax2, an2, h2 = axis_angle_hel_of(x.detach())
@@ -469,8 +469,8 @@ def test_th_axis_angle_hel():
    axis0 = torch.tensor(hnormalized(np.array([1., 1, 1, 0])), requires_grad=True)
    ang0 = torch.tensor(0.9398483, requires_grad=True)
    h0 = torch.tensor(2.443, requires_grad=True)
-   x = th_rot(axis0, ang0, hel=h0)
-   ax, an, h = th_axis_angle_hel(x)
+   x = throt(axis0, ang0, hel=h0)
+   ax, an, h = thaxis_angle_hel(x)
    ax2, an2, h2 = axis_angle_hel_of(x.detach())
    assert np.allclose(ax2, ax.detach())
    assert np.allclose(an2, an.detach())
@@ -484,10 +484,10 @@ def test_th_misc():
    torch = pytest.importorskip('torch')
 
    r = torch.randn(2, 4, 5, 3)
-   p = th_point(r)
+   p = thpoint(r)
    assert np.allclose(p[..., :3], r)
    assert np.allclose(p[..., 3], 1)
-   p = th_randpoint(11)
+   p = thrandpoint(11)
    assert p.shape == (11, 4)
    assert np.allclose(p[:, 3], 1)
 
@@ -512,7 +512,7 @@ if __name__ == '__main__':
 #    ic(cen0.shape)
 #    ic(hel.shape)
 
-#    rot = th_rot(axis0, ang0, cen0, hel)
+#    rot = throt(axis0, ang0, cen0, hel)
 #    ic(rot.shape)
 #    assert 0
 
@@ -531,7 +531,7 @@ if __name__ == '__main__':
 #    n1 = torch.tensor([1., 0, 0, 0], requires_grad=True)
 #    p2 = torch.tensor([0., 0, 0, 1], requires_grad=True)
 #    n2 = torch.tensor([0., 1, 0, 0], requires_grad=True)
-#    isct, norm, status = th_intersect_planes(p1, n1, p2, n2)
+#    isct, norm, status = thintersect_planes(p1, n1, p2, n2)
 #    assert status == 0
 #    assert isct[2] == 0
 #    assert np.allclose(abs(norm[:3].detach()), (0, 0, 1))
@@ -540,7 +540,7 @@ if __name__ == '__main__':
 #    n1 = torch.tensor([1., 0, 0, 0], requires_grad=True)
 #    p2 = torch.tensor([0., 0, 0, 1], requires_grad=True)
 #    n2 = torch.tensor([0., 0, 1, 0], requires_grad=True)
-#    isct, norm, status = th_intersect_planes(p1, n1, p2, n2)
+#    isct, norm, status = thintersect_planes(p1, n1, p2, n2)
 #    assert status == 0
 #    assert isct[1] == 0
 #    assert np.allclose(abs(norm[:3].detach()), (0, 1, 0))
@@ -549,7 +549,7 @@ if __name__ == '__main__':
 #    n1 = torch.tensor([0., 1, 0, 0], requires_grad=True)
 #    p2 = torch.tensor([0., 0, 0, 1], requires_grad=True)
 #    n2 = torch.tensor([0., 0, 1, 0], requires_grad=True)
-#    isct, norm, status = th_intersect_planes(p1, n1, p2, n2)
+#    isct, norm, status = thintersect_planes(p1, n1, p2, n2)
 #    assert status == 0
 #    assert isct[0] == 0
 #    assert np.allclose(abs(norm[:3].detach()), (1, 0, 0))
@@ -558,7 +558,7 @@ if __name__ == '__main__':
 #    n1 = torch.tensor([1., 0, 0, 0], requires_grad=True)
 #    p2 = torch.tensor([0., 9, 0, 1], requires_grad=True)
 #    n2 = torch.tensor([0., 1, 0, 0], requires_grad=True)
-#    isct, norm, status = th_intersect_planes(p1, n1, p2, n2)
+#    isct, norm, status = thintersect_planes(p1, n1, p2, n2)
 #    assert status == 0
 #    assert np.allclose(isct[:3].detach(), [7, 9, 0])
 #    assert np.allclose(abs(norm.detach()), [0, 0, 1, 0])
@@ -567,7 +567,7 @@ if __name__ == '__main__':
 #    n1 = torch.tensor([1., 1, 0, 0], requires_grad=True)
 #    p2 = torch.tensor([0., 0, 0, 1], requires_grad=True)
 #    n2 = torch.tensor([0., 1, 1, 0], requires_grad=True)
-#    isct, norm, status = th_intersect_planes(p1, n1, p2, n2)
+#    isct, norm, status = thintersect_planes(p1, n1, p2, n2)
 #    assert status == 0
 #    assert np.allclose(abs(norm.detach()), hnormalized([1, 1, 1, 0]))
 
@@ -581,10 +581,10 @@ if __name__ == '__main__':
 #    n1 = torch.tensor([-0.80966465, -0.18557869, 0.55677976, 0.])
 #    p2 = torch.tensor([0.14790894, -1.333329, 0.45396509, 1.])
 #    n2 = torch.tensor([-0.92436319, -0.0221499, 0.38087016, 0.])
-#    isct, norm, sts = th_intersect_planes(p1, n1, p2, n2)
+#    isct, norm, sts = thintersect_planes(p1, n1, p2, n2)
 #    assert sts == 0
-#    assert torch.all(th_ray_in_plane(p1, n1, isct, norm))
-#    assert torch.all(th_ray_in_plane(p2, n2, isct, norm))
+#    assert torch.all(thray_in_plane(p1, n1, isct, norm))
+#    assert torch.all(thray_in_plane(p2, n2, isct, norm))
 #    assert np.allclose(isct.detach(), isct2)
 #    assert np.allclose(norm.detach(), norm2)
 
@@ -592,15 +592,15 @@ if __name__ == '__main__':
 #    n1 = torch.tensor([1., 0, 0, 0], requires_grad=True)
 #    p2 = torch.tensor([0., 0, 0, 1], requires_grad=True)
 #    n2 = torch.tensor([0., 0, 1, 0], requires_grad=True)
-#    isct, norm, status = th_intersect_planes(p1, n1, p2, n2)
+#    isct, norm, status = thintersect_planes(p1, n1, p2, n2)
 
 #    assert status == 0
-#    assert abs(th_dot(n1, norm)) < 0.0001
-#    assert abs(th_dot(n2, norm)) < 0.0001
-#    assert torch.all(th_point_in_plane(p1, n1, isct))
-#    assert torch.all(th_point_in_plane(p2, n2, isct))
-#    assert torch.all(th_ray_in_plane(p1, n1, isct, norm))
-#    assert torch.all(th_ray_in_plane(p2, n2, isct, norm))
+#    assert abs(thdot(n1, norm)) < 0.0001
+#    assert abs(thdot(n2, norm)) < 0.0001
+#    assert torch.all(thpoint_in_plane(p1, n1, isct))
+#    assert torch.all(thpoint_in_plane(p2, n2, isct))
+#    assert torch.all(thray_in_plane(p1, n1, isct, norm))
+#    assert torch.all(thray_in_plane(p2, n2, isct, norm))
 
 # def test_th_axis_angle_cen_hel():
 #    torch = pytest.importorskip('torch')
@@ -610,8 +610,8 @@ if __name__ == '__main__':
 #    ang0 = torch.tensor(0.9398483, requires_grad=True)
 #    cen0 = torch.tensor([1., 2, 3, 1], requires_grad=True)
 #    h0 = torch.tensor(2.443, requires_grad=True)
-#    x = th_rot(axis0, ang0, cen0, h0)
-#    axis, ang, cen, hel = th_axis_angle_cen_hel(x)
+#    x = throt(axis0, ang0, cen0, h0)
+#    axis, ang, cen, hel = thaxis_angle_cen_hel(x)
 #    ax2, an2, cen2 = axis_ang_cen_of(x.detach().numpy())
 #    assert np.allclose(ax2, axis.detach())
 #    assert np.allclose(an2, ang.detach())
@@ -636,7 +636,7 @@ if __name__ == '__main__':
 
 #    for v in (1., -1.):
 #       q0 = torch.tensor([v, 0., 0., 0.], requires_grad=True)
-#       q = th_quat_to_upper_half(q0)
+#       q = thquat_to_upper_half(q0)
 #       assert np.allclose(q.detach(), [1, 0, 0, 0])
 #       s = torch.sum(q)
 #       s.backward()
@@ -653,11 +653,11 @@ if __name__ == '__main__':
 #    shift = 100
 #    for std in (0.001, 0.01, 0.1, 1, 10):
 #       for i in range(ntrials):
-#          # xform = th_rot([0, 0, 1], 120, degrees=True)
+#          # xform = throt([0, 0, 1], 120, degrees=True)
 #          xform = torch.tensor(rand_xform(), requires_grad=True)
-#          p = th_randpoint(10, std=10)
-#          q = th_xform(xform, p)
-#          delta = th_randvec(10, std=std)
+#          p = thrandpoint(10, std=10)
+#          q = thxform(xform, p)
+#          delta = thrandvec(10, std=std)
 #          q = q + delta
 #          q = q + shift
 #          q[:, 3] = 1
@@ -666,11 +666,11 @@ if __name__ == '__main__':
 
 #          # ic(p.dtype, q.dtype)
 
-#          rms, qhat, xpq = th_rmsfit(p, q)
+#          rms, qhat, xpq = thrmsfit(p, q)
 #          # ic(xpq)
 
-#          assert np.allclose(qhat.detach().numpy(), th_xform(xpq, p).detach().numpy())
-#          assert np.allclose(rms.detach().numpy(), th_rms(qhat, q).detach().numpy())
+#          assert np.allclose(qhat.detach().numpy(), thxform(xpq, p).detach().numpy())
+#          assert np.allclose(rms.detach().numpy(), thrms(qhat, q).detach().numpy())
 #          assert rms < std * 3
 #          # print(rms)
 #          rms.backward()

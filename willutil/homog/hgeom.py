@@ -429,7 +429,8 @@ def axis_of(xforms, tol=1e-7, debug=False):
    return axs.reshape(origshape[:-1])
 
 def is_homog_xform(xforms):
-   return ((xforms.shape[-2:] == (4, 4)) and (np.allclose(1, np.linalg.det(xforms[..., :3, :3]))) and (np.allclose(xforms[..., 3, :], [0, 0, 0, 1])))
+   return ((xforms.shape[-2:] == (4, 4)) and (np.allclose(1, np.linalg.det(xforms[..., :3, :3])))
+           and (np.allclose(xforms[..., 3, :], [0, 0, 0, 1])))
 
 def hinv(xforms):
    return np.linalg.inv(xforms)
@@ -604,7 +605,7 @@ def hray(origin, direction):
 def hframe(u, v, w, cen=None):
    u, v, w = hpoint(u), hpoint(v), hpoint(w)
    assert u.shape == v.shape == w.shape
-   if not cen: cen = u
+   if cen is None: cen = u
    cen = hpoint(cen)
    assert cen.shape == u.shape
    stubs = np.empty(u.shape[:-1] + (4, 4))
@@ -886,6 +887,8 @@ def hori3(x):
    assert x.shape[-2:] == (4, 4)
    return x[..., :3, :3]
 
+hori = hori3
+
 def hprojperp(u, v):
    u = hvec(u)
    v = hpointorvec(v)
@@ -1120,9 +1123,10 @@ def halign(a, b, doto=None):
    # ic(x.shape)
    return x if doto is None else hxform(x, doto)
 
-def halign2(a1, a2, b1, b2, doto=None):
+def halign2(a1, a2, b1, b2, doto=None, strict=False):
    "minimizes angular error"
    a1, a2, b1, b2 = (hnormalized(v) for v in (a1, a2, b1, b2))
+   if strict: assert np.allclose(np.dot(a1, a2), np.dot(b1, b2), atol=0.001)
    aaxis = hnormalized(a1 + a2)
    baxis = hnormalized(b1 + b2)
    # baxis = np.where(hangle(aaxis, baxis) > , baxis, -baxis)
@@ -1134,7 +1138,7 @@ def halign2(a1, a2, b1, b2, doto=None):
    X = Xaround @ Xmiddle
    # ic(angle(b1, a1), angle(b2, a2), angle(b1, X @ a1), angle(b2, X @ a2))
    assert (angle(b1, a1) + angle(b2, a2)) + 0.001 >= (angle(b1, X @ a1) + angle(b2, X @ a2))
-   return X if doto is None else hxform(x, doto)
+   return X if doto is None else hxform(X, doto)
 
 def calc_dihedral_angle(p1, p2, p3, p4):
    p1, p2, p3, p4 = hpoint(p1), hpoint(p2), hpoint(p3), hpoint(p4)
@@ -1228,7 +1232,8 @@ def xform_around_dof_for_vector_target_angle(fix, mov, dof, target_angle):
    else:
       angles = [-dang + ahat, -dang - ahat, np.pi - dang + ahat, np.pi - dang - ahat]
       moves = [(hrot(dof, ang + 0.000) @ mov[..., None]).reshape(1, 4) for ang in angles]
-      if not (np.allclose(angle(moves[0], fix), angle(moves[1], fix)) or np.allclose(angle(moves[2], fix), angle(moves[3], fix))):
+      if not (np.allclose(angle(moves[0], fix), angle(moves[1], fix))
+              or np.allclose(angle(moves[2], fix), angle(moves[3], fix))):
          return []
 
       if np.allclose(angle(moves[0], fix), target_angle):
