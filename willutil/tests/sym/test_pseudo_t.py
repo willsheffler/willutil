@@ -9,9 +9,17 @@ def test_t2():
 def test_t4():
    wu.sym.create_pseudo_t(4)
 
-def test_pseudo_t_start():
+def test_pseudo_t_dist_min():
    asym = wu.sym.pseudo_t_start(2)
    loss, asym2 = wu.sym.min_pseudo_t_dist2(asym)
+   ic(asym2.shape)
+   wu.showme(hscaled(0.1, asym))
+   wu.showme(hscaled(0.1, asym2))
+   wu.showme(hscaled(0.1, wu.sym.make('I', asym)))
+
+def test_pseudo_t_env_min():
+   asym = wu.sym.pseudo_t_start(2)
+   loss, asym2 = wu.sym.min_pseudo_t_symerror(asym)
    ic(asym2.shape)
    wu.showme(hscaled(0.1, asym))
    wu.showme(hscaled(0.1, asym2))
@@ -61,7 +69,8 @@ def test_from_pdb():
    wu.showme(wu.hxform(wu.sym.frames('I'), frames[-1]), weight=10, xyzlen=[10, 7, 4])
 
 def main():
-   test_pseudo_t_start()
+   test_pseudo_t_env_min()
+   # test_pseudo_t_start()
    # test_from_pdb()
    # test_t2()
 

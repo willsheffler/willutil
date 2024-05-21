@@ -90,13 +90,13 @@ def min_sym_environment_loss(asym0, frames0, lbfgs, indep, **kw):
    loss.backward()
    return loss
 
-def min_pseudo_t_sym_environment(asym, sym='I'):
+def min_pseudo_t_symerror(asym, sym='I'):
    t = len(asym)
    frames = wu.sym.frames(sym)
    frames0 = torch.tensor(frames[:, :3, :3]).cuda().to(torch.float32)
    asym0 = torch.tensor(asym[:, :3, 3]).cuda().to(torch.float32)
    indep = [torch.zeros((t, 3)).cuda().requires_grad_(True)]
-   loss = torch_min(min_dist_loss, **vars())
+   loss = torch_min(min_sym_environment_loss, **vars())
    asym[:, :3, 3] = torch.einsum('aij,aj->ai', Q2R(indep[0]), asym0).cpu().detach()
    asym = to_canonical_frame(asym, frames)
    return loss, asym.numpy()
