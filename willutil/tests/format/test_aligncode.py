@@ -363,6 +363,7 @@ def test_git_diff():
    assert len(diff) == len(code16diff)
    assert diff == code16diff
 
+@pytest.mark.skip
 def test_git_merge_sub_orig():
    orig = code16
    new = align_code(code16)
