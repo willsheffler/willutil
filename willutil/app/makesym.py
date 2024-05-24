@@ -1,4 +1,5 @@
-import os, argparse
+import os
+import argparse
 import numpy as np
 import willutil as wu
 
@@ -61,7 +62,7 @@ def get_tgtaxis_frames(arch, output_symmetry, **kw):
 
 def build_component_asu(componentinfo, reconcile_method='longest_chain', **kw):
    if reconcile_method != 'longest_chain':
-      raise ValueError(f'only reconcile_method longest_chain is currently supported')
+      raise ValueError('only reconcile_method longest_chain is currently supported')
    ci = componentinfo
    chains = ci.chains
    xform = wu.hrot(ci.axis, ci.angle, ci.center)

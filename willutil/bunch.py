@@ -92,7 +92,7 @@ class Bunch(dict):
          raise TypeError('Bunch.accumulate needs Bunch or dict type')
       not_empty = len(self)
       for k in other:
-         if not k in self:
+         if k not in self:
             if strict and not_empty:
                raise ValueError(f'{k} not in this Bunch')
             self[k] = list()
@@ -125,10 +125,10 @@ class Bunch(dict):
 
    def __getattr__(self, k):
       if k == '_special':
-         raise ValueError(f'_special is a reseved name for Bunch')
+         raise ValueError('_special is a reseved name for Bunch')
       if k == '__deepcopy__':
          return None
-      if self._special['strict_lookup'] and not k in self:
+      if self._special['strict_lookup'] and k not in self:
          raise KeyError(f'Bunch is missing value for key {k}')
       try:
          # Throws exception if not in prototype chain
@@ -198,7 +198,7 @@ class Bunch(dict):
       newbunch = Bunch()
       newbunch._special = self._special
       for k in self.keys():
-         if not k in dropkeys:
+         if k not in dropkeys:
             newbunch[k] = self[k]
       return newbunch
 

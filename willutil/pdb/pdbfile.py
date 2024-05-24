@@ -1,5 +1,6 @@
 from difflib import SequenceMatcher
-import collections, os
+import collections
+import os
 import numpy as np
 import willutil as wu
 
@@ -453,7 +454,7 @@ class PDBFile:
             if tolerances.seqmatch < 2 * match.size / len(seq1 + seq2):
                groups.append((ichain, jchain, match))
                if len(seenit.intersection([ichain, jchain])):
-                  raise ValueError(f'looks like more than 2fold symmetry, not yet supported')
+                  raise ValueError('looks like more than 2fold symmetry, not yet supported')
                seenit.update([ichain, jchain])
       if not groups:
          raise ValueError(f'No symmetrical chains found by longest common substring {tolerances.seqmatch}')

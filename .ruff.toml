@@ -1,0 +1,3 @@
+ignore = [E402]
+line-length = 111
+target-version = "py312"

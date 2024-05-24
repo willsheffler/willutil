@@ -1,8 +1,9 @@
-import sys, os, gzip
+import sys
+import os
+import gzip
 from os.path import join
 import pandas as pd
 
-from cppimport import import_hook
 # from cppimport.config import turn_off_strict_prototypes
 # turn_off_strict_prototypes()
 from willutil.sampling._orientations import read_karney_orientations

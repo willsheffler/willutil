@@ -1,7 +1,9 @@
-import torch, numpy as np
+import torch
+import numpy as np
 import willutil as wu
 from willutil.homog import *
-from willutil.homog.thgeom import *
+# from willutil.homog.thgeom import *
+from willutil.homog import thgeom as h
 
 def extract_t_asu(frames, t, sym='I'):
    cen = hpoint(np.stack(list(wu.sym.axes('I').values())).mean(0))
@@ -61,7 +63,7 @@ def to_canonical_frame(asym, frames):
 
 def min_dist_loss(asym0, frames0, lbfgs, indep, **kw):
    lbfgs.zero_grad()
-   asym = torch.einsum('aij,aj->ai', Q2R(indep[0]), asym0)
+   asym = torch.einsum('aij,aj->ai', h.Q2R(indep[0]), asym0)
    sym = torch.einsum('sij,aj->sai', frames0, asym)
    d = torch.norm(asym[None, None] - sym[:, :, None], dim=-1)
    d = torch.where(d < 0.001, 9e9, d)
@@ -75,14 +77,14 @@ def min_pseudo_t_dist2(asym, sym='I'):
    frames0 = torch.tensor(frames[:, :3, :3]).cuda().to(torch.float32)
    asym0 = torch.tensor(asym[:, :3, 3]).cuda().to(torch.float32)
    indep = [torch.zeros((t, 3)).cuda().requires_grad_(True)]
-   loss = torch_min(min_dist_loss, **vars())
-   asym[:, :3, 3] = torch.einsum('aij,aj->ai', Q2R(indep[0]), asym0).cpu().detach()
+   loss = h.torch_min(min_dist_loss, **vars())
+   asym[:, :3, 3] = torch.einsum('aij,aj->ai', h.Q2R(indep[0]), asym0).cpu().detach()
    asym = to_canonical_frame(asym, frames)
    return loss, asym.numpy()
 
 def min_sym_environment_loss(asym0, frames0, lbfgs, indep, **kw):
    lbfgs.zero_grad()
-   asym = torch.einsum('aij,aj->ai', Q2R(indep[0]), asym0)
+   asym = torch.einsum('aij,aj->ai', h.Q2R(indep[0]), asym0)
    sym = torch.einsum('sij,aj->sai', frames0, asym)
    d = torch.norm(asym[None, None] - sym[:, :, None], dim=-1)
    d = torch.where(d < 0.001, 9e9, d)
@@ -96,8 +98,8 @@ def min_pseudo_t_symerror(asym, sym='I'):
    frames0 = torch.tensor(frames[:, :3, :3]).cuda().to(torch.float32)
    asym0 = torch.tensor(asym[:, :3, 3]).cuda().to(torch.float32)
    indep = [torch.zeros((t, 3)).cuda().requires_grad_(True)]
-   loss = torch_min(min_sym_environment_loss, **vars())
-   asym[:, :3, 3] = torch.einsum('aij,aj->ai', Q2R(indep[0]), asym0).cpu().detach()
+   loss = h.torch_min(min_sym_environment_loss, **vars())
+   asym[:, :3, 3] = torch.einsum('aij,aj->ai', h.Q2R(indep[0]), asym0).cpu().detach()
    asym = to_canonical_frame(asym, frames)
    return loss, asym.numpy()
 
@@ -106,17 +108,12 @@ def min_pseudo_t_dist(asym, sym='I'):
    frames = wu.sym.frames(sym)
    frames0 = torch.tensor(frames[:, :3, :3]).cuda().to(torch.float32)
    asym0 = torch.tensor(asym[:, :3, 3]).cuda().to(torch.float32)
-   cen = thpoint(np.stack(list(wu.sym.axes('I').values())).mean(0))[:3].cuda().to(torch.float32)
+   cen = h.point(np.stack(list(wu.sym.axes('I').values())).mean(0))[:3].cuda().to(torch.float32)
    cen = cen * torch.norm(asym0[0])
-
-   def Q2R(Q):
-      Qs = torch.cat((torch.ones((len(asym0), 1), device=Q.device, dtype=Q.dtype), Q), dim=-1)
-      Qs = normQ(Qs)
-      return Qs2Rs(Qs[None, :]).squeeze(0)
 
    def score():
       lbfgs.zero_grad()
-      asym = torch.einsum('aij,aj->ai', Q2R(Q), asym0)
+      asym = torch.einsum('aij,aj->ai', h.Q2R(Q), asym0)
       sym = torch.einsum('sij,aj->sai', frames0, asym)
       d = torch.norm(asym[None, None] - sym[:, :, None], dim=-1)
       d = torch.where(d < 0.001, 9e9, d)
@@ -137,7 +134,7 @@ def min_pseudo_t_dist(asym, sym='I'):
    for iter in range(4):
       loss = lbfgs.step(score)
 
-   asym[:, :3, 3] = torch.einsum('aij,aj->ai', Q2R(Q), asym0).cpu().detach()
+   asym[:, :3, 3] = torch.einsum('aij,aj->ai', h.Q2R(Q), asym0).cpu().detach()
    asym = to_canonical_frame(asym, frames)
    return loss, asym
 
@@ -146,13 +143,13 @@ def create_pseudo_t(t, sym='I'):
    losses, asyms = list(), list()
    for i in range(100):
       asym = make_asym(t, 8 * np.sqrt(t), frames)
-      sym = thxform(frames, asym).reshape(-1, 4, 4)
+      sym = h.xform(frames, asym).reshape(-1, 4, 4)
       loss, asym2 = min_pseudo_t_dist(asym, sym='I')
       losses.append(loss)
       asyms.append(asym)
    losses = torch.tensor(losses)
    ic(losses, min(losses))
    asym = asyms[torch.argmin(losses)]
-   sym2 = thxform(frames, asym2).reshape(-1, 4, 4)
-   wu.showme(sym2, weight=2, colorset=range(t))
-   wu.showme(asym2, weight=4, colorset=range(t))
+   sym2 = h.xform(frames, asym2).reshape(-1, 4, 4)
+   # wu.showme(sym2, weight=2, colorset=range(t))
+   # wu.showme(asym2, weight=4, colorset=range(t))

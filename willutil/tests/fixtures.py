@@ -1,4 +1,3 @@
-import numpy as np
 import willutil as wu
 from willutil.tests.testdata import load_test_data, test_data_path
 

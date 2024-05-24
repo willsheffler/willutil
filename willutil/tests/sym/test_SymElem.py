@@ -171,7 +171,6 @@ def check_frame_opids():
       # tmp = wu.hxformpts(wu.hscaled(100, frames[opcompids == 109]), wu.hscaled(100, elem.cen + elem.axis))
       # ic(tmp)
       # assert 0
-      import pymol
       # ids = opids
       # ids = compids
       ids = opcompids

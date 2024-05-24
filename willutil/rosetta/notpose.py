@@ -256,7 +256,7 @@ def _init_NotPose_coords(self, coords, seq=None, name=None, chain=None, secstruc
    self.pdbhet = None
    assert coords.ndim in (3, 4)
    if len(coords) == 0:
-      raise ValueError(f'Can\'t create NotPose from empty coordinates')
+      raise ValueError('Can\'t create NotPose from empty coordinates')
    coords = wu.hpoint(coords)
    self._chain = 'A' * len(coords)
    if coords.ndim == 4:

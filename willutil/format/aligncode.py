@@ -1,8 +1,11 @@
-import re, collections, os, subprocess, difflib, random, sys
+import re
+import os
+import subprocess
+import sys
 from contextlib import suppress
 from io import BytesIO
 
-from tokenize import (tokenize, COMMENT, NAME, NUMBER, tok_name, STRING, NEWLINE, DEDENT, INDENT, ENDMARKER, ENCODING,
+from tokenize import (tokenize, COMMENT, STRING, NEWLINE, DEDENT, INDENT, ENDMARKER, ENCODING,
                       OP)
 import willutil as wu
 
@@ -18,7 +21,7 @@ def align_code(
    **kw,
 ):
    kw = wu.Bunch(kw)
-   if not 'prof' in kw:
+   if 'prof' not in kw:
       kw.prof = wu.Timer()
    kw.debug = debug
    code0 = code
@@ -87,9 +90,9 @@ def align_code(
 
    if check_with_yapf:
       kw.prof.checkpoint()
-      if not 'yapforig' in locals():
+      if 'yapforig' not in locals():
          yapforig = run_yapf(code)
-      if not 'yapfnew' in locals():
+      if 'yapfnew' not in locals():
          yapfnew = run_yapf(newcode)
       kw.prof.checkpoint('yapf', keeppriorname=True)
       if make_yapf_diff:
@@ -251,7 +254,6 @@ def run_yapf(s):
       return outs.decode()
    except (PermissionError, FileNotFoundError):
       if 'pytest' in sys.modules:
-         import pytest
          wu.tests.force_pytest_skip('yapf not available/runnable')
 
 def process_token(t):
@@ -281,7 +283,7 @@ def linetokens(line):
       return []
 
 def split_by_toks(line):
-   assert not '\n' in line
+   assert '\n' not in line
    toks = linetokens(line)
    strsplt = [t.line[t.start[1]:t.end[1]] for t in toks]
    return wu.Bunch(strsplt=strsplt, toks=toks)

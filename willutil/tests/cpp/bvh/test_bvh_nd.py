@@ -1,8 +1,5 @@
-import _pickle
 from time import perf_counter
 import numpy as np
-from cppimport import import_hook
-import willutil.homog as hm
 from willutil.cpp.bvh.bvh_nd import *
 
 def test_bvh_bvh_isect7():

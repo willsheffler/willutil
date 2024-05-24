@@ -1,5 +1,3 @@
-import functools as ft
-import numpy as np
 import willutil as wu
 from willutil.homog import *
 
@@ -69,7 +67,7 @@ def asufit(
       wu.showme(bodies, name='start', pngi=0, **kw)
    ic(asym.scale())
    if dumppdb:
-      asym.dumppdb(f'debugpdbs/asufit_000000.pdb', **kw)
+      asym.dumppdb('debugpdbs/asufit_000000.pdb', **kw)
    # assert 0
 
    for i in range(iterations):

@@ -1,5 +1,5 @@
 from collections import defaultdict
-import deferred_import, os
+import os
 import willutil as wu
 
 import numpy as np
@@ -86,7 +86,7 @@ _dumppdb_seenit = defaultdict(lambda: -1)
 
 def dumppdb(out='willutil.pdb', stuff=None, *a, namereset=False, addtimestamp=False, **kw):
    global _dumppdb_seenit
-   if stuff is None: raise ValueError(f'param "stuff" must be specified')
+   if stuff is None: raise ValueError('param "stuff" must be specified')
    stuff = wu.misc.check_torch_to_numpy(stuff)
    if addtimestamp:
       out = os.path.join(os.path.dirname(out), wu.misc.datetimetag() + '_' + os.path.basename(out))

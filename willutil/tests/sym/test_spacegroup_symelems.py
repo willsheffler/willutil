@@ -1,9 +1,8 @@
-import itertools, pytest, os
-import numpy as np
+import itertools
+import pytest
 import willutil as wu
 from willutil.sym.SymElem import SymElem, showsymelems
 from willutil.sym.spacegroup_symelems import _compute_symelems, _find_compound_symelems, _remove_redundant_screws, _printelems
-from numpy import array
 
 pytest.skip(allow_module_level=True)
 

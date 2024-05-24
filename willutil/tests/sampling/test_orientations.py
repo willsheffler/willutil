@@ -1,9 +1,9 @@
-import sys, gzip
+import sys
+import gzip
 import numpy as np
 import willutil.sampling.orientations as ori
 import pytest
 
-from cppimport import import_hook
 # from cppimport.config import turn_off_strict_prototypes
 # turn_off_strict_prototypes()
 # from rpxdock.sampling._orientations_test import *

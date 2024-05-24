@@ -16,7 +16,8 @@ def try_to_be_deterministic():
       did_numpy = False
 
    try:
-      import torch, os
+      import torch
+      import os
       torch.manual_seed(0)
       torch.use_deterministic_algorithms(True)
       torch.backends.cudnn.deterministic = True

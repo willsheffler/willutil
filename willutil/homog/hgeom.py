@@ -1,6 +1,7 @@
-import copy, itertools as it, functools as ft, sys, collections
+import copy
+import sys
+import collections
 import willutil as wu
-import deferred_import
 
 import numpy as np
 
@@ -129,7 +130,7 @@ def hxform(x, stuff, homogout='auto', **kw):
          assert x.ndim in (2, 3)
 
    stuff, origstuff = np.asarray(stuff), stuff
-   if not stuff.dtype in (np.float64, np.float32):
+   if stuff.dtype not in (np.float64, np.float32):
       stuff = stuff.astype(np.float64)
       # raise ValueError(f'unknown dtype {stuff.dtype} for type {type(origstuff)}')
    x = np.asarray(x).astype(stuff.dtype)
@@ -1445,8 +1446,8 @@ def hpow_int(xform, power):
    return result
 
 def hpow_float(xform, power):
-   ic('get rot, axis, hel, cen')
-   ic('interp rot/hel around axis/cen')
+   # ic('get rot, axis, hel, cen')
+   # ic('interp rot/hel around axis/cen')
    return NotImplemented
 
 def hcom_flat(points):

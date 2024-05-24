@@ -1,8 +1,7 @@
-import deferred_import
 
 import numpy as np
 
-from willutil.homog.util import jit, guvec, float32, float64
+from willutil.homog.util import jit
 
 def is_valid_quat_rot(quat):
    assert quat.shape[-1] == 4

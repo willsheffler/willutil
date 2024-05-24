@@ -13,6 +13,7 @@ def main():
 
    # WIP_P23_perm()
    # test_icos_perm()
+   test_icos_perm()
    ic('PASS test_permutations')
 
 def WIP_opcompid():

@@ -1,4 +1,12 @@
-import time, os, collections, statistics, logging, statistics, functools, inspect, sys, _testcapi
+import time
+import os
+import collections
+import statistics
+import logging
+import functools
+import inspect
+import sys
+import _testcapi
 import willutil as wu
 
 log = logging.getLogger(__name__)

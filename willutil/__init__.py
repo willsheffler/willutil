@@ -1,18 +1,8 @@
-import os
 from deferred_import import deferred_import
 import icecream as ic
 
-ic.install()
-
-import builtins, opt_einsum, collections
-
 from willutil.bunch import Bunch, bunchify, unbunchify
 from willutil.timer import Timer, timed, checkpoint
-
-# from willutil.viz import showme
-def showme(*a, **kw):
-   from willutil.viz import showme as viz_showme
-   viz_showme(*a, **kw)
 
 from willutil.rigid.rigidbody import RigidBody, RigidBodyFollowers
 from willutil.search.montecarlo import MonteCarlo
@@ -45,6 +35,8 @@ from willutil.rosetta import NotPose
 from willutil.tests import test_data_path
 
 from willutil.misc import WARNME, datetag, datetimetag, UnhashableSet, printheader
+
+from willutil.homog import thgeom as h
 
 # deferr import of cpp libs to avoid compilation if unnecessary
 cpp = deferred_import('willutil.cpp')
@@ -134,51 +126,13 @@ from willutil.homog import (
    zaxis_of,
    to_xyz,
 )
-from willutil.homog.thgeom import (
-   t_rot,
-   thangle,
-   thaxis,
-   thaxis_angle_cen,
-   thaxis_angle_cen_hel,
-   thaxis_angle,
-   thaxis_angle_hel,
-   thcom,
-   thcom_flat,
-   thconstruct,
-   thdot,
-   thhomog,
-   thintersect_planes,
-   this_valid_quat_rot,
-   thmean_along,
-   thpoint_line_dist2,
-   thnorm,
-   thnorm2,
-   thnormalized,
-   thpoint,
-   thpoint_in_plane,
-   thquat_to_rot,
-   thquat_to_upper_half,
-   thquat_to_xform,
-   thrand_quat,
-   thproj,
-   thprojperp,
-   thrand,
-   thrand_xform,
-   thrand_xform_small,
-   thrandpoint,
-   thrandunit,
-   thrandvec,
-   thray_in_plane,
-   thrms,
-   thrmsfit,
-   throg,
-   throt,
-   throt_to_quat,
-   thvec,
-   thxform,
-   thxformpts,
-   torch_min,
-)
+
+ic.install()
+
+# from willutil.viz import showme
+def showme(*a, **kw):
+   from willutil.viz import showme as viz_showme
+   viz_showme(*a, **kw)
 
 #__all__ = ('MonteCarlo', 'RigidBody', 'compute_symfit', 'dssp', 'halign', 'halign2', 'halign_vector', 'hangle',
 #           'hangle_degrees', 'hangle_of', 'hangle_of_degrees', 'hangline', 'haxis_ang_cen_of', 'haxis_ang_cen_hel_of',

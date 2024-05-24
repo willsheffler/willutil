@@ -3,7 +3,9 @@ some multiprocessing related utils
 InProcessExecutor, which tries to be sortof a dummy executor to ease debugging
 '''
 
-import multiprocessing, threading, os
+import multiprocessing
+import threading
+import os
 from time import perf_counter
 from tqdm import tqdm
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor

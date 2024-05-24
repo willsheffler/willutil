@@ -1,4 +1,4 @@
-import numpy as np, pytest
+import numpy as np
 import willutil as wu
 import willutil.homog as hm
 import willutil.viz
@@ -18,7 +18,6 @@ def test_line_strips(headless=True):
 
 def test_pymol_viz_example(headless=True):
    # pytest.importorskip('pymol')
-   import willutil.viz
    frame1 = hm.hframe([1, 0, 0], [0, 1, 0], [0, 0, 1], [9, 0, 0])
    rel = hm.hrot([1, 0, 0], 90, [0, 0, 10])
    rel[0, 3] = 3

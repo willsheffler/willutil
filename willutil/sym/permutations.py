@@ -8,7 +8,7 @@ def symframe_permutations(frames, **kw):
    func = functools.partial(symperm1, frames=frames)
    with cf.ThreadPoolExecutor(max_workers=8) as exe:
       perm = exe.map(func, range(len(frames)))
-   perm = np.stack(perm)
+   perm = np.stack(list(perm))
    return perm
 
 def symframe_permutations_torch(frames, maxcols=None):

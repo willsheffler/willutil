@@ -2,7 +2,11 @@
 Should use lru_cache in preference to this?
 '''
 
-import os, sys, time, _pickle, types, logging, copy
+import os
+import sys
+import _pickle
+import logging
+import copy
 
 log = logging.getLogger(__name__)
 

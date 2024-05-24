@@ -1,5 +1,3 @@
-import numpy as np
-import willutil as wu
 
 lattice_minmult = dict(
    TRICLINIC=2,

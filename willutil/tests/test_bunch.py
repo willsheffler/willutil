@@ -60,7 +60,7 @@ def test_bunch_sub():
 
    assert 'a' in b
    b4 = b.sub(a=None)
-   assert not 'a' in b4
+   assert 'a' not in b4
    assert 'b' in b4
 
    b = Bunch(dict(a=2, b="bee"), _strict=False)
@@ -75,7 +75,7 @@ def test_bunch_sub():
 
    assert 'a' in b
    b4 = b.sub(a=None)
-   assert not 'a' in b4
+   assert 'a' not in b4
    assert 'b' in b4
 
 def test_bunch_items():

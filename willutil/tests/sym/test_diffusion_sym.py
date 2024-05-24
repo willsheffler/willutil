@@ -1,3 +1,4 @@
+import numpy as np
 import willutil as wu
 from willutil.sym.diffusion_sym import *
 

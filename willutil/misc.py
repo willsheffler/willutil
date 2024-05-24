@@ -1,5 +1,5 @@
-import datetime, sys, inspect, os, functools
-import willutil as wu
+import datetime
+import sys
 
 _WARNINGS_ISSUED = set()
 
@@ -95,13 +95,13 @@ def tostr(s):
 def datetimetag(sep='_'):
    now = datetime.datetime.now()
    if sep == 'label':
-      return now.strftime(f'y%Ym%md%dh%Hm%Ms%S')
+      return now.strftime('y%Ym%md%dh%Hm%Ms%S')
    return now.strftime(f'%Y{sep}%m{sep}%d{sep}%H{sep}%M{sep}%S')
 
 def datetag(sep='_'):
    now = datetime.datetime.now()
    if sep == 'label':
-      return now.strftime(f'y%Ym%md%d')
+      return now.strftime('y%Ym%md%d')
    return now.strftime(f'%Y{sep}%m{sep}%d')
 
 def seconds_between_datetimetags(tag1, tag2):

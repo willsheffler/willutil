@@ -1,4 +1,6 @@
-import numpy as np, willutil as wu, pytest
+import numpy as np
+import willutil as wu
+import pytest
 
 def main():
 

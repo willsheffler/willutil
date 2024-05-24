@@ -2,7 +2,7 @@
 OOOOOOOLLLLDD Easy 3D Linear Algebra, like xyz\* in rosetta
 """
 from random import gauss, uniform
-from math import pi, sqrt, sin, cos, acos, asin, atan2, degrees, radians, copysign
+from math import pi, sqrt, sin, cos, acos, asin, atan2, degrees, radians
 from itertools import chain, product
 import math
 import operator as op
@@ -700,7 +700,6 @@ def rotation_matrix_degrees(axis, angle):
    return rotation_matrix(axis, radians(angle))
 
 def test_rotation_mat():
-   import random
 
    for i in range(100):
       a0 = randnorm()

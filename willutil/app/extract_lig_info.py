@@ -1,6 +1,7 @@
-import sys, logging, collections
+import sys
+import logging
+import collections
 
-import numpy as np
 
 xr = deferred_import.deferred_import('xarray')
 import willutil as wu
@@ -45,7 +46,7 @@ def get_lig_counts(files_or_pattern, hetonly=True):
          rncount.update(resnames)
          pdbligs[pdb.code] = {k.decode(): v for k, v in collections.Counter(resnames).items()}
          for rn in df.rn.unique():
-            if not rn in skipres:
+            if rn not in skipres:
                ligpdbs[rn].append(pdb.code)
       except Error as e:
          print('error on', fname)

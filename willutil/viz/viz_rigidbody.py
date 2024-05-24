@@ -1,5 +1,5 @@
 import numpy as np
-from willutil.viz.pymol_viz import pymol_load, cgo_cyl, cgo_sphere, cgo_fan, cgo_cube, showcube
+from willutil.viz.pymol_viz import pymol_load, cgo_sphere
 import willutil as wu
 from willutil.rigid.rigidbody import RigidBody, RigidBodyFollowers
 

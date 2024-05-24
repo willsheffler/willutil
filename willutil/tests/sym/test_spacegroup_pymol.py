@@ -1,6 +1,6 @@
-import pytest, tempfile
+import pytest
+import tempfile
 import numpy as np
-from numpy.random import rand
 import willutil as wu
 from opt_einsum import contract as einsum
 

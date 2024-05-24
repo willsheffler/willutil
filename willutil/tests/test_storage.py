@@ -21,7 +21,7 @@ def test_pickle_bunch():
 
    # for parallel testing, only do on the main thread
    import threading
-   if not threading.current_thread() is threading.main_thread():
+   if threading.current_thread() is not threading.main_thread():
       return
 
    with tempfile.TemporaryDirectory() as tmpdir:

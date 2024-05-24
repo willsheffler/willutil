@@ -1,9 +1,8 @@
-import copy
 import numpy as np
 import willutil as wu
 from willutil.sym.symframes import tetrahedral_frames, octahedral_frames
 from willutil.homog.hgeom import halign2, halign, htrans, hinv, hnorm, hxform, hnormalized, hpoint, hvec, angle, hdot
-from willutil.sym.spacegroup_util import tounitcellpts, applylatticepts, lattice_vectors
+from willutil.sym.spacegroup_util import applylatticepts, lattice_vectors
 
 class ScrewError(Exception):
    pass
@@ -255,7 +254,6 @@ class SymElem:
          ic(frames.shape)
          ic(match)
          from willutil.viz.pymol_viz import showme
-         import willutil.viz.viz_xtal
          showme(frames, scale=10)
          showme(self, scale=10)
          assert len(match) == len(self.operators)
@@ -330,7 +328,7 @@ class SymElem:
       if not np.isclose(self.screw, round(self.screw)):
          raise ScrewError(f'screw has non integer value {self.screw}')
       if self.screw >= max(2, self.nfold):  # C11 is ok
-         raise ScrewError(f'screw dosent match nfold')
+         raise ScrewError('screw dosent match nfold')
 
       self.screw = int(round(self.screw))
       if self.nfold > 1:
@@ -657,7 +655,7 @@ def showsymelems(
          labelcount[s.label] += 1
          colorcount[s.label[:2]] += 1
          ii += 1
-   from willutil.viz.pymol_viz import showcell, showcube
+   from willutil.viz.pymol_viz import showcell
    # ic(sym)
    # ic(lattice)
    # ic(cellgeom)

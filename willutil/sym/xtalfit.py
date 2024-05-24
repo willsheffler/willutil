@@ -211,7 +211,7 @@ def fix_xtal_to_coords(xtal, coords, cellsize=None, domc=True, domin=False, nosh
    assert 0
 
 def analyze_xtal_asu_placement(sym):
-   import scipy.spatial, collections
+   import collections
    xtal = Xtal(sym)
    cen = xtal.asucen(xtalasumethod='closest_to_cen', use_olig_nbrs=True)
    ic(cen)

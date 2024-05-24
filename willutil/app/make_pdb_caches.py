@@ -1,5 +1,5 @@
-import sys, logging, collections
-import numpy as np, pandas as pd
+import sys
+import logging
 import willutil as wu
 
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
@@ -29,7 +29,8 @@ def main(pattern):
       print(sys.argv[:4])
       # pdbs = getpdbs(files_or_pattern)
       # extract_het_pdbfiles(files_or_pattern)
-      import glob, os
+      import glob
+      import os
       for f in glob.glob(pattern):
          # print(f)
          os.rename(f, f.replace('pickle.het', 'het'))

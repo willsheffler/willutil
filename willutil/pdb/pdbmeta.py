@@ -1,4 +1,10 @@
-import sys, os, urllib.request, logging, gzip, lzma, collections, tqdm
+import sys
+import os
+import urllib.request
+import logging
+import gzip
+import lzma
+import collections
 
 import willutil as wu
 
@@ -101,7 +107,6 @@ class PDBMetadata:
       pisces_chains=True,
       entrytype='prot',
    ):
-      import willutil.pdb.pisces
 
       # print(minres, maxres, maxres, max_seq_ident)
       piscesdf = wu.pdb.get_pisces_set(maxresl, max_seq_ident)
@@ -172,7 +177,7 @@ class PDBMetadata:
       return seq
 
    def _load_cached(self, name, loadfunc):
-      if not name in self.metadata:
+      if name not in self.metadata:
          try:
             val = wu.load_package_data(f'pdb/meta/{name}.pickle')
          except FileNotFoundError:
@@ -193,7 +198,7 @@ class PDBMetadata:
          assert os.path.exists(fname)
 
       # recompress seqres
-      fn = wu.storage.package_data_path(f'pdb/meta/seqres.txt')
+      fn = wu.storage.package_data_path('pdb/meta/seqres.txt')
       if not os.path.exists(fn + '.xz'):
          with gzip.open(fn + '.gz') as inp:
             with lzma.open(fn + '.xz', 'wb') as out:
@@ -248,7 +253,7 @@ class PDBMetadata:
       return pdbseq
 
    def get_nres(self):
-      import pandas as pd, numpy as np
+      import pandas as pd
       nres = {k: len(v) for k, v in self.seq.items()}
       nres = pd.Series(nres)
       # nres = nres[np.argsort(nres)]
@@ -279,7 +284,7 @@ class PDBMetadata:
                countnoresl += 1
                resl = 9e9
             pdbresl[code] = resl
-      import pandas as pd, numpy as np
+      import pandas as pd
       pdbresl = pd.Series(pdbresl)
       # pdbresl = pdbresl[np.argsort(pdbresl)]
       return pdbresl
@@ -311,7 +316,7 @@ class PDBMetadata:
 
    def get_biotype(self):
       biotype = dict()
-      with wu.open_package_data(f'pdb/meta/entries.txt.xz') as inp:
+      with wu.open_package_data('pdb/meta/entries.txt.xz') as inp:
          count = 0
          for line in inp:
             count += 1
@@ -327,7 +332,7 @@ class PDBMetadata:
 
    def get_source(self):
       foo = dict()
-      with wu.open_package_data(f'pdb/meta/source.txt.xz') as inp:
+      with wu.open_package_data('pdb/meta/source.txt.xz') as inp:
          count = 0
          for line in inp:
             count += 1
@@ -340,10 +345,9 @@ class PDBMetadata:
       return foo
 
    def _get_entrytypes_hack(self):
-      import pandas as pd
       entrytypes = dict()
       byentrytype = {'prot': set(), 'nuc': set(), 'prot-nuc': set(), 'other': set()}
-      with wu.open_package_data(f'pdb/meta/entrytypes.txt.xz') as inp:
+      with wu.open_package_data('pdb/meta/entrytypes.txt.xz') as inp:
          for line in inp:
             code, entrytype, _ = line.split()
             code = code.decode().upper()

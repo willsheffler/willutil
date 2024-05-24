@@ -1,4 +1,3 @@
-from cppimport import import_hook
 from willutil.cpp.util import pybind_types_test
 import numpy as np
 

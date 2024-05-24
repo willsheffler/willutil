@@ -1,9 +1,10 @@
-import os, pickle
+import os
+import pickle
 
 from worms.util.util import datetimetag
 from worms.util.ping import PING
 
-from worms.data.data import data_dir, test_file_path
+from worms.data.data import test_file_path
 
 def get_latest_testresult_path(tag, candidates_ok=False):
 

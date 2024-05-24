@@ -1,4 +1,3 @@
-from cppimport import import_hook
 from willutil.cpp.util.dilated_int_test import *
 
 def test_dilated_int():

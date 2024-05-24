@@ -11,7 +11,7 @@ class Helix:
       # assert nfold == 1
       assert turnsB == 1
       if phase < 0 or phase > 1:
-         raise ValueError(f'helix phase must be 0-1, if you need beyond this range, adjust nturns')
+         raise ValueError('helix phase must be 0-1, if you need beyond this range, adjust nturns')
 
    def dump_pdb(self, fname, coords, **kw):
       frames = self.frames(**kw)

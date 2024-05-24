@@ -1,6 +1,4 @@
-import os
 import numpy as np
-import pytest
 import willutil as wu
 import willutil.homog as hm
 import willutil.viz

@@ -1,4 +1,3 @@
-import numpy as np
 
 def main():
    # frames = np.array((1, 12))
@@ -16,7 +15,6 @@ def _highindex():
    print(max(m))
 
 def parse_sgdat():
-   import re
    with open('/home/sheffler/src/willutil/willutil/sym/spacegroups.txt') as inp:
       s = inp.read()
    # s = re.sub('','',s)

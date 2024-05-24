@@ -1,10 +1,11 @@
-import sys, os, willutil as wu
+import sys
+import os
 
 # def pmlmovie1():
 
 def pymol_movie_script_objs():
    nobjs = 203  #* 2
-   movdir = f'/home/sheffler/Documents/gm230203/helix_slide'
+   movdir = '/home/sheffler/Documents/gm230203/helix_slide'
    w, h = 960, 720
    nloop = 4
    yturn = 0  # 50 / nobjs
@@ -17,7 +18,7 @@ def pymol_movie_script_objs():
       for i in range(nobjs):
          # for i in range(nobjs // 2):
          out.write(f"turn y, {yturn}\n")
-         out.write(f'move_down()\n')
+         out.write('move_down()\n')
          out.write(f'png {movdir}/frame{i:06}.png, {w}, {h}, ray={ray}\n')
 
       #for i in range(nobjs // 2, nobjs):
@@ -39,7 +40,7 @@ def pymol_movie_script1():
    with open(f'{home}/tmp_movie.pml', 'w') as out:
       for o in (out, sys.stdout):
 
-         o.write(f'mview reset\n')
+         o.write('mview reset\n')
          o.write(f'mset 1x{nframes}\n')
          state = 1
          for i in range((nstates - 15) * 4):
@@ -68,7 +69,7 @@ def pymol_movie_script1():
             o.write(f"showbbox('MAKESYM', radius=1, scale=0.88, state={state})\n")
             o.write(f'mview store, {frame}, state={state}\n')
 
-         o.write(f'mplay\n')
+         o.write('mplay\n')
 
 def pymol_movie_script2():
    home = os.path.expanduser('~')
@@ -83,8 +84,8 @@ def pymol_movie_script2():
    ray = 1
    full = False
 
-   if full: movdir = f'/home/sheffler/Documents/gm230203/I32_mov_full'
-   else: movdir = f'/home/sheffler/Documents/gm230203/I32_mov_asym'
+   if full: movdir = '/home/sheffler/Documents/gm230203/I32_mov_full'
+   else: movdir = '/home/sheffler/Documents/gm230203/I32_mov_asym'
    os.makedirs(movdir, exist_ok=True)
 
    with open(f'{movdir}.pml', 'w') as out:

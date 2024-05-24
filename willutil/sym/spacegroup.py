@@ -1,4 +1,3 @@
-import itertools
 import willutil as wu
 
 from willutil.sym.spacegroup_data import *
@@ -12,7 +11,7 @@ if 'H32' in sg_frames_dict:
    sg_frames_dict['R32'] = sg_frames_dict['H32']
 
 sg_redundant = {'P2': 'P121'}
-sg_all = [k for k in sg_pdbname if not k in sg_redundant]
+sg_all = [k for k in sg_pdbname if k not in sg_redundant]
 sg_all_chiral = [k for k in sg_all if sg_is_chiral(k)]
 
 def sgframes(
@@ -31,7 +30,7 @@ def sgframes(
       cellgeom = tuple(round(x, roundgeom) for x in cellgeom)
    cells = process_num_cells(cells)
    key = spacegroup, cellgeom, tuple(cells.flat), sortframes
-   if not key in _memoized_frames:
+   if key not in _memoized_frames:
       unitframes = sg_frames_dict[spacegroup]
       if cellgeom == 'unit': latticevec = np.eye(3)
       else: latticevec = lattice_vectors(spacegroup, cellgeom=cellgeom)
@@ -42,7 +41,7 @@ def sgframes(
 
       _memoized_frames[key] = frames.round(10)
       if len(_memoized_frames) > 10_000:
-         wu.WARNME(f'sgframes holding >10000 _memoized_frames')
+         wu.WARNME('sgframes holding >10000 _memoized_frames')
 
    return _memoized_frames[key]
 

@@ -1,4 +1,8 @@
-import json, gzip, lzma, pickle, os
+import json
+import gzip
+import lzma
+import pickle
+import os
 import numpy as np
 import willutil as wu
 

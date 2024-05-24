@@ -1,6 +1,5 @@
-import os
-import numpy as np, pytest
-import willutil as wu
+import numpy as np
+import pytest
 from willutil.pdb import pdbmeta as meta
 
 def test_pdb_metadata():

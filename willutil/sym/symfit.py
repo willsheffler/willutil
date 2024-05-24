@@ -1,4 +1,3 @@
-import itertools as it, sys
 import numpy as np
 import willutil as wu
 from willutil import homog as hm, Bunch
@@ -12,7 +11,7 @@ def align(coords, symelem, **kw):
       msg = f'WARNING not aligning input on symelem: {symelem.label}'
       wu.WARNME(msg)
       return coords
-      raise NotImplementedError(f'hook up compute_symfit')
+      raise NotImplementedError('hook up compute_symfit')
 
 def aligncx(coords, symelem, rmsthresh=1, axistol=0.02, angtol=0.05, centol=1.0, **kw):
    '''leaves center at 0 regardless of symelem'''
@@ -360,7 +359,7 @@ def disambiguate_axes(sym, axis, nfold, noambigaxes=True, **kw):
       dot = np.abs(hm.hdot(ambigaxis[None, :], maybeaxis[:, None]))
       try:
          maxdot = np.max(dot, axis=0)
-      except Exception as e:
+      except Exception:
          raise SymFitError(f'missing axes: {nfold1}')
       maybe_so = maxdot > np.cos(angcut)  # theoretically pi/8 ro 22.5 deg
 
@@ -724,7 +723,7 @@ def symfit_mc_play(
 ):
    kw = wu.Bunch(kw, _strict=False)
 
-   if not 'timer' in kw: kw.timer = wu.Timer()
+   if 'timer' not in kw: kw.timer = wu.Timer()
 
    import os
    if "PYTEST_CURRENT_TEST" in os.environ:
@@ -967,7 +966,6 @@ def symfit_parallel_convergence_trials(**kw):
    # 11 iters  7526.1  fail 0.656  0.59 1.14 2.17 3.93 999.00
    # 12 iters  9048.2  fail 0.844  0.47 1.03 1.39 5.37 999.00
    import concurrent.futures as cf
-   from itertools import repeat, chain, combinations
    from collections import defaultdict
 
    kw = wu.Bunch()
@@ -1005,7 +1003,7 @@ def symfit_parallel_convergence_trials(**kw):
 
 def symfit_parallel_mc_scoreterms_trials(**kw):
    import concurrent.futures as cf
-   from itertools import repeat, chain, combinations
+   from itertools import chain, combinations
    from collections import defaultdict
 
    termsset = list(chain(*(combinations("CHNA", i + 1) for i in range(4))))

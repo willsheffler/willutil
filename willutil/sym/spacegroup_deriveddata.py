@@ -1,8 +1,8 @@
 REBUILD_SPACEGROUP_DATA = False
 # REBUILD_SPACEGROUP_DATA = True
 
-import numpy as np, itertools
-import willutil as wu
+import numpy as np
+import itertools
 from willutil.sym.spacegroup_data import *
 from willutil.sym.spacegroup_util import *
 from willutil.sym.spacegroup_symelems import _compute_symelems, _find_compound_symelems

@@ -1,5 +1,5 @@
-import tempfile, random
-import numpy as np
+import tempfile
+import random
 from willutil.pdb.pdbfile import PDBFile
 from willutil.viz.pymol_viz import pymol_load
 

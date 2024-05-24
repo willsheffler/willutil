@@ -3,7 +3,6 @@ from time import perf_counter
 import numpy as np
 from willutil.cpp.xbin import xbin_test, Xbin_double, Xbin_float, create_Xbin_nside_double
 from willutil.homog import angle_of
-from willutil.cpp.geom import bcc
 
 import willutil.homog as hm
 """

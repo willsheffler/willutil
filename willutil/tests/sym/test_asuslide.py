@@ -1,4 +1,5 @@
-import numpy as np, functools as ft
+import numpy as np
+import functools as ft
 import pytest
 from numpy import array
 import willutil as wu
@@ -189,7 +190,7 @@ def asuslide_case4():
    xyz = pdb.ca()
    fracremains = 1.0
    primaryframes = xtal.primary_frames(cellsize)
-   cen = wu.thcom(xyz.reshape(-1, xyz.shape[-1]))
+   cen = h.com(xyz.reshape(-1, xyz.shape[-1]))
    frames = wu.sym.frames(sym, ontop=primaryframes, cells=(-1, 1), cellsize=cellsize, center=cen,
                           xtalrad=cellsize * 0.9)
    # frames = primaryframes

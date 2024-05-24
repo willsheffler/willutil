@@ -1,4 +1,3 @@
-import numpy as np
 from willutil.cpp.geom.bcc import *
 
 # def test_bcc_neighbors_3():b

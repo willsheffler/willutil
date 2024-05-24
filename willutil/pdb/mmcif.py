@@ -1,4 +1,6 @@
-import os, io, tempfile
+import os
+import io
+import tempfile
 
 from Bio.PDB.MMCIF2Dict import MMCIF2Dict
 from Bio.PDB.PDBParser import PDBParser

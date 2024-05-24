@@ -1,9 +1,7 @@
-import random
 import numpy as np
 import willutil as wu
 
 from numba import njit
-import numba
 
 class SymScaffIcos:
    """represents framework for placing stuff on icosahedrol"""

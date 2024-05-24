@@ -1,4 +1,5 @@
-import tempfile, glob
+import tempfile
+import glob
 import numpy as np
 import willutil as wu
 
@@ -47,7 +48,7 @@ def test_pdbdump_sequential():
 def test_pdbdump(pdb1pgx):
    with tempfile.TemporaryDirectory() as d:
       # fname = f'{d}/xyz.pdb'
-      fname = f'xyz.pdb'
+      fname = 'xyz.pdb'
       xyz, mask = pdb1pgx.atomcoords()
       xyz, mask = xyz[10:20], mask[10:20]
       wu.dumppdb(fname, xyz, mask, nchain=1)
@@ -72,7 +73,7 @@ def test_pdbdump_ncac(pdb1pgx):
    xyz, mask = pdb.atomcoords()[:10]
    with tempfile.TemporaryDirectory() as d:
       fname = f'{d}/xyz.pdb'
-      fname = f'xyz.pdb'
+      fname = 'xyz.pdb'
       wu.dumppdb(fname, xyz, mask)
 
 if __name__ == '__main__':

@@ -172,7 +172,6 @@ def _pick_best_related_symelems(symelems, spacegroup, lattice, f4cel, f2cel, fin
                print('!' * 80, flush=True)
                continue
                from willutil.viz.pymol_viz import showme
-               import willutil.viz.viz_xtal
                showme(e, scale=10)
                showme(f2cel, scale=10)
                # assert 0
@@ -501,7 +500,7 @@ def _make_symtags(tag, frames):
 #    tag = torch.tensor(tag, device=torch_device).to(torch.float32)
 #    # frames = torch.tensor(frames, device=torch_device).to(torch.float32)
 #    concat = torch.cat
-#    tax, tcen, thel = wu.thvec(tag[:3]), wu.thpoint(tag[3:6]), torch.tile(tag[6], [len(frames), 1])
+#    tax, tcen, thel = h.vec(tag[:3]), h.point(tag[3:6]), torch.tile(tag[6], [len(frames), 1])
 #
 #    # concat = np.concatenate
 #    # tax, tcen, thel = hvec(tag[:3]), hpoint(tag[3:6]), np.tile(tag[6], [len(frames), 1])

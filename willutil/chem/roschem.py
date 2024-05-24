@@ -1,4 +1,5 @@
-import deferred_import, json
+import deferred_import
+import json
 import willutil as wu
 
 pyro = deferred_import.deferred_import('pyrosetta')

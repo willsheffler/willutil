@@ -1,5 +1,5 @@
 import willutil as wu
-from willutil.sym.spacegroup_contacts import minimal_spacegroup_cover_symelems, check_if_symelems_complete
+from willutil.sym.spacegroup_contacts import minimal_spacegroup_cover_symelems
 
 def main():
    # symelems = wu.sym.symelems('P6')

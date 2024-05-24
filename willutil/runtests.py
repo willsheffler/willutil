@@ -4,9 +4,14 @@ usage: python runtests.py <projname>
 this script exists for easy editor integration
 """
 
-import sys, os, re, argparse
+import sys
+import os
+import re
+import argparse
 from time import perf_counter
 from collections import defaultdict
+
+exe = sys.executable
 
 _post = defaultdict(lambda: "")
 
@@ -63,11 +68,11 @@ def dispatch(
          path, bname = os.path.split(fname)
 
    if not file_has_main(fname) and bname.startswith("test_"):
-      cmd = "pytest {pytest_args} {fname}".format(**vars())
+      cmd = f"{exe} -mpytest {pytest_args} {fname}".format(**vars())
    elif fname.endswith(".py") and bname != 'conftest.py':
-      cmd = "PYTHONPATH=. python " + fname
+      cmd = f"PYTHONPATH=. {exe} " + fname
    else:
-      cmd = "pytest {pytest_args}".format(**vars())
+      cmd = f"{exe} -mpytest {pytest_args}".format(**vars())
 
    return cmd, _post[bname]
 
@@ -76,7 +81,7 @@ def main(**kw):
 
    post = ""
    if not kw['testfile']:
-      cmd = "pytest"
+      cmd = f"{exe} -mpytest"
    else:
       if kw['testfile'].endswith(__file__):
          cmd = ""

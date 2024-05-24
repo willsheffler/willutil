@@ -1,14 +1,17 @@
-import pytest, numpy as np, itertools as it, functools as ft
+import pytest
+import numpy as np
 
 import willutil
 from willutil.homog import *
 import willutil.homog as hm
+from willutil import h
 
 from icecream import ic
 
 ic.configureOutput(includeContext=True, contextAbsPath=True)
 
 def main():
+   test_hrmsfit()
    test_hcentered()
 
    test_halign()
@@ -22,7 +25,6 @@ def main():
    test_hpow_float()
 
    test_hdiff()
-   # test_hrmsfit()
 
    test_hexpand()
 
@@ -1521,9 +1523,8 @@ def test_hrmsfit(trials=10):
          # print(float(rms), float(rms2))
          assert rms2 > rms
 
-      import willutil as wu
       import torch
-      rms2, qhat2, xpqhat2 = wu.thrmsfit(torch.tensor(p), torch.tensor(q))
+      rms2, qhat2, xpqhat2 = h.rmsfit(torch.tensor(p), torch.tensor(q))
       assert np.allclose(rms, rms2)
       assert np.allclose(qhat, qhat2)
       assert np.allclose(xpqhat, xpqhat2)

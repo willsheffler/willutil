@@ -1,5 +1,10 @@
-import sys, itertools, re, os, inspect, random, functools
-from willutil.sym.pymol_xyzmath import (Vec, Mat, Xform, RAD, projperp, SYMTET, SYMOCT, isvec, randnorm, Ux, Uy, Uz)
+import sys
+import itertools
+import re
+import os
+import inspect
+import functools
+from willutil.sym.pymol_xyzmath import (Vec, Mat, Xform, RAD, projperp, SYMTET, SYMOCT, isvec, randnorm, Ux, Uz)
 
 try:
    from willutil.viz.pymol_cgo import cgo_cyl, cgo_sphere, cgo_segment
@@ -27,7 +32,7 @@ def hacky_xtal_maker(
    v = cmd.get_view()
    CEN = [g.cen for g in G]
    FN = list()
-   tag = "test" if not "tag" in kw else kw["tag"]
+   tag = "test" if "tag" not in kw else kw["tag"]
    for d in range(mindepth, depth + 1):
       symtrie = generate_sym_trie(G, depth=d)
       # buildcgo = BuildCGO( nodes=[ CEN1+Vec(2,3,4), CEN2+Vec(2,4,3), ] )
@@ -277,10 +282,10 @@ class PymolSymElem(object):
             c2b.round0()
             c3a.round0()
             c3b.round0()
-            if not c2b in seen2:
+            if c2b not in seen2:
                CGO.extend(cgo_cyl(cen, cen + c2b, radius, col=(1, 0, 0)))
                seen2.append(c2b)
-            if not c3a in seen3:
+            if c3a not in seen3:
                CGO.extend(cgo_cyl(cen + c3a, cen + c3b, radius, col=(0, 1, 0)))
                seen3.append(c3a)
                seen3.append(c3b)
@@ -302,15 +307,15 @@ class PymolSymElem(object):
             c3b.round0()
             c4a.round0()
             c4b.round0()
-            if not c2b in seen2:
+            if c2b not in seen2:
                CGO.extend(cgo_cyl(cen + c2a, cen + c2b, radius, col=(1, 0, 0)))
                seen2.append(c2a)
                seen2.append(c2b)
-            if not c3a in seen3:
+            if c3a not in seen3:
                CGO.extend(cgo_cyl(cen + c3a, cen + c3b, radius, col=(0, 1, 0)))
                seen3.append(c3a)
                seen3.append(c3b)
-            if not c4a in seen4:
+            if c4a not in seen4:
                CGO.extend(cgo_cyl(cen + c4a, cen + c4b, radius, col=(0, 0, 1)))
                seen4.append(c4a)
                seen4.append(c4b)
@@ -672,7 +677,7 @@ def generate_sym_trie(generators, depth=10, opts=None, verbose=False):
 
 newpath = os.path.dirname(inspect.getfile(inspect.currentframe()))  # script directory
 
-if not newpath in sys.path:
+if newpath not in sys.path:
    sys.path.append(newpath)
 # from xyzMath import Vec, Mat, Xform, RAD, projperp, Ux, Uy, Uz
 # from wills_pymol_crap.pymol_util import cgo_sphere, cgo_segment, cgo_cyl
@@ -1058,9 +1063,9 @@ class ComponentCenterVisitor(object):
          CC = xform * priCC
          CClist = self.priCCtoCClist[priCC]
          CCframes = self.priCCtoCCframes[priCC]
-         if not CC in CClist:
+         if CC not in CClist:
             CClist.append(CC)
-         if not CC in list(CCframes.keys()):
+         if CC not in list(CCframes.keys()):
             CCframes[CC] = list()
          CCframes[CC].append(sym_trie_node)
 
@@ -1099,7 +1104,7 @@ class ComponentCenterVisitor(object):
          for CC in closest:
             # assert CC not in list(self.parentmap.keys())
             self.parentmap[CC] = CCparent
-            if not CCparent in self.childmap:
+            if CCparent not in self.childmap:
                self.childmap[CCparent] = list()
             self.childmap[CCparent].append(CC)
 
@@ -1200,7 +1205,7 @@ class ComponentCenterVisitor(object):
             Sxyz += "# virtuals for comp%i cen%i\n" % (ip, icc)
             CC, STNs = val2
             assert len(STNs) > 0
-            PCC = None if not CC in list(self.parentmap.keys()) else self.parentmap[CC]
+            PCC = None if CC not in list(self.parentmap.keys()) else self.parentmap[CC]
             if PCC:
                PCCName = "CMP%02i_CEN%03i" % node2num[PCC]
             if PCC:
@@ -1294,7 +1299,7 @@ class ComponentCenterVisitor(object):
             c = "SUBUNIT"
          jname = "JUMP__%s__to__%s" % (p, c.replace(" ", ""))
          s += "connect_virtual %-57s %-25s %-25s\n" % (jname, p, c)
-         if not "A" in subunit_group_map:
+         if "A" not in subunit_group_map:
             subunit_group_map["A"] = list()
          subunit_group_map["A"].append(jname)
       s += "\n"
@@ -1311,7 +1316,7 @@ class ComponentCenterVisitor(object):
                jname = "JUMP__%s__to__%s" % (p, c.replace(" ", ""))
                # "# shares xform with primary "+SUBname0 )
                s += "connect_virtual %-57s %-25s %-25s %s\n" % (jname, p, c, "")
-               if not chain in subunit_group_map:
+               if chain not in subunit_group_map:
                   subunit_group_map[chain] = list()
                subunit_group_map[chain].append(jname)
          s += "\n"
@@ -1360,7 +1365,7 @@ class ComponentCenterVisitor(object):
       s += "################# SUBUNIT JUMP GROUPS ############################\n\n"
 
       for chain, jumps in list(subunit_group_map.items()):
-         if chain != f'A' and kwargs[f'one_component']:
+         if chain != 'A' and kwargs['one_component']:
             continue
          s += "set_jump_group GROUP_SUBUNT_%s" % chain
          for jump in sorted(jumps):

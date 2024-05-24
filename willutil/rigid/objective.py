@@ -1,4 +1,3 @@
-import functools as ft
 import numpy as np
 import willutil as wu
 from willutil.homog import *

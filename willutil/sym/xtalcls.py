@@ -1,4 +1,5 @@
-import itertools, os
+import itertools
+import os
 import numpy as np
 import willutil as wu
 from willutil.sym.xtalinfo import _xtal_asucens

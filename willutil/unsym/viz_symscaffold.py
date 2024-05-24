@@ -1,4 +1,3 @@
-import tempfile
 import numpy as np
 from willutil.unsym.symscaffold import SymScaffIcos
 from willutil.viz.pymol_viz import pymol_load

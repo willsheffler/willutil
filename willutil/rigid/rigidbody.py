@@ -14,7 +14,7 @@ class RigidBodyFollowers:
          self.bodies = bodies
       elif frames is not None:
          if coords is None:
-            raise ValueError(f'if no bodies specified, coords and frames/sym must be provided')
+            raise ValueError('if no bodies specified, coords and frames/sym must be provided')
          assert wu.hunique(frames)
          self.asym = RigidBody(coords, **kw)
          self.symbodies = [RigidBody(parent=self.asym, xfromparent=x, **kw) for x in frames[1:]]
@@ -95,7 +95,7 @@ class RigidBodyFollowers:
       if scalecoords is None:
          scalecoords = self.scale_com_with_cellsize
       if safe and self.is_point_symmetry:
-         raise ValueError(f'scale_frames only valid for non-point symmetry')
+         raise ValueError('scale_frames only valid for non-point symmetry')
 
       scalefactor = wu.to_xyz(scalefactor)
       if self.sym is not None and self.sym.startswith('H'):
@@ -314,7 +314,7 @@ class RigidBody:
    @position.setter
    def position(self, newposition):
       if newposition.shape[-2:] != (4, 4):
-         raise ValueError(f'RigidBody position is 4,4 matrix (not point)')
+         raise ValueError('RigidBody position is 4,4 matrix (not point)')
       if self.parent != None:
          # raise ValueError(f'RigidBody with parent cant have position set')
          self.parent.position = wu.hinv(self.xfromparent) @ newposition

@@ -1,6 +1,5 @@
 import willutil as wu
-from willutil.sym.pymol_symgen import (PymolSymElem, generate_sym_trie, BuildCGO, ComponentCenterVisitor, CountFrames,
-                                       Vec)
+from willutil.sym.pymol_symgen import (PymolSymElem, Vec)
 try:
    import pymol
    from pymol import cmd

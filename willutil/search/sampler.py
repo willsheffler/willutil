@@ -1,4 +1,3 @@
-import functools as ft
 import numpy as np
 import willutil as wu
 from willutil.homog import *
@@ -32,7 +31,7 @@ class RBSampler:
       if rotsd == None:
          self.rotsd = cartsd / (lever or 20)
       else:
-         assert lever == None, f'if rotsd specified, no lever must be provided'
+         assert lever == None, 'if rotsd specified, no lever must be provided'
       self.biasdir = hnormalized(biasdir)
       self.biasradial = float(biasradial)
       self.minradius = minradius

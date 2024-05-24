@@ -1,4 +1,6 @@
-import time, pytest, statistics
+import time
+import pytest
+import statistics
 from willutil import Timer
 import willutil as wu
 

@@ -1,7 +1,6 @@
 import functools
 import numpy as np
 import willutil as wu
-from willutil.rigid.objective import tooclose_clash, tooclose_overlap
 
 def helix_slide(
    helix,

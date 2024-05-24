@@ -1,4 +1,5 @@
-import itertools, tempfile, sys, tempfile, random
+import tempfile
+import random
 import numpy as np
 import pytest
 import willutil as wu

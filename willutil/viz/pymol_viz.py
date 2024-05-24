@@ -1,7 +1,12 @@
-import sys, os, tempfile, numpy as np, time, functools, typing
+import sys
+import os
+import tempfile
+import numpy as np
+import time
+import functools
+import typing
 from collections import defaultdict
 
-from logging import info
 from functools import singledispatch
 #
 # from deferred_import import deferred_import
@@ -14,11 +19,10 @@ try:
    from pymol import cgo, cmd
 except:
    pass
-from willutil import homog as hm
 from willutil.viz.pymol_cgo import *
 from willutil.sym.symfit import RelXformInfo
 import willutil.viz.primitives as prim
-from willutil.sym.spacegroup_util import applylatticepts, tounitcellpts
+from willutil.sym.spacegroup_util import tounitcellpts
 
 _showme_state = wu.Bunch(
    launched=0,
@@ -272,7 +276,7 @@ def get_different_colors(ncol, niter=1000, colorseed=1):
 
 def get_cgo_name(name):
    names = pymol.cmd.get_names()
-   if not name in names:
+   if name not in names:
       return name
    i = 0
    while name + '_' + str(i) in names:
@@ -690,7 +694,7 @@ def clear_pymol():
 
 def showme(*args, how="pymol", **kw):
    randstate = np.random.get_state()
-   if not 'pymol' in sys.modules:
+   if 'pymol' not in sys.modules:
       how = 'pdb'
    if how == "pymol":
       result = showme_pymol(*args, **kw)

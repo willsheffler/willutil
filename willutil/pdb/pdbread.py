@@ -1,4 +1,10 @@
-import os, gzip, io, glob, logging, tqdm, time
+import os
+import gzip
+import io
+import glob
+import logging
+import tqdm
+import time
 import numpy as np
 import willutil as wu
 from willutil.pdb.pdbfile import PDBFile
@@ -76,7 +82,6 @@ def read_pdb_atoms(fname_or_buf, **kw):
 ##@timed
 def parse_pdb_atoms(atomstr, **kw):
    import pandas as pd
-   import numpy as np
    assert (atomstr)
 
    dt = pdbcoldtypes.copy()

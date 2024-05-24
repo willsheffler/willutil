@@ -3,7 +3,7 @@ import willutil as wu
 import numpy as np
 import torch
 from willutil.cpp.rms import qcp_rms_regions_f4i4
-
+from willutil import h
 from collections import namedtuple
 
 # FastDMEMotifPlacement = namedtuple('FastDMEMotifPlacement', 'offset rms dme occ alldme')
@@ -276,7 +276,7 @@ def make_test_motif(xyz, sizes, minsep=0, minbeg=0, minend=0, ntries=3, rnoise=0
       crd = xyz[lb:ub]
       com = wu.hcom(crd.cpu(), flat=True)
       x = wu.hrandsmall(cart_sd=rnoise * 0.707, rot_sd=0.707 * rnoise / lever, centers=com)
-      motif.append(wu.thxform(x, crd.cpu()).to(xyz.device))
+      motif.append(h.xform(x, crd.cpu()).to(xyz.device))
 
    return motif, pos
 
@@ -342,13 +342,13 @@ def make_floating_offsets(sizes, nres, nasym, cbreaks, minsep=0, minbeg=0, minen
 def place_motif_rms_brute(xyz, motif, topk=10, nasym=None, **kw):
    import torch
    nasym = nasym or nres
-   ca = wu.thpoint(xyz[:, 1])
-   mcrd = wu.thpoint(torch.cat(motif)[:, 1])
+   ca = h.point(xyz[:, 1])
+   mcrd = h.point(torch.cat(motif)[:, 1])
    offsets = make_floating_offsets([len(m) for m in motif], nres, nasym, **kw)
    rms = torch.zeros(len(offsets))
    for i, offset in enumerate(offsets):
       scrd = torch.cat([ca[o:o + len(m)] for o, m in zip(offset, motif)])
-      rms[i], _, _ = wu.thrmsfit(mcrd, scrd)
+      rms[i], _, _ = h.rmsfit(mcrd, scrd)
    val, idx = torch.topk(rms, topk, largest=False)
    return MotifPlacement(offsets[idx], rms[idx], offsets, rms)
 
@@ -363,8 +363,8 @@ def place_motif_dme_brute(xyz, motif, topk=10, nasym=None, **kw):
 
    nres = len(xyz)
    nasym = nasym or nres
-   ca = wu.thpoint(xyz[:, 1])
-   mcrd = wu.thpoint(torch.cat(motif)[:, 1])
+   ca = h.point(xyz[:, 1])
+   mcrd = h.point(torch.cat(motif)[:, 1])
    mdist = torch.cdist(mcrd, mcrd)
    offsets = make_floating_offsets([len(m) for m in motif], nres, nasym, **kw)
    assert torch.all(offsets[:, 0] <= nasym)

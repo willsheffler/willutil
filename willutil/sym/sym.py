@@ -1,4 +1,5 @@
-import copy, functools
+import copy
+import functools
 from willutil import Bunch
 from willutil.homog.hgeom import *
 from willutil.sym.symframes import *
@@ -42,7 +43,7 @@ def frames(
          return xtal(sym).frames(ontop=ontop, **kw).copy()
       else:
          f = sym_frames[sym].copy()
-   except KeyError as e:
+   except KeyError:
       raise ValueError(f'unknown symmetry {sym}')
    wu.checkpoint('frames gen')
 

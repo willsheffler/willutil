@@ -232,10 +232,10 @@ def xtalinfo(name):
       'P23': 'P 2 3',
    }
 
-   if not name in _xtal_info_dict:
+   if name not in _xtal_info_dict:
       if name in alternate_names:
          name = alternate_names[name]
-   if not name in _xtal_info_dict:
+   if name not in _xtal_info_dict:
       name = name.replace('_', ' ')
    # ic(name)
    return name, _xtal_info_dict[name]

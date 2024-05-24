@@ -1,4 +1,5 @@
-import os, time, logging
+import os
+import logging
 import deferred_import
 
 import numpy as np
@@ -246,7 +247,7 @@ class PdbData:
       )
       assert task in not_needed
       for v in not_needed[task]:
-         if not v in self.data:
+         if v not in self.data:
             print("PdbData.only_whats_needed: missing:", v)
       return PdbData(self.data.drop(not_needed[task]))
 

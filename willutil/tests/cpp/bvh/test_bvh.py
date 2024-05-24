@@ -1,7 +1,8 @@
-import _pickle, numpy as np, itertools as it
+import _pickle
+import numpy as np
+import itertools as it
 from time import perf_counter
 
-from cppimport import import_hook
 # cppimport.set_quiet(False)
 
 import willutil as wu

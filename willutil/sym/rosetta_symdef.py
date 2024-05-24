@@ -1,4 +1,6 @@
-import functools, os, glob, re
+import functools
+import glob
+import re
 import willutil as wu
 import numpy as np
 

@@ -1,5 +1,4 @@
-import time
-from willutil import Cache, GLOBALCACHE, Timer
+from willutil import Cache
 
 _ncalc = 0
 
@@ -14,7 +13,7 @@ def test_cache():
 
    # for parallel testing, only do on the main thread
    import threading
-   if not threading.current_thread() is threading.main_thread():
+   if threading.current_thread() is not threading.main_thread():
       return
 
    cache = Cache()

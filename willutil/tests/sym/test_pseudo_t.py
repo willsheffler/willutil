@@ -1,4 +1,3 @@
-import pytest
 import willutil as wu
 from willutil import *
 from icecream import ic
@@ -13,17 +12,17 @@ def test_pseudo_t_dist_min():
    asym = wu.sym.pseudo_t_start(2)
    loss, asym2 = wu.sym.min_pseudo_t_dist2(asym)
    ic(asym2.shape)
-   wu.showme(hscaled(0.1, asym))
-   wu.showme(hscaled(0.1, asym2))
-   wu.showme(hscaled(0.1, wu.sym.make('I', asym)))
+   # wu.showme(hscaled(0.1, asym))
+   # wu.showme(hscaled(0.1, asym2))
+   # wu.showme(hscaled(0.1, wu.sym.make('I', asym)))
 
 def test_pseudo_t_env_min():
    asym = wu.sym.pseudo_t_start(2)
    loss, asym2 = wu.sym.min_pseudo_t_symerror(asym)
    ic(asym2.shape)
-   wu.showme(hscaled(0.1, asym))
-   wu.showme(hscaled(0.1, asym2))
-   wu.showme(hscaled(0.1, wu.sym.make('I', asym)))
+   # wu.showme(hscaled(0.1, asym))
+   # wu.showme(hscaled(0.1, asym2))
+   # wu.showme(hscaled(0.1, wu.sym.make('I', asym)))
 
 def test_from_pdb():
    import numpy as np

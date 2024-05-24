@@ -1,4 +1,5 @@
-import os, deferred_import
+import os
+import deferred_import
 
 pd = deferred_import.deferred_import('pandas')
 import willutil as wu
