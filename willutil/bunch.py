@@ -3,7 +3,7 @@ import os
 __all__ = ("Bunch", "bunchify", "unbunchify")
 
 class Bunch(dict):
-   def __init__(self, __arg_or_ns=None, _strict='__STRICT', _default='__NODEFALT', **kw):
+   def __init__(self, __arg_or_ns=None, _strict='__NOT_STRICT', _default='__NODEFALT', **kw):
       if __arg_or_ns is not None:
          try:
             super().__init__(__arg_or_ns)
@@ -11,7 +11,7 @@ class Bunch(dict):
             super().__init__(vars(__arg_or_ns))
       self.update(kw)
       self.__dict__['_special'] = dict()
-      self.__dict__['_special']['strict_lookup'] = _strict or _strict == '__STRICT'
+      self.__dict__['_special']['strict_lookup'] = _strict is True or _strict == '__STRICT'
       if _default == '__NODEFALT':
          _default = None
       elif _strict == '__STRICT':
@@ -92,7 +92,7 @@ class Bunch(dict):
          raise TypeError('Bunch.accumulate needs Bunch or dict type')
       not_empty = len(self)
       for k in other:
-         if k not in self:
+         if not k in self:
             if strict and not_empty:
                raise ValueError(f'{k} not in this Bunch')
             self[k] = list()
@@ -125,10 +125,10 @@ class Bunch(dict):
 
    def __getattr__(self, k):
       if k == '_special':
-         raise ValueError('_special is a reseved name for Bunch')
+         raise ValueError(f'_special is a reseved name for Bunch')
       if k == '__deepcopy__':
          return None
-      if self._special['strict_lookup'] and k not in self:
+      if self._special['strict_lookup'] and not k in self:
          raise KeyError(f'Bunch is missing value for key {k}')
       try:
          # Throws exception if not in prototype chain
@@ -171,7 +171,7 @@ class Bunch(dict):
    def copy(self):
       return Bunch.from_dict(super().copy())
 
-   def sub(self, __BUNCH_SUB_ITEMS=None, _onlynone=False, **kw):
+   def sub(self, __BUNCH_SUB_ITEMS=None, _onlynone=False, exclude=[], **kw):
       if len(kw) == 0:
          if isinstance(__BUNCH_SUB_ITEMS, dict):
             kw = __BUNCH_SUB_ITEMS
@@ -183,7 +183,8 @@ class Bunch(dict):
          if v is None and k in newbunch:
             del newbunch[k]
          elif not _onlynone or k not in self or self[k] is None:
-            newbunch.__setattr__(k, v)
+            if not k in exclude:
+               newbunch.__setattr__(k, v)
       return newbunch
 
    def only(self, keys):
@@ -198,7 +199,7 @@ class Bunch(dict):
       newbunch = Bunch()
       newbunch._special = self._special
       for k in self.keys():
-         if k not in dropkeys:
+         if not k in dropkeys:
             newbunch[k] = self[k]
       return newbunch
 
