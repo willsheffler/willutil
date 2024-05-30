@@ -97,9 +97,9 @@ def process_num_cells(cells):
       if isinstance(cells[0], int):
          cells = [(0, cells[0] - 1), (0, cells[1] - 1), (0, cells[2] - 1)]
       cells = [(a, b, c) for a, b, c in itertools.product(
-         range(cells[0][0], cells[0][1] + 1),
-         range(cells[1][0], cells[1][1] + 1),
-         range(cells[2][0], cells[2][1] + 1),
+          range(cells[0][0], cells[0][1] + 1),
+          range(cells[1][0], cells[1][1] + 1),
+          range(cells[2][0], cells[2][1] + 1),
       )]
    else:
       raise ValueError(f'bad cells {cells}')
@@ -194,17 +194,17 @@ def lattice_vectors(lattice, cellgeom=None, strict=True):
    # ic(1.0 - ((cosB * cosC - cosA) / (sinB * sinC))**2)
 
    lattice_vectors = np.array([[
-      a,
-      b * cosC,
-      c * cosB,
+       a,
+       b * cosC,
+       c * cosB,
    ], [
-      0.0,
-      b * sinC,
-      c * (cosA - cosB * cosC) / sinC,
+       0.0,
+       b * sinC,
+       c * (cosA - cosB * cosC) / sinC,
    ], [
-      0.0,
-      0.0,
-      c * sinB * np.sqrt(1.0 - ((cosB * cosC - cosA) / (sinB * sinC))**2),
+       0.0,
+       0.0,
+       c * sinB * np.sqrt(1.0 - ((cosB * cosC - cosA) / (sinB * sinC))**2),
    ]])
    return lattice_vectors
 

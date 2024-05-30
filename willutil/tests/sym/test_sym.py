@@ -73,14 +73,14 @@ def test_frames_asym_remove_sameaxis():
    syms = 'tet oct icos'.split()
    csyms = 'c2 c3 c4 c5'.split()
    config = [
-      ('tet  c2'.split(), (4, 6, 6, 12)),
-      ('tet  c3'.split(), (2, 4, 4, 12)),
-      ('oct  c2'.split(), (7, 12, 12, 24)),
-      ('oct  c3'.split(), (4, 8, 8, 24)),
-      ('oct  c4'.split(), (3, 6, 6, 24)),
-      ('icos c2'.split(), (16, 30, 30, 60)),
-      ('icos c3'.split(), (8, 20, 20, 60)),
-      ('icos c5'.split(), (4, 12, 12, 60)),
+       ('tet  c2'.split(), (4, 6, 6, 12)),
+       ('tet  c3'.split(), (2, 4, 4, 12)),
+       ('oct  c2'.split(), (7, 12, 12, 24)),
+       ('oct  c3'.split(), (4, 8, 8, 24)),
+       ('oct  c4'.split(), (3, 6, 6, 24)),
+       ('icos c2'.split(), (16, 30, 30, 60)),
+       ('icos c3'.split(), (8, 20, 20, 60)),
+       ('icos c5'.split(), (4, 12, 12, 60)),
    ]
    for i, ((sym, csym), (n1, n2, n3, n4)) in enumerate(config):
       # print(i, sym, csym)
@@ -141,9 +141,9 @@ def test_sym():
    assert wu.sym.symframes.octahedral_frames.shape == (24, 4, 4)
    assert wu.sym.symframes.icosahedral_frames.shape == (60, 4, 4)
    x = np.concatenate([
-      wu.sym.symframes.tetrahedral_frames,
-      wu.sym.symframes.octahedral_frames,
-      wu.sym.symframes.icosahedral_frames,
+       wu.sym.symframes.tetrahedral_frames,
+       wu.sym.symframes.octahedral_frames,
+       wu.sym.symframes.icosahedral_frames,
    ])
    assert np.all(x[..., 3, 3] == 1)
    assert np.all(x[..., 3, :3] == 0)

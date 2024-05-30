@@ -24,8 +24,7 @@ class Cache(dict):
    def key_of(self, fun, *args, **kw):
       return fun.__name__, repr(args), repr(kw)
 
-   def get_cached(self, fun, *args, _force_reload=False, _saved_only=False, _nodump=False,
-                  _key=None, **kw):
+   def get_cached(self, fun, *args, _force_reload=False, _saved_only=False, _nodump=False, _key=None, **kw):
       if _key is None:
          _key = self.key_of(fun, *args, **kw)
       try:

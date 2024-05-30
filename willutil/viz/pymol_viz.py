@@ -25,28 +25,28 @@ import willutil.viz.primitives as prim
 from willutil.sym.spacegroup_util import tounitcellpts
 
 _showme_state = wu.Bunch(
-   launched=0,
-   seenit=defaultdict(lambda: -1),
-   _nsymops=0,
+    launched=0,
+    seenit=defaultdict(lambda: -1),
+    _nsymops=0,
 )
 
 @singledispatch
 def pymol_load(
-   toshow,
-   # state=_showme_state,
-   # name=None,
-   **kw,
+    toshow,
+    # state=_showme_state,
+    # name=None,
+    **kw,
 ):
    raise NotImplementedError("pymol_load: don't know how to show " + str(type(toshow)))
 
 @pymol_load.register(prim.Cylinder)
 def _(
-   toshow,
-   state=_showme_state,
-   # name=None,
-   addtocgo=None,
-   make_cgo_only=False,
-   **kw,
+    toshow,
+    state=_showme_state,
+    # name=None,
+    addtocgo=None,
+    make_cgo_only=False,
+    **kw,
 ):
    v = pymol.cmd.get_view()
    mycgo = cgo_cyl(toshow.start, toshow.end, toshow.radius, col=toshow.color)
@@ -67,24 +67,24 @@ def _(
 
 @pymol_load.register(RelXformInfo)
 def _(
-   toshow,
-   state=_showme_state,
-   col='bycx',
-   name='xrel',
-   showframes=True,
-   center=np.array([0, 0, 0, 1]),
-   scalefans=None,
-   fixedfansize=1,
-   expand=1.0,
-   fuzz=0,
-   make_cgo_only=False,
-   cyc_ang_match_tol=0.1,
-   axislen=20,
-   usefitaxis=False,
-   axisrad=0.1,
-   helicalrad=None,
-   addtocgo=None,
-   **kw,
+    toshow,
+    state=_showme_state,
+    col='bycx',
+    name='xrel',
+    showframes=True,
+    center=np.array([0, 0, 0, 1]),
+    scalefans=None,
+    fixedfansize=1,
+    expand=1.0,
+    fuzz=0,
+    make_cgo_only=False,
+    cyc_ang_match_tol=0.1,
+    axislen=20,
+    usefitaxis=False,
+    axisrad=0.1,
+    helicalrad=None,
+    addtocgo=None,
+    **kw,
 ):
 
    state._nsymops += 1
@@ -133,8 +133,8 @@ def _(
       mycgo += cgo_cyl(c1, c2, axisrad, col=col)
       mycgo += cgo_cyl(cen + axis * toshow.hel / 2, cen - axis * toshow.hel / 2, helicalrad, col=col)
       shift = fuzz * (np.random.rand() - 0.5)
-      mycgo += cgo_fan(axis, cen + axis * shift, fixedfansize if fixedfansize else toshow.rad * scalefans, arc=ang,
-                       col=col, startpoint=cen1)
+      mycgo += cgo_fan(axis, cen + axis * shift, fixedfansize if fixedfansize else toshow.rad * scalefans,
+                       arc=ang, col=col, startpoint=cen1)
 
    if addtocgo is None:
       pymol.cmd.load_cgo(mycgo, 'symops%i' % state._nsymops)
@@ -148,10 +148,10 @@ def _(
 
 @pymol_load.register(dict)
 def _(
-   toshow,
-   state=_showme_state,
-   name='stuff_in_dict',
-   **kw,
+    toshow,
+    state=_showme_state,
+    name='stuff_in_dict',
+    **kw,
 ):
    if "pose" in toshow:
       pymol_load(toshow["pose"], state, **kw)
@@ -164,11 +164,11 @@ def _(
 
 @pymol_load.register(list)
 def pymol_viz_list(
-   toshow,
-   state=_showme_state,
-   name='list',
-   topcolors=[],
-   **kw,
+    toshow,
+    state=_showme_state,
+    name='list',
+    topcolors=[],
+    **kw,
 ):
    kw = wu.Bunch(kw)
 
@@ -199,10 +199,10 @@ def pymol_viz_list(
 
 @pymol_load.register(np.ndarray)
 def pymol_load_npndarray(
-   toshow,
-   state=_showme_state,
-   kind=None,
-   **kw,
+    toshow,
+    state=_showme_state,
+    kind=None,
+    **kw,
 ):
    # showaxes()
    shape = toshow.shape
@@ -230,9 +230,9 @@ try:
 
    @pymol_load.register(torch.Tensor)
    def _(
-      toshow,
-      *a,
-      **kw,
+       toshow,
+       *a,
+       **kw,
    ):
       np_array = toshow.cpu().detach().numpy()
       # ic('showme torch.Tensor', np_array.shape)
@@ -252,10 +252,14 @@ def get_different_colors(ncol, niter=1000, colorseed=1):
    for i in range(niter):
       colors = np.random.rand(ncol, 3)
       # ic(np.max(colors[:, ], axis=1))
-      b = np.min(np.max(colors[:, ], axis=1))
+      b = np.min(np.max(colors[
+          :,
+      ], axis=1))
       for i in range(100):
          colors0 = np.random.rand(ncol, 3)
-         score = np.min(np.max(colors0[:, ], axis=1))
+         score = np.min(np.max(colors0[
+             :,
+         ], axis=1))
          if score > b:
             colors = colors0
       # ic(colors.shape)
@@ -291,27 +295,27 @@ def get_cgo_name(name):
    # return name
 
 def pymol_visualize_xforms(
-      xforms,
-      state=_showme_state,
-      name='xforms',
-      randpos=0.0,
-      xyzlen=[5 / 4, 1, 4 / 5],
-      xyzscale=1.0,
-      scale=1.0,
-      weight=1.0,
-      spheres=0,
-      make_cgo_only=False,
-      center_weight=1.0,
-      center=None,
-      rays=0,
-      framecolors=None,
-      perturb=0,
-      addtocgo=None,
-      colors=None,
-      bounds=None,
-      colorset=0,
-      lattice=np.eye(3),
-      **kw,
+    xforms,
+    state=_showme_state,
+    name='xforms',
+    randpos=0.0,
+    xyzlen=[5 / 4, 1, 4 / 5],
+    xyzscale=1.0,
+    scale=1.0,
+    weight=1.0,
+    spheres=0,
+    make_cgo_only=False,
+    center_weight=1.0,
+    center=None,
+    rays=0,
+    framecolors=None,
+    perturb=0,
+    addtocgo=None,
+    colors=None,
+    bounds=None,
+    colorset=0,
+    lattice=np.eye(3),
+    **kw,
 ):
    kw = wu.Bunch(kw)
    if perturb != 0: raise NotImplementedError
@@ -415,16 +419,16 @@ def pymol_visualize_xforms(
    return None
 
 def show_ndarray_lines(
-   toshow,
-   state=_showme_state,
-   name=None,
-   col=None,
-   scale=100,
-   bothsides=False,
-   spheres=3,
-   cyl=0,
-   addtocgo=None,
-   **kw,
+    toshow,
+    state=_showme_state,
+    name=None,
+    col=None,
+    scale=100,
+    bothsides=False,
+    spheres=3,
+    cyl=0,
+    addtocgo=None,
+    **kw,
 ):
    name = name or "ndarray_lines"
    state["seenit"][name] += 1
@@ -464,17 +468,17 @@ def cgo_frame_points(frames, scale, showpts, scaleptrad=1, **kw):
    return cgo
 
 def show_ndarray_line_strip(
-   toshow,
-   state=_showme_state,
-   name='lines',
-   col=[1, 1, 1],
-   stateno=1,
-   linewidth=1,
-   breaks=1,
-   breaks_groups=1,
-   whitetopn=0,
-   addtocgo=None,
-   **kw,
+    toshow,
+    state=_showme_state,
+    name='lines',
+    col=[1, 1, 1],
+    stateno=1,
+    linewidth=1,
+    breaks=1,
+    breaks_groups=1,
+    whitetopn=0,
+    addtocgo=None,
+    **kw,
 ):
    # v = pymol.cmd.get_view()
    # print('!!!!!!!!!!!!!!!!!!!!!!!!', state)
@@ -533,26 +537,26 @@ def show_ndarray_line_strip(
    # pymol.cmd.set_view(v)
 
 RAINBOW = [
-   (148 / 255, 0 / 255, 211 / 255),
-   (75 / 255, 0 / 255, 130 / 255),
-   (0 / 255, 0 / 255, 255 / 255),
-   (0 / 255, 255 / 255, 0 / 255),
-   (255 / 255, 255 / 255, 0 / 255),
-   (255 / 255, 127 / 255, 0 / 255),
-   (255 / 255, 0 / 255, 0 / 255),
+    (148 / 255, 0 / 255, 211 / 255),
+    (75 / 255, 0 / 255, 130 / 255),
+    (0 / 255, 0 / 255, 255 / 255),
+    (0 / 255, 255 / 255, 0 / 255),
+    (255 / 255, 255 / 255, 0 / 255),
+    (255 / 255, 127 / 255, 0 / 255),
+    (255 / 255, 0 / 255, 0 / 255),
 ]
 
 def show_ndarray_point_or_vec(
-   toshow,
-   state=_showme_state,
-   name='points',
-   col=None,
-   sphere=1.0,
-   addtocgo=None,
-   chainbow=False,
-   kind=None,
-   scale=1,
-   **kw,
+    toshow,
+    state=_showme_state,
+    name='points',
+    col=None,
+    sphere=1.0,
+    addtocgo=None,
+    chainbow=False,
+    kind=None,
+    scale=1,
+    **kw,
 ):
    v = pymol.cmd.get_view()
    state["seenit"][name] += 1
@@ -590,11 +594,11 @@ def show_ndarray_point_or_vec(
       addtocgo.extend(mycgo)
 
 def show_ndarray_n_ca_c(
-   toshow,
-   state=_showme_state,
-   name=None,
-   col=[1, 1, 1],
-   **kw,
+    toshow,
+    state=_showme_state,
+    name=None,
+    col=[1, 1, 1],
+    **kw,
 ):
    name = name or "ndarray_n_ca_c"
    state["seenit"][name] += 1
@@ -626,17 +630,17 @@ def iscgo(maybecgo):
    return isinstance(maybecgo[0], float)
 
 def showme_pymol(
-   what,
-   headless=False,
-   block=False,
-   vizfresh=False,
-   png=None,
-   pngi=0,
-   pngturn=0,
-   ray=False,
-   one_png_only=False,
-   name='noname',
-   **kw,
+    what,
+    headless=False,
+    block=False,
+    vizfresh=False,
+    png=None,
+    pngi=0,
+    pngturn=0,
+    ray=False,
+    one_png_only=False,
+    name='noname',
+    **kw,
 ):
    # if name != 'noname': ic('SHOWME', name)
    global _showme_state
@@ -708,18 +712,18 @@ _atom_record_format = ("ATOM  {atomi:5d} {atomn:^4}{idx:^1}{resn:3s} {chain:1}{r
                        "{x:8.3f}{y:8.3f}{z:8.3f}{occ:6.2f}{b:6.2f}\n")
 
 def format_atom(
-   atomi=0,
-   atomn="ATOM",
-   idx=" ",
-   resn="ALA",
-   chain="A",
-   resi=0,
-   insert=" ",
-   x=0,
-   y=0,
-   z=0,
-   occ=0,
-   b=0,
+    atomi=0,
+    atomn="ATOM",
+    idx=" ",
+    resn="ALA",
+    chain="A",
+    resi=0,
+    insert=" ",
+    x=0,
+    y=0,
+    z=0,
+    occ=0,
+    b=0,
 ):
    return _atom_record_format.format(**locals())
 

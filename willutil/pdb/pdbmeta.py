@@ -99,13 +99,13 @@ class PDBMetadata:
       return self._load_cached('clust100', lambda: self.get_clust('100'))
 
    def make_pdb_set(
-      self,
-      maxresl=2.0,
-      minres=50,
-      maxres=500,
-      max_seq_ident=0.5,
-      pisces_chains=True,
-      entrytype='prot',
+       self,
+       maxresl=2.0,
+       minres=50,
+       maxres=500,
+       max_seq_ident=0.5,
+       pisces_chains=True,
+       entrytype='prot',
    ):
 
       # print(minres, maxres, maxres, max_seq_ident)
@@ -149,22 +149,22 @@ class PDBMetadata:
 
    def __init__(self):
       self.urls = wu.Bunch(
-         author='https://ftp.wwpdb.org/pub/pdb/derived_data/index/author.idx',
-         compound='https://ftp.wwpdb.org/pub/pdb/derived_data/index/compound.idx',
-         resl='https://ftp.wwpdb.org/pub/pdb/derived_data/index/resolu.idx',
-         xtal='https://ftp.wwpdb.org/pub/pdb/derived_data/index/crystal.idx',
-         entries='https://ftp.wwpdb.org/pub/pdb/derived_data/index/entries.idx',
-         onhold='https://ftp.wwpdb.org/pub/pdb/derived_data/index/on_hold.list',
-         entrytypes='https://ftp.wwpdb.org/pub/pdb/derived_data/pdb_entry_type.txt',
-         seqres='https://ftp.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt.gz',
-         source='https://ftp.wwpdb.org/pub/pdb/derived_data/index/source.idx',
-         clust30='https://cdn.rcsb.org/resources/sequence/clusters/bc-30.out',
-         clust40='https://cdn.rcsb.org/resources/sequence/clusters/bc-40.out',
-         clust50='https://cdn.rcsb.org/resources/sequence/clusters/bc-50.out',
-         clust70='https://cdn.rcsb.org/resources/sequence/clusters/bc-70.out',
-         clust90='https://cdn.rcsb.org/resources/sequence/clusters/bc-90.out',
-         clust95='https://cdn.rcsb.org/resources/sequence/clusters/bc-95.out',
-         clust100='https://cdn.rcsb.org/resources/sequence/clusters/bc-100.out',
+          author='https://ftp.wwpdb.org/pub/pdb/derived_data/index/author.idx',
+          compound='https://ftp.wwpdb.org/pub/pdb/derived_data/index/compound.idx',
+          resl='https://ftp.wwpdb.org/pub/pdb/derived_data/index/resolu.idx',
+          xtal='https://ftp.wwpdb.org/pub/pdb/derived_data/index/crystal.idx',
+          entries='https://ftp.wwpdb.org/pub/pdb/derived_data/index/entries.idx',
+          onhold='https://ftp.wwpdb.org/pub/pdb/derived_data/index/on_hold.list',
+          entrytypes='https://ftp.wwpdb.org/pub/pdb/derived_data/pdb_entry_type.txt',
+          seqres='https://ftp.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt.gz',
+          source='https://ftp.wwpdb.org/pub/pdb/derived_data/index/source.idx',
+          clust30='https://cdn.rcsb.org/resources/sequence/clusters/bc-30.out',
+          clust40='https://cdn.rcsb.org/resources/sequence/clusters/bc-40.out',
+          clust50='https://cdn.rcsb.org/resources/sequence/clusters/bc-50.out',
+          clust70='https://cdn.rcsb.org/resources/sequence/clusters/bc-70.out',
+          clust90='https://cdn.rcsb.org/resources/sequence/clusters/bc-90.out',
+          clust95='https://cdn.rcsb.org/resources/sequence/clusters/bc-95.out',
+          clust100='https://cdn.rcsb.org/resources/sequence/clusters/bc-100.out',
       )
       self.metadata = wu.Bunch()
       # self.metadata = wu.Bunch(_strict=True)
@@ -205,9 +205,8 @@ class PDBMetadata:
                out.write(inp.read())
          os.remove(fn + '.gz')
 
-      for name in ('author', 'compound', 'resl', 'xtal', 'entries', 'onhold', 'entrytypes',
-                   'source', 'clust30', 'clust40', 'clust50', 'clust70', 'clust90', 'clust95',
-                   'clust100'):
+      for name in ('author', 'compound', 'resl', 'xtal', 'entries', 'onhold', 'entrytypes', 'source',
+                   'clust30', 'clust40', 'clust50', 'clust70', 'clust90', 'clust95', 'clust100'):
          fname = wu.storage.package_data_path(f'pdb/meta/{name}.txt')
          if os.path.exists(fname):  # could skipped download
             log.info(f'running xz {fname}')

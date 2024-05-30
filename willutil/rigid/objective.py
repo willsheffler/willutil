@@ -46,25 +46,25 @@ class RBLatticeOverlapObjective:
 
 class RBOverlapObjective:
    def __init__(
-      self,
-      initial,
-      bodies=None,
-      contactfrac=None,
-      scoreframes=None,
-      clashframes=None,
-      lever=20,
-      biasradial=None,
-      biasdir=None,
-      contactdist=None,
-      clashdist=3,
-      driftpenalty=1,
-      clashpenalty=1,
-      angpenalty=1,
-      spreadpenalty=1,
-      minradius=0,
-      sym=None,
-      symaxes=None,
-      **kw,
+       self,
+       initial,
+       bodies=None,
+       contactfrac=None,
+       scoreframes=None,
+       clashframes=None,
+       lever=20,
+       biasradial=None,
+       biasdir=None,
+       contactdist=None,
+       clashdist=3,
+       driftpenalty=1,
+       clashpenalty=1,
+       angpenalty=1,
+       spreadpenalty=1,
+       minradius=0,
+       sym=None,
+       symaxes=None,
+       **kw,
    ):
 
       self.initial = initial.position.copy()
@@ -171,16 +171,16 @@ class RBOverlapObjective:
          # ic((self.driftpenalty * xdiff)**2)
          # ic((self.angpenalty * 10 * angdiff * wu.hnorm(wu.hprojperp([1, 0, 0], asym.com())))**2)
       s = [
-         10 * sum(scores),
-         (self.spreadpenalty * (max(fracs) - min(fracs)))**2,
-         (self.driftpenalty * xdiff)**2,
-         (self.angpenalty * angdiff1)**2,
-         (self.angpenalty * angdiff2)**2,
-         # 0.1 * (axsdist1 + axsdist2)
-         (max(0, self.minradius - wu.hnorm(asym.com())))**2,
-         0.0 * angdiffcen**2,
-         self.clashpenalty * clash,
-         2 * np.sum(np.array(dists)**2),
+          10 * sum(scores),
+          (self.spreadpenalty * (max(fracs) - min(fracs)))**2,
+          (self.driftpenalty * xdiff)**2,
+          (self.angpenalty * angdiff1)**2,
+          (self.angpenalty * angdiff2)**2,
+          # 0.1 * (axsdist1 + axsdist2)
+          (max(0, self.minradius - wu.hnorm(asym.com())))**2,
+          0.0 * angdiffcen**2,
+          self.clashpenalty * clash,
+          2 * np.sum(np.array(dists)**2),
       ]
       # ic(s)
       return np.sum(s)

@@ -37,8 +37,8 @@ def run_symscaffold_vis():
    for i in range(10_000):
       scaff.reset()
       placed = wu.unsym.mark555(
-         scaff.occ,
-         scaff.nbrs,
+          scaff.occ,
+          scaff.nbrs,
       )
       nplaced.append(len(placed))
       if len(placed) > 17:

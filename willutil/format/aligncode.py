@@ -5,20 +5,19 @@ import sys
 from contextlib import suppress
 from io import BytesIO
 
-from tokenize import (tokenize, COMMENT, STRING, NEWLINE, DEDENT, INDENT, ENDMARKER, ENCODING,
-                      OP)
+from tokenize import (tokenize, COMMENT, STRING, NEWLINE, DEDENT, INDENT, ENDMARKER, ENCODING, OP)
 import willutil as wu
 
 def align_code(
-   code,
-   min_tok_complexity=0,
-   align_around_comments=True,
-   only_changes=False,
-   yapf_preproc=False,
-   check_with_yapf=True,
-   make_yapf_diff=False,
-   debug=False,
-   **kw,
+    code,
+    min_tok_complexity=0,
+    align_around_comments=True,
+    only_changes=False,
+    yapf_preproc=False,
+    check_with_yapf=True,
+    make_yapf_diff=False,
+    debug=False,
+    **kw,
 ):
    kw = wu.Bunch(kw)
    if 'prof' not in kw:
@@ -109,9 +108,9 @@ def align_code(
    return newcode
 
 def align_code_block(
-   lines,
-   min_block_size=2,
-   **kw,
+    lines,
+    min_block_size=2,
+    **kw,
 ):
    kw = wu.Bunch(kw)
    if min_block_size < 2:
@@ -151,9 +150,9 @@ def sub_orig_into_merge(substitute, merge):
    substitute = substitute.splitlines()
 
    matches = re.split(
-      r"""^<<<<<<<.*?$(.*?)=======(.*?)^>>>>>>>.*?$""",
-      merge,
-      flags=re.MULTILINE | re.DOTALL,
+       r"""^<<<<<<<.*?$(.*?)=======(.*?)^>>>>>>>.*?$""",
+       merge,
+       flags=re.MULTILINE | re.DOTALL,
    )
    assert len(matches) % 3 == 1
 
@@ -196,9 +195,9 @@ def sub_orig_into_merge(substitute, merge):
    return merge
 
 def git_merge(
-   orig,
-   new,
-   substitute=None,
+    orig,
+    new,
+    substitute=None,
 ):
    import tempfile
    with tempfile.TemporaryDirectory() as tmpdir:
@@ -231,8 +230,8 @@ def git_merge(
    return merge
 
 def run_diff(
-   orig,
-   new,
+    orig,
+    new,
 ):
    import tempfile
    with tempfile.TemporaryDirectory() as tmpdir:
@@ -289,12 +288,12 @@ def split_by_toks(line):
    return wu.Bunch(strsplt=strsplt, toks=toks)
 
 def split_by_chars(
-   line,
-   chars='{:}',
-   nochars='.',
-   no_whitespace_around_dot=True,
-   align_between_dots=True,
-   **kw,
+    line,
+    chars='{:}',
+    nochars='.',
+    no_whitespace_around_dot=True,
+    align_between_dots=True,
+    **kw,
 ):
    linesplit = list()
    mytoks = list()
@@ -338,12 +337,12 @@ def split_by_chars(
    return wu.Bunch(linesplit=linesplit, mytoks=mytoks)
 
 def padstrs(
-   strs,
-   rpad=1,
-   lpad=1,
-   padcut=1,
-   left_justify=True,
-   **kw,
+    strs,
+    rpad=1,
+    lpad=1,
+    padcut=1,
+    left_justify=True,
+    **kw,
 ):
    l = max(len(s) for s in strs)
    nopad = l < padcut
@@ -369,10 +368,10 @@ def assert_line_equal(line1, line2):
    assert line1 == line2
 
 def align_mytok_block(
-   orig,
-   rows,
-   rjust_before_parens=False,
-   **kw,
+    orig,
+    rows,
+    rjust_before_parens=False,
+    **kw,
 ):
    cols = list()
    r = list(zip(*rows))
@@ -435,12 +434,12 @@ def get_rpad(l):
    return len(l) - len(l.rstrip(' '))
 
 def postproc(
-   lines,
-   origlines,
-   align_trailing_comma=False,
-   preproc_comments=True,
-   markmodlines=False,
-   **kw,
+    lines,
+    origlines,
+    align_trailing_comma=False,
+    preproc_comments=True,
+    markmodlines=False,
+    **kw,
 ):
    assert len(lines) == len(origlines)
 
@@ -461,17 +460,17 @@ def postproc(
          line = line.replace(": ", ":")
 
          pair = [
-            ')=',
-            ']=',
-            '}=',
-            '=[',
-            '=(',
-            '={',
-            '*(',
-            '*}',
-            ',[',
-            ',{',
-            ',(',
+             ')=',
+             ']=',
+             '}=',
+             '=[',
+             '=(',
+             '={',
+             '*(',
+             '*}',
+             ',[',
+             ',{',
+             ',(',
          ]
          for a, b in pair:
             line = line.replace(a + b, a + ' ' + b)
@@ -508,10 +507,10 @@ def extract_comment_lines(lines, align_through_comments=False, **kw):
    return comments, code
 
 def replace_comment_lines(
-   comments,
-   code,
-   align_through_comments=False,
-   **kw,
+    comments,
+    code,
+    align_through_comments=False,
+    **kw,
 ):
    lines = code.copy()
    for i, c in comments.items():
@@ -540,12 +539,12 @@ def token_complexity(toks):
    return sum([t not in _boring_toks for t in toks])
 
 def align_code_file(
-   fname,
-   inplace=False,
-   check_with_yapf=True,
-   backup=None,
-   debug=False,
-   **kw,
+    fname,
+    inplace=False,
+    check_with_yapf=True,
+    backup=None,
+    debug=False,
+    **kw,
 ):
    origstdout = sys.stdout
    sys.stdout = open('/home/sheffler/src/willutil/log/sublime_build.log', 'w')
@@ -564,11 +563,11 @@ def align_code_file(
    kw.prof.checkpoint('read orig')
 
    aln = align_code(
-      orig,
-      check_with_yapf=check_with_yapf,
-      yapf_preproc=True,
-      markmodlines=(fname is None),
-      **kw,
+       orig,
+       check_with_yapf=check_with_yapf,
+       yapf_preproc=True,
+       markmodlines=(fname is None),
+       **kw,
    )
 
    kw.prof.checkpoint('align_code')

@@ -29,12 +29,12 @@ def extract_t_asu(frames, t, sym='I'):
 
 def pseudo_t_start(t):
    dat = {
-      2: 'pseudo_t/T2_3iz3.npy',
-      3: 'pseudo_t/T3_2tbv.npy',
-      4: 'pseudo_t/T4_1ohf_A510.npy',
-      7: 'pseudo_t/T7_1ohg_A200.npy',
-      9: 'pseudo_t/T9_8h89_J155.npy',
-      13: 'pseudo_t/T13_2btv.npy'
+       2: 'pseudo_t/T2_3iz3.npy',
+       3: 'pseudo_t/T3_2tbv.npy',
+       4: 'pseudo_t/T4_1ohf_A510.npy',
+       7: 'pseudo_t/T7_1ohg_A200.npy',
+       9: 'pseudo_t/T9_8h89_J155.npy',
+       13: 'pseudo_t/T13_2btv.npy'
    }
    frames = wu.load_package_data(dat[t])
    assert len(frames) == 60 * t

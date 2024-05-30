@@ -15,15 +15,15 @@ sg_all = [k for k in sg_pdbname if k not in sg_redundant]
 sg_all_chiral = [k for k in sg_all if sg_is_chiral(k)]
 
 def sgframes(
-   spacegroup: str,
-   cellgeom=None,
-   cells=1,
-   sortframes='default',
-   roundgeom=10,
-   xtalrad=9e9,
-   asucen=[0.5, 0.5, 0.5],
-   xtalcen=None,
-   **kw,
+    spacegroup: str,
+    cellgeom=None,
+    cells=1,
+    sortframes='default',
+    roundgeom=10,
+    xtalrad=9e9,
+    asucen=[0.5, 0.5, 0.5],
+    xtalcen=None,
+    **kw,
 ):
    spacegroup = spacegroup_canonical_name(spacegroup)
    if isinstance(cellgeom, np.ndarray) or cellgeom not in ('unit', 'nonsingular', None):

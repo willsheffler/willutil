@@ -4,44 +4,45 @@ import willutil as wu
 from willutil.rigid.objective import tooclose_overlap
 
 def asuslide(
-   sym,
-   coords,
-   frames=None,
-   axes=None,
-   existing_olig=None,
-   alongaxis=None,
-   towardaxis=None,
-   boundscheck=lambda x: True,
-   printme=False,
-   cellsize=1,
-   isxtal=False,
-   nbrs='auto',
-   doscale=True,
-   doscaleiters=True,
-   iters=5,
-   subiters=1,
-   clashiters=5,
-   receniters=2,
-   step=10,
-   scalestep=None,
-   closestfirst=True,
-   centerasu='toward_partner',
-   centerasu_at_start=False,
-   showme=False,
-   scaleslides=1.0,
-   iterstepscale=0.5,
-   coords_to_asucen=False,
-   along_extra_axes=[],
-   xtalrad=0.5,
-   timer=None,
-   **kw,
+    sym,
+    coords,
+    frames=None,
+    axes=None,
+    existing_olig=None,
+    alongaxis=None,
+    towardaxis=None,
+    boundscheck=lambda x: True,
+    printme=False,
+    cellsize=1,
+    isxtal=False,
+    nbrs='auto',
+    doscale=True,
+    doscaleiters=True,
+    iters=5,
+    subiters=1,
+    clashiters=5,
+    receniters=2,
+    step=10,
+    scalestep=None,
+    closestfirst=True,
+    centerasu='toward_partner',
+    centerasu_at_start=False,
+    showme=False,
+    scaleslides=1.0,
+    iterstepscale=0.5,
+    coords_to_asucen=False,
+    along_extra_axes=[],
+    xtalrad=0.5,
+    timer=None,
+    **kw,
 ):
    kw = wu.Bunch(kw)
 
    if isinstance(cellsize, (int, float)): cellsize = [float(cellsize)] * 3
    if not isinstance(cellsize, np.ndarray): cellsize = np.array(cellsize, dtype=np.float64)
    if printme:
-      coordstr = repr(coords).replace(' ', '').replace('\n', '').replace('\t', '').replace('float32', 'np.float32')
+      coordstr = repr(coords).replace(' ', '').replace('\n', '').replace('\t', '').replace(
+          'float32', 'np.float32')
       framestr = repr(frames).replace(' ', '').replace('\n', '').replace('\t', '')
       print(f'''      #yapf: disable
       kw = {repr(dict(kw))}
@@ -96,7 +97,8 @@ def asuslide(
    # userfunc = functools.partial(kw.get('tooclosefunc', tooclose_overlap), printme=printme, **kw)
    kw.tooclosefunc = functools.partial(kw.get('tooclosefunc', tooclose_overlap), printme=printme, **kw)
 
-   assembly = wu.rigid.RigidBodyFollowers(sym=sym, coords=coords, frames=frames, recenter=True, cellsize=cellsize, **kw)
+   assembly = wu.rigid.RigidBodyFollowers(sym=sym, coords=coords, frames=frames, recenter=True,
+                                          cellsize=cellsize, **kw)
    if showme: wu.showme(assembly, name='START', **kw)
    # assembly.dump_pdb(f'/home/sheffler/DEBUG_asuslide_start_{wu.misc.datetimetag()}.pdb')
 
@@ -122,7 +124,8 @@ def asuslide(
             axpos = wu.hscaled(cellsize / cellsize0, wu.hpoint(axpos))
             if towardaxis:
                # ic(axpos)
-               axisperp = wu.hnormalized(wu.hprojperp(axis, assembly.asym.com() - axpos - wu.hrandvec() / 1000))
+               axisperp = wu.hnormalized(wu.hprojperp(axis,
+                                                      assembly.asym.com() - axpos - wu.hrandvec() / 1000))
                # ic(axis, assembly.asym.com() - axpos, cellsize, axisperp)
                if centerasu and i < receniters:
                   recenter_asu_frames(assembly, method=centerasu, axis=axisperp, **kw)
@@ -167,21 +170,21 @@ def tooclose_by_symelem(assembly, tooclosefunc, **kw):
    return np.array(tooclose, dtype=bool)
 
 def slide_axis(
-   axis,
-   assembly,
-   nbrs='auto',
-   tooclosefunc=None,
-   perp=False,
-   step=1.0,
-   maxstep=100,
-   showme=False,
-   # symelemsibs=None,
-   resetonfail=True,
-   scaleslides=1.0,
-   boundscheck=lambda x: True,
-   nobadsteps=False,
-   timer=None,
-   **kw,
+    axis,
+    assembly,
+    nbrs='auto',
+    tooclosefunc=None,
+    perp=False,
+    step=1.0,
+    maxstep=100,
+    showme=False,
+    # symelemsibs=None,
+    resetonfail=True,
+    scaleslides=1.0,
+    boundscheck=lambda x: True,
+    nobadsteps=False,
+    timer=None,
+    **kw,
 ):
    axis = wu.hnormalized(axis)
    origpos = assembly.asym.position
@@ -278,24 +281,24 @@ def slide_scale(*a, **kw):
    return slide_cellsize(*a, scalecoords=True, **kw)
 
 def slide_cellsize(
-   assembly,
-   cellsize,
-   symelems=None,
-   tooclosefunc=None,  #tooclose_clash,
-   step=1.0,
-   maxstep=100,
-   showme=False,
-   cellscalelimit=9e9,
-   resetonfail=True,
-   scaleslides=1.0,
-   boundscheck=lambda x: True,
-   scalecoords=None,
-   nobadsteps=False,
-   ignoreimmobile=True,
-   mincellsize=0.1,
-   maxcellsize=9e9,
-   timer=None,
-   **kw,
+    assembly,
+    cellsize,
+    symelems=None,
+    tooclosefunc=None,  #tooclose_clash,
+    step=1.0,
+    maxstep=100,
+    showme=False,
+    cellscalelimit=9e9,
+    resetonfail=True,
+    scaleslides=1.0,
+    boundscheck=lambda x: True,
+    scalecoords=None,
+    nobadsteps=False,
+    ignoreimmobile=True,
+    mincellsize=0.1,
+    maxcellsize=9e9,
+    timer=None,
+    **kw,
 ):
    if showme: wu.showme(assembly, name='scaleinput', **kw)
    orig_scalecoords = assembly.scale_com_with_cellsize
@@ -403,13 +406,13 @@ def slide_cellsize(
 ################################# NO ########################
 
 def recenter_asu_frames(
-   assembly,
-   symelemsibs=None,
-   method=None,
-   axis=None,
-   showme=False,
-   resetonfail=True,
-   **kw,
+    assembly,
+    symelemsibs=None,
+    method=None,
+    axis=None,
+    showme=False,
+    resetonfail=True,
+    **kw,
 ):
    """symelemsibs is ???
    """

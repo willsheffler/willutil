@@ -97,6 +97,6 @@ def parallel_nobatch_map(pool, function, accumulator, batch_size, map_func_args,
 
 def tqdm_parallel_map(pool, function, accumulator, map_func_args, batch_size, **kw):
    for _ in tqdm(
-         parallel_batch_map(pool, function, accumulator, batch_size, map_func_args=map_func_args,
-                            **kw), total=len(map_func_args[0]), **kw):
+       parallel_batch_map(pool, function, accumulator, batch_size, map_func_args=map_func_args, **kw),
+       total=len(map_func_args[0]), **kw):
       pass

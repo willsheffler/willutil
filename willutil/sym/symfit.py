@@ -27,7 +27,8 @@ def aligncx(coords, symelem, rmsthresh=1, axistol=0.02, angtol=0.05, centol=1.0,
    if max(rms) > rmsthresh: raise ValueError(f'subunits have high rms {rms}')
    axs, ang, cen = (np.array(x) for x in zip(*[wu.haxis_ang_cen_of(x) for x in xfits]))
 
-   if np.max(ang - 2 * np.pi / symelem.nfold) > angtol: raise ValueError(f'sub rotation angles incoherent {ang}')
+   if np.max(ang - 2 * np.pi / symelem.nfold) > angtol:
+      raise ValueError(f'sub rotation angles incoherent {ang}')
    if np.max(np.std(axs, axis=0)) > axistol: raise ValueError(f'sub rotation axes incoherent {axs}')
    if np.max(np.std(cen, axis=0)) > centol: raise ValueError(f'sub rotation centers incoherent {cen}')
    avgaxs = np.mean(axs, axis=0)
@@ -49,16 +50,16 @@ def aligncx(coords, symelem, rmsthresh=1, axistol=0.02, angtol=0.05, centol=1.0,
    return coords, xfit
 
 def compute_symfit(
-   sym,
-   frames,
-   *,
-   lossterms=None,
-   max_radius=100000.0,
-   min_radius=0.0,
-   penalize_redundant_cyclic_nth=0,  # nth closest
-   target_sub_com=None,
-   target_sub_com_testpoint=None,
-   **kw,
+    sym,
+    frames,
+    *,
+    lossterms=None,
+    max_radius=100000.0,
+    min_radius=0.0,
+    penalize_redundant_cyclic_nth=0,  # nth closest
+    target_sub_com=None,
+    target_sub_com_testpoint=None,
+    **kw,
 ):
    kw = wu.Bunch(kw)
    sym = sym.lower()
@@ -135,21 +136,25 @@ def compute_symfit(
    if lossterms:
       weighted_err = np.sqrt(sum(loss[c] for c in lossterms))
 
-   return SymFit(sym=sym, nframes=len(frames), frames=frames, symops=symops, center=center, opcen1=cen1, opcen2=cen2, opaxs1=axs1, opaxs2=axs2, iscet=isect, isect1=p, iscet2=q, radius=radius, xfit=xfit, cen_err=cen_err, symop_hel_err=op_hel_err, symop_ang_err=op_ang_err, axes_err=axesfiterr, total_err=total_err, weighted_err=weighted_err, redundant_cyclic_err=redundant_cyclic_err, losses=loss)
+   return SymFit(sym=sym, nframes=len(frames), frames=frames, symops=symops, center=center, opcen1=cen1,
+                 opcen2=cen2, opaxs1=axs1, opaxs2=axs2, iscet=isect, isect1=p, iscet2=q, radius=radius,
+                 xfit=xfit, cen_err=cen_err, symop_hel_err=op_hel_err, symop_ang_err=op_ang_err,
+                 axes_err=axesfiterr, total_err=total_err, weighted_err=weighted_err,
+                 redundant_cyclic_err=redundant_cyclic_err, losses=loss)
 
 _get_redundant_cyclic_err_warning = True
 
 def get_redundant_cyclic_err(
-   symops,
-   penalize_redundant_cyclic_nth,
-   penalize_redundant_cyclic_angle=None,  # degrees    
-   penalize_redundant_cyclic_weight=1.0,
-   **kw,
+    symops,
+    penalize_redundant_cyclic_nth,
+    penalize_redundant_cyclic_angle=None,  # degrees
+    penalize_redundant_cyclic_weight=1.0,
+    **kw,
 ):
    if symops.sym.startswith('c'):
       global _get_redundant_cyclic_err_warning
       if _get_redundant_cyclic_err_warning:
-         wu.PING('WARNING: redundant_cyclic_err makes no sense when fitting cyclic symmetry')
+         print('WARNING: redundant_cyclic_err makes no sense when fitting cyclic symmetry')
          _get_redundant_cyclic_err_warning = False
    if penalize_redundant_cyclic_angle is None:
       penalize_redundant_cyclic_angle = wu.sym.min_symaxis_angle(symops.sym) / 2
@@ -218,14 +223,14 @@ def rel_xform_info(frame1, frame2, **kw):
       assert 0
    hel = np.sum(axs * rel[:, 3])
    return RelXformInfo(
-      xrel=rel,
-      axs=axs,
-      ang=ang,
-      cen=cen,
-      rad=rad,
-      hel=hel,
-      framecen=framecen,
-      frames=np.array([frame1, frame2]),
+       xrel=rel,
+       axs=axs,
+       ang=ang,
+       cen=cen,
+       rad=rad,
+       hel=hel,
+       framecen=framecen,
+       frames=np.array([frame1, frame2]),
    )
 
 def xform_update_symop(symop, xform, srad):
@@ -278,7 +283,8 @@ def symops_from_frames(*, sym, frames, **kw):
    inplane = hm.hprojperp(axs, cen - frame1[:, :, 3])
    rad = np.sqrt(np.sum(inplane**2, axis=-1))
    hel = np.sum(axs * xrel[:, :, 3], axis=-1)
-   assert (len(frame1) == len(frame2) == len(xrel) == len(axs) == len(ang) == len(cen) == len(framecen) == len(rad) == len(hel))
+   assert (len(frame1) == len(frame2) == len(xrel) == len(axs) == len(ang) == len(cen) == len(framecen) ==
+           len(rad) == len(hel))
    errrad = np.minimum(10000, np.maximum(rad, 1.0))
    angdelta, err, closest = dict(), dict(), dict()
    point_angles = wu.sym.sym_point_angles[sym]
@@ -326,20 +332,20 @@ def symops_from_frames(*, sym, frames, **kw):
       raise SymFitError(f'sym {sym} all axes are same nfold {nfold[0]}')
 
    return SymOps(
-      sym=sym,
-      key=keys,
-      frame1=frame1,
-      frame2=frame2,
-      xrel=xrel,
-      axs=axs,
-      ang=ang,
-      cen=cen,
-      rad=rad,
-      hel=hel,
-      framecen=framecen,
-      nfold=nfold,
-      nfold_err=nfold_err,
-      angdelta=angdelta,
+       sym=sym,
+       key=keys,
+       frame1=frame1,
+       frame2=frame2,
+       xrel=xrel,
+       axs=axs,
+       ang=ang,
+       cen=cen,
+       rad=rad,
+       hel=hel,
+       framecen=framecen,
+       nfold=nfold,
+       nfold_err=nfold_err,
+       angdelta=angdelta,
    )
 
 def disambiguate_axes(sym, axis, nfold, noambigaxes=True, **kw):
@@ -373,16 +379,16 @@ def stupid_pairs_from_symops(symops):
    pairs = dict()
    for i, k in enumerate(symops.key):
       pairs[k] = RelXformInfo(
-         xrel=symops.xrel[i],
-         axs=symops.axs[i],
-         ang=symops.ang[i],
-         cen=symops.cen[i],
-         rad=symops.rad[i],
-         hel=symops.hel[i],
-         framecen=symops.framecen[i],
-         frames=np.array([symops.frame1[i], symops.frame2[i]]),
-         nfold=symops.nfold[i],
-         nfold_err=symops.nfold_err[i],
+          xrel=symops.xrel[i],
+          axs=symops.axs[i],
+          ang=symops.ang[i],
+          cen=symops.cen[i],
+          rad=symops.rad[i],
+          hel=symops.hel[i],
+          framecen=symops.framecen[i],
+          frames=np.array([symops.frame1[i], symops.frame2[i]]),
+          nfold=symops.nfold[i],
+          nfold_err=symops.nfold_err[i],
       )
    return pairs
 
@@ -477,16 +483,16 @@ def best_axes_fit(sym, xsamp, nfolds, tgtaxes, tofitaxes, **kw):
    return bestx, err
 
 def symops_align_axes(
-   sym,
-   frames,
-   opary,
-   symops,
-   center,
-   radius,
-   choose_closest_frame=False,
-   align_ang_delta_thresh=0.001,
-   alignaxes_more_iters=1.0,
-   **kw,
+    sym,
+    frames,
+    opary,
+    symops,
+    center,
+    radius,
+    choose_closest_frame=False,
+    align_ang_delta_thresh=0.001,
+    alignaxes_more_iters=1.0,
+    **kw,
 ):
    nfolds = list(wu.sym.symaxes[sym].keys())
 
@@ -678,8 +684,8 @@ def symfit_gradient(symfit):
    print(list(symfit.symops.keys()))
    for i in range(len(sop.key)):
       print(
-         sop.nfold[i],
-         np.round(np.degrees(sop.ang[i] + sop.angdelta[i])),
+          sop.nfold[i],
+          np.round(np.degrees(sop.ang[i] + sop.angdelta[i])),
       )
    cenforce = np.zeros
    frametorq = np.zeros(shape=(symfit.nframes, 4))
@@ -700,26 +706,26 @@ def symfit_gradient(symfit):
    # assert 0
 
 def symfit_mc_play(
-   sym=None,
-   seed=None,
-   random_frames=False,
-   quiet=True,
-   nframes=None,
-   maxiters=500,
-   goalerr=0.01,
-   showme=False,
-   scalesamp=1.0,
-   scalecartsamp=1.0,
-   scalerotsamp=1.0,
-   scaletemp=1.0,
-   max_cartsd=10,
-   vizinterval=10,
-   showsymdups=True,
-   showsymops=False,
-   showfulltraj=False,
-   showopts=None,
-   headless=False,
-   **kw,
+    sym=None,
+    seed=None,
+    random_frames=False,
+    quiet=True,
+    nframes=None,
+    maxiters=500,
+    goalerr=0.01,
+    showme=False,
+    scalesamp=1.0,
+    scalecartsamp=1.0,
+    scalerotsamp=1.0,
+    scaletemp=1.0,
+    max_cartsd=10,
+    vizinterval=10,
+    showsymdups=True,
+    showsymops=False,
+    showfulltraj=False,
+    showopts=None,
+    headless=False,
+    **kw,
 ):
    kw = wu.Bunch(kw, _strict=False)
 
@@ -740,11 +746,11 @@ def symfit_mc_play(
    kw.sym = sym or 'icos'
    if nframes is None:
       nframes = dict(
-         d3=6,
-         d5=6,
-         tet=6,
-         oct=7,
-         icos=7,
+          d3=6,
+          d5=6,
+          tet=6,
+          oct=7,
+          icos=7,
       )[kw.sym]
    nframes = min(nframes, len(wu.sym.sym_frames[sym]))
 
@@ -762,12 +768,12 @@ def symfit_mc_play(
 
    # kw.choose_closest_frame = kw.choose_closest_frame or True
    showme_opts = showopts.sub(
-      _onlynone=True,
-      spheres=0.4,
-      showme=showme,
-      vizfresh=True,
-      weight=1,
-      # xyzlen=[.4, .4, .4],
+       _onlynone=True,
+       spheres=0.4,
+       showme=showme,
+       vizfresh=True,
+       weight=1,
+       # xyzlen=[.4, .4, .4],
    )
 
    if random_frames:
@@ -790,11 +796,11 @@ def symfit_mc_play(
    if showme:
       pairs = wu.sym.stupid_pairs_from_symops(symfit.symops)
       wu.showme(
-         pairs,
-         name='pairsstart',
-         col='bycx',
-         center=[0, 0, 0],
-         **showme_opts,
+          pairs,
+          name='pairsstart',
+          col='bycx',
+          center=[0, 0, 0],
+          **showme_opts,
       )
 
    import pymol
@@ -809,7 +815,9 @@ def symfit_mc_play(
 
       if isamp % 10 == 0: frames = best[0]
       if isamp % 100 == 0 and not quiet:
-         print(f'{isamp:6} {symfit.weighted_err:7.3} {naccept / (isamp + 1):7.3} {lowerr:7.3} {symfit.radius:9.3}')
+         print(
+             f'{isamp:6} {symfit.weighted_err:7.3} {naccept / (isamp + 1):7.3} {lowerr:7.3} {symfit.radius:9.3}'
+         )
       cartsd = symfit.weighted_err / 45 * scalecartsamp * scalesamp
       cartsd = min(max_cartsd, cartsd)
       rotsd = cartsd / symfit.radius * scalerotsamp * scalesamp
@@ -857,7 +865,8 @@ def symfit_mc_play(
                vizfresh = True
                # symdupframes = wu.sym.sym_frames[kw.sym][:, None] @ frames[None, :]
                symdupframes = frames
-               wu.showme(symdupframes, name='xfitmc%05i' % isamp, col=None, **showme_opts.sub(vizfresh=vizfresh))
+               wu.showme(symdupframes, name='xfitmc%05i' % isamp, col=None,
+                         **showme_opts.sub(vizfresh=vizfresh))
 
                # os.makedirs('symfit_movie', exist_ok=True)
                # pymol.cmd.png(f'symfit_movie/symdup_{ipng:04}.png', )
@@ -872,7 +881,8 @@ def symfit_mc_play(
                # pairs = {(0, 1): pairs[(0, 1)]}
                del pairs[(0, 1)]
                # assert 0
-               wu.showme(pairs, name='pairsstop', col='bycx', center=[0, 0, 0], **showme_opts.sub(vizfresh=vizfresh))
+               wu.showme(pairs, name='pairsstop', col='bycx', center=[0, 0, 0],
+                         **showme_opts.sub(vizfresh=vizfresh))
                # assert 0
                # os.makedirs('symfit_movie', exist_ok=True)
                # fname = f'symfit_movie/symops_{ipng:04}.png'
@@ -996,9 +1006,10 @@ def symfit_parallel_convergence_trials(**kw):
          badscores = [s for s in score if s > 3 * kw.goalerr]
          # badscores = []
          print(
-            f'{nframes:4} iters {np.mean(niters):7.1f} ',
-            f'fail {len(badscores)/ntrials:5.3f} ',
-            ' '.join(['%4.2f' % q for q in np.quantile(badscores, [0.0, 0.1, 0.25, 0.5, 1.0])] if badscores else '', ),
+             f'{nframes:4} iters {np.mean(niters):7.1f} ',
+             f'fail {len(badscores)/ntrials:5.3f} ',
+             ' '.join(['%4.2f' % q for q in np.quantile(badscores, [0.0, 0.1, 0.25, 0.5, 1.0])]
+                      if badscores else '', ),
          )
 
 def symfit_parallel_mc_scoreterms_trials(**kw):
@@ -1034,12 +1045,14 @@ def symfit_parallel_mc_scoreterms_trials(**kw):
          badscores = [s for s in score if s > 3 * kw.goalerr]
          # badscores = []
          print(
-            f'{terms:4} iters {np.mean(niters):7.1f} ',
-            f'fail {len(badscores)/ntrials:5.3f} ',
-            ' '.join(['%4.2f' % q for q in np.quantile(badscores, [0.0, 0.1, 0.25, 0.5, 1.0])] if badscores else '', ),
+             f'{terms:4} iters {np.mean(niters):7.1f} ',
+             f'fail {len(badscores)/ntrials:5.3f} ',
+             ' '.join(['%4.2f' % q for q in np.quantile(badscores, [0.0, 0.1, 0.25, 0.5, 1.0])]
+                      if badscores else '', ),
          )
 
-def setup_test_frames(nframes, sym, cart_sd_fuzz, rot_sd_fuzz, tprelen=20, tprerand=0, tpostlen=10, tpostrand=0, noxpost=False, **kw):
+def setup_test_frames(nframes, sym, cart_sd_fuzz, rot_sd_fuzz, tprelen=20, tprerand=0, tpostlen=10,
+                      tpostrand=0, noxpost=False, **kw):
    symframes = wu.sym.sym_frames[sym]
    selframes = symframes[np.random.choice(len(symframes), nframes, replace=False), :, :]
    xpre = hm.rand_xform()

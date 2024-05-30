@@ -17,24 +17,24 @@ def example_I213(cell=70, **kw):
    # AXS = [Vec(1, 1, 1), Vec(1, 1, -1)]
    # CEN = [cell * Vec(0, 0, 0), cell * Vec(0.5, 0, 0.0)]
    G = [
-      PymolSymElem("C2", axis=Vec(1, 0, 0), cen=Vec(0, 0, 0.25) * cell, col=[1, 0.7, 0.0]),
-      PymolSymElem("C3", axis=Vec(1, 1, 1) * 0.57735, cen=Vec(0, 0, 0) * cell, col=[0.1, 0.5, 1]),
+       PymolSymElem("C2", axis=Vec(1, 0, 0), cen=Vec(0, 0, 0.25) * cell, col=[1, 0.7, 0.0]),
+       PymolSymElem("C3", axis=Vec(1, 1, 1) * 0.57735, cen=Vec(0, 0, 0) * cell, col=[0.1, 0.5, 1]),
    ]
 
    hacky_xtal_maker(
-      G,
-      cell,
-      tag="I213",
-      origin=cell * Vec(0.0, 0.0, 0.0),
-      showshape=0,
-      symdef=0,
-      make_symdef=0,
-      showlinks=1,
-      shownodes=1,
-      radius=0.5,
-      bbox=[Vec(-1, -1, -1) * -999, Vec(cell + 1, cell + 1, cell + 1) * 100],
-      # length=40,
-      **kw,
+       G,
+       cell,
+       tag="I213",
+       origin=cell * Vec(0.0, 0.0, 0.0),
+       showshape=0,
+       symdef=0,
+       make_symdef=0,
+       showlinks=1,
+       shownodes=1,
+       radius=0.5,
+       bbox=[Vec(-1, -1, -1) * -999, Vec(cell + 1, cell + 1, cell + 1) * 100],
+       # length=40,
+       **kw,
    )
    wu.viz.pymol_cgo.showcube(Vec(0, 0, 0), Vec(1, 1, 1) * cell)
 

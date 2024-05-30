@@ -6,29 +6,29 @@ import willutil as wu
 
 @pymol_load.register(SymElem)
 def pymol_viz_SymElem(
-      toshow,
-      state,
-      col='bycx',
-      name='SymElem',
-      center=np.array([0, 0, 0, 1]),
-      # scalefans=None,
-      fansize=0.05,
-      fanshift=0,
-      fancover=1.0,
-      make_cgo_only=False,
-      cyc_ang_match_tol=0.1,
-      axislen=0.2,
-      axisrad=0.008,
-      addtocgo=None,
-      scale=1,
-      cellshift=(0, 0, 0),
-      fanrefpoint=[1, 2, 3, 1],
-      symelemscale=1,
-      symelemtwosided=False,
-      shifttounit=False,
-      symelemradiuscut=9e9,
-      symelemcentercut=[0, 0, 0],
-      **kw,
+    toshow,
+    state,
+    col='bycx',
+    name='SymElem',
+    center=np.array([0, 0, 0, 1]),
+    # scalefans=None,
+    fansize=0.05,
+    fanshift=0,
+    fancover=1.0,
+    make_cgo_only=False,
+    cyc_ang_match_tol=0.1,
+    axislen=0.2,
+    axisrad=0.008,
+    addtocgo=None,
+    scale=1,
+    cellshift=(0, 0, 0),
+    fanrefpoint=[1, 2, 3, 1],
+    symelemscale=1,
+    symelemtwosided=False,
+    shifttounit=False,
+    symelemradiuscut=9e9,
+    symelemcentercut=[0, 0, 0],
+    **kw,
 ):
    import pymol
 
@@ -91,10 +91,12 @@ def pymol_viz_SymElem(
    # ic(fanthickness)
    # ic(fanrefpoint)
    # ic(fanshift)
-   mycgo += cgo_fan(axis, cen, fansize, arc=arc, thickness=fanthickness, col=col, startpoint=fanrefpoint, fanshift=fanshift)
+   mycgo += cgo_fan(axis, cen, fansize, arc=arc, thickness=fanthickness, col=col, startpoint=fanrefpoint,
+                    fanshift=fanshift)
    if symelemtwosided:
       col2 = (1, 1, 1)
-      mycgo += cgo_fan(axis, cen, fansize, arc=arc, thickness=fanthickness, col=col2, startpoint=fanrefpoint, fanshift=fanshift - 0.01)
+      mycgo += cgo_fan(axis, cen, fansize, arc=arc, thickness=fanthickness, col=col2, startpoint=fanrefpoint,
+                       fanshift=fanshift - 0.01)
 
    if addtocgo is None:
       pymol.cmd.load_cgo(mycgo, f'{name}_{state["seenit"][name]}')
@@ -107,24 +109,24 @@ def pymol_viz_SymElem(
 
 @pymol_load.register(Xtal)
 def pymol_viz_Xtal(
-      toshow,
-      state,
-      name='xtal',
-      scale=10,
-      # neighbors=1,
-      # cellshift=(0, 0, 0),
-      cells=1,
-      showsymelems=True,
-      showgenframes=False,
-      splitobjs=False,
-      showpoints=None,
-      fanshift=0,
-      fansize=0.1,
-      showcube=None,
-      pointradius=1,
-      addtocgo=None,
-      pointcol=(0.5, 0.5, 0.5),
-      **kw,
+    toshow,
+    state,
+    name='xtal',
+    scale=10,
+    # neighbors=1,
+    # cellshift=(0, 0, 0),
+    cells=1,
+    showsymelems=True,
+    showgenframes=False,
+    splitobjs=False,
+    showpoints=None,
+    fanshift=0,
+    fansize=0.1,
+    showcube=None,
+    pointradius=1,
+    addtocgo=None,
+    pointcol=(0.5, 0.5, 0.5),
+    **kw,
 ):
    import pymol
    state["seenit"][name] += 1
@@ -153,16 +155,16 @@ def pymol_viz_Xtal(
                fanrefpoint = xcellshift @ fanrefpoint
                fanrefpoint = wu.hscaled(scale, fanrefpoint)
                pymol_viz_SymElem(
-                  elem,
-                  state,
-                  scale=scale,
-                  addtocgo=cgo,
-                  fanrefpoint=fanrefpoint,
-                  fansize=size,
-                  fanshift=fanshift,
-                  cellshift=cellshift,
-                  shifttounit=toshow.dimension == 3,
-                  **kw,
+                   elem,
+                   state,
+                   scale=scale,
+                   addtocgo=cgo,
+                   fanrefpoint=fanrefpoint,
+                   fansize=size,
+                   fanshift=fanshift,
+                   cellshift=cellshift,
+                   shifttounit=toshow.dimension == 3,
+                   **kw,
                )
       if splitobjs:
          pymol.cmd.load_cgo(cgo, f'{name}_symelem{i}')
@@ -220,44 +222,44 @@ def xtal_show_points(which, pointscale=1, pointshift=(0, 0, 0), scaleptrad=1, **
    s = pointscale * scaleptrad
    pointshift = np.asarray(pointshift)
    showpts = [
-      np.empty(shape=(0, 3)),
-      np.array([
-         [0.28, 0.13, 0.13],
-         [0.28, 0.13 + 0.06 * s, 0.13],
-         [0.28, 0.13, 0.13 + 0.05 * s],
-      ]),
-      np.array([
-         [0.18, 0.03, 0.03],
-         [0.18, 0.03 + 0.06 * s, 0.03],
-         [0.18, 0.03, 0.03 + 0.05 * s],
-      ]),
-      np.array([
-         [0.18, 0.03, 0.03],
-         [0.18, 0.03 + 0.06 * s, 0.03],
-         [0.18, 0.03, 0.03 + 0.05 * s],
-      ]),
-      # C3(axis=[-1, -1, -1], cen=A([0, 0, 0]) / 8, label='C3_111_1m0_111_8', vizcol=(1, 0, 0)),
-      # C2(axis=[1, 0, 0], cen=A([3, 0, 2]) / 8, label='D2_100_0m1_102_8', vizcol=(0, 1, 0)),
-      # C2(axis=[1, -1, 0], cen=A([-2.7, 0.7, -1]) / 8, label='D3_111_1m0_mmm_8', vizcol=(0, 0, 1)),
-      # yapf: disable
-      np.array([
-         [0.18, 0.03, 0.03],
-         [0.18, 0.03 + 0.06 * s, 0.03],
-         [0.18, 0.03, 0.03 + 0.05 * s],
-         [-0.0, 0.2, 0.03],
-         [-0.0, 0.2 + 0.06 * s, 0.03],
-         [-0.0, 0.2, 0.03 + 0.05 * s],
-         [0.15, -0.0, 0.13],
-         [0.15, -0.0 + 0.06 * s, 0.13],
-         [0.15, -0.0, 0.03 + 0.15 * s],
-         [0.21, -0.21, -0.0],
-         [0.21, -0.21 + 0.06 * s, 0.0],
-         [0.21, -0.21, 0],
-         [0.0, -0.0, 0.2],
-         [0.0, 0.0 + 0.06 * s, 0.2],
-         [0.0, 0.0, 0.2 + 0.05 * s],
-      ]),
-      # yapf: enable
+       np.empty(shape=(0, 3)),
+       np.array([
+           [0.28, 0.13, 0.13],
+           [0.28, 0.13 + 0.06 * s, 0.13],
+           [0.28, 0.13, 0.13 + 0.05 * s],
+       ]),
+       np.array([
+           [0.18, 0.03, 0.03],
+           [0.18, 0.03 + 0.06 * s, 0.03],
+           [0.18, 0.03, 0.03 + 0.05 * s],
+       ]),
+       np.array([
+           [0.18, 0.03, 0.03],
+           [0.18, 0.03 + 0.06 * s, 0.03],
+           [0.18, 0.03, 0.03 + 0.05 * s],
+       ]),
+       # C3(axis=[-1, -1, -1], cen=A([0, 0, 0]) / 8, label='C3_111_1m0_111_8', vizcol=(1, 0, 0)),
+       # C2(axis=[1, 0, 0], cen=A([3, 0, 2]) / 8, label='D2_100_0m1_102_8', vizcol=(0, 1, 0)),
+       # C2(axis=[1, -1, 0], cen=A([-2.7, 0.7, -1]) / 8, label='D3_111_1m0_mmm_8', vizcol=(0, 0, 1)),
+       # yapf: disable
+       np.array([
+           [0.18, 0.03, 0.03],
+           [0.18, 0.03 + 0.06 * s, 0.03],
+           [0.18, 0.03, 0.03 + 0.05 * s],
+           [-0.0, 0.2, 0.03],
+           [-0.0, 0.2 + 0.06 * s, 0.03],
+           [-0.0, 0.2, 0.03 + 0.05 * s],
+           [0.15, -0.0, 0.13],
+           [0.15, -0.0 + 0.06 * s, 0.13],
+           [0.15, -0.0, 0.03 + 0.15 * s],
+           [0.21, -0.21, -0.0],
+           [0.21, -0.21 + 0.06 * s, 0.0],
+           [0.21, -0.21, 0],
+           [0.0, -0.0, 0.2],
+           [0.0, 0.0 + 0.06 * s, 0.2],
+           [0.0, 0.0, 0.2 + 0.05 * s],
+       ]),
+       # yapf: enable
    ]
    # ic(wu.hxform(wu.hrot([1, -1, 0], 90, np.array([-2.7, 0.7, -1]) / 8), [0, 0, 0.2]))
    # assert 0

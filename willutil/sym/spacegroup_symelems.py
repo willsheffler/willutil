@@ -19,12 +19,12 @@ def _flipaxs(a):
    return a
 
 def _compute_symelems(
-   spacegroup,
-   unitframes=None,
-   lattice=None,
-   aslist=False,
-   find_alternates=True,
-   profile=False,
+    spacegroup,
+    unitframes=None,
+    lattice=None,
+    aslist=False,
+    find_alternates=True,
+    profile=False,
 ):
    t = wu.Timer()
 
@@ -167,7 +167,7 @@ def _pick_best_related_symelems(symelems, spacegroup, lattice, f4cel, f2cel, fin
                # newelems[psym].append((ielem - 9999, e))
                print('!' * 80)
                print(
-                  f'WARNING {spacegroup} failed to find matches for element:\n{unitelem}\nWill be missing some symelements'
+                   f'WARNING {spacegroup} failed to find matches for element:\n{unitelem}\nWill be missing some symelements'
                )
                print('!' * 80, flush=True)
                continue
@@ -191,13 +191,13 @@ def _pick_best_related_symelems(symelems, spacegroup, lattice, f4cel, f2cel, fin
    return newelems
 
 def _find_compound_symelems(
-   spacegroup,
-   se=None,
-   frames=None,
-   frames2=None,
-   frames1=None,
-   aslist=False,
-   lattice=None,
+    spacegroup,
+    se=None,
+    frames=None,
+    frames2=None,
+    frames1=None,
+    aslist=False,
+    lattice=None,
 ):
    timer = wu.Timer()
    if se is None:
@@ -265,9 +265,9 @@ def _find_compound_symelems(
          elif (nf1, nf2) == (3, 2) and np.isclose(ang, 0.9553166181245092):
             psym = 'T'
          elif any([
-            (nf1, nf2) == (3, 2) and np.isclose(ang, 0.6154797086703874),
-            (nf1, nf2) == (4, 3) and np.isclose(ang, 0.9553166181245092),
-            (nf1, nf2) == (4, 2) and np.isclose(ang, 0.7853981633974484),
+             (nf1, nf2) == (3, 2) and np.isclose(ang, 0.6154797086703874),
+             (nf1, nf2) == (4, 3) and np.isclose(ang, 0.9553166181245092),
+             (nf1, nf2) == (4, 2) and np.isclose(ang, 0.7853981633974484),
          ]):
             psym = 'O'
          # elif (nf1, nf2) in [(2, 2), (3, 3)]:
@@ -388,7 +388,8 @@ def _pick_bestframe_compound_elems(spacegroup, compound_elems, lattice, frames, 
                   bestbadiframes, bestbadelem = cperr.match, movedelem
             continue
       if bestelem is None:
-         print('NOT ALL MATCHING FRAMES FOR', elem, len(bestbadiframes), 'of', len(elem.operators), bestbadiframes)
+         print('NOT ALL MATCHING FRAMES FOR', elem, len(bestbadiframes), 'of', len(elem.operators),
+               bestbadiframes)
          bestelem = bestbadelem
       bestelem = bestelem.tounit(lattice)
       assert bestelem.isunit
@@ -483,14 +484,14 @@ def _make_symtags(tag, frames):
    if np.any(np.isclose(thel, [0.5, np.sqrt(2) / 2])):
       # if is 21, 42, 63 screw, allow reverse axis with same helical shift
       symtags = concat([
-         concat([c1, c2, +thel, tif], axis=1),
-         concat([-c1, c2, -thel, tif], axis=1),
-         concat([-c1, c2, +thel, tif], axis=1),
+          concat([c1, c2, +thel, tif], axis=1),
+          concat([-c1, c2, -thel, tif], axis=1),
+          concat([-c1, c2, +thel, tif], axis=1),
       ])
    else:
       symtags = concat([
-         concat([c1, c2, +thel, tif], axis=1),
-         concat([-c1, c2, -thel, tif], axis=1),
+          concat([c1, c2, +thel, tif], axis=1),
+          concat([-c1, c2, -thel, tif], axis=1),
       ])
 
    return symtags

@@ -3,19 +3,19 @@ import numpy as np
 import willutil as wu
 
 def helix_slide(
-   helix,
-   coords,
-   cellsize,
-   coils=2,
-   contactfrac=0,
-   step=10,
-   maxstep=10,
-   iters=4,
-   breathe=[2.5, 1, 0.5, 0],
-   showme=False,
-   closest=9,
-   scalefirst=False,
-   **kw,
+    helix,
+    coords,
+    cellsize,
+    coils=2,
+    contactfrac=0,
+    step=10,
+    maxstep=10,
+    iters=4,
+    breathe=[2.5, 1, 0.5, 0],
+    showme=False,
+    closest=9,
+    scalefirst=False,
+    **kw,
 ):
    assert np.allclose(cellsize[0], cellsize[1])
    cellsize = cellsize.copy()
@@ -39,14 +39,14 @@ def helix_slide(
             scale = (1 + step / np.mean(assembly.cellsize) * expand)
 
             cellsize = wu.sym.slide_cellsize(
-               assembly,
-               cellsize=cellsize,
-               step=step,
-               tooclosefunc=tooclose,
-               showme=showme,
-               maxstep=maxstep,
-               moveasymunit=False,
-               **kw,
+                assembly,
+                cellsize=cellsize,
+                step=step,
+                tooclosefunc=tooclose,
+                showme=showme,
+                maxstep=maxstep,
+                moveasymunit=False,
+                **kw,
             )
 
             if expand > 0:

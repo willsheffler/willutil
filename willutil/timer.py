@@ -12,11 +12,11 @@ import willutil as wu
 log = logging.getLogger(__name__)
 
 _summary_types = dict(
-   sum=sum,
-   mean=statistics.mean,
-   min=min,
-   max=max,
-   median=statistics.median,
+    sum=sum,
+    mean=statistics.mean,
+    min=min,
+    max=max,
+    median=statistics.median,
 )
 
 def checkpoint(kw, label=None, funcbegin=False, dont_mod_label=False, filename=None, funcname=None):
@@ -76,10 +76,10 @@ class _TimerGetter:
 
 class Timer:
    def __init__(
-      self,
-      name='Timer',
-      verbose=True,
-      start=True,
+       self,
+       name='Timer',
+       verbose=True,
+       start=True,
    ):
       self.name = name
       self.verbose = verbose
@@ -111,11 +111,11 @@ class Timer:
       return self
 
    def checkpoint(
-      self,
-      name=None,
-      verbose=False,
-      keeppriorname=False,
-      autolabel=False,
+       self,
+       name=None,
+       verbose=False,
+       keeppriorname=False,
+       autolabel=False,
    ):
       name = str(name)
       if name is None:
@@ -128,17 +128,18 @@ class Timer:
       self.checkpoints[name].append(t - self.last)
       self.last = t
       if self.verbose or verbose:
-         log.debug(f'{self.name} checkpoint {name} iter {len(self.checkpoints[name])}' + f'time {self.checkpoints[name][-1]}')
+         log.debug(f'{self.name} checkpoint {name} iter {len(self.checkpoints[name])}' +
+                   f'time {self.checkpoints[name][-1]}')
       return self
 
    def elapsed(self):
       return time.perf_counter() - self._start
 
    def __exit__(
-      self,
-      type=None,
-      value=None,
-      traceback=None,
+       self,
+       type=None,
+       value=None,
+       traceback=None,
    ):
       self.checkpoints['total'].append(time.perf_counter() - self._start)
       if self.verbose: log.debug(f'Timer {self.name} finished')
@@ -155,10 +156,10 @@ class Timer:
       return self.checkpoints[name]
 
    def report_dict(
-      self,
-      order='longest',
-      summary='sum',
-      timecut=0,
+       self,
+       order='longest',
+       summary='sum',
+       timecut=0,
    ):
       if not callable(summary):
          if summary not in _summary_types:
@@ -174,16 +175,16 @@ class Timer:
       return {k: v for k, v in report.items() if v > timecut}
 
    def report(
-      self,
-      order='longest',
-      summary='sum',
-      namelen=None,
-      precision='10.5f',
-      printme=True,
-      scale=1.0,
-      timecut=0,
-      file=None,
-      pattern='',
+       self,
+       order='longest',
+       summary='sum',
+       namelen=None,
+       precision='10.5f',
+       printme=True,
+       scale=1.0,
+       timecut=0,
+       file=None,
+       pattern='',
    ):
 
       if namelen is None:

@@ -5,11 +5,11 @@ import willutil as wu
 
 @pymol_load.register(SymScaffIcos)
 def pymol_viz_pdbfile(
-   scaf,
-   state,
-   name='scaf',
-   showcen=True,
-   **kw,
+    scaf,
+    state,
+    name='scaf',
+    showcen=True,
+    **kw,
 ):
 
    cen0 = wu.hnormalized([.21, .15, 1])
@@ -31,10 +31,10 @@ def pymol_viz_pdbfile(
 
    scale = 28
    pts = wu.hpoint([
-      cen * scale,
-      pt2 * scale,
-      pt3 * scale,
-      pt5 * scale,
+       cen * scale,
+       pt2 * scale,
+       pt3 * scale,
+       pt5 * scale,
    ])
    ic(pts)
    pointnames = ['CEN', 'EDGE', 'VERT', 'FACE']
@@ -55,17 +55,18 @@ def pymol_viz_pdbfile(
             for ipoint in range(len(pts)):
                if not showcen and pointnames[ipoint] == 'CEN': continue
                idx = 10 * iframe + ipoint
-               out.write(wu.pdb.pdb_format_atom(
-                  ia=idx,
-                  x=sympts[iframe, ipoint, 0],
-                  y=sympts[iframe, ipoint, 1],
-                  z=sympts[iframe, ipoint, 2],
-                  ir=iframe,
-                  rn=f'I{iframe:02}',
-                  an=pointnames[ipoint],
-                  c=0,
-                  elem=elem[iframe, ipoint],
-               ))
+               out.write(
+                   wu.pdb.pdb_format_atom(
+                       ia=idx,
+                       x=sympts[iframe, ipoint, 0],
+                       y=sympts[iframe, ipoint, 1],
+                       z=sympts[iframe, ipoint, 2],
+                       ir=iframe,
+                       rn=f'I{iframe:02}',
+                       an=pointnames[ipoint],
+                       c=0,
+                       elem=elem[iframe, ipoint],
+                   ))
 
       from pymol import cmd
 

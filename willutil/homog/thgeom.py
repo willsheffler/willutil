@@ -9,10 +9,10 @@ import willutil as wu
 def torch_min(func, iters=4, history_size=10, max_iter=4, line_search_fn="strong_wolfe", **kw):
    import functools
    lbfgs = t.optim.LBFGS(
-      kw['indep'],
-      history_size=history_size,
-      max_iter=max_iter,
-      line_search_fn=line_search_fn,
+       kw['indep'],
+       history_size=history_size,
+       max_iter=max_iter,
+       line_search_fn=line_search_fn,
    )
    closure = functools.partial(func, lbfgs=lbfgs, **kw)
    for iter in range(iters):
@@ -88,8 +88,8 @@ def axis_angle_cen(xforms, ident_match_tol=1e-8):
    axis, angle = axis_angle(xforms)
    not_ident = t.abs(angle) > ident_match_tol
    cen = t.tile(
-      t.tensor([0, 0, 0, 1]),
-      angle.shape,
+       t.tensor([0, 0, 0, 1]),
+       angle.shape,
    ).reshape(*angle.shape, 4)
 
    assert t.all(not_ident)
@@ -126,16 +126,16 @@ def rot(axis, angle, center=None, hel=None, squeeze=True):
    center = point(center)
    if hel is None: hel = t.tensor([0], dtype=t.float)
    if axis.ndim == 1: axis = axis[
-         None,
+       None,
    ]
    if angle.ndim == 0: angle = angle[
-         None,
+       None,
    ]
    if center.ndim == 1: center = center[
-         None,
+       None,
    ]
    if hel.ndim == 0: hel = hel[
-         None,
+       None,
    ]
    rot = rot3(axis, angle, shape=(4, 4), squeeze=False)
    shape = angle.shape
@@ -143,16 +143,16 @@ def rot(axis, angle, center=None, hel=None, squeeze=True):
    # assert 0
    x, y, z = center[..., 0], center[..., 1], center[..., 2]
    center = t.stack([
-      x - rot[..., 0, 0] * x - rot[..., 0, 1] * y - rot[..., 0, 2] * z,
-      y - rot[..., 1, 0] * x - rot[..., 1, 1] * y - rot[..., 1, 2] * z,
-      z - rot[..., 2, 0] * x - rot[..., 2, 1] * y - rot[..., 2, 2] * z,
-      t.ones(*shape),
+       x - rot[..., 0, 0] * x - rot[..., 0, 1] * y - rot[..., 0, 2] * z,
+       y - rot[..., 1, 0] * x - rot[..., 1, 1] * y - rot[..., 1, 2] * z,
+       z - rot[..., 2, 0] * x - rot[..., 2, 1] * y - rot[..., 2, 2] * z,
+       t.ones(*shape),
    ], axis=-1)
    shift = axis * hel[..., None]
    center = center + shift
    r = t.cat([rot[..., :3], center[
-      ...,
-      None,
+       ...,
+       None,
    ]], axis=-1)
    if r.shape == (1, 4, 4): r = r.reshape(4, 4)
    return r
@@ -238,8 +238,8 @@ def homog(rot, trans=None, **kw):
    trans = t.as_tensor(trans)
 
    if rot.shape == (3, 3):
-      rot = t.cat([rot, t.tensor([[0., 0., 0.]],device=rot.device)], axis=0)
-      rot = t.cat([rot, t.tensor([[0], [0], [0], [1]],device=rot.device)], axis=1)
+      rot = t.cat([rot, t.tensor([[0., 0., 0.]], device=rot.device)], axis=0)
+      rot = t.cat([rot, t.tensor([[0], [0], [0], [1]], device=rot.device)], axis=1)
 
    assert rot.shape[-2:] == (4, 4)
    assert trans.shape[-1:] == (4, )
@@ -255,21 +255,21 @@ def quat_to_rot(quat):
    qk = quat[..., 3]
 
    rot = t.cat([
-      t.tensor([[
-         1 - 2 * (qj**2 + qk**2),
-         2 * (qi * qj - qk * qr),
-         2 * (qi * qk + qj * qr),
-      ]]),
-      t.tensor([[
-         2 * (qi * qj + qk * qr),
-         1 - 2 * (qi**2 + qk**2),
-         2 * (qj * qk - qi * qr),
-      ]]),
-      t.tensor([[
-         2 * (qi * qk - qj * qr),
-         2 * (qj * qk + qi * qr),
-         1 - 2 * (qi**2 + qj**2),
-      ]])
+       t.tensor([[
+           1 - 2 * (qj**2 + qk**2),
+           2 * (qi * qj - qk * qr),
+           2 * (qi * qk + qj * qr),
+       ]]),
+       t.tensor([[
+           2 * (qi * qj + qk * qr),
+           1 - 2 * (qi**2 + qk**2),
+           2 * (qj * qk - qi * qr),
+       ]]),
+       t.tensor([[
+           2 * (qi * qk - qj * qr),
+           2 * (qj * qk + qi * qr),
+           1 - 2 * (qi**2 + qj**2),
+       ]])
    ])
    # ic(rot.shape)
    return rot
@@ -286,10 +286,10 @@ def rot3(axis, angle, shape=(3, 3), squeeze=True):
    # angle = t.tensor(angle, dtype=dtype, requires_grad=requires_grad)
 
    if axis.ndim == 1: axis = axis[
-         None,
+       None,
    ]
    if angle.ndim == 0: angle = angle[
-         None,
+       None,
    ]
    # if angle.ndim == 0
    if axis.shape and angle.shape and not is_broadcastable(axis.shape[:-1], angle.shape):
@@ -303,16 +303,16 @@ def rot3(axis, angle, shape=(3, 3), squeeze=True):
    bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
    if shape == (3, 3):
       rot = t.stack([
-         t.stack([aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)], axis=-1),
-         t.stack([2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)], axis=-1),
-         t.stack([2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc], axis=-1),
+          t.stack([aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)], axis=-1),
+          t.stack([2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)], axis=-1),
+          t.stack([2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc], axis=-1),
       ], axis=-2)
    elif shape == (4, 4):
       rot = t.stack([
-         t.stack([aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac), zero], axis=-1),
-         t.stack([2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab), zero], axis=-1),
-         t.stack([2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc, zero], axis=-1),
-         t.stack([zero, zero, zero, zero + 1], axis=-1),
+          t.stack([aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac), zero], axis=-1),
+          t.stack([2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab), zero], axis=-1),
+          t.stack([2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc, zero], axis=-1),
+          t.stack([zero, zero, zero, zero + 1], axis=-1),
       ], axis=-2)
    else:
       raise ValueError(f'rot3 shape must be (3,3) or (4,4), not {shape}')
@@ -468,19 +468,19 @@ def axis_angle(xforms):
 def axis(xforms):
    if xforms.shape[-2:] == (4, 4):
       return normalized(
-         t.stack((
-            xforms[..., 2, 1] - xforms[..., 1, 2],
-            xforms[..., 0, 2] - xforms[..., 2, 0],
-            xforms[..., 1, 0] - xforms[..., 0, 1],
-            t.zeros(xforms.shape[:-2]),
-         ), axis=-1))
+          t.stack((
+              xforms[..., 2, 1] - xforms[..., 1, 2],
+              xforms[..., 0, 2] - xforms[..., 2, 0],
+              xforms[..., 1, 0] - xforms[..., 0, 1],
+              t.zeros(xforms.shape[:-2]),
+          ), axis=-1))
    if xforms.shape[-2:] == (3, 3):
       return normalized(
-         t.stack((
-            xforms[..., 2, 1] - xforms[..., 1, 2],
-            xforms[..., 0, 2] - xforms[..., 2, 0],
-            xforms[..., 1, 0] - xforms[..., 0, 1],
-         ), axis=-1))
+          t.stack((
+              xforms[..., 2, 1] - xforms[..., 1, 2],
+              xforms[..., 0, 2] - xforms[..., 2, 0],
+              xforms[..., 1, 0] - xforms[..., 0, 1],
+          ), axis=-1))
    else:
       raise ValueError('wrong shape for xform/rotation matrix: ' + str(xforms.shape))
 
@@ -555,9 +555,9 @@ def intersect_planes(p1, n1, p2, n2):
    amax = t.argmax(abs_u, axis=-1)
    sel = amax == 0, amax == 1, amax == 2
    perm = t.cat([
-      t.where(sel[0])[0],
-      t.where(sel[1])[0],
-      t.where(sel[2])[0],
+       t.where(sel[0])[0],
+       t.where(sel[1])[0],
+       t.where(sel[2])[0],
    ])
    perminv = t.empty_like(perm)
    perminv[perm] = t.arange(len(perm))
@@ -638,15 +638,18 @@ def diff(x, y, lever=10.0):
 def Qs2Rs(Qs):
    Rs = t.zeros((*Qs.shape[:-1], 3, 3), device=Qs.device)
 
-   Rs[..., 0, 0] = Qs[..., 0] * Qs[..., 0] + Qs[..., 1] * Qs[..., 1] - Qs[..., 2] * Qs[..., 2] - Qs[..., 3] * Qs[..., 3]
+   Rs[..., 0,
+      0] = Qs[..., 0] * Qs[..., 0] + Qs[..., 1] * Qs[..., 1] - Qs[..., 2] * Qs[..., 2] - Qs[..., 3] * Qs[..., 3]
    Rs[..., 0, 1] = 2 * Qs[..., 1] * Qs[..., 2] - 2 * Qs[..., 0] * Qs[..., 3]
    Rs[..., 0, 2] = 2 * Qs[..., 1] * Qs[..., 3] + 2 * Qs[..., 0] * Qs[..., 2]
    Rs[..., 1, 0] = 2 * Qs[..., 1] * Qs[..., 2] + 2 * Qs[..., 0] * Qs[..., 3]
-   Rs[..., 1, 1] = Qs[..., 0] * Qs[..., 0] - Qs[..., 1] * Qs[..., 1] + Qs[..., 2] * Qs[..., 2] - Qs[..., 3] * Qs[..., 3]
+   Rs[..., 1,
+      1] = Qs[..., 0] * Qs[..., 0] - Qs[..., 1] * Qs[..., 1] + Qs[..., 2] * Qs[..., 2] - Qs[..., 3] * Qs[..., 3]
    Rs[..., 1, 2] = 2 * Qs[..., 2] * Qs[..., 3] - 2 * Qs[..., 0] * Qs[..., 1]
    Rs[..., 2, 0] = 2 * Qs[..., 1] * Qs[..., 3] - 2 * Qs[..., 0] * Qs[..., 2]
    Rs[..., 2, 1] = 2 * Qs[..., 2] * Qs[..., 3] + 2 * Qs[..., 0] * Qs[..., 1]
-   Rs[..., 2, 2] = Qs[..., 0] * Qs[..., 0] - Qs[..., 1] * Qs[..., 1] - Qs[..., 2] * Qs[..., 2] + Qs[..., 3] * Qs[..., 3]
+   Rs[..., 2,
+      2] = Qs[..., 0] * Qs[..., 0] - Qs[..., 1] * Qs[..., 1] - Qs[..., 2] * Qs[..., 2] + Qs[..., 3] * Qs[..., 3]
 
    return Rs
 
@@ -726,7 +729,6 @@ def _thxform_impl(x, stuff, outerprod='auto', flat=False, is_points='auto', impr
       # assert 0
    # ic('result', result.shape)
    return result
-
 
 def valid(stuff, is_points=None, strict=False, **kw):
    if stuff.shape[-2:] == (4, 4) and not is_points == True:

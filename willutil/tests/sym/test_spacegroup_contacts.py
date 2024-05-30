@@ -18,11 +18,11 @@ def main():
 
    for sg, elemslist in covers.items():
       elemslist = [
-         elems for elems in elemslist if all([
-            # all(e.iscyclic for e in elems),
-            any(e.iscyclic for e in elems),
-            any(e.isscrew for e in elems),
-         ])
+          elems for elems in elemslist if all([
+              # all(e.iscyclic for e in elems),
+              any(e.iscyclic for e in elems),
+              any(e.isscrew for e in elems),
+          ])
       ]
       if elemslist:
          wu.printheader(sg)

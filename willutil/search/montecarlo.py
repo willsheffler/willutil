@@ -4,13 +4,13 @@ import willutil as wu
 
 class MonteCarlo:
    def __init__(
-      self,
-      scorefunc=None,
-      preprocess=lambda x: x,
-      temperature=1,
-      debug=False,
-      timer=None,
-      **kw,
+       self,
+       scorefunc=None,
+       preprocess=lambda x: x,
+       temperature=1,
+       debug=False,
+       timer=None,
+       **kw,
    ):
       self.best = 9e9
       self.beststate = None
@@ -32,10 +32,10 @@ class MonteCarlo:
       return self.naccept / self.ntrials
 
    def try_this(
-      self,
-      state=None,
-      score=None,
-      **kw,
+       self,
+       state=None,
+       score=None,
+       **kw,
    ):
       # assert isinstance(state, wu.Bunch)
       assert score is not None or self.scorefunc is not None

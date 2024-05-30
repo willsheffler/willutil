@@ -1,4 +1,3 @@
-
 import numpy as np
 
 from willutil.homog.util import jit

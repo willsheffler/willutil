@@ -91,21 +91,21 @@ def parse_pdb_atoms(atomstr, **kw):
    cr[0] = 0, cr[1][1]
    cr[1] = 0, cr[1][1]
    converters = dict(
-      het=lambda x: x.startswith('HETATM'),
-      # logic below allows entries line 'ATOM 123456'
-      ai=lambda x: np.int32(x[4:]) if x.startswith('ATOM') else np.int32(x[6:]),
+       het=lambda x: x.startswith('HETATM'),
+       # logic below allows entries line 'ATOM 123456'
+       ai=lambda x: np.int32(x[4:]) if x.startswith('ATOM') else np.int32(x[6:]),
    )
 
    mdf = dict()
    for m in atomstr.keys():
       df = pd.read_fwf(
-         io.StringIO(atomstr[m]),
-         names=pdbcolnames,
-         colspecs=cr,
-         header=None,
-         dtype=dt,
-         converters=converters,
-         na_filter=False,
+          io.StringIO(atomstr[m]),
+          names=pdbcolnames,
+          colspecs=cr,
+          header=None,
+          dtype=dt,
+          converters=converters,
+          na_filter=False,
       )
       # don't understand why pandas doesn't respect the str dtypes from "dt"
       df.an = df.an.astype('a4')
@@ -135,7 +135,8 @@ def concatenate_models(df):
    df = pd.concat(df.values())
    return df
 
-def format_atom(atomi=0, atomn='ATOM', idx=' ', resn='ALA', chain='A', resi=0, insert=' ', x=0, y=0, z=0, occ=1, b=0):
+def format_atom(atomi=0, atomn='ATOM', idx=' ', resn='ALA', chain='A', resi=0, insert=' ', x=0, y=0, z=0,
+                occ=1, b=0):
    return _atom_record_format.format(**locals())
 
 ##@timed
@@ -158,8 +159,8 @@ def find_pdb_files(files_or_pattern, maxsize=99e99, **kw):
    return files
 
 def load_pdb(
-   fname,
-   cache=True,
+    fname,
+    cache=True,
 ):
    fname = fname.replace('.pickle', '')
    if cache:
@@ -179,12 +180,12 @@ def load_pdb(
    return pdbfile
 
 def load_pdbs(
-   files_or_pattern,
-   cache=True,
-   skip_errors=False,
-   pbar=True,
-   maxfiles=9e9,
-   **kw,
+    files_or_pattern,
+    cache=True,
+    skip_errors=False,
+    pbar=True,
+    maxfiles=9e9,
+    **kw,
 ):
    files = find_pdb_files(files_or_pattern, **kw)
    pdbs = dict()
@@ -201,12 +202,12 @@ def load_pdbs(
    return pdbs
 
 def gen_pdbs(
-   files_or_pattern,
-   cache=True,
-   skip_errors=False,
-   pbar=True,
-   maxfiles=9e9,
-   **kw,
+    files_or_pattern,
+    cache=True,
+    skip_errors=False,
+    pbar=True,
+    maxfiles=9e9,
+    **kw,
 ):
    files = find_pdb_files(files_or_pattern, **kw)
    pdbs = dict()
@@ -241,58 +242,58 @@ def gen_pdbs(
 # 79 - 80        LString(2)      Charge on the atom.
 
 pdbcolnames = [
-   'het',  # "ATOM  "                   
-   'ai',  # Atom serial number.        
-   'an',  # Atom name.                 
-   'al',  # Alternate location indicato
-   'rn',  # Residue name.              
-   'ch',  # Chain identifier.          
-   'ri',  # Residue sequence number.   
-   # 'rins',  # Code for insertion of resid
-   'x',  # Orthogonal coordinates for 
-   'y',  # Orthogonal coordinates for 
-   'z',  # Orthogonal coordinates for 
-   'occ',  # Occupancy.                 
-   'bfac',  # Temperature factor (Default
-   # 'seg',  # Segment identifier, left-ju
-   'elem',  # Element symbol, right-justi
-   # 'charge',  # Charge on the atom.
+    'het',  # "ATOM  "                   
+    'ai',  # Atom serial number.        
+    'an',  # Atom name.                 
+    'al',  # Alternate location indicato
+    'rn',  # Residue name.              
+    'ch',  # Chain identifier.          
+    'ri',  # Residue sequence number.   
+    # 'rins',  # Code for insertion of resid
+    'x',  # Orthogonal coordinates for 
+    'y',  # Orthogonal coordinates for 
+    'z',  # Orthogonal coordinates for 
+    'occ',  # Occupancy.                 
+    'bfac',  # Temperature factor (Default
+    # 'seg',  # Segment identifier, left-ju
+    'elem',  # Element symbol, right-justi
+    # 'charge',  # Charge on the atom.
 ]
 
 pdbcolrange = [
-   (1 - 1, 6),
-   (7 - 1, 11),
-   (13 - 1, 16),
-   (17 - 1, 17),
-   (18 - 1, 20),
-   (22 - 1, 22),
-   (23 - 1, 26),
-   # (27 - 1, 27),
-   (31 - 1, 38),
-   (39 - 1, 46),
-   (47 - 1, 54),
-   (55 - 1, 60),
-   (61 - 1, 66),
-   # (73 - 1, 76),
-   (77 - 1, 78),
-   # (79 - 1, 80),
+    (1 - 1, 6),
+    (7 - 1, 11),
+    (13 - 1, 16),
+    (17 - 1, 17),
+    (18 - 1, 20),
+    (22 - 1, 22),
+    (23 - 1, 26),
+    # (27 - 1, 27),
+    (31 - 1, 38),
+    (39 - 1, 46),
+    (47 - 1, 54),
+    (55 - 1, 60),
+    (61 - 1, 66),
+    # (73 - 1, 76),
+    (77 - 1, 78),
+    # (79 - 1, 80),
 ]
 
 pdbcoldtypes = dict(
-   het='b',  # Record name
-   ai='i4',  # Integer
-   an='a4',  # Atom
-   al='a1',  # Character
-   rn='a3',  # Residue name
-   ch='a1',  # Character
-   ri='i4',  # Integer
-   # rins='a1',  # AChar
-   x='f4',  # Real(8.3)
-   y='f4',  # Real(8.3)
-   z='f4',  # Real(8.3)
-   occ='f4',  # Real(6.2)
-   bfac='f4',  # Real(6.2)
-   # seg='a4',  # Lstring(4)
-   elem='a2',  # Lstring(2)
-   # charge='a2',  # LString(2)
+    het='b',  # Record name
+    ai='i4',  # Integer
+    an='a4',  # Atom
+    al='a1',  # Character
+    rn='a3',  # Residue name
+    ch='a1',  # Character
+    ri='i4',  # Integer
+    # rins='a1',  # AChar
+    x='f4',  # Real(8.3)
+    y='f4',  # Real(8.3)
+    z='f4',  # Real(8.3)
+    occ='f4',  # Real(6.2)
+    bfac='f4',  # Real(6.2)
+    # seg='a4',  # Lstring(4)
+    elem='a2',  # Lstring(2)
+    # charge='a2',  # LString(2)
 )

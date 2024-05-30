@@ -242,8 +242,12 @@ class PdbData:
 
    def only_whats_needed(self, task):
       not_needed = dict(
-         seqproftest="phi psi omega chi1 chi2 chi3 chi4 chain r_fa_sol r_fa_intra_atr_xover4 r_fa_intra_rep_xover4 r_fa_intra_sol_xover4 r_lk_ball r_lk_ball_iso r_lk_ball_bridge r_lk_ball_bridge_uncpl r_fa_elec r_fa_intra_elec r_pro_close r_hbond_sr_bb r_hbond_lr_bb r_hbond_bb_sc r_hb_sc r_dslf_fa13 r_rama_prepro r_omega r_p_aa_pp r_fa_dun_rot r_fa_dun_dev r_fa_dun_semi r_hxl_tors r_ref sasa2 sasa4 nnb6 nnb8 nnb12 nnb14 p_hb_bb_bb p_hb_bb_sc p_hb_sc_bb p_hb_sc_sc p_fa_atr p_fa_rep p_fa_sol p_lk_ball p_fa_elec p_hbond_sr_bb p_hbond_lr_bb".split(),
-         respairscore="r_fa_intra_atr_xover4 r_fa_intra_rep_xover4 r_fa_intra_sol_xover4 r_lk_ball_iso r_lk_ball_bridge r_lk_ball_bridge_uncpl r_fa_intra_elec r_pro_close r_rama_prepro r_omega r_p_aa_pp r_hxl_tors r_ref sasa2 sasa4 nnb6 nnb8 nnb12 nnb14 p_hb_bb_bb p_hb_bb_sc p_hb_sc_bb p_fa_atr p_fa_rep p_fa_sol p_lk_ball p_fa_elec".split(),
+          seqproftest=
+          "phi psi omega chi1 chi2 chi3 chi4 chain r_fa_sol r_fa_intra_atr_xover4 r_fa_intra_rep_xover4 r_fa_intra_sol_xover4 r_lk_ball r_lk_ball_iso r_lk_ball_bridge r_lk_ball_bridge_uncpl r_fa_elec r_fa_intra_elec r_pro_close r_hbond_sr_bb r_hbond_lr_bb r_hbond_bb_sc r_hb_sc r_dslf_fa13 r_rama_prepro r_omega r_p_aa_pp r_fa_dun_rot r_fa_dun_dev r_fa_dun_semi r_hxl_tors r_ref sasa2 sasa4 nnb6 nnb8 nnb12 nnb14 p_hb_bb_bb p_hb_bb_sc p_hb_sc_bb p_hb_sc_sc p_fa_atr p_fa_rep p_fa_sol p_lk_ball p_fa_elec p_hbond_sr_bb p_hbond_lr_bb"
+          .split(),
+          respairscore=
+          "r_fa_intra_atr_xover4 r_fa_intra_rep_xover4 r_fa_intra_sol_xover4 r_lk_ball_iso r_lk_ball_bridge r_lk_ball_bridge_uncpl r_fa_intra_elec r_pro_close r_rama_prepro r_omega r_p_aa_pp r_hxl_tors r_ref sasa2 sasa4 nnb6 nnb8 nnb12 nnb14 p_hb_bb_bb p_hb_bb_sc p_hb_sc_bb p_fa_atr p_fa_rep p_fa_sol p_lk_ball p_fa_elec"
+          .split(),
       )
       assert task in not_needed
       for v in not_needed[task]:
@@ -359,20 +363,20 @@ def pdbdata_from_dicts(self, data, sanitycheck):
    data = {**pdbdata, **resdata, **pairdata}
    assert len(data) == len(pdbdata) + len(resdata) + len(pairdata)
    self.data = xr.Dataset(
-      data,
-      coords=dict(
-         xyzw=["x", "y", "z", "w"],
-         hrow=["x", "y", "z", "w"],
-         hcol=["x", "y", "z", "t"],
-      ),
-      attrs=dict(
-         pdb_res_offsets=pdb_res_offsets,
-         pdb_pair_offsets=pdb_pair_offsets,
-         xbin_params=bin_params,
-         xbin_types=raw["xbin_types"],
-         xbin_swap_type=raw["xbin_swap_type"],
-         eweights=raw["eweights"],
-      ),
+       data,
+       coords=dict(
+           xyzw=["x", "y", "z", "w"],
+           hrow=["x", "y", "z", "w"],
+           hcol=["x", "y", "z", "t"],
+       ),
+       attrs=dict(
+           pdb_res_offsets=pdb_res_offsets,
+           pdb_pair_offsets=pdb_pair_offsets,
+           xbin_params=bin_params,
+           xbin_types=raw["xbin_types"],
+           xbin_swap_type=raw["xbin_swap_type"],
+           eweights=raw["eweights"],
+       ),
    )
 
    _change_seq_ss_to_ids(self)

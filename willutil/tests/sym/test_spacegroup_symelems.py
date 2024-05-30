@@ -39,13 +39,13 @@ def main():
       print(e, flush=True)
    # assert 0
    showsymelems(
-      sym,
-      wu.sym.symelems(sym),
-      scan=20,
-      weight=8,
-      offset=0.0,
-      # lattice=wu.sym.lattice_vectors(sym, [1.8, 1.6, 1.7, 70, 70, 110], strict=False),
-      lattice=wu.sym.lattice_vectors(sym, [1, 1.6, 1.7, 70, 70, 110], strict=False),
+       sym,
+       wu.sym.symelems(sym),
+       scan=20,
+       weight=8,
+       offset=0.0,
+       # lattice=wu.sym.lattice_vectors(sym, [1.8, 1.6, 1.7, 70, 70, 110], strict=False),
+       lattice=wu.sym.lattice_vectors(sym, [1, 1.6, 1.7, 70, 70, 110], strict=False),
    )
    assert 0
 

@@ -1,10 +1,10 @@
 def sort_ncac_coords(coords):
    # sort atom pairs within residues
    for i, j in [
-      (0, 1),  # N Ca
-      (1, 2),  # Ca C
-      (1, 4),  # Ca Cb
-      (2, 3),  # C O
+       (0, 1),  # N Ca
+       (1, 2),  # Ca C
+       (1, 4),  # Ca Cb
+       (2, 3),  # C O
    ]:
       dist = np.linalg.norm(coords[None, :, i] - coords[:, None, j], axis=-1)
       # np.fill_diagonal(dist, 9e9)

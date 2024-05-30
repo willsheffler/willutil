@@ -10,12 +10,20 @@ def test_fname_and_extension():
    print(list(wu.storage.fname_extensions('d/e/f').values()))
    assert list(wu.storage.fname_extensions('d/e/f').values()) == ['d/e/', 'f', '', '', 'f', 'f', '', 'd/e/f']
    assert list(wu.storage.fname_extensions('f.gz').values()) == ['', 'f', '', '.gz', 'f.gz', 'f', '.gz', 'f']
-   assert list(wu.storage.fname_extensions('/d/e/f.tar.gz').values()) == ['/d/e/', 'f', '', '.tar.gz', 'f.tar.gz', 'f', '.tar.gz', '/d/e/f']
-   assert list(wu.storage.fname_extensions('/d/f.k.tar.gz').values()) == ['/d/', 'f', '.k', '.tar.gz', 'f.k.tar.gz', 'f.k', '.k.tar.gz', '/d/f.k']
-   assert list(wu.storage.fname_extensions('/d/f.k.xz').values()) == ['/d/', 'f', '.k', '.xz', 'f.k.xz', 'f.k', '.k.xz', '/d/f.k']
+   assert list(wu.storage.fname_extensions('/d/e/f.tar.gz').values()) == [
+       '/d/e/', 'f', '', '.tar.gz', 'f.tar.gz', 'f', '.tar.gz', '/d/e/f'
+   ]
+   assert list(wu.storage.fname_extensions('/d/f.k.tar.gz').values()) == [
+       '/d/', 'f', '.k', '.tar.gz', 'f.k.tar.gz', 'f.k', '.k.tar.gz', '/d/f.k'
+   ]
+   assert list(wu.storage.fname_extensions('/d/f.k.xz').values()) == [
+       '/d/', 'f', '.k', '.xz', 'f.k.xz', 'f.k', '.k.xz', '/d/f.k'
+   ]
    assert list(wu.storage.fname_extensions('f.k').values()) == ['', 'f', '.k', '', 'f.k', 'f.k', '.k', 'f.k']
 
-   assert list(wu.storage.fname_extensions('d/f.i.j.k.l').values()) == ['d/', 'f.i.j.k', '.l', '', 'f.i.j.k.l', 'f.i.j.k.l', '.l', 'd/f.i.j.k.l']
+   assert list(wu.storage.fname_extensions('d/f.i.j.k.l').values()) == [
+       'd/', 'f.i.j.k', '.l', '', 'f.i.j.k.l', 'f.i.j.k.l', '.l', 'd/f.i.j.k.l'
+   ]
 
 def test_pickle_bunch():
 

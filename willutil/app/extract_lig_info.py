@@ -2,7 +2,6 @@ import sys
 import logging
 import collections
 
-
 xr = deferred_import.deferred_import('xarray')
 import willutil as wu
 
@@ -18,9 +17,9 @@ def get_lig_counts(files_or_pattern, hetonly=True):
    skipres = set(_.encode() for _ in wu.chem.aa3 + wu.chem.nucleic + ['HOH'])
 
    for fname, pdb in tqdm.tqdm(wu.pdb.pdbread.gen_pdbs(
-         files_or_pattern,
-         cache=True,
-         skip_errors=True,
+       files_or_pattern,
+       cache=True,
+       skip_errors=True,
    )):
       try:
          # print('extract lig info', fname)

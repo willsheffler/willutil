@@ -69,13 +69,13 @@ def main():
    # assert 0
 
    test_hxtal_viz(
-      xtalname='P 4 3 2 43',
-      headless=False,
-      # symelemscale=0.8,
-      cells=1,
-      # scaleptrad=1,
-      showcube=False,
-      showsymelems=True,
+       xtalname='P 4 3 2 43',
+       headless=False,
+       # symelemscale=0.8,
+       cells=1,
+       # scaleptrad=1,
+       showcube=False,
+       showsymelems=True,
    )
    # test_xtal_cryst1_P_4_3_2_43()
    assert 0
@@ -100,34 +100,34 @@ def main():
 
    if 1:
       test_hxtal_viz(
-         xtalname='I 41 3 2',
-         headless=False,
-         cells=(-1, 0),
-         symelemscale=0.8,
-         fansize=0.08,
-         # fansize=np.array([1.7, 1.2, 0.7]) / 3,
-         # fancover=10,
-         # symelemtwosided=True,
-         showsymelems=True,
-         # pointshift=(0.2, 0.2, 0.1),
-         scaleptrad=1,
-         showcube=False,
+          xtalname='I 41 3 2',
+          headless=False,
+          cells=(-1, 0),
+          symelemscale=0.8,
+          fansize=0.08,
+          # fansize=np.array([1.7, 1.2, 0.7]) / 3,
+          # fancover=10,
+          # symelemtwosided=True,
+          showsymelems=True,
+          # pointshift=(0.2, 0.2, 0.1),
+          scaleptrad=1,
+          showcube=False,
       )
       assert 0
 
    if 0:
       test_hxtal_viz(
-         xtalname='I4132_322',
-         headless=False,
-         cells=(-1, 0),
-         symelemscale=0.3,
-         fansize=np.array([1.7, 1.2, 0.7]) / 3,
-         fancover=10,
-         symelemtwosided=True,
-         showsymelems=True,
-         # pointshift=(0.2, 0.2, 0.1),
-         scaleptrad=1,
-         showcube=False,
+          xtalname='I4132_322',
+          headless=False,
+          cells=(-1, 0),
+          symelemscale=0.3,
+          fansize=np.array([1.7, 1.2, 0.7]) / 3,
+          fancover=10,
+          symelemtwosided=True,
+          showsymelems=True,
+          # pointshift=(0.2, 0.2, 0.1),
+          scaleptrad=1,
+          showcube=False,
       )
       assert 0
       '''
@@ -323,9 +323,9 @@ def helper_test_xtal_cryst1(xtalname, dump_pdbs=False):
 
    cellsize = 99.12345
    crd = cellsize * np.array([
-      [0.28, 0.13, 0.13],
-      [0.28, 0.16, 0.13],
-      [0.28, 0.13, 0.15],
+       [0.28, 0.13, 0.13],
+       [0.28, 0.16, 0.13],
+       [0.28, 0.13, 0.15],
    ])
 
    if dump_pdbs:
@@ -396,16 +396,16 @@ def test_hxtal_viz(headless=True, xtalname='P 2 3', symelemscale=0.7, cellsize=1
    # wu.showme(cen, vizsphereradius=1)
 
    wu.showme(
-      xtal,
-      headless=headless,
-      showgenframes=False,
-      symelemscale=symelemscale,
-      pointscale=0.8,
-      scale=cellsize,
-      showpoints=cen[None],
-      pointradius=0.3,
-      # vizfresh=True,
-      **kw,
+       xtal,
+       headless=headless,
+       showgenframes=False,
+       symelemscale=symelemscale,
+       pointscale=0.8,
+       scale=cellsize,
+       showpoints=cen[None],
+       pointradius=0.3,
+       # vizfresh=True,
+       **kw,
    )
    # sys.path.append('/home/sheffler/src/wills_pymol_crap')
    # pymol.cmd.do('@/home/sheffler/.pymolrc')

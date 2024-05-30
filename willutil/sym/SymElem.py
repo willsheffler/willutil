@@ -3,6 +3,7 @@ import willutil as wu
 from willutil.sym.symframes import tetrahedral_frames, octahedral_frames
 from willutil.homog.hgeom import halign2, halign, htrans, hinv, hnorm, hxform, hnormalized, hpoint, hvec, angle, hdot
 from willutil.sym.spacegroup_util import applylatticepts, lattice_vectors
+from opt_einsum import contract as einsum
 
 class ScrewError(Exception):
    pass
@@ -32,22 +33,22 @@ def symelem_of(frame, **kw):
 
 def _round(val):
    for v in [
-         0,
-         0.125,
-         1 / 6,
-         0.25,
-         1 / 3,
-         0.375,
-         0.5,
-         np.sqrt(3) / 3,
-         0.625,
-         2 / 3,
-         np.sqrt(2) / 2,
-         0.75,
-         5 / 6,
-         np.sqrt(3) / 3,
-         0.875,
-         1,
+       0,
+       0.125,
+       1 / 6,
+       0.25,
+       1 / 3,
+       0.375,
+       0.5,
+       np.sqrt(3) / 3,
+       0.625,
+       2 / 3,
+       np.sqrt(2) / 2,
+       0.75,
+       5 / 6,
+       np.sqrt(3) / 3,
+       0.875,
+       1,
    ]:
       if isinstance(val, np.ndarray):
          val[np.isclose(val, v, atol=0.0001)] = v
@@ -57,24 +58,24 @@ def _round(val):
 
 class SymElem:
    def __init__(
-      self,
-      nfold,
-      axis,
-      cen=[0, 0, 0],
-      axis2=None,
-      *,
-      label=None,
-      vizcol=None,
-      scale=1,
-      parent=None,
-      children=None,
-      hel=0,
-      lattice=None,
-      screw=None,
-      adjust_cyclic_center=False,
-      frame=None,
-      isunit=None,
-      latticetype=None,
+       self,
+       nfold,
+       axis,
+       cen=[0, 0, 0],
+       axis2=None,
+       *,
+       label=None,
+       vizcol=None,
+       scale=1,
+       parent=None,
+       children=None,
+       hel=0,
+       lattice=None,
+       screw=None,
+       adjust_cyclic_center=False,
+       frame=None,
+       isunit=None,
+       latticetype=None,
    ):
       self._init_args = wu.Bunch(vars()).without('self')
       self.vizcol = vizcol
@@ -87,7 +88,8 @@ class SymElem:
 
       self.mobile = False
       if wu.homog.hgeom.h_point_line_dist([0, 0, 0], cen, axis) > 0.0001: self.mobile = True
-      if axis2 is not None and wu.homog.hgeom.h_point_line_dist([0, 0, 0], cen, axis2) > 0.0001: self.mobile = True
+      if axis2 is not None and wu.homog.hgeom.h_point_line_dist([0, 0, 0], cen, axis2) > 0.0001:
+         self.mobile = True
       self.operators = self.make_operators()
       self.numops = len(self.operators)
       self.parent = parent
@@ -186,10 +188,11 @@ class SymElem:
          if sanitycheck and self.iscompound:
             assert np.allclose(centest, centest[0])
             if not (self.istet or self.isoct):
-               assert np.all(np.logical_or(
-                  np.all(np.isclose(axstest, axstest[0]), axis=1),
-                  np.all(np.isclose(axstest, -axstest[0]), axis=1),
-               ))
+               assert np.all(
+                   np.logical_or(
+                       np.all(np.isclose(axstest, axstest[0]), axis=1),
+                       np.all(np.isclose(axstest, -axstest[0]), axis=1),
+                   ))
          if np.allclose(compid[iframematch], -1):
             compid[iframematch] = fid
             fid += 1
@@ -235,7 +238,8 @@ class SymElem:
       newcen = applylatticepts(latticevec, self.cen)
       newhel = applylatticepts(latticevec, self.cen + self.axis * self.hel)
       newhel = hnorm(newhel - newcen)
-      newelem = SymElem(self._init_args.nfold, self.axis, newcen, self.axis2, hel=newhel, screw=self.screw, isunit=tounit)
+      newelem = SymElem(self._init_args.nfold, self.axis, newcen, self.axis2, hel=newhel, screw=self.screw,
+                        isunit=tounit)
       assert self.operators.shape == newelem.operators.shape
       return newelem
 
@@ -388,9 +392,11 @@ class SymElem:
 
       if adjust_cyclic_center and (axis2 is None) and np.isclose(hel, 0):  # cyclic
          assert 0, 'this needs an audit'
-         dist = wu.homog.line_line_distance_pa(self.cen, self.axis, _cube_edge_cen * self.scale, _cube_edge_axis)
+         dist = wu.homog.line_line_distance_pa(self.cen, self.axis, _cube_edge_cen * self.scale,
+                                               _cube_edge_axis)
          w = np.argmin(dist)
-         newcen, _ = wu.homog.line_line_closest_points_pa(self.cen, self.axis, _cube_edge_cen[w] * self.scale, _cube_edge_axis[w])
+         newcen, _ = wu.homog.line_line_closest_points_pa(self.cen, self.axis, _cube_edge_cen[w] * self.scale,
+                                                          _cube_edge_axis[w])
          if not np.any(np.isnan(newcen)):
             self.cen = newcen
 
@@ -412,9 +418,9 @@ class SymElem:
       if not self.isscrew:
          return self.operators
       return np.stack([
-         np.eye(4),
-         wu.htrans(self.axis[:3] * -self.hel),
-         wu.htrans(self.axis[:3] * self.hel),
+          np.eye(4),
+          wu.htrans(self.axis[:3] * -self.hel),
+          wu.htrans(self.axis[:3] * self.hel),
       ])
 
    def make_operators(self):
@@ -472,7 +478,8 @@ class SymElem:
          axis = hxform(x, self.axis)
          axis2 = None if self.axis2 is None else hxform(x, self.axis2)
          cen = hxform(x, self.cen)
-         other = SymElem(self._init_args.nfold, axis, cen, axis2, label=self.label, vizcol=self.vizcol, scale=1, screw=self.screw)
+         other = SymElem(self._init_args.nfold, axis, cen, axis2, label=self.label, vizcol=self.vizcol,
+                         scale=1, screw=self.screw)
          result.append(other)
       if single:
          result = result[0]
@@ -500,37 +507,37 @@ class SymElem:
       return s
 
 _cubeedges = [
-   [[0, 0, 0], [1, 0, 0]],
-   [[0, 0, 0], [0, 0, 1]],
-   [[0, 0, 0], [0, 1, 0]],
-   [[0, 0, 1], [1, 0, 0]],
-   [[0, 1, 0], [1, 0, 0]],
-   [[0, 1, 0], [0, 0, 1]],
-   [[1, 0, 0], [0, 0, 1]],
-   [[0, 0, 1], [0, 1, 0]],
-   [[1, 0, 0], [0, 1, 0]],
-   [[0, 1, 1], [1, 0, 0]],
-   [[1, 1, 0], [0, 0, 1]],
-   [[1, 0, 1], [0, 1, 0]],
+    [[0, 0, 0], [1, 0, 0]],
+    [[0, 0, 0], [0, 0, 1]],
+    [[0, 0, 0], [0, 1, 0]],
+    [[0, 0, 1], [1, 0, 0]],
+    [[0, 1, 0], [1, 0, 0]],
+    [[0, 1, 0], [0, 0, 1]],
+    [[1, 0, 0], [0, 0, 1]],
+    [[0, 0, 1], [0, 1, 0]],
+    [[1, 0, 0], [0, 1, 0]],
+    [[0, 1, 1], [1, 0, 0]],
+    [[1, 1, 0], [0, 0, 1]],
+    [[1, 0, 1], [0, 1, 0]],
 ]
 _cube_edge_cen, _cube_edge_axis = np.array(_cubeedges).swapaxes(0, 1)
 
 def showsymelems(
-   sym,
-   symelems,
-   allframes=True,
-   colorbyelem=False,
-   cells=3,
-   framecells=4,
-   bounds=[-0.1, 1.1],
-   scale=12,
-   offset=0,
-   weight=2.0,
-   scan=0,
-   lattice=None,
-   # onlyz=False,
-   showframes=True,
-   screwextraaxis=False,
+    sym,
+    symelems,
+    allframes=True,
+    colorbyelem=False,
+    cells=3,
+    framecells=4,
+    bounds=[-0.1, 1.1],
+    scale=12,
+    offset=0,
+    weight=2.0,
+    scan=0,
+    lattice=None,
+    # onlyz=False,
+    showframes=True,
+    screwextraaxis=False,
 ):
    if isinstance(symelems, list):
       tmp = defaultdict(list)
@@ -563,7 +570,8 @@ def showsymelems(
          # if colorbyelem: args.colors = [[(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, 0, 1), (0, 1, 1), (1, 1, 1)][ii]]
          f2 = elemframes
          if scan and not s.iscompound:
-            f2 = elemframes[:, None] @ wu.htrans(s.axis[None] * np.linspace(-scale * np.sqrt(3), scale * np.sqrt(3), scan)[:, None])[None]
+            f2 = elemframes[:, None] @ wu.htrans(
+                s.axis[None] * np.linspace(-scale * np.sqrt(3), scale * np.sqrt(3), scan)[:, None])[None]
             # ic(f2.shape)
             f2 = f2.reshape(-1, 4, 4)
             # ic(f2.shape)
@@ -574,27 +582,27 @@ def showsymelems(
 
          if s.istet:
             configs = [
-               ((s.axis, [0, 1, 0]), (None, None), [0.0, 0.8, 0.0]),
-               ((-s.axis, [0, 1, 0]), (None, None), [0.0, 0.8, 0.0]),
-               ((s.axis2, [1, 0, 0]), (None, None), [0.8, 0.0, 0.0]),
+                ((s.axis, [0, 1, 0]), (None, None), [0.0, 0.8, 0.0]),
+                ((-s.axis, [0, 1, 0]), (None, None), [0.0, 0.8, 0.0]),
+                ((s.axis2, [1, 0, 0]), (None, None), [0.8, 0.0, 0.0]),
             ]
          elif s.isoct:
             configs = [
-               (([0, 1, 1], [1, 0, 0]), (None, None), [0.7, 0.0, 0.0]),
-               (([1, 1, 1], [0, 1, 0]), (None, None), [0.0, 0.7, 0.0]),
-               (([0, 0, 1], [0, 0, 1]), (None, None), [0.0, 0.0, 0.7]),
+                (([0, 1, 1], [1, 0, 0]), (None, None), [0.7, 0.0, 0.0]),
+                (([1, 1, 1], [0, 1, 0]), (None, None), [0.0, 0.7, 0.0]),
+                (([0, 0, 1], [0, 0, 1]), (None, None), [0.0, 0.0, 0.7]),
             ]
          elif s.label == 'D2':
             configs = [
-               ((s.axis, [1, 0, 0]), (s.axis2, [0, 1, 0]), [0.7, 0, 0]),
-               ((s.axis, [0, 1, 0]), (s.axis2, [0, 0, 1]), [0.7, 0, 0]),
-               ((s.axis, [0, 0, 1]), (s.axis2, [1, 0, 0]), [0.7, 0, 0]),
+                ((s.axis, [1, 0, 0]), (s.axis2, [0, 1, 0]), [0.7, 0, 0]),
+                ((s.axis, [0, 1, 0]), (s.axis2, [0, 0, 1]), [0.7, 0, 0]),
+                ((s.axis, [0, 0, 1]), (s.axis2, [1, 0, 0]), [0.7, 0, 0]),
             ]
          elif s.label == 'D4':
             configs = [
-               ((s.axis2, [1, 0, 0]), (s.axis, [0, 1, 0]), [0.7, 0, 0]),
-               ((wu.hrot(s.axis, 45, s.cen) @ s.axis2, [1, 0, 0]), (s.axis, [0, 1, 0]), [0.7, 0, 0]),
-               ((s.axis, [0, 0, 1]), (s.axis2, [1, 0, 0]), [0.0, 0, 0.9]),
+                ((s.axis2, [1, 0, 0]), (s.axis, [0, 1, 0]), [0.7, 0, 0]),
+                ((wu.hrot(s.axis, 45, s.cen) @ s.axis2, [1, 0, 0]), (s.axis, [0, 1, 0]), [0.7, 0, 0]),
+                ((s.axis, [0, 0, 1]), (s.axis2, [1, 0, 0]), [0.0, 0, 0.9]),
             ]
          elif s.label == 'C11':
             continue
@@ -641,15 +649,15 @@ def showsymelems(
             else:
                origin = wu.halign(ax, tax)
             wu.showme(
-               f2 @ shift @ origin,
-               name=name,
-               bounds=[b * scale for b in bounds],
-               xyzlen=xyzlen,
-               addtocgo=cgo,
-               make_cgo_only=True,
-               weight=cylweight,
-               colorset=colorcount[s.label[:2]],
-               lattice=lattice,
+                f2 @ shift @ origin,
+                name=name,
+                bounds=[b * scale for b in bounds],
+                xyzlen=xyzlen,
+                addtocgo=cgo,
+                make_cgo_only=True,
+                weight=cylweight,
+                colorset=colorcount[s.label[:2]],
+                lattice=lattice,
             )
          pymol.cmd.load_cgo(cgo, name)
          labelcount[s.label] += 1

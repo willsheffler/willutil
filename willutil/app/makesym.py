@@ -115,109 +115,109 @@ def get_cli_config():
 
    parser = argparse.ArgumentParser()
    parser.add_argument(
-      'inputs',
-      nargs='+',
-      help='input pdb files',
+       'inputs',
+       nargs='+',
+       help='input pdb files',
    )
    parser.add_argument(
-      '--architecture',
-      default='oct4',
-      help='symmetry desired, tet#, oct# or icos#, where # is the symmetry axis aroud which we build. '
-      'for example, oct4 will place inputs around the 4fold axis',
+       '--architecture',
+       default='oct4',
+       help='symmetry desired, tet#, oct# or icos#, where # is the symmetry axis aroud which we build. '
+       'for example, oct4 will place inputs around the 4fold axis',
    )
    parser.add_argument(
-      '--radius',
-      default=[100, 110, 1],
-      type=float,
-      nargs=3,
-      help='radial samples [start, stop, step] inclusive',
+       '--radius',
+       default=[100, 110, 1],
+       type=float,
+       nargs=3,
+       help='radial samples [start, stop, step] inclusive',
    )
    parser.add_argument(
-      '--angle',
-      default=[-20, 20, 10],
-      type=float,
-      nargs=3,
-      help='angular samples [start, stop, step] inclusive, in degrees',
+       '--angle',
+       default=[-20, 20, 10],
+       type=float,
+       nargs=3,
+       help='angular samples [start, stop, step] inclusive, in degrees',
    )
    parser.add_argument(
-      '--output_prefix',
-      default='makesym',
-      help='prefix for output pdbs. can contain directories. fname will be '
-      '{output_prefix}_{architecture}_{input basename}_{radius}_{angle}.pdb',
+       '--output_prefix',
+       default='makesym',
+       help='prefix for output pdbs. can contain directories. fname will be '
+       '{output_prefix}_{architecture}_{input basename}_{radius}_{angle}.pdb',
    )
    parser.add_argument(
-      '--autoset_rotational_origin',
-      default=True,
-      type=bool,
-      help='realign such that 0 rotation places chains as close as possible. sortof',
+       '--autoset_rotational_origin',
+       default=True,
+       type=bool,
+       help='realign such that 0 rotation places chains as close as possible. sortof',
    )
    parser.add_argument(
-      '--input_nfold',
-      default=None,
-      type=int,
-      help='nfold of input structures. if not specified, will be auto-detected',
+       '--input_nfold',
+       default=None,
+       type=int,
+       help='nfold of input structures. if not specified, will be auto-detected',
    )
    parser.add_argument(
-      '--output_symmetry',
-      type=string_arg_checker('full cyclic asym'),
-      default='cyclic',
-      help='asym: output one subunit, cyclic: output formed cyclic oligomer, full: output full cage',
+       '--output_symmetry',
+       type=string_arg_checker('full cyclic asym'),
+       default='cyclic',
+       help='asym: output one subunit, cyclic: output formed cyclic oligomer, full: output full cage',
    )
    parser.add_argument(
-      '--template',
-      default=None,
-      help='template to align',
+       '--template',
+       default=None,
+       help='template to align',
    )
    parser.add_argument(
-      '--rms_tolerance',
-      default=1.0,
-      type=float,
-      help='rms limit for "symmetric" chains',
+       '--rms_tolerance',
+       default=1.0,
+       type=float,
+       help='rms limit for "symmetric" chains',
    )
    parser.add_argument(
-      '--angle_tolerance',
-      default=0.5,
-      type=float,
-      help='max deviation from ideal angle (degrees) for "symmetric" chains',
+       '--angle_tolerance',
+       default=0.5,
+       type=float,
+       help='max deviation from ideal angle (degrees) for "symmetric" chains',
    )
    parser.add_argument(
-      '--seqmatch_tolerance',
-      default=0.9,
-      type=float,
-      help='minimum sequence match fraction to consider chains "symmetrical"',
+       '--seqmatch_tolerance',
+       default=0.9,
+       type=float,
+       help='minimum sequence match fraction to consider chains "symmetrical"',
    )
    parser.add_argument(
-      '--translation_tolerance',
-      default=0.5,
-      type=float,
-      help='max allowed shift along sym axis for "symmetric" chains',
+       '--translation_tolerance',
+       default=0.5,
+       type=float,
+       help='max allowed shift along sym axis for "symmetric" chains',
    )
    parser.add_argument(
-      '--contact_distance',
-      default=10.0,
-      type=float,
-      help='max CA-CA distance to be considered in contact',
+       '--contact_distance',
+       default=10.0,
+       type=float,
+       help='max CA-CA distance to be considered in contact',
    )
    parser.add_argument(
-      '--test',
-      action='store_true',
-      help='don\'t catch and handle exceptions',
+       '--test',
+       action='store_true',
+       help='don\'t catch and handle exceptions',
    )
    parser.add_argument(
-      '--chainA_contacts_only',
-      action='store_true',
-      help='if multiple chains in ASU, only output contacts wtih chain A',
+       '--chainA_contacts_only',
+       action='store_true',
+       help='if multiple chains in ASU, only output contacts wtih chain A',
    )
    parser.add_argument(
-      '--move_to_unitcell',
-      action='store_true',
-      help='output moved to unitcell',
+       '--move_to_unitcell',
+       action='store_true',
+       help='output moved to unitcell',
    )
    parser.add_argument(
-      '--reconcile_method',
-      default='longest_chain',
-      type=string_arg_checker('unchanged longest_chain shortest_chain common average'),
-      help='''specifies how asymmetrical chains are handled. choices:
+       '--reconcile_method',
+       default='longest_chain',
+       type=string_arg_checker('unchanged longest_chain shortest_chain common average'),
+       help='''specifies how asymmetrical chains are handled. choices:
       unchanged: align to symmetry axis but do not symmetrize structure
       longest_chain: symmetrize by copying longest chain
       shortest_chain: symmetrize by copying shortest chain 
@@ -233,10 +233,10 @@ def get_cli_config():
    args.angle[1] += 0.001
 
    args.tolerances = wu.Bunch(
-      rms=args.rms_tolerance,
-      translation=args.translation_tolerance,
-      angle=np.radians(args.angle_tolerance),
-      seqmatch=args.seqmatch_tolerance,
+       rms=args.rms_tolerance,
+       translation=args.translation_tolerance,
+       angle=np.radians(args.angle_tolerance),
+       seqmatch=args.seqmatch_tolerance,
    )
    args.arch = args.architecture
 

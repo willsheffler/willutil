@@ -125,9 +125,9 @@ def fix_xtal_to_coords(xtal, coords, cellsize=None, domc=True, domin=False, nosh
 
    if domc:
       state = wu.Bunch(
-         cellsize=cellsize,
-         # cartshift=np.array([0., 0, 0, 0]),
-         cartshift=cartshift,
+          cellsize=cellsize,
+          # cartshift=np.array([0., 0, 0, 0]),
+          cartshift=cartshift,
       )
       step = 5
       mc = wu.MonteCarlo(ft.partial(npscorefunc, xtal, scom), temperature=0.3)

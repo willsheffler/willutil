@@ -4,7 +4,8 @@ import re
 import os
 import inspect
 import functools
-from willutil.sym.pymol_xyzmath import (Vec, Mat, Xform, RAD, projperp, SYMTET, SYMOCT, isvec, randnorm, Ux, Uz)
+from willutil.sym.pymol_xyzmath import (Vec, Mat, Xform, RAD, projperp, SYMTET, SYMOCT, isvec, randnorm, Ux,
+                                        Uz)
 
 try:
    from willutil.viz.pymol_cgo import cgo_cyl, cgo_sphere, cgo_segment
@@ -18,15 +19,15 @@ except ImportError:
 _symelem_nshow = 0
 
 def hacky_xtal_maker(
-   G,
-   cell,
-   depth=4,
-   mindepth=0,
-   symdef=1,
-   shownodes=1,
-   verbose=False,
-   showcell=False,
-   **kw,
+    G,
+    cell,
+    depth=4,
+    mindepth=0,
+    symdef=1,
+    shownodes=1,
+    verbose=False,
+    showcell=False,
+    **kw,
 ):
    print('hacky_xtal_maker')
    v = cmd.get_view()
@@ -50,7 +51,8 @@ def hacky_xtal_maker(
          if symdef:
             sdef_string = FN[-1].make_symdef(**kw)
             if verbose:
-               print("==================== SYMDEF (dump to " + tag + "_" + str(d) + ".sym) ====================")
+               print("==================== SYMDEF (dump to " + tag + "_" + str(d) +
+                     ".sym) ====================")
                print(sdef_string)
                print("=====================================================================")
             with open(tag + "_" + str(d) + ".sym", "w") as out:
@@ -76,13 +78,13 @@ def hacky_xtal_maker(
 class PymolSymElem(object):
    """docstring for PymolSymElem"""
    def __init__(
-         self,
-         kind,
-         axis=Vec(0, 0, 1),
-         cen=Vec(0, 0, 0),
-         axis2=Vec(1, 0, 0),
-         col=None,
-         input_xform=None,
+       self,
+       kind,
+       axis=Vec(0, 0, 1),
+       cen=Vec(0, 0, 0),
+       axis2=Vec(1, 0, 0),
+       col=None,
+       input_xform=None,
    ):
       super(PymolSymElem, self).__init__()
       self.kind = kind
@@ -108,7 +110,20 @@ class PymolSymElem(object):
             self.frames.append(cx)
             self.frames.append(RAD(self.axis2, 180.0, cen) * cx)
       elif self.kind == "T":
-         self.frames = [Xform(Mat(Vec(1, 0, 0), Vec(0, 1, 0), Vec(0, 0, 1)), Vec(0, 0, 0)), Xform(Mat(Vec(0, 0, 1), Vec(1, 0, 0), Vec(0, 1, 0)), Vec(0, 0, 0)), Xform(Mat(Vec(0, 0, 1), Vec(-1, 0, 0), Vec(0, -1, 0)), Vec(0, 0, 0)), Xform(Mat(Vec(0, 0, -1), Vec(1, 0, 0), Vec(0, -1, 0)), Vec(0, 0, 0)), Xform(Mat(Vec(0, 0, -1), Vec(-1, 0, 0), Vec(0, 1, 0)), Vec(0, 0, 0)), Xform(Mat(Vec(0, 1, 0), Vec(0, 0, 1), Vec(1, 0, 0)), Vec(0, 0, 0)), Xform(Mat(Vec(0, 1, 0), Vec(0, 0, -1), Vec(-1, 0, 0)), Vec(0, 0, 0)), Xform(Mat(Vec(0, -1, 0), Vec(0, 0, 1), Vec(-1, 0, 0)), Vec(0, 0, 0)), Xform(Mat(Vec(0, -1, 0), Vec(0, 0, -1), Vec(1, 0, 0)), Vec(0, 0, 0)), Xform(Mat(Vec(1, 0, 0), Vec(0, -1, 0), Vec(0, -0, -1)), Vec(0, 0, 0)), Xform(Mat(Vec(-1, 0, 0), Vec(0, 1, 0), Vec(0, 0, -1)), Vec(0, 0, 0)), Xform(Mat(Vec(-1, 0, 0), Vec(0, -1, 0), Vec(0, 0, 1)), Vec(0, 0, 0))]
+         self.frames = [
+             Xform(Mat(Vec(1, 0, 0), Vec(0, 1, 0), Vec(0, 0, 1)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(0, 0, 1), Vec(1, 0, 0), Vec(0, 1, 0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(0, 0, 1), Vec(-1, 0, 0), Vec(0, -1, 0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(0, 0, -1), Vec(1, 0, 0), Vec(0, -1, 0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(0, 0, -1), Vec(-1, 0, 0), Vec(0, 1, 0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(0, 1, 0), Vec(0, 0, 1), Vec(1, 0, 0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(0, 1, 0), Vec(0, 0, -1), Vec(-1, 0, 0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(0, -1, 0), Vec(0, 0, 1), Vec(-1, 0, 0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(0, -1, 0), Vec(0, 0, -1), Vec(1, 0, 0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(1, 0, 0), Vec(0, -1, 0), Vec(0, -0, -1)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(-1, 0, 0), Vec(0, 1, 0), Vec(0, 0, -1)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(-1, 0, 0), Vec(0, -1, 0), Vec(0, 0, 1)), Vec(0, 0, 0))
+         ]
          if input_xform:
             xc = Xform(cen) * input_xform
          else:
@@ -117,30 +132,30 @@ class PymolSymElem(object):
             self.frames[i] = xc * x * (~xc)
       elif self.kind == "O":
          self.frames = [
-            Xform(Mat(Vec(+1, +0, -0), Vec(+0, +1, +0), Vec(+0, -0, +1)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(+0, +1, +0), Vec(+1, +0, -0), Vec(-0, +0, -1)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(+0, -0, +1), Vec(+1, +0, -0), Vec(-0, +1, +0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(+1, +0, -0), Vec(+0, -0, +1), Vec(+0, -1, -0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(-0, +0, -1), Vec(+0, +1, +0), Vec(+1, -0, -0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(-0, +1, +0), Vec(+0, -0, +1), Vec(+1, +0, -0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(+0, +1, +0), Vec(-0, +0, -1), Vec(-1, +0, +0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(+0, -0, +1), Vec(-0, +1, +0), Vec(-1, -0, +0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(+0, -1, -0), Vec(+1, +0, +0), Vec(+0, -0, +1)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(+1, -0, -0), Vec(-0, +0, -1), Vec(+0, +1, +0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(+1, +0, +0), Vec(+0, -1, -0), Vec(-0, +0, -1)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(-0, +0, -1), Vec(+1, -0, -0), Vec(-0, -1, -0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(-1, +0, +0), Vec(+0, +1, -0), Vec(-0, +0, -1)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(-1, -0, +0), Vec(+0, +0, +1), Vec(-0, +1, +0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(+0, -0, +1), Vec(+0, -1, -0), Vec(+1, +0, +0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(+0, +1, -0), Vec(-1, +0, +0), Vec(+0, -0, +1)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(+0, +0, +1), Vec(-1, -0, +0), Vec(+0, -1, -0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(+0, -1, -0), Vec(-0, -0, +1), Vec(-1, -0, -0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(-0, -1, -0), Vec(-0, +0, -1), Vec(+1, -0, -0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(-0, +0, -1), Vec(-1, +0, +0), Vec(+0, +1, -0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(+0, +0, -1), Vec(-0, -1, -0), Vec(-1, +0, +0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(-1, +0, +0), Vec(-0, +0, -1), Vec(-0, -1, +0)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(-1, -0, -0), Vec(+0, -1, -0), Vec(-0, -0, +1)), Vec(0, 0, 0)),
-            Xform(Mat(Vec(+0, -1, -0), Vec(-1, -0, -0), Vec(+0, +0, -1)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(+1, +0, -0), Vec(+0, +1, +0), Vec(+0, -0, +1)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(+0, +1, +0), Vec(+1, +0, -0), Vec(-0, +0, -1)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(+0, -0, +1), Vec(+1, +0, -0), Vec(-0, +1, +0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(+1, +0, -0), Vec(+0, -0, +1), Vec(+0, -1, -0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(-0, +0, -1), Vec(+0, +1, +0), Vec(+1, -0, -0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(-0, +1, +0), Vec(+0, -0, +1), Vec(+1, +0, -0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(+0, +1, +0), Vec(-0, +0, -1), Vec(-1, +0, +0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(+0, -0, +1), Vec(-0, +1, +0), Vec(-1, -0, +0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(+0, -1, -0), Vec(+1, +0, +0), Vec(+0, -0, +1)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(+1, -0, -0), Vec(-0, +0, -1), Vec(+0, +1, +0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(+1, +0, +0), Vec(+0, -1, -0), Vec(-0, +0, -1)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(-0, +0, -1), Vec(+1, -0, -0), Vec(-0, -1, -0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(-1, +0, +0), Vec(+0, +1, -0), Vec(-0, +0, -1)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(-1, -0, +0), Vec(+0, +0, +1), Vec(-0, +1, +0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(+0, -0, +1), Vec(+0, -1, -0), Vec(+1, +0, +0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(+0, +1, -0), Vec(-1, +0, +0), Vec(+0, -0, +1)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(+0, +0, +1), Vec(-1, -0, +0), Vec(+0, -1, -0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(+0, -1, -0), Vec(-0, -0, +1), Vec(-1, -0, -0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(-0, -1, -0), Vec(-0, +0, -1), Vec(+1, -0, -0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(-0, +0, -1), Vec(-1, +0, +0), Vec(+0, +1, -0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(+0, +0, -1), Vec(-0, -1, -0), Vec(-1, +0, +0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(-1, +0, +0), Vec(-0, +0, -1), Vec(-0, -1, +0)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(-1, -0, -0), Vec(+0, -1, -0), Vec(-0, -0, +1)), Vec(0, 0, 0)),
+             Xform(Mat(Vec(+0, -1, -0), Vec(-1, -0, -0), Vec(+0, +0, -1)), Vec(0, 0, 0)),
          ]
          if input_xform:
             xc = Xform(cen) * input_xform
@@ -165,13 +180,13 @@ class PymolSymElem(object):
       pymol.cmd.set_view(v)
 
    def cgo(
-      self,
-      length=20.0,
-      radius=0.5,
-      vizsphereradius=1.5,
-      col=None,
-      showshape=0,
-      **kwargs,
+       self,
+       length=20.0,
+       radius=0.5,
+       vizsphereradius=1.5,
+       col=None,
+       showshape=0,
+       **kwargs,
    ):
       if not col and self.col:
          col = self.col
@@ -211,31 +226,31 @@ class PymolSymElem(object):
          c1.round0()
          c2.round0()
          CGO.extend([
-            #pymol.cgo.BEGIN, pymol.cgo.LINES,
-            #pymol.cgo.COLOR, col[0], col[1],col[2],
-            #pymol.cgo.VERTEX, self.cen.x-a.x, self.cen.y-a.y, self.cen.z-a.z,
-            #pymol.cgo.VERTEX, self.cen.x+a.x, self.cen.y+a.y, self.cen.z+a.z,
-            # pymol.cgo.END,
-            pymol.cgo.CYLINDER,
-            c1.x,
-            c1.y,
-            c1.z,
-            c2.x,
-            c2.y,
-            c2.z,
-            radius,
-            # pymol.cgo.CYLINDER, 0,     50,    0,      0,    -50,     0, radius,
-            col[0],
-            col[1],
-            col[2],
-            col[0],
-            col[1],
-            col[2],
-            # pymol.cgo.SPHERE,
-            # c.x,
-            # c.y,
-            # c.z,
-            # vizsphereradius
+             #pymol.cgo.BEGIN, pymol.cgo.LINES,
+             #pymol.cgo.COLOR, col[0], col[1],col[2],
+             #pymol.cgo.VERTEX, self.cen.x-a.x, self.cen.y-a.y, self.cen.z-a.z,
+             #pymol.cgo.VERTEX, self.cen.x+a.x, self.cen.y+a.y, self.cen.z+a.z,
+             # pymol.cgo.END,
+             pymol.cgo.CYLINDER,
+             c1.x,
+             c1.y,
+             c1.z,
+             c2.x,
+             c2.y,
+             c2.z,
+             radius,
+             # pymol.cgo.CYLINDER, 0,     50,    0,      0,    -50,     0, radius,
+             col[0],
+             col[1],
+             col[2],
+             col[0],
+             col[1],
+             col[2],
+             # pymol.cgo.SPHERE,
+             # c.x,
+             # c.y,
+             # c.z,
+             # vizsphereradius
          ])
          if self.kind.startswith("D"):
             for i in range(self.nfold):
@@ -255,20 +270,20 @@ class PymolSymElem(object):
                c2.round0()
                r = radius if self.nfold == 2 else radius
                CGO.extend([
-                  pymol.cgo.CYLINDER,
-                  c1.x,
-                  c1.y,
-                  c1.z,
-                  c2.x,
-                  c2.y,
-                  c2.z,
-                  r,
-                  col[0],
-                  col[1],
-                  col[2],
-                  col[0],
-                  col[1],
-                  col[2],
+                   pymol.cgo.CYLINDER,
+                   c1.x,
+                   c1.y,
+                   c1.z,
+                   c2.x,
+                   c2.y,
+                   c2.z,
+                   r,
+                   col[0],
+                   col[1],
+                   col[2],
+                   col[0],
+                   col[1],
+                   col[2],
                ])
       elif self.kind == "T":
          cen = x * self.cen
@@ -338,115 +353,115 @@ class PymolSymElem(object):
             p4.round0()
             # if verbose: print p1,p2,p3,p4
             CGO.extend([
-               pymol.cgo.BEGIN,
-               pymol.cgo.TRIANGLES,
-               pymol.cgo.COLOR,
-               col[0],
-               col[1],
-               col[2],
-               pymol.cgo.ALPHA,
-               1,
-               pymol.cgo.NORMAL,
-               axs.x,
-               axs.y,
-               axs.z,
-               pymol.cgo.VERTEX,
-               p1.x + axs.x / 10.0,
-               p1.y + axs.y / 10.0,
-               p1.z + axs.z / 10.0,
-               pymol.cgo.NORMAL,
-               axs.x,
-               axs.y,
-               axs.z,
-               pymol.cgo.VERTEX,
-               p2.x + axs.x / 10.0,
-               p2.y + axs.y / 10.0,
-               p2.z + axs.z / 10.0,
-               pymol.cgo.NORMAL,
-               axs.x,
-               axs.y,
-               axs.z,
-               pymol.cgo.VERTEX,
-               p3.x + axs.x / 10.0,
-               p3.y + axs.y / 10.0,
-               p3.z + axs.z / 10.0,
-               pymol.cgo.NORMAL,
-               axs.x,
-               axs.y,
-               axs.z,
-               pymol.cgo.VERTEX,
-               p1.x + axs.x / 10.0,
-               p1.y + axs.y / 10.0,
-               p1.z + axs.z / 10.0,
-               pymol.cgo.NORMAL,
-               axs.x,
-               axs.y,
-               axs.z,
-               pymol.cgo.VERTEX,
-               p2.x + axs.x / 10.0,
-               p2.y + axs.y / 10.0,
-               p2.z + axs.z / 10.0,
-               pymol.cgo.NORMAL,
-               axs.x,
-               axs.y,
-               axs.z,
-               pymol.cgo.VERTEX,
-               p4.x + axs.x / 10.0,
-               p4.y + axs.y / 10.0,
-               p4.z + axs.z / 10.0,
-               pymol.cgo.COLOR,
-               1 - col[0],
-               1 - col[1],
-               1 - col[2],
-               pymol.cgo.NORMAL,
-               -axs.x,
-               -axs.y,
-               -axs.z,
-               pymol.cgo.VERTEX,
-               p1.x - axs.x / 10.0,
-               p1.y - axs.y / 10.0,
-               p1.z - axs.z / 10.0,
-               pymol.cgo.NORMAL,
-               -axs.x,
-               -axs.y,
-               -axs.z,
-               pymol.cgo.VERTEX,
-               p2.x - axs.x / 10.0,
-               p2.y - axs.y / 10.0,
-               p2.z - axs.z / 10.0,
-               pymol.cgo.NORMAL,
-               -axs.x,
-               -axs.y,
-               -axs.z,
-               pymol.cgo.VERTEX,
-               p3.x - axs.x / 10.0,
-               p3.y - axs.y / 10.0,
-               p3.z - axs.z / 10.0,
-               pymol.cgo.NORMAL,
-               -axs.x,
-               -axs.y,
-               -axs.z,
-               pymol.cgo.VERTEX,
-               p1.x - axs.x / 10.0,
-               p1.y - axs.y / 10.0,
-               p1.z - axs.z / 10.0,
-               pymol.cgo.NORMAL,
-               -axs.x,
-               -axs.y,
-               -axs.z,
-               pymol.cgo.VERTEX,
-               p2.x - axs.x / 10.0,
-               p2.y - axs.y / 10.0,
-               p2.z - axs.z / 10.0,
-               pymol.cgo.NORMAL,
-               -axs.x,
-               -axs.y,
-               -axs.z,
-               pymol.cgo.VERTEX,
-               p4.x - axs.x / 10.0,
-               p4.y - axs.y / 10.0,
-               p4.z - axs.z / 10.0,
-               pymol.cgo.END,
+                pymol.cgo.BEGIN,
+                pymol.cgo.TRIANGLES,
+                pymol.cgo.COLOR,
+                col[0],
+                col[1],
+                col[2],
+                pymol.cgo.ALPHA,
+                1,
+                pymol.cgo.NORMAL,
+                axs.x,
+                axs.y,
+                axs.z,
+                pymol.cgo.VERTEX,
+                p1.x + axs.x / 10.0,
+                p1.y + axs.y / 10.0,
+                p1.z + axs.z / 10.0,
+                pymol.cgo.NORMAL,
+                axs.x,
+                axs.y,
+                axs.z,
+                pymol.cgo.VERTEX,
+                p2.x + axs.x / 10.0,
+                p2.y + axs.y / 10.0,
+                p2.z + axs.z / 10.0,
+                pymol.cgo.NORMAL,
+                axs.x,
+                axs.y,
+                axs.z,
+                pymol.cgo.VERTEX,
+                p3.x + axs.x / 10.0,
+                p3.y + axs.y / 10.0,
+                p3.z + axs.z / 10.0,
+                pymol.cgo.NORMAL,
+                axs.x,
+                axs.y,
+                axs.z,
+                pymol.cgo.VERTEX,
+                p1.x + axs.x / 10.0,
+                p1.y + axs.y / 10.0,
+                p1.z + axs.z / 10.0,
+                pymol.cgo.NORMAL,
+                axs.x,
+                axs.y,
+                axs.z,
+                pymol.cgo.VERTEX,
+                p2.x + axs.x / 10.0,
+                p2.y + axs.y / 10.0,
+                p2.z + axs.z / 10.0,
+                pymol.cgo.NORMAL,
+                axs.x,
+                axs.y,
+                axs.z,
+                pymol.cgo.VERTEX,
+                p4.x + axs.x / 10.0,
+                p4.y + axs.y / 10.0,
+                p4.z + axs.z / 10.0,
+                pymol.cgo.COLOR,
+                1 - col[0],
+                1 - col[1],
+                1 - col[2],
+                pymol.cgo.NORMAL,
+                -axs.x,
+                -axs.y,
+                -axs.z,
+                pymol.cgo.VERTEX,
+                p1.x - axs.x / 10.0,
+                p1.y - axs.y / 10.0,
+                p1.z - axs.z / 10.0,
+                pymol.cgo.NORMAL,
+                -axs.x,
+                -axs.y,
+                -axs.z,
+                pymol.cgo.VERTEX,
+                p2.x - axs.x / 10.0,
+                p2.y - axs.y / 10.0,
+                p2.z - axs.z / 10.0,
+                pymol.cgo.NORMAL,
+                -axs.x,
+                -axs.y,
+                -axs.z,
+                pymol.cgo.VERTEX,
+                p3.x - axs.x / 10.0,
+                p3.y - axs.y / 10.0,
+                p3.z - axs.z / 10.0,
+                pymol.cgo.NORMAL,
+                -axs.x,
+                -axs.y,
+                -axs.z,
+                pymol.cgo.VERTEX,
+                p1.x - axs.x / 10.0,
+                p1.y - axs.y / 10.0,
+                p1.z - axs.z / 10.0,
+                pymol.cgo.NORMAL,
+                -axs.x,
+                -axs.y,
+                -axs.z,
+                pymol.cgo.VERTEX,
+                p2.x - axs.x / 10.0,
+                p2.y - axs.y / 10.0,
+                p2.z - axs.z / 10.0,
+                pymol.cgo.NORMAL,
+                -axs.x,
+                -axs.y,
+                -axs.z,
+                pymol.cgo.VERTEX,
+                p4.x - axs.x / 10.0,
+                p4.y - axs.y / 10.0,
+                p4.z - axs.z / 10.0,
+                pymol.cgo.END,
             ])
          if self.kind == "C3":
             axs = x.R * self.axis
@@ -458,67 +473,67 @@ class PymolSymElem(object):
             p2 = cen + p2
             p3 = cen + p3
             CGO.extend([
-               pymol.cgo.BEGIN,
-               pymol.cgo.TRIANGLES,
-               pymol.cgo.COLOR,
-               col[0],
-               col[1],
-               col[2],
-               pymol.cgo.ALPHA,
-               1,
-               pymol.cgo.NORMAL,
-               axs.x,
-               axs.y,
-               axs.z,
-               pymol.cgo.VERTEX,
-               p1.x + axs.x / 10.0,
-               p1.y + axs.y / 10.0,
-               p1.z + axs.z / 10.0,
-               pymol.cgo.NORMAL,
-               axs.x,
-               axs.y,
-               axs.z,
-               pymol.cgo.VERTEX,
-               p2.x + axs.x / 10.0,
-               p2.y + axs.y / 10.0,
-               p2.z + axs.z / 10.0,
-               pymol.cgo.NORMAL,
-               axs.x,
-               axs.y,
-               axs.z,
-               pymol.cgo.VERTEX,
-               p3.x + axs.x / 10.0,
-               p3.y + axs.y / 10.0,
-               p3.z + axs.z / 10.0,
-               pymol.cgo.COLOR,
-               1 - col[0],
-               1 - col[1],
-               1 - col[2],
-               pymol.cgo.NORMAL,
-               -axs.x,
-               -axs.y,
-               -axs.z,
-               pymol.cgo.VERTEX,
-               p1.x - axs.x / 10.0,
-               p1.y - axs.y / 10.0,
-               p1.z - axs.z / 10.0,
-               pymol.cgo.NORMAL,
-               -axs.x,
-               -axs.y,
-               -axs.z,
-               pymol.cgo.VERTEX,
-               p2.x - axs.x / 10.0,
-               p2.y - axs.y / 10.0,
-               p2.z - axs.z / 10.0,
-               pymol.cgo.NORMAL,
-               -axs.x,
-               -axs.y,
-               -axs.z,
-               pymol.cgo.VERTEX,
-               p3.x - axs.x / 10.0,
-               p3.y - axs.y / 10.0,
-               p3.z - axs.z / 10.0,
-               pymol.cgo.END,
+                pymol.cgo.BEGIN,
+                pymol.cgo.TRIANGLES,
+                pymol.cgo.COLOR,
+                col[0],
+                col[1],
+                col[2],
+                pymol.cgo.ALPHA,
+                1,
+                pymol.cgo.NORMAL,
+                axs.x,
+                axs.y,
+                axs.z,
+                pymol.cgo.VERTEX,
+                p1.x + axs.x / 10.0,
+                p1.y + axs.y / 10.0,
+                p1.z + axs.z / 10.0,
+                pymol.cgo.NORMAL,
+                axs.x,
+                axs.y,
+                axs.z,
+                pymol.cgo.VERTEX,
+                p2.x + axs.x / 10.0,
+                p2.y + axs.y / 10.0,
+                p2.z + axs.z / 10.0,
+                pymol.cgo.NORMAL,
+                axs.x,
+                axs.y,
+                axs.z,
+                pymol.cgo.VERTEX,
+                p3.x + axs.x / 10.0,
+                p3.y + axs.y / 10.0,
+                p3.z + axs.z / 10.0,
+                pymol.cgo.COLOR,
+                1 - col[0],
+                1 - col[1],
+                1 - col[2],
+                pymol.cgo.NORMAL,
+                -axs.x,
+                -axs.y,
+                -axs.z,
+                pymol.cgo.VERTEX,
+                p1.x - axs.x / 10.0,
+                p1.y - axs.y / 10.0,
+                p1.z - axs.z / 10.0,
+                pymol.cgo.NORMAL,
+                -axs.x,
+                -axs.y,
+                -axs.z,
+                pymol.cgo.VERTEX,
+                p2.x - axs.x / 10.0,
+                p2.y - axs.y / 10.0,
+                p2.z - axs.z / 10.0,
+                pymol.cgo.NORMAL,
+                -axs.x,
+                -axs.y,
+                -axs.z,
+                pymol.cgo.VERTEX,
+                p3.x - axs.x / 10.0,
+                p3.y - axs.y / 10.0,
+                p3.z - axs.z / 10.0,
+                pymol.cgo.END,
             ])
       return CGO
 
@@ -588,7 +603,8 @@ class SymTrieNode(object):
          c.visit(visitor, depth=depth + 1, xform=xform)
 
    def __str__(self):
-      return "elem %2i frame %2i depth %2i nchild %2i" % (self.ielem, self.iframe, self.depth, len(self.children))
+      return "elem %2i frame %2i depth %2i nchild %2i" % (self.ielem, self.iframe, self.depth,
+                                                          len(self.children))
 
 class SymTrieSanityCheckVisitor(object):
    """docstring for SymTrieSanityCheckVisitor"""
@@ -605,14 +621,14 @@ class SymTrieSanityCheckVisitor(object):
          assert STN in STN.parent.children
 
 def generate_sym_trie_recurse(
-   generators,
-   depth,
-   opts,
-   body,
-   heads,
-   newheads,
-   igen,
-   verbose=False,
+    generators,
+    depth,
+    opts,
+    body,
+    heads,
+    newheads,
+    igen,
+    verbose=False,
 ):
    if depth < 1:
       return
@@ -651,7 +667,8 @@ def generate_sym_trie_recurse(
 
    # if verbose: print len(newheads),igen,len(generators)
    if depth > 1:  # and newheads:
-      generate_sym_trie_recurse(generators, depth - 1, opts, body, heads, newheads, (igen + 1) % len(generators))
+      generate_sym_trie_recurse(generators, depth - 1, opts, body, heads, newheads,
+                                (igen + 1) % len(generators))
 
 def generate_sym_trie(generators, depth=10, opts=None, verbose=False):
    raise NotImplementedError('some bug needs to be fixed')
@@ -660,7 +677,7 @@ def generate_sym_trie(generators, depth=10, opts=None, verbose=False):
    if verbose: print("NEW SYM TRIE")
    root = SymTrieNode(generators, 0, 0, 0, Xform())
    heads = [
-      (root, Xform()),
+       (root, Xform()),
    ]
    body = list()
    newheads = list()
@@ -817,7 +834,8 @@ def makeicos(sel='all', name="ICOS", n=60):
 
 def make_d3oct(d3, cage, cage_trimer_chain="A", depth=4, maxrad=9e9):
    if verbose:
-      print(cmd.super("((" + cage + ") and (chain " + cage_trimer_chain + "))", "((" + d3 + ") and (chain A))"))
+      print(cmd.super("((" + cage + ") and (chain " + cage_trimer_chain + "))",
+                      "((" + d3 + ") and (chain A))"))
    zcagecen = com(cage + " and name ca").z
    if verbose: print(zcagecen)
    # return
@@ -825,10 +843,10 @@ def make_d3oct(d3, cage, cage_trimer_chain="A", depth=4, maxrad=9e9):
    # if verbose: print x * Vec(1,1,1), x*Vec(1,-1,0)
    # RAD(Ux,180), RAD(Uy,120),
    G = [
-      RAD(Ux, 180),
-      RAD(Uz, 120),
-      RAD(x * Vec(1, 0, 0), 90, Vec(0, 0, zcagecen)),
-      RAD(x * Vec(1, 1, 0), 180, Vec(0, 0, zcagecen)),
+       RAD(Ux, 180),
+       RAD(Uz, 120),
+       RAD(x * Vec(1, 0, 0), 90, Vec(0, 0, zcagecen)),
+       RAD(x * Vec(1, 1, 0), 180, Vec(0, 0, zcagecen)),
    ]
    makesym(G, sele="((" + d3 + ") and ((chain A+B) and name CA))", depth=depth, maxrad=maxrad)
    cmd.show("sph", "MAKESYM")
@@ -837,7 +855,8 @@ def make_d3oct(d3, cage, cage_trimer_chain="A", depth=4, maxrad=9e9):
 
 def make_d3tet(d3, cage, cage_trimer_chain="A", depth=4, maxrad=9e9):
    if verbose:
-      print(cmd.super("((" + cage + ") and (chain " + cage_trimer_chain + "))", "((" + d3 + ") and (chain A))"))
+      print(cmd.super("((" + cage + ") and (chain " + cage_trimer_chain + "))",
+                      "((" + d3 + ") and (chain A))"))
    zcagecen = com(cage + " and name ca").z
    if verbose: print(zcagecen)
    # return
@@ -845,9 +864,9 @@ def make_d3tet(d3, cage, cage_trimer_chain="A", depth=4, maxrad=9e9):
    # if verbose: print x * Vec(1,1,1), x*Vec(1,-1,0)
    # RAD(Ux,180), RAD(Uy,120),
    G = [
-      RAD(Ux, 180),
-      RAD(Uz, 120),
-      RAD(x * Vec(1, 0, 0), 180, Vec(0, 0, zcagecen)),
+       RAD(Ux, 180),
+       RAD(Uz, 120),
+       RAD(x * Vec(1, 0, 0), 180, Vec(0, 0, zcagecen)),
    ]
    makesym(G, sele="((" + d3 + ") and ((chain A+B) and name CA))", depth=depth, maxrad=maxrad)
    cmd.show("sph", "MAKESYM")
@@ -890,16 +909,16 @@ def cgo_cyl_arrow(c1, c2, rad, col=(1, 1, 1), col2=None, arrowlen=4.0):
 class BuildCGO(object):
    """docstring for BuildCGO"""
    def __init__(
-         self,
-         nodes,
-         maxrad=9e9,
-         origin=Vec(0, 0, 0),
-         bbox=[Vec(-9e9, -9e9, -9e9), Vec(9e9, 9e9, 9e9)],
-         showlinks=False,
-         showelems=True,
-         label="BuildCGO",
-         arrowlen=10.0,
-         **kwargs,
+       self,
+       nodes,
+       maxrad=9e9,
+       origin=Vec(0, 0, 0),
+       bbox=[Vec(-9e9, -9e9, -9e9), Vec(9e9, 9e9, 9e9)],
+       showlinks=False,
+       showelems=True,
+       label="BuildCGO",
+       arrowlen=10.0,
+       **kwargs,
    ):
       super(BuildCGO, self).__init__()
       self.nodes = nodes
@@ -917,10 +936,10 @@ class BuildCGO(object):
       self.arrowlen = arrowlen
       self.colors = list()
       self.colors = [
-         (1, 1, 0),
-         (0, 1, 1),
-         (1, 0, 1),
-         (0.5, 0.5, 0.5),
+          (1, 1, 0),
+          (0, 1, 1),
+          (1, 0, 1),
+          (0.5, 0.5, 0.5),
       ]
       self.kwargs = kwargs
       if self.bbox[0].x < self.bbox[1].x:
@@ -992,7 +1011,8 @@ class BuildCGO(object):
       # should add duplicate checks here
       if c1.distance(c2) < 1.0:
          return
-      self.CGO.extend(cgo_cyl_arrow(c1, c2, rad=0.5, col=self.colors[max(0, icol - 1)], col2=self.colors[icol]))
+      self.CGO.extend(cgo_cyl_arrow(c1, c2, rad=0.5, col=self.colors[max(0, icol - 1)],
+                                    col2=self.colors[icol]))
 
    def show(self, verbose=False, **kwargs):
       v = cmd.get_view()
@@ -1145,7 +1165,8 @@ class ComponentCenterVisitor(object):
             for stn in STNs:
                assert stn.position * priCC == CC
 
-   def show(self, component_pos=(Vec(0, -4, 4), Vec(0, 3, 3), Vec(11, 9, 3), Vec(9, 3, 11)), showframes=True, **kwargs):
+   def show(self, component_pos=(Vec(0, -4, 4), Vec(0, 3, 3), Vec(11, 9, 3), Vec(9, 3, 11)), showframes=True,
+            **kwargs):
       self.sanitycheck()
       if not self.parentmap:
          self.makeCCtree()
@@ -1228,13 +1249,17 @@ class ComponentCenterVisitor(object):
             if True:
                ELEMDIR2 = projperp(ELEMDIR, Vec(1, 2, 3)).normalized()
             if PCC:
-               Sxyz += (XYZ_TEMPLATE % (PCCDofBegName, DIR.x, DIR.y, DIR.z, DIR2.x, DIR2.y, DIR2.z, PCC.x * scale, PCC.y * scale, PCC.z * scale))
+               Sxyz += (XYZ_TEMPLATE % (PCCDofBegName, DIR.x, DIR.y, DIR.z, DIR2.x, DIR2.y, DIR2.z,
+                                        PCC.x * scale, PCC.y * scale, PCC.z * scale))
             if PCC:
-               Sxyz += (XYZ_TEMPLATE % (PCCDofEndName, DIR.x, DIR.y, DIR.z, DIR2.x, DIR2.y, DIR2.z, CC.x * scale, CC.y * scale, CC.z * scale))
+               Sxyz += (XYZ_TEMPLATE % (PCCDofEndName, DIR.x, DIR.y, DIR.z, DIR2.x, DIR2.y, DIR2.z,
+                                        CC.x * scale, CC.y * scale, CC.z * scale))
             if True:
-               Sxyz += (XYZ_TEMPLATE % (CCDofBegName, ELEMDIR.x, ELEMDIR.y, ELEMDIR.z, ELEMDIR2.x, ELEMDIR2.y, ELEMDIR2.z, CC.x * scale, CC.y * scale, CC.z * scale))
+               Sxyz += (XYZ_TEMPLATE % (CCDofBegName, ELEMDIR.x, ELEMDIR.y, ELEMDIR.z, ELEMDIR2.x, ELEMDIR2.y,
+                                        ELEMDIR2.z, CC.x * scale, CC.y * scale, CC.z * scale))
             if True:
-               Sxyz += (XYZ_TEMPLATE % (CCDofEndName, ELEMDIR.x, ELEMDIR.y, ELEMDIR.z, ELEMDIR2.x, ELEMDIR2.y, ELEMDIR2.z, CC.x * scale, CC.y * scale, CC.z * scale))
+               Sxyz += (XYZ_TEMPLATE % (CCDofEndName, ELEMDIR.x, ELEMDIR.y, ELEMDIR.z, ELEMDIR2.x, ELEMDIR2.y,
+                                        ELEMDIR2.z, CC.x * scale, CC.y * scale, CC.z * scale))
             if PCC:
                edges.append((PCCName, PCCDofBegName))
             if PCC:
@@ -1259,7 +1284,9 @@ class ComponentCenterVisitor(object):
                SX = stn.position.R * Vec(1, 0, 0)
                SY = stn.position.R * Vec(0, 1, 0)
                SO = stn.position * priCC
-               Sxyz += (XYZ_TEMPLATE % (SUBName, SX.x, SX.y, SX.z, SY.x, SY.y, SY.z, SO.x * scale, SO.y * scale, SO.z * scale))
+               Sxyz += (
+                   XYZ_TEMPLATE %
+                   (SUBName, SX.x, SX.y, SX.z, SY.x, SY.y, SY.z, SO.x * scale, SO.y * scale, SO.z * scale))
             edges.append((None, None))  # spacer
             Sxyz += "\n"
 

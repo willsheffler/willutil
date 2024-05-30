@@ -2,26 +2,26 @@ import willutil as wu
 from willutil.homog import *
 
 def asufit(
-   sym,
-   coords,
-   contact_coords=None,
-   frames=None,
-   objfunc=None,
-   sampler=None,
-   mc=None,
-   cartsd=None,
-   iterations=300,
-   lever=None,
-   temperature=1,
-   thresh=0.000001,
-   minradius=None,
-   resetinterval=100,
-   correctionfactor=2,
-   showme=False,
-   showme_accepts=False,
-   dumppdb=False,
-   verbose=False,
-   **kw,
+    sym,
+    coords,
+    contact_coords=None,
+    frames=None,
+    objfunc=None,
+    sampler=None,
+    mc=None,
+    cartsd=None,
+    iterations=300,
+    lever=None,
+    temperature=1,
+    thresh=0.000001,
+    minradius=None,
+    resetinterval=100,
+    correctionfactor=2,
+    showme=False,
+    showme_accepts=False,
+    dumppdb=False,
+    verbose=False,
+    **kw,
 ):
    ic('asufit', sym)
 
@@ -44,17 +44,17 @@ def asufit(
 
    if objfunc is None:
       objfunc = ObjFuncDefault(
-         asym,
-         bodies=bodies,
-         sym=sym,
-         **kw,
+          asym,
+          bodies=bodies,
+          sym=sym,
+          **kw,
       )
 
    if sampler is None:
       sampler = SamplerDefault(
-         cartsd=cartsd,
-         center=asym.com(),
-         **kw,
+          cartsd=cartsd,
+          center=asym.com(),
+          **kw,
       )
    if mc is None:
       mc = wu.MonteCarlo(objfunc, temperature=temperature, **kw)

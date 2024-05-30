@@ -27,16 +27,16 @@ def pymol_viz_RigidBodyFollowers(bodies, state, name='RigidBodyFollowers', addto
 
 @pymol_load.register(RigidBody)
 def pymol_viz_RigidBody(
-      body,
-      state,
-      name='rigidbody',
-      addtocgo=None,
-      showpairswith=None,
-      showpairsdist=8,
-      showcontactswith=None,
-      vizsphereradius=2,
-      col=(1, 1, 1),
-      **kw,
+    body,
+    state,
+    name='rigidbody',
+    addtocgo=None,
+    showpairswith=None,
+    showpairsdist=8,
+    showcontactswith=None,
+    vizsphereradius=2,
+    col=(1, 1, 1),
+    **kw,
 ):
    kw = wu.Bunch(kw)
    import pymol

@@ -54,7 +54,8 @@ def fname_extensions(fname):
    elif c: extcomp = f'.{c}'
    uncomp = f'{directory}{baseext}'
 
-   return wu.Bunch(directory=directory, base=base, ext=ext, compression=compression, basename=basename, baseext=baseext, extcomp=extcomp, uncomp=uncomp)
+   return wu.Bunch(directory=directory, base=base, ext=ext, compression=compression, basename=basename,
+                   baseext=baseext, extcomp=extcomp, uncomp=uncomp)
 
 def package_data_path(fname, emptyok=True):
    if os.path.exists(os.path.join(data_dir, fname)):

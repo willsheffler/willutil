@@ -4,12 +4,12 @@ import numpy as np
 
 def main():
    test_add_bb_o(
-      wu.tests.fixtures.ncac(),
-      wu.tests.fixtures.ncaco(),
+       wu.tests.fixtures.ncac(),
+       wu.tests.fixtures.ncaco(),
    )
    test_dssp(
-      wu.tests.fixtures.ncac(),
-      wu.tests.fixtures.ncaco(),
+       wu.tests.fixtures.ncac(),
+       wu.tests.fixtures.ncaco(),
    )
    ic('TEST_DSSP MAIN DONE')
 

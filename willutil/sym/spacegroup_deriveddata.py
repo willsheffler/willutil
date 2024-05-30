@@ -3,6 +3,7 @@ REBUILD_SPACEGROUP_DATA = False
 
 import numpy as np
 import itertools
+from icecream import ic
 from willutil.sym.spacegroup_data import *
 from willutil.sym.spacegroup_util import *
 from willutil.sym.spacegroup_symelems import _compute_symelems, _find_compound_symelems
@@ -158,13 +159,13 @@ def _get_spacegroup_data():
 
       if update:
          sgdata = dict(
-            sg_frames_dict=sg_frames_dict,
-            sg_cheshire_dict=sg_cheshire_dict,
-            sg_symelem_dict=sg_symelem_dict,
-            sg_permutations444_dict=sg_permutations444_dict,
-            sg_symelem_frame444_opids_dict=sg_symelem_frame444_opids_dict,
-            sg_symelem_frame444_compids_dict=sg_symelem_frame444_compids_dict,
-            sg_symelem_frame444_opcompids_dict=sg_symelem_frame444_opcompids_dict,
+             sg_frames_dict=sg_frames_dict,
+             sg_cheshire_dict=sg_cheshire_dict,
+             sg_symelem_dict=sg_symelem_dict,
+             sg_permutations444_dict=sg_permutations444_dict,
+             sg_symelem_frame444_opids_dict=sg_symelem_frame444_opids_dict,
+             sg_symelem_frame444_compids_dict=sg_symelem_frame444_compids_dict,
+             sg_symelem_frame444_opcompids_dict=sg_symelem_frame444_opcompids_dict,
          )
          ic('saving spacegroup data')
          save_package_data(sgdata, 'spacegroup_data.pickle.xz')

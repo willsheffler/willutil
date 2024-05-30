@@ -49,9 +49,9 @@ def helper_test_spacegroup_frames_pymol(spacegroup, cellgeom, ncells, dump_pdbs=
 
    frames = wu.sym.sgframes(spacegroup, cellgeom='nonsingular', cells=ncells)
    unitcrd = wu.hpoint(np.array([
-      [0.1, 0.2, 0.3],
-      [0.3, 0.2, 0.1],
-      [0.2, 0.1, 0.1],
+       [0.1, 0.2, 0.3],
+       [0.3, 0.2, 0.1],
+       [0.2, 0.1, 0.1],
    ]))
    latvec = wu.sym.lattice_vectors(spacegroup, cellgeom)
    asymcrd = wu.sym.applylatticepts(latvec, unitcrd)

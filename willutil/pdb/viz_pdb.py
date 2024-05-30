@@ -5,10 +5,10 @@ from willutil.viz.pymol_viz import pymol_load
 
 @pymol_load.register(PDBFile)
 def pymol_viz_pdbfile(
-   pdb,
-   state,
-   name='pdb',
-   **kw,
+    pdb,
+    state,
+    name='pdb',
+    **kw,
 ):
    tag = str(random.random())[2:]
    # ic(tag)

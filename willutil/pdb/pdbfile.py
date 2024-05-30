@@ -9,19 +9,20 @@ _default_tol = wu.Bunch(rms=2.0, translation=1.0, angle=np.radians(5.0), seqmatc
 class PDBFile:
    #@timed
    def __init__(
-      self,
-      df,
-      meta,
-      original_contents,
-      renumber_by_model=True,
-      renumber_from_0=False,
-      removehet=False,
-      **kw,
+       self,
+       df,
+       meta,
+       original_contents,
+       renumber_by_model=True,
+       renumber_from_0=False,
+       removehet=False,
+       **kw,
    ):
       self.init(df, meta, original_contents, renumber_by_model, renumber_from_0, removehet, **kw)
 
    #@timed
-   def init(self, df, meta, original_contents, renumber_by_model=False, renumber_from_0=False, removehet=False, **kw):
+   def init(self, df, meta, original_contents, renumber_by_model=False, renumber_from_0=False, removehet=False,
+            **kw):
       self.original_contents = original_contents
       self.meta = meta.copy()
       self.code = meta.code
@@ -119,17 +120,17 @@ class PDBFile:
 
    #@timed
    def subset(
-      self,
-      chain=None,
-      het=None,
-      removeres=None,
-      atomnames=[],
-      chains=[],
-      model=None,
-      modelidx=None,
-      inplace=False,
-      removeatoms=[],
-      **kw,
+       self,
+       chain=None,
+       het=None,
+       removeres=None,
+       atomnames=[],
+       chains=[],
+       model=None,
+       modelidx=None,
+       inplace=False,
+       removeatoms=[],
+       **kw,
    ):
       import numpy as np
       import pandas as pd
@@ -183,10 +184,10 @@ class PDBFile:
 
       if inplace:
          self.init(
-            df,
-            self.meta,
-            original_contents=self.original_contents,
-            renumber_by_model=True,
+             df,
+             self.meta,
+             original_contents=self.original_contents,
+             renumber_by_model=True,
          )
          return self
       else:
@@ -468,7 +469,8 @@ class PDBFile:
       ca1 = chains[jchain].ca()[seqmatch.b:seqmatch.b + seqmatch.size]
       rms, _, xrmsfit = wu.hrmsfit(ca0, ca1)
       if rms > tolerances.rms:
-         raise ValueError(f'rmsd {rms:5.3f} between detected symmetric chains is above rms tolerance {tolerances.rms}')
+         raise ValueError(
+             f'rmsd {rms:5.3f} between detected symmetric chains is above rms tolerance {tolerances.rms}')
       axis, ang, cen, hel = wu.haxis_angle_cen_hel_of(xrmsfit)
       if hel > tolerances.translation:
          raise ValueError(f'translation along symaxis of {hel:5.3f} between "symmetric"'
@@ -476,13 +478,13 @@ class PDBFile:
       nfold, ang = _get_nfold_angle(ang, tolerances, **kw)
       assert nfold == 2, f'nfold {nfold} not supported yet'
       return wu.Bunch(
-         axis=axis,
-         angle=ang,
-         center=cen,
-         hel=hel,
-         nfold=nfold,
-         chaingroups=cgroups,
-         chains=chains,
+          axis=axis,
+          angle=ang,
+          center=cen,
+          hel=hel,
+          nfold=nfold,
+          chaingroups=cgroups,
+          chains=chains,
       )
 
 def _atomrecords_to_chainseq(df, ignoremissing=True):
@@ -533,5 +535,5 @@ def _get_nfold_angle(ang, tolerances, candidates=[2, 3, 4, 5, 6], **kw):
       if angnf - tolerances.angle < ang < angnf + tolerances.angle:
          return nfold, ang
    raise ValueError(
-      f'Angle {np.degrees(ang)} deviates from any nfold in {candidates} by more than {np.degrees(tolerances.angle)} degrees'
+       f'Angle {np.degrees(ang)} deviates from any nfold in {candidates} by more than {np.degrees(tolerances.angle)} degrees'
    )

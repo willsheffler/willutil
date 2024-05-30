@@ -1,11 +1,6 @@
 import os
 import pickle
 
-from worms.util.util import datetimetag
-from worms.util.ping import PING
-
-from worms.data.data import test_file_path
-
 def get_latest_testresult_path(tag, candidates_ok=False):
 
    path = get_timestamped_test_dir_latest(tag, candidates_ok=candidates_ok)
@@ -44,7 +39,7 @@ def get_timestamped_test_dirs(tag, candidates_ok=False):
    try:
       dirs.remove('config')  # config directory allowed along with results dirs
    except ValueError:
-      PING(f'WARNING no config dir for testdir {testpath}')
+      print(f'WARNING no config dir for testdir {testpath}')
    return dirs
 
 def get_timestamped_test_dir_latest(tag, candidates_ok=False):

@@ -27,13 +27,13 @@ def readcif(fname):
       mmcif_dict = MMCIF2Dict(readfname)
       struct = parser.get_structure('????', readfname)
    cryst1 = wu.sym.cryst1_pattern_full % (
-      float(mmcif_dict['_cell.length_a'][0]),
-      float(mmcif_dict['_cell.length_b'][0]),
-      float(mmcif_dict['_cell.length_c'][0]),
-      float(mmcif_dict['_cell.angle_alpha'][0]),
-      float(mmcif_dict['_cell.angle_beta'][0]),
-      float(mmcif_dict['_cell.angle_gamma'][0]),
-      mmcif_dict['_symmetry.space_group_name_H-M'][0],
+       float(mmcif_dict['_cell.length_a'][0]),
+       float(mmcif_dict['_cell.length_b'][0]),
+       float(mmcif_dict['_cell.length_c'][0]),
+       float(mmcif_dict['_cell.angle_alpha'][0]),
+       float(mmcif_dict['_cell.angle_beta'][0]),
+       float(mmcif_dict['_cell.angle_gamma'][0]),
+       mmcif_dict['_symmetry.space_group_name_H-M'][0],
    )
    pdb_io = PDBIO()
    pdb_io.set_structure(struct)

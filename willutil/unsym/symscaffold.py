@@ -52,24 +52,24 @@ def pos_try3(i, isub, nbrs):
    r = np.random.rand()
    if i == 0:
       pos = [
-         (isub, 0),
-         (isub, 2),
-         (nbr2[isub], 0),
+          (isub, 0),
+          (isub, 2),
+          (nbr2[isub], 0),
       ]
    elif r < 0.5:
       pos = [
-         (isub, 0),
-         (isub, 2),
-         (nbr2[isub], 0),
-         (nbr3[isub, 0], 2),
+          (isub, 0),
+          (isub, 2),
+          (nbr2[isub], 0),
+          (nbr3[isub, 0], 2),
       ]  # ***
       # pos = [(isub, 0), (isub, 2), (nbr2[isub], 0)]
    else:
       pos = [
-         (isub, 0),
-         (isub, 2),
-         (nbr5[isub, 3], 2),
-         (nbr2[isub], 0),
+          (isub, 0),
+          (isub, 2),
+          (nbr5[isub, 3], 2),
+          (nbr2[isub], 0),
       ]  # ***
    return pos
 
@@ -77,27 +77,27 @@ def pos_try3(i, isub, nbrs):
 def shape_553line(isub, nbrs):
    nbr2, nbr3, nbr5 = nbrs
    return [
-      (isub, 2),
-      (nbr5[isub, 0], 2),
-      (nbr2[isub], 1),
+       (isub, 2),
+       (nbr5[isub, 0], 2),
+       (nbr2[isub], 1),
    ]
 
 @njit
 def shape_553longtri(isub, nbrs):
    nbr2, nbr3, nbr5 = nbrs
    return [
-      (isub, 2),
-      (nbr5[isub, 0], 2),
-      (nbr3[isub, 1], 1),
+       (isub, 2),
+       (nbr5[isub, 0], 2),
+       (nbr3[isub, 1], 1),
    ]
 
 @njit
 def shape_3_5_5a5_triangle(isub, nbrs):
    nbr2, nbr3, nbr5 = nbrs
    return [
-      (isub, 1),
-      (isub, 2),
-      (nbr5[isub, 0], 2),
+       (isub, 1),
+       (isub, 2),
+       (nbr5[isub, 0], 2),
    ]
 
 @njit
@@ -110,9 +110,9 @@ def pos_try4(i, isub, nbrs):
       pos = shape_3_5_5a5_triangle(isub, nbrs)
    else:
       pos = [
-         (isub, 1),
-         (nbr3[isub, 0], 1),
-         (nbr5[isub, 3], 2),
+          (isub, 1),
+          (nbr3[isub, 0], 1),
+          (nbr5[isub, 3], 2),
       ]
    return pos
 

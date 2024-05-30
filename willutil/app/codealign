@@ -15,17 +15,17 @@ def main():
    if kw.files:
       for f in kw.files:
          wu.format.align_code_file(
-            f,
-            inplace=True,
-            yapf=True,
-            **kw,
+             f,
+             inplace=True,
+             yapf=True,
+             **kw,
          )
    else:
       wu.format.align_code_file(
-         None,
-         inplace=True,
-         yapf=True,
-         **kw,
+          None,
+          inplace=True,
+          yapf=True,
+          **kw,
       )
 
 if __name__ == '__main__':

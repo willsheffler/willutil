@@ -8,16 +8,16 @@ import sys
 
 def getpdbs(files_or_pattern):
    return wu.pdb.pdbread.load_pdbs(
-      files_or_pattern,
-      cache=True,
-      skip_errors=True,
+       files_or_pattern,
+       cache=True,
+       skip_errors=True,
    )
 
 def extract_het_pdbfiles(files_or_pattern):
    for fname, pdb in wu.pdb.pdbread.gen_pdbs(
-         files_or_pattern,
-         cache=True,
-         skip_errors=True,
+       files_or_pattern,
+       cache=True,
+       skip_errors=True,
    ):
       # print('extract_het_pdbfiles', fname)
       h = pdb.subset(het=True, removeres=['HOH'])

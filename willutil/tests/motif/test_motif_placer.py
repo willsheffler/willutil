@@ -32,7 +32,8 @@ def main():
 
 def debug_polymotif_c2():
    fnames = [
-      '/home/sheffler/project/multimotif/input/dimer20N_1.pdb', '/home/sheffler/project/multimotif/input/dimer20N_2.pdb'
+       '/home/sheffler/project/multimotif/input/dimer20N_1.pdb',
+       '/home/sheffler/project/multimotif/input/dimer20N_2.pdb'
    ]
    pdbs = [wu.readpdb(f) for f in fnames]
    xyz = np.stack([p.ncac() for p in pdbs])
@@ -339,19 +340,20 @@ def perftest_motif_placer():
    # ic(motifpos)
    t.checkpoint('make_test_motif')
 
-   _ = place_motif_dme_fast(xyz[:40], motif, nasym=nasym, cbreaks=cbreaks, junct=junct, nolapcheck=10, nrmsalign=10)
+   _ = place_motif_dme_fast(xyz[:40], motif, nasym=nasym, cbreaks=cbreaks, junct=junct, nolapcheck=10,
+                            nrmsalign=10)
    t.checkpoint('fastdme_init')
    result = place_motif_dme_fast(
-      xyz,
-      motif,
-      nasym=nasym,
-      cbreaks=cbreaks,
-      junct=junct,
-      return_alldme=True,
-      nolapcheck=1000,
-      nrmsalign=1,
-      motif_occlusion_weight=0.1,
-      motif_occlusion_dist=10,
+       xyz,
+       motif,
+       nasym=nasym,
+       cbreaks=cbreaks,
+       junct=junct,
+       return_alldme=True,
+       nolapcheck=1000,
+       nrmsalign=1,
+       motif_occlusion_weight=0.1,
+       motif_occlusion_dist=10,
    )
    t.checkpoint('fastdme')
    # t.report()
@@ -430,10 +432,10 @@ def test_motif_placer_minbeg_minend(showme=False):
          sizes = [12, 13]
          motif, motifpos = make_test_motif(xyz, sizes, rnoise=0.1, nasym=nasym, cbreaks=cbreaks, minbeg=minbeg,
                                            minend=minend)
-         fastdme = place_motif_dme_fast(xyz, motif, nasym=nasym, cbreaks=cbreaks, junct=junct, return_alldme=True,
-                                        minbeg=minbeg, minend=minend)
-         doffset, dme, alldo, alldme = place_motif_dme_brute(xyz, motif, nasym=nasym, cbreaks=cbreaks, minbeg=minbeg,
-                                                             minend=minend)
+         fastdme = place_motif_dme_fast(xyz, motif, nasym=nasym, cbreaks=cbreaks, junct=junct,
+                                        return_alldme=True, minbeg=minbeg, minend=minend)
+         doffset, dme, alldo, alldme = place_motif_dme_brute(xyz, motif, nasym=nasym, cbreaks=cbreaks,
+                                                             minbeg=minbeg, minend=minend)
          x = fastdme.alldme[tuple(alldo.T - minbeg)]
          if all([junct * 2 >= s for s in sizes]):
             assert torch.allclose(x, alldme)
@@ -482,15 +484,18 @@ def Rs2Qs(Rs):
 def Qs2Rs(Qs):
    Rs = torch.zeros((*Qs.shape[:-1], 3, 3), device=Qs.device)
 
-   Rs[..., 0, 0] = Qs[..., 0] * Qs[..., 0] + Qs[..., 1] * Qs[..., 1] - Qs[..., 2] * Qs[..., 2] - Qs[..., 3] * Qs[..., 3]
+   Rs[..., 0,
+      0] = Qs[..., 0] * Qs[..., 0] + Qs[..., 1] * Qs[..., 1] - Qs[..., 2] * Qs[..., 2] - Qs[..., 3] * Qs[..., 3]
    Rs[..., 0, 1] = 2 * Qs[..., 1] * Qs[..., 2] - 2 * Qs[..., 0] * Qs[..., 3]
    Rs[..., 0, 2] = 2 * Qs[..., 1] * Qs[..., 3] + 2 * Qs[..., 0] * Qs[..., 2]
    Rs[..., 1, 0] = 2 * Qs[..., 1] * Qs[..., 2] + 2 * Qs[..., 0] * Qs[..., 3]
-   Rs[..., 1, 1] = Qs[..., 0] * Qs[..., 0] - Qs[..., 1] * Qs[..., 1] + Qs[..., 2] * Qs[..., 2] - Qs[..., 3] * Qs[..., 3]
+   Rs[..., 1,
+      1] = Qs[..., 0] * Qs[..., 0] - Qs[..., 1] * Qs[..., 1] + Qs[..., 2] * Qs[..., 2] - Qs[..., 3] * Qs[..., 3]
    Rs[..., 1, 2] = 2 * Qs[..., 2] * Qs[..., 3] - 2 * Qs[..., 0] * Qs[..., 1]
    Rs[..., 2, 0] = 2 * Qs[..., 1] * Qs[..., 3] - 2 * Qs[..., 0] * Qs[..., 2]
    Rs[..., 2, 1] = 2 * Qs[..., 2] * Qs[..., 3] + 2 * Qs[..., 0] * Qs[..., 1]
-   Rs[..., 2, 2] = Qs[..., 0] * Qs[..., 0] - Qs[..., 1] * Qs[..., 1] - Qs[..., 2] * Qs[..., 2] + Qs[..., 3] * Qs[..., 3]
+   Rs[..., 2,
+      2] = Qs[..., 0] * Qs[..., 0] - Qs[..., 1] * Qs[..., 1] - Qs[..., 2] * Qs[..., 2] + Qs[..., 3] * Qs[..., 3]
 
    return Rs
 

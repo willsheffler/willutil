@@ -19,11 +19,11 @@ def _test_slidedock_onecomp():
 
    with wu.Timer():
       newxyz = slide_dock_oligomer(
-         'icos',
-         'c3',
-         'c2',
-         xyz,
-         startaxis=startaxis,
+          'icos',
+          'c3',
+          'c2',
+          xyz,
+          startaxis=startaxis,
       )
    wu.dumppdb('test_slide_dock_oligomer.pdb', wu.hxform(wu.sym.frames('icos'), newxyz))
 

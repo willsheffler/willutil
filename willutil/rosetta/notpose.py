@@ -96,9 +96,9 @@ class NotResidue:
          if self.nopo.coordsonly:
             return self.nopo.coords[self.ir, self.anamemap[ia.decode()]]
          xyz = (
-            float(self.rdf.x[self.rdf.an == ia]),
-            float(self.rdf.y[self.rdf.an == ia]),
-            float(self.rdf.z[self.rdf.an == ia]),
+             float(self.rdf.x[self.rdf.an == ia]),
+             float(self.rdf.y[self.rdf.an == ia]),
+             float(self.rdf.z[self.rdf.an == ia]),
          )
 
       return NotXYZ(xyz)
@@ -198,13 +198,13 @@ class CrystInfo:
 
    def cryst1(self):
       return wu.sym.cryst1_pattern_full % (
-         self.A(),
-         self.B(),
-         self.C(),
-         self.alpha(),
-         self.beta(),
-         self.gamma(),
-         self.spacegroup(),
+          self.A(),
+          self.B(),
+          self.C(),
+          self.alpha(),
+          self.beta(),
+          self.gamma(),
+          self.spacegroup(),
       )
 
 def _init_NotPose_pdb(self, fname=None, pdb=None, chain=None, secstruct=None, **kw):

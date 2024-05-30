@@ -5,18 +5,18 @@ import willutil as wu
 
 @pymol_load.register(Helix)
 def pymol_viz_Helix(
-   helix,
-   state,
-   name='Helix',
-   radius=20,
-   spacing=10,
-   phase=0,
-   points=[],
-   splitobjs=False,
-   addtocgo=None,
-   make_cgo_only=False,
-   coils=2,
-   **kw,
+    helix,
+    state,
+    name='Helix',
+    radius=20,
+    spacing=10,
+    phase=0,
+    points=[],
+    splitobjs=False,
+    addtocgo=None,
+    make_cgo_only=False,
+    coils=2,
+    **kw,
 ):
    import pymol
    state["seenit"][name] += 1
@@ -26,9 +26,9 @@ def pymol_viz_Helix(
    frames = helix.frames(radius, spacing, coils, **kw)
    s = 1
    showpts = np.array([
-      [0.28, 0.13, 0.13],
-      [0.28, 0.13 + 0.06 * s, 0.13],
-      [0.28, 0.13, 0.13 + 0.05 * s],
+       [0.28, 0.13, 0.13],
+       [0.28, 0.13 + 0.06 * s, 0.13],
+       [0.28, 0.13, 0.13 + 0.05 * s],
    ])
    r = [1.0]
    c = [(1, 1, 1)]

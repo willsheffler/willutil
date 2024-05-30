@@ -15,104 +15,98 @@ exe = sys.executable
 
 _post = defaultdict(lambda: "")
 
-
 def get_args(sysargv):
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--projname", help='name of project')
-    parser.add_argument("testfile", type=str, default='')
-    args = parser.parse_args(sysargv[1:])
-    return args.__dict__
-
+   parser = argparse.ArgumentParser()
+   parser.add_argument("--projname", help='name of project')
+   parser.add_argument("testfile", type=str, default='')
+   args = parser.parse_args(sysargv[1:])
+   return args.__dict__
 
 def file_has_main(fname):
-    with open(fname) as inp:
-        for l in inp:
-            if l.startswith("if __name__ == "):
-                return True
-    return False
-
+   with open(fname) as inp:
+      for l in inp:
+         if l.startswith("if __name__ == "):
+            return True
+   return False
 
 def testfile_of(path, bname, **kw):
 
-    t = re.sub(f"^{kw['projname']}", f"{kw['projname']}/tests", path) + "/test_" + bname
-    print("testfile_of", path, bname, 'is', t)
-    if os.path.exists(t):
-        return t
-
+   t = re.sub(f"^{kw['projname']}", f"{kw['projname']}/tests", path) + "/test_" + bname
+   print("testfile_of", path, bname, 'is', t)
+   if os.path.exists(t):
+      return t
 
 def dispatch(
-        fname,
-        pytest_args='--workers 8',
-        file_mappings=dict(),
-        overrides=dict(),
-        strict=True,
-        **kw,
+    fname,
+    pytest_args='--workers 8',
+    file_mappings=dict(),
+    overrides=dict(),
+    strict=True,
+    **kw,
 ):
-    '''for the love of god... clean me up. eh, could be worse'''
-    fname = os.path.relpath(fname)
-    path, bname = os.path.split(fname)
+   '''for the love of god... clean me up. eh, could be worse'''
+   fname = os.path.relpath(fname)
+   path, bname = os.path.split(fname)
 
-    if bname in overrides:
-        oride = overrides[bname]
-        return oride, _post[bname]
+   if bname in overrides:
+      oride = overrides[bname]
+      return oride, _post[bname]
 
-    if fname in file_mappings:
-        assert len(file_mappings[fname]) == 1
-        fname = file_mappings[fname][0]
-        path, bname = os.path.split(fname)
-    if not strict and bname in file_mappings:
-        assert len(file_mappings[bname]) == 1
-        bname = file_mappings[bname][0]
-        path, bname = os.path.split(bname)
+   if fname in file_mappings:
+      assert len(file_mappings[fname]) == 1
+      fname = file_mappings[fname][0]
+      path, bname = os.path.split(fname)
+   if not strict and bname in file_mappings:
+      assert len(file_mappings[bname]) == 1
+      bname = file_mappings[bname][0]
+      path, bname = os.path.split(bname)
 
-    if not file_has_main(fname) and not bname.startswith("test_"):
-        testfile = testfile_of(path, bname, **kw)
-        if testfile:
-            fname = testfile
-            path, bname = os.path.split(fname)
+   if not file_has_main(fname) and not bname.startswith("test_"):
+      testfile = testfile_of(path, bname, **kw)
+      if testfile:
+         fname = testfile
+         path, bname = os.path.split(fname)
 
-    if not file_has_main(fname) and bname.startswith("test_"):
-        cmd = f"{exe} -mpytest {pytest_args} {fname}".format(**vars())
-    elif fname.endswith(".py") and bname != 'conftest.py':
-        cmd = f"PYTHONPATH=. {exe} " + fname
-    else:
-        cmd = f"{exe} -mpytest {pytest_args}".format(**vars())
+   if not file_has_main(fname) and bname.startswith("test_"):
+      cmd = f"{exe} -mpytest {pytest_args} {fname}".format(**vars())
+   elif fname.endswith(".py") and bname != 'conftest.py':
+      cmd = f"PYTHONPATH=. {exe} " + fname
+   else:
+      cmd = f"{exe} -mpytest {pytest_args}".format(**vars())
 
-    return cmd, _post[bname]
-
+   return cmd, _post[bname]
 
 def main(**kw):
-    t = perf_counter()
+   t = perf_counter()
 
-    post = ""
-    if not kw['testfile']:
-        cmd = f"{exe} -mpytest"
-    else:
-        if kw['testfile'].endswith(__file__):
-            cmd = ""
-        else:
-            cmd, post = dispatch(
-                kw['testfile'],
-                **kw,
-            )
+   post = ""
+   if not kw['testfile']:
+      cmd = f"{exe} -mpytest"
+   else:
+      if kw['testfile'].endswith(__file__):
+         cmd = ""
+      else:
+         cmd, post = dispatch(
+             kw['testfile'],
+             **kw,
+         )
 
-    print("call:", sys.argv)
-    print("cwd:", os.getcwd())
-    print("cmd:", cmd)
-    print(f"{' util/runtests.py running cmd in cwd ':=^60}")
-    sys.stdout.flush()
-    # if 1cmd.startswith('pytest '):
-    os.putenv("NUMBA_OPT", "1")
-    # os.putenv('NUMBA_DISABLE_JIT', '1')
+   print("call:", sys.argv)
+   print("cwd:", os.getcwd())
+   print("cmd:", cmd)
+   print(f"{' util/runtests.py running cmd in cwd ':=^60}")
+   sys.stdout.flush()
+   # if 1cmd.startswith('pytest '):
+   os.putenv("NUMBA_OPT", "1")
+   # os.putenv('NUMBA_DISABLE_JIT', '1')
 
-    # print(cmd)
-    os.system(cmd)
+   # print(cmd)
+   os.system(cmd)
 
-    print(f"{' main command done ':=^60}")
-    os.system(post)
-    t = perf_counter() - t
-    print(f"{f' runtests.py done, time {t:7.3f} ':=^60}")
-
+   print(f"{' main command done ':=^60}")
+   os.system(post)
+   t = perf_counter() - t
+   print(f"{f' runtests.py done, time {t:7.3f} ':=^60}")
 
 _overrides = {
     #    "genrate_motif_scores.py":
@@ -129,7 +123,6 @@ _file_mappings = {
     'willutil/homog/sym.py': ['willutil/tests/homog/test_homog.py'],
     'willutil/homog/quat.py': ['willutil/tests/homog/test_homog.py'],
     'willutil/homog/hgeom.py': ['willutil/tests/homog/test_homog.py'],
-    "willutil_cpp/geom/expand_xforms.cpp": ["willutil/tests/cpp/geom/test_expand_xforms.py"],
     # 'willutil/pdb/pisces.py': ['willutil/tests/pdb/test_pdbmeta.py'],
     #    "rosetta.py": ["rpxdock/tests/test_body.py"],
     #   "bvh_algo.hpp": ["rpxdock/tests/bvh/test_bvh_nd.py"],
@@ -173,5 +166,5 @@ _file_mappings = {
 }
 
 if __name__ == '__main__':
-    args = get_args(sys.argv)
-    main(file_mappings=_file_mappings, overrides=_overrides, **args)
+   args = get_args(sys.argv)
+   main(file_mappings=_file_mappings, overrides=_overrides, **args)

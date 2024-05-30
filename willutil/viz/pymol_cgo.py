@@ -19,15 +19,15 @@ def showcom(sel="all"):
    c = com(sel)
    print("Center of mass: ", c)
    mycgo = [
-      cgo.COLOR,
-      1.0,
-      1.0,
-      1.0,
-      cgo.SPHERE,
-      cen[0],
-      cen[1],
-      cen[2],
-      1.0,
+       cgo.COLOR,
+       1.0,
+       1.0,
+       1.0,
+       cgo.SPHERE,
+       cen[0],
+       cen[1],
+       cen[2],
+       1.0,
    ]  # white sphere with 3A radius
    pymol.cmd.load_cgo(mycgo, "com%i" % _numcom)
    _numcom += 1
@@ -52,21 +52,21 @@ def showsphere(cen, rad=1, col=(1, 1, 1), lbl=''):
 
 def cgo_vecfrompoint(axis, cen, col=(1, 1, 1), lbl=''):
    OBJ = [
-      cgo.BEGIN,
-      cgo.LINES,
-      cgo.COLOR,
-      col[0],
-      col[1],
-      col[2],
-      cgo.VERTEX,
-      cen[0],
-      cen[1],
-      cen[2],
-      cgo.VERTEX,
-      cen[0] + axis[0],
-      cen[1] + axis[1],
-      cen[2] + axis[2],
-      cgo.END,
+       cgo.BEGIN,
+       cgo.LINES,
+       cgo.COLOR,
+       col[0],
+       col[1],
+       col[2],
+       cgo.VERTEX,
+       cen[0],
+       cen[1],
+       cen[2],
+       cgo.VERTEX,
+       cen[0] + axis[0],
+       cen[1] + axis[1],
+       cen[2] + axis[2],
+       cgo.END,
    ]
    return OBJ
 
@@ -88,21 +88,21 @@ def showvecfrompoint(axis, cen, col=(1, 1, 1), lbl=''):
 
 def cgo_segment(c1, c2, col=(1, 1, 1)):
    OBJ = [
-      cgo.BEGIN,
-      cgo.LINES,
-      cgo.COLOR,
-      col[0],
-      col[1],
-      col[2],
-      cgo.VERTEX,
-      c1[0],
-      c1[1],
-      c1[2],
-      cgo.VERTEX,
-      c2[0],
-      c2[1],
-      c2[2],
-      cgo.END,
+       cgo.BEGIN,
+       cgo.LINES,
+       cgo.COLOR,
+       col[0],
+       col[1],
+       col[2],
+       cgo.VERTEX,
+       c1[0],
+       c1[1],
+       c1[2],
+       cgo.VERTEX,
+       c2[0],
+       c2[1],
+       c2[2],
+       cgo.END,
    ]
    # pymol.cmd.load_cgo([cgo.COLOR, col[0],col[1],col[2],
    #             cgo.CYLINDER, c1[0],     c1[1],     c1[2],
@@ -127,20 +127,20 @@ def showsegment(c1, c2, col=(1, 1, 1), lbl=''):
 def cgo_cyl(c1, c2, rad, col=(1, 1, 1), col2=None):
    col2 = col2 or col
    return [  # cgo.COLOR, col[0],col[1],col[2],
-      cgo.CYLINDER,
-      c1[0],
-      c1[1],
-      c1[2],
-      c2[0],
-      c2[1],
-      c2[2],
-      rad,
-      col[0],
-      col[1],
-      col[2],
-      col2[0],
-      col2[1],
-      col2[2],
+       cgo.CYLINDER,
+       c1[0],
+       c1[1],
+       c1[2],
+       c2[0],
+       c2[1],
+       c2[2],
+       rad,
+       col[0],
+       col[1],
+       col[2],
+       col2[0],
+       col2[1],
+       col2[2],
    ]
 
 def showcyl(c1, c2, rad, col=(1, 1, 1), col2=None, lbl=''):
@@ -161,42 +161,42 @@ def showline(axis, cen, col=(1, 1, 1), lbl='', oneside=False):
    pymol.cmd.delete(lbl)
    v = pymol.cmd.get_view()
    OBJ = [
-      cgo.BEGIN,
-      cgo.LINES,
-      cgo.COLOR,
-      col[0],
-      col[1],
-      col[2],
-      cgo.VERTEX,
-      cen[0] if oneside else cen[0] - axis[0],
-      cen[1] if oneside else cen[1] - axis[1],
-      cen[2] if oneside else cenc[2] - axis[2],
-      cgo.VERTEX,
-      cen[0] + axis[0],
-      cen[1] + axis[1],
-      cen[2] + axis[2],
-      cgo.END,
+       cgo.BEGIN,
+       cgo.LINES,
+       cgo.COLOR,
+       col[0],
+       col[1],
+       col[2],
+       cgo.VERTEX,
+       cen[0] if oneside else cen[0] - axis[0],
+       cen[1] if oneside else cen[1] - axis[1],
+       cen[2] if oneside else cenc[2] - axis[2],
+       cgo.VERTEX,
+       cen[0] + axis[0],
+       cen[1] + axis[1],
+       cen[2] + axis[2],
+       cgo.END,
    ]
    pymol.cmd.load_cgo(OBJ, lbl)
    pymol.cmd.set_view(v)
 
 def cgo_lineabs(axis, cen, col=(1, 1, 1)):
    return [
-      cgo.BEGIN,
-      cgo.LINES,
-      cgo.COLOR,
-      col[0],
-      col[1],
-      col[2],
-      cgo.VERTEX,
-      cen[0],
-      cen[1],
-      cen[2],
-      cgo.VERTEX,
-      axis[0],
-      axis[1],
-      axis[2],
-      cgo.END,
+       cgo.BEGIN,
+       cgo.LINES,
+       cgo.COLOR,
+       col[0],
+       col[1],
+       col[2],
+       cgo.VERTEX,
+       cen[0],
+       cen[1],
+       cen[2],
+       cgo.VERTEX,
+       axis[0],
+       axis[1],
+       axis[2],
+       cgo.END,
    ]
 
 def showlineabs(axis, cen, col=(1, 1, 1), lbl=''):
@@ -211,18 +211,18 @@ def showlineabs(axis, cen, col=(1, 1, 1), lbl=''):
    pymol.cmd.set_view(v)
 
 def cgo_fan(
-      axis,
-      cen,
-      rad,
-      arc,
-      col=(1, 1, 1),
-      col2=None,
-      startpoint=[1, 2, 3, 1],
-      thickness=0.0,
-      showstart=True,
-      randspread=0,
-      fanshift=0.0,
-      ntri=50,
+    axis,
+    cen,
+    rad,
+    arc,
+    col=(1, 1, 1),
+    col2=None,
+    startpoint=[1, 2, 3, 1],
+    thickness=0.0,
+    showstart=True,
+    randspread=0,
+    fanshift=0.0,
+    ntri=50,
 ):
    if arc > 10: arc = np.radians(arc)
    col2 = col2 or col
@@ -282,7 +282,11 @@ def showfan(axis, cen, rad, arc, col=(1, 1, 1), lbl='', **kw):
 
 def showaxes():
    v = pymol.cmd.get_view()
-   obj = [cgo.BEGIN, cgo.LINES, cgo.COLOR, 1.0, 0.0, 0.0, cgo.VERTEX, 0.0, 0.0, 0.0, cgo.VERTEX, 20.0, 0.0, 0.0, cgo.COLOR, 0.0, 1.0, 0.0, cgo.VERTEX, 0.0, 0.0, 0.0, cgo.VERTEX, 0.0, 20.0, 0.0, cgo.COLOR, 0.0, 0.0, 1.0, cgo.VERTEX, 0.0, 0.0, 0.0, cgo.VERTEX, 00, 0.0, 20.0, cgo.END]
+   obj = [
+       cgo.BEGIN, cgo.LINES, cgo.COLOR, 1.0, 0.0, 0.0, cgo.VERTEX, 0.0, 0.0, 0.0, cgo.VERTEX, 20.0, 0.0, 0.0,
+       cgo.COLOR, 0.0, 1.0, 0.0, cgo.VERTEX, 0.0, 0.0, 0.0, cgo.VERTEX, 0.0, 20.0, 0.0, cgo.COLOR, 0.0, 0.0,
+       1.0, cgo.VERTEX, 0.0, 0.0, 0.0, cgo.VERTEX, 00, 0.0, 20.0, cgo.END
+   ]
    pymol.cmd.load_cgo(obj, "axes")
 
 def cgo_cyl_arrow(c1, c2, r, col=(1, 1, 1), col2=None, arrowlen=4.0):
@@ -320,35 +324,36 @@ def cgo_cell(lattice, r=0.03):
    ic(lattice)
    lattice = lattice.T
    a = [
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      lattice[0],
-      lattice[0],
-      lattice[1],
-      lattice[1],
-      lattice[2],
-      lattice[2],
-      lattice[0] + lattice[1],
-      lattice[0] + lattice[2],
-      lattice[1] + lattice[2],
+       [0, 0, 0],
+       [0, 0, 0],
+       [0, 0, 0],
+       lattice[0],
+       lattice[0],
+       lattice[1],
+       lattice[1],
+       lattice[2],
+       lattice[2],
+       lattice[0] + lattice[1],
+       lattice[0] + lattice[2],
+       lattice[1] + lattice[2],
    ]
    b = [
-      lattice[0],
-      lattice[1],
-      lattice[2],
-      lattice[0] + lattice[1],
-      lattice[0] + lattice[2],
-      lattice[1] + lattice[0],
-      lattice[1] + lattice[2],
-      lattice[2] + lattice[0],
-      lattice[2] + lattice[1],
-      lattice[0] + lattice[1] + lattice[2],
-      lattice[0] + lattice[1] + lattice[2],
-      lattice[0] + lattice[1] + lattice[2],
+       lattice[0],
+       lattice[1],
+       lattice[2],
+       lattice[0] + lattice[1],
+       lattice[0] + lattice[2],
+       lattice[1] + lattice[0],
+       lattice[1] + lattice[2],
+       lattice[2] + lattice[0],
+       lattice[2] + lattice[1],
+       lattice[0] + lattice[1] + lattice[2],
+       lattice[0] + lattice[1] + lattice[2],
+       lattice[0] + lattice[1] + lattice[2],
    ]
 
-   mycgo = [[cgo.CYLINDER, a[i][0], a[i][1], a[i][2], b[i][0], b[i][1], b[i][2], r, 1, 1, 1, 1, 1, 1] for i in range(len(a))]
+   mycgo = [[cgo.CYLINDER, a[i][0], a[i][1], a[i][2], b[i][0], b[i][1], b[i][2], r, 1, 1, 1, 1, 1, 1]
+            for i in range(len(a))]
    mycgo = list(itertools.chain(*mycgo))
 
    return mycgo
@@ -357,34 +362,35 @@ def cgo_cube(lb=[-10, -10, -10], ub=[10, 10, 10], r=0.03, xform=np.eye(4)):
    if isinstance(lb, (float, int)): lb = [lb] * 3
    if isinstance(ub, (float, int)): ub = [ub] * 3
    a = [
-      wu.homog.hxform(xform, [ub[0], ub[1], ub[2]]),
-      wu.homog.hxform(xform, [ub[0], ub[1], lb[2]]),
-      wu.homog.hxform(xform, [ub[0], lb[1], lb[2]]),
-      wu.homog.hxform(xform, [ub[0], lb[1], ub[2]]),
-      wu.homog.hxform(xform, [lb[0], ub[1], ub[2]]),
-      wu.homog.hxform(xform, [lb[0], ub[1], lb[2]]),
-      wu.homog.hxform(xform, [lb[0], lb[1], lb[2]]),
-      wu.homog.hxform(xform, [lb[0], lb[1], ub[2]]),
-      wu.homog.hxform(xform, [lb[0], ub[1], ub[2]]),
-      wu.homog.hxform(xform, [lb[0], ub[1], lb[2]]),
-      wu.homog.hxform(xform, [lb[0], lb[1], ub[2]]),
-      wu.homog.hxform(xform, [lb[0], lb[1], lb[2]]),
+       wu.homog.hxform(xform, [ub[0], ub[1], ub[2]]),
+       wu.homog.hxform(xform, [ub[0], ub[1], lb[2]]),
+       wu.homog.hxform(xform, [ub[0], lb[1], lb[2]]),
+       wu.homog.hxform(xform, [ub[0], lb[1], ub[2]]),
+       wu.homog.hxform(xform, [lb[0], ub[1], ub[2]]),
+       wu.homog.hxform(xform, [lb[0], ub[1], lb[2]]),
+       wu.homog.hxform(xform, [lb[0], lb[1], lb[2]]),
+       wu.homog.hxform(xform, [lb[0], lb[1], ub[2]]),
+       wu.homog.hxform(xform, [lb[0], ub[1], ub[2]]),
+       wu.homog.hxform(xform, [lb[0], ub[1], lb[2]]),
+       wu.homog.hxform(xform, [lb[0], lb[1], ub[2]]),
+       wu.homog.hxform(xform, [lb[0], lb[1], lb[2]]),
    ]
    b = [
-      wu.homog.hxform(xform, [ub[0], ub[1], lb[2]]),
-      wu.homog.hxform(xform, [ub[0], lb[1], lb[2]]),
-      wu.homog.hxform(xform, [ub[0], lb[1], ub[2]]),
-      wu.homog.hxform(xform, [ub[0], ub[1], ub[2]]),
-      wu.homog.hxform(xform, [lb[0], ub[1], lb[2]]),
-      wu.homog.hxform(xform, [lb[0], lb[1], lb[2]]),
-      wu.homog.hxform(xform, [lb[0], lb[1], ub[2]]),
-      wu.homog.hxform(xform, [lb[0], ub[1], ub[2]]),
-      wu.homog.hxform(xform, [ub[0], ub[1], ub[2]]),
-      wu.homog.hxform(xform, [ub[0], ub[1], lb[2]]),
-      wu.homog.hxform(xform, [ub[0], lb[1], ub[2]]),
-      wu.homog.hxform(xform, [ub[0], lb[1], lb[2]]),
+       wu.homog.hxform(xform, [ub[0], ub[1], lb[2]]),
+       wu.homog.hxform(xform, [ub[0], lb[1], lb[2]]),
+       wu.homog.hxform(xform, [ub[0], lb[1], ub[2]]),
+       wu.homog.hxform(xform, [ub[0], ub[1], ub[2]]),
+       wu.homog.hxform(xform, [lb[0], ub[1], lb[2]]),
+       wu.homog.hxform(xform, [lb[0], lb[1], lb[2]]),
+       wu.homog.hxform(xform, [lb[0], lb[1], ub[2]]),
+       wu.homog.hxform(xform, [lb[0], ub[1], ub[2]]),
+       wu.homog.hxform(xform, [ub[0], ub[1], ub[2]]),
+       wu.homog.hxform(xform, [ub[0], ub[1], lb[2]]),
+       wu.homog.hxform(xform, [ub[0], lb[1], ub[2]]),
+       wu.homog.hxform(xform, [ub[0], lb[1], lb[2]]),
    ]
-   mycgo = [[cgo.CYLINDER, a[i][0], a[i][1], a[i][2], b[i][0], b[i][1], b[i][2], r, 1, 1, 1, 1, 1, 1] for i in range(len(a))]
+   mycgo = [[cgo.CYLINDER, a[i][0], a[i][1], a[i][2], b[i][0], b[i][1], b[i][2], r, 1, 1, 1, 1, 1, 1]
+            for i in range(len(a))]
    mycgo = list(itertools.chain(*mycgo))
 
    # yapf: disable

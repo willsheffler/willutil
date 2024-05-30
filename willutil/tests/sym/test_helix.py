@@ -32,6 +32,7 @@ def test_helix_params():
       h = wu.sym.Helix(turns=9, nfold=1, turnsB=1, phase=1.001)
 
 def test_helix_scaling():
+   pytest.importorskip('willutil_cpp')
    h = wu.sym.Helix(turns=9, nfold=1, turnsB=1, phase=0)
 
    np.random.seed(7)

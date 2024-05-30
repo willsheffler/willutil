@@ -2,6 +2,10 @@
 	"build_systems":
 	[
 		{
+			"name": "test install",
+			"shell_cmd": "cd ~/tmp; pip uninstall -y willutil && rm -rf $folder/build $folder/willutil.egg-info && pip install $folder && python -mpytest --pyargs willutil &> $folder/log/sublime_build.log"
+		},
+		{
 			"name": "test_pseudo_t.py",
 			"shell_cmd": "cd $folder; python willutil/tests/sym/test_pseudo_t.py &> log/sublime_build.log"
 		},

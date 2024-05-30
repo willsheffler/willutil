@@ -16,15 +16,15 @@ class RBLatticeRBSampler:
 
 class RBSampler:
    def __init__(
-      self,
-      cartsd=None,
-      rotsd=None,
-      lever=None,
-      biasradial=1,
-      biasdir=[1, 0, 0],
-      center=[0, 0, 0],
-      minradius=0,
-      **kw,
+       self,
+       cartsd=None,
+       rotsd=None,
+       lever=None,
+       biasradial=1,
+       biasdir=[1, 0, 0],
+       center=[0, 0, 0],
+       minradius=0,
+       **kw,
    ):
       self.cartsd = cartsd
       self.rotsd = rotsd
