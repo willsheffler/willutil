@@ -16,8 +16,10 @@ icecream
 numba
 colorama
 Bio
+willutil_cpp @ git+https://github.com/willsheffler/willutil_cpp.git
 
 --find-links https://download.pytorch.org/whl/cpu
 torch
 torchvision
 torchaudio
+
