@@ -2,4 +2,4 @@
 from willutil.homog.hgeom import *
 from deferred_import import deferred_import
 
-quat = deferred_import('willutil.homog.quat')
+quat = deferred_import("willutil.homog.quat")

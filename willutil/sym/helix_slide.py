@@ -2,6 +2,7 @@ import functools
 import numpy as np
 import willutil as wu
 
+
 def helix_slide(
     helix,
     coords,
@@ -17,42 +18,43 @@ def helix_slide(
     scalefirst=False,
     **kw,
 ):
-   assert np.allclose(cellsize[0], cellsize[1])
-   cellsize = cellsize.copy()
-   coords = coords.astype(np.float64)
+    assert np.allclose(cellsize[0], cellsize[1])
+    cellsize = cellsize.copy()
+    coords = coords.astype(np.float64)
 
-   hframes = helix.frames(xtalrad=9e9, radius=cellsize[0], spacing=cellsize[2], coils=coils, closest=closest)
-   assembly = wu.RigidBodyFollowers(coords=coords, frames=hframes, symtype='H', cellsize=cellsize, clashdis=8,
-                                    contactdis=16)
-   # if showme: assembly.dump_pdb(f'helix_slide____.pdb')
-   hstep = np.array([0.00, 0.00, step])
-   rstep = np.array([step, step, 0.00])
-   sstep = np.array([step, step, step])
-   tooclose = functools.partial(wu.rigid.tooclose_overlap, contactfrac=contactfrac)
-   # steps = [hstep, rstep]
-   steps = [rstep, hstep]
-   if scalefirst:
-      steps = [sstep] + steps
-   for i, expand in enumerate(breathe):
-      for j in range(iters):
-         for step in steps:
-            scale = (1 + step / np.mean(assembly.cellsize) * expand)
+    hframes = helix.frames(xtalrad=9e9, radius=cellsize[0], spacing=cellsize[2], coils=coils, closest=closest)
+    assembly = wu.RigidBodyFollowers(
+        coords=coords, frames=hframes, symtype="H", cellsize=cellsize, clashdis=8, contactdis=16
+    )
+    # if showme: assembly.dump_pdb(f'helix_slide____.pdb')
+    hstep = np.array([0.00, 0.00, step])
+    rstep = np.array([step, step, 0.00])
+    sstep = np.array([step, step, step])
+    tooclose = functools.partial(wu.rigid.tooclose_overlap, contactfrac=contactfrac)
+    # steps = [hstep, rstep]
+    steps = [rstep, hstep]
+    if scalefirst:
+        steps = [sstep] + steps
+    for i, expand in enumerate(breathe):
+        for j in range(iters):
+            for step in steps:
+                scale = 1 + step / np.mean(assembly.cellsize) * expand
 
-            cellsize = wu.sym.slide_cellsize(
-                assembly,
-                cellsize=cellsize,
-                step=step,
-                tooclosefunc=tooclose,
-                showme=showme,
-                maxstep=maxstep,
-                moveasymunit=False,
-                **kw,
-            )
+                cellsize = wu.sym.slide_cellsize(
+                    assembly,
+                    cellsize=cellsize,
+                    step=step,
+                    tooclosefunc=tooclose,
+                    showme=showme,
+                    maxstep=maxstep,
+                    moveasymunit=False,
+                    **kw,
+                )
 
-            if expand > 0:
-               cellsize = assembly.scale_frames(scale)
-            if showme:
-               wu.showme(assembly, **kw)
+                if expand > 0:
+                    cellsize = assembly.scale_frames(scale)
+                if showme:
+                    wu.showme(assembly, **kw)
 
-            # assembly.dump_pdb(f'helix_slide_{i}_{j}.pdb')
-   return assembly
+                # assembly.dump_pdb(f'helix_slide_{i}_{j}.pdb')
+    return assembly

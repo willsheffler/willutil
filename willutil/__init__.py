@@ -20,14 +20,17 @@ from willutil import sampling
 from willutil import search
 from willutil import misc
 from willutil import tests
+
 # from willutil import reproducibility
 # from willutil import format
 from willutil import homog
 from willutil import sym
+
 # from willutil import viz
-viz = deferred_import('willutil.viz')
+viz = deferred_import("willutil.viz")
 from willutil import rigid
 from willutil import rosetta
+
 # from willutil import unsym
 from willutil.chem import dssp
 from willutil.rosetta import NotPose
@@ -39,7 +42,7 @@ from willutil.misc import WARNME, datetag, datetimetag, UnhashableSet, printhead
 from willutil.homog import thgeom as h
 
 # deferr import of cpp libs to avoid compilation if unnecessary
-cpp = deferred_import('willutil_cpp')
+cpp = deferred_import("willutil_cpp")
 # from willutil import cpp
 
 # emptybunch = Bunch()
@@ -129,12 +132,15 @@ from willutil.homog import (
 
 ic.install()
 
+
 # from willutil.viz import showme
 def showme(*a, **kw):
-   from willutil.viz import showme as viz_showme
-   viz_showme(*a, **kw)
+    from willutil.viz import showme as viz_showme
 
-#__all__ = ('MonteCarlo', 'RigidBody', 'compute_symfit', 'dssp', 'halign', 'halign2', 'halign_vector', 'hangle',
+    viz_showme(*a, **kw)
+
+
+# __all__ = ('MonteCarlo', 'RigidBody', 'compute_symfit', 'dssp', 'halign', 'halign2', 'halign_vector', 'hangle',
 #           'hangle_degrees', 'hangle_of', 'hangle_of_degrees', 'hangline', 'haxis_ang_cen_of', 'haxis_ang_cen_hel_of',
 #           'haxis_angle_hel_of', 'haxis_angle_of', 'haxisof', 'hcart', 'hcart3', 'hcoherence', 'hcom', 'hcom_flat',
 #           'hconstruct', 'hcross', 'hdiff', 'hdihedral', 'hdist', 'hdot', 'hexpand', 'hframe', 'hinv', 'hline_angle',

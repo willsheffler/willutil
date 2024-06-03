@@ -2,144 +2,150 @@ import itertools
 import pytest
 import willutil as wu
 from willutil.sym.SymElem import SymElem, showsymelems
-from willutil.sym.spacegroup_symelems import _compute_symelems, _find_compound_symelems, _remove_redundant_screws, _printelems
+from willutil.sym.spacegroup_symelems import (
+    _compute_symelems,
+    _find_compound_symelems,
+    _remove_redundant_screws,
+    _printelems,
+)
 
 pytest.skip(allow_module_level=True)
 
+
 def main():
+    # test_symelems_R3()rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
 
-   # test_symelems_R3()rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
+    # test_symelems_P622()
+    # assert 0
 
-   # test_symelems_P622()
-   # assert 0
+    # test_symelems_P622()
+    # assert 0
 
-   # test_symelems_P622()
-   # assert 0
+    # for l in 'C21 C31 C32 C41 C42 C43 C61 C62 C63 C64 C65'.split():
+    #    print('\n', l)
+    #    for k, v in wu.sym.sg_symelem_dict.items():
+    #       # if not any(x.iscyclic for x in v):
+    #       # if not wu.sym.latticetype(k) == 'MONOCLINIC': continue
+    #       # if not any(x.isdihedral for x in v): continue
+    #       if not any(x.label == l for x in v): continue
+    #       print(k, end=' ')
+    #       # for e in v:
+    #       # print(e)
+    # print(flush=True)
+    # assert 0
 
-   # for l in 'C21 C31 C32 C41 C42 C43 C61 C62 C63 C64 C65'.split():
-   #    print('\n', l)
-   #    for k, v in wu.sym.sg_symelem_dict.items():
-   #       # if not any(x.iscyclic for x in v):
-   #       # if not wu.sym.latticetype(k) == 'MONOCLINIC': continue
-   #       # if not any(x.isdihedral for x in v): continue
-   #       if not any(x.label == l for x in v): continue
-   #       print(k, end=' ')
-   #       # for e in v:
-   #       # print(e)
-   # print(flush=True)
-   # assert 0
+    # T
+    # P23 F23 I23 P4232 F432 F4132
+    # O
+    # P432 F432 I432
 
-   # T
-   # P23 F23 I23 P4232 F432 F4132
-   # O
-   # P432 F432 I432
+    sym = "P3221"
+    for e in wu.sym.symelems(sym):
+        print(e, flush=True)
+    # assert 0
+    showsymelems(
+        sym,
+        wu.sym.symelems(sym),
+        scan=20,
+        weight=8,
+        offset=0.0,
+        # lattice=wu.sym.lattice_vectors(sym, [1.8, 1.6, 1.7, 70, 70, 110], strict=False),
+        lattice=wu.sym.lattice_vectors(sym, [1, 1.6, 1.7, 70, 70, 110], strict=False),
+    )
+    assert 0
 
-   sym = 'P3221'
-   for e in wu.sym.symelems(sym):
-      print(e, flush=True)
-   # assert 0
-   showsymelems(
-       sym,
-       wu.sym.symelems(sym),
-       scan=20,
-       weight=8,
-       offset=0.0,
-       # lattice=wu.sym.lattice_vectors(sym, [1.8, 1.6, 1.7, 70, 70, 110], strict=False),
-       lattice=wu.sym.lattice_vectors(sym, [1, 1.6, 1.7, 70, 70, 110], strict=False),
-   )
-   assert 0
+    # test_symelems_P312()
 
-   # test_symelems_P312()
+    # test_symelems_P1()
+    # test_symelems_P41()
+    # test_symelems_P43()
 
-   # test_symelems_P1()
-   # test_symelems_P41()
-   # test_symelems_P43()
+    # test_compound_elems_R32()
+    # test_compound_elems_P222()
+    # test_compound_elems_F23(1)
+    # test_compound_elems_P23()
+    # test_compound_elems_I23()
+    # test_compound_elems_P213()
+    # test_compound_elems_P4132()
+    # test_compound_elems_I4132()
+    # test_compound_elems_P432()
+    # test_compound_elems_I432()
+    # test_compound_elems_F432()
+    # test_compound_elems_F4132()
 
-   # test_compound_elems_R32()
-   # test_compound_elems_P222()
-   # test_compound_elems_F23(1)
-   # test_compound_elems_P23()
-   # test_compound_elems_I23()
-   # test_compound_elems_P213()
-   # test_compound_elems_P4132()
-   # test_compound_elems_I4132()
-   # test_compound_elems_P432()
-   # test_compound_elems_I432()
-   # test_compound_elems_F432()
-   # test_compound_elems_F4132()
+    # test_compound_elems_P3121()
+    # test_compound_elems_P212121()
+    # test_compound_elems_P31()
+    # test_compound_elems_P32()
+    # test_compound_elems_P213()
+    # test_compound_elems_P3221()
+    # test_compound_elems_P41()
+    # test_compound_elems_P41212()
+    # test_compound_elems_P4232()
+    # test_compound_elems_P43()
+    # test_compound_elems_P43212()
+    # test_compound_elems_P4332()
+    # test_compound_elems_P6()
+    # test_compound_elems_P61()
+    # test_compound_elems_P6122()
+    # test_compound_elems_P62()
+    # test_compound_elems_P63()
+    # test_compound_elems_P64()
+    # test_compound_elems_P65()
+    # test_compound_elems_P6522()
+    # test_compound_elems_I213()rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
+    # test_compound_elems_I23()rpxdock_P3221_Crpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb2_c21004657999819pmsave_0006_asym.pdb
+    # test_compound_elems_I4()rpxdock_P3221_C2_c21004657999819pmsarpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbvrpxdock_P3221_C2_c21004657999819pmrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbsrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbarpxdock_P3221_C2_c21004657999819pmsrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbve_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbe_0006_asym.pdb
+    # test_compound_elems_I41()
 
-   # test_compound_elems_P3121()
-   # test_compound_elems_P212121()
-   # test_compound_elems_P31()
-   # test_compound_elems_P32()
-   # test_compound_elems_P213()
-   # test_compound_elems_P3221()
-   # test_compound_elems_P41()
-   # test_compound_elems_P41212()
-   # test_compound_elems_P4232()
-   # test_compound_elems_P43()
-   # test_compound_elems_P43212()
-   # test_compound_elems_P4332()
-   # test_compound_elems_P6()
-   # test_compound_elems_P61()
-   # test_compound_elems_P6122()
-   # test_compound_elems_P62()
-   # test_compound_elems_P63()
-   # test_compound_elems_P64()
-   # test_compound_elems_P65()
-   # test_compound_elems_P6522()
-   # test_compound_elems_I213()rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
-   # test_compound_elems_I23()rpxdock_P3221_Crpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb2_c21004657999819pmsave_0006_asym.pdb
-   # test_compound_elems_I4()rpxdock_P3221_C2_c21004657999819pmsarpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbvrpxdock_P3221_C2_c21004657999819pmrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbsrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbarpxdock_P3221_C2_c21004657999819pmsrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbve_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbrpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdbe_0006_asym.pdb
-   # test_compound_elems_I41()
+    assert 0
 
-   assert 0
+    # test_symelems_P1211()rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
+    # test_symelems_P2221()
+    # test_symelems_P21212()
+    # test_symelems_P1()
+    # test_symelems_C121()
+    # test_symelems_P3()
+    # test_symelems_P222()rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
+    # test_symelems_P23()
+    # test_symelems_F23()
+    # test_symelems_R32()
 
-   # test_symelems_P1211()rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
-   # test_symelems_P2221()
-   # test_symelems_P21212()
-   # test_symelems_P1()
-   # test_symelems_C121()
-   # test_symelems_P3()
-   # test_symelems_P222()rpxdock_P3221_C2_c21004657999819pmsave_0006_asym.pdb
-   # test_symelems_P23()
-   # test_symelems_F23()
-   # test_symelems_R32()
+    # test_symelems_P3121()
+    # test_symelems_P212121()
+    # test_symelems_P31()
+    # test_symelems_P32()
+    # test_symelems_P213()
+    # test_symelems_P3221()
+    # test_symelems_P41()
+    # test_symelems_P41212()
+    # test_symelems_P4132()
+    # test_symelems_P4232()
+    # test_symelems_P43()
+    # test_symelems_P432()
+    # test_symelems_P43212()
+    # test_symelems_P4332()
+    # test_symelems_P6()
+    # test_symelems_P61()
+    # test_symelems_P6122()
+    # test_symelems_P62()
+    # test_symelems_P63()
+    # test_symelems_P64()
+    # test_symelems_P65()
+    # test_symelems_P6522()
+    # test_symelems_I213()
+    # test_symelems_I23()
+    # test_symelems_I4()
+    # test_symelems_I41()
+    # test_symelems_I4132()
+    # test_symelems_I432()
+    # test_symelems_F4132()
+    # test_symelems_F432()
 
-   # test_symelems_P3121()
-   # test_symelems_P212121()
-   # test_symelems_P31()
-   # test_symelems_P32()
-   # test_symelems_P213()
-   # test_symelems_P3221()
-   # test_symelems_P41()
-   # test_symelems_P41212()
-   # test_symelems_P4132()
-   # test_symelems_P4232()
-   # test_symelems_P43()
-   # test_symelems_P432()
-   # test_symelems_P43212()
-   # test_symelems_P4332()
-   # test_symelems_P6()
-   # test_symelems_P61()
-   # test_symelems_P6122()
-   # test_symelems_P62()
-   # test_symelems_P63()
-   # test_symelems_P64()
-   # test_symelems_P65()
-   # test_symelems_P6522()
-   # test_symelems_I213()
-   # test_symelems_I23()
-   # test_symelems_I4()
-   # test_symelems_I41()
-   # test_symelems_I4132()
-   # test_symelems_I432()
-   # test_symelems_F4132()
-   # test_symelems_F432()
+    # test_remove_redundant_screws()
 
-   # test_remove_redundant_screws()
+    ic("PASS test_spacegroup_symelems")
 
-   ic('PASS test_spacegroup_symelems')
 
 # yapf: disable
 

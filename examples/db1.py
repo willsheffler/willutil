@@ -1,3 +1,3 @@
 import willutil as wu
 
-wu.readpdb('test.pdb')
+wu.readpdb("test.pdb")

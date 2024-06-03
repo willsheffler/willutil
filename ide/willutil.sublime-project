@@ -3,7 +3,7 @@
 	[
 		{
 			"name": "test install",
-			"shell_cmd": "cd ~/tmp; pip uninstall -y willutil && rm -rf $folder/build $folder/willutil.egg-info && pip install $folder && python -mpytest --pyargs willutil &> $folder/log/sublime_build.log"
+			"shell_cmd": "cd ~/tmp; echo $folder; log=$folder/log/sublime_build.log; virtualenv testenv &>> $log && source testenv/bin/activate &>> $log && echo $(which python) &>> $log && python -mpip uninstall -y willutil &>> $log && rm -rf $folder/build $folder/willutil.egg-info &>> $log && python -mpip install $folder &>> $log && python -mpytest --pyargs willutil &>> $log && pip uninstall willutil -y &>> $log"
 		},
 		{
 			"name": "test_pseudo_t.py",
