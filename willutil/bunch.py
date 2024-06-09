@@ -2,7 +2,6 @@ import os
 
 __all__ = ("Bunch", "bunchify", "unbunchify")
 
-
 class Bunch(dict):
     def __init__(self, __arg_or_ns=None, _strict="__NOT_STRICT", _default="__NODEFALT", **kw):
         if __arg_or_ns is not None:
@@ -153,7 +152,7 @@ class Bunch(dict):
         except AttributeError:
             try:
                 self[k] = v
-            except:
+            except KeyError:
                 raise AttributeError(k)
         else:
             object.__setattr__(self, k, v)
@@ -245,7 +244,6 @@ class Bunch(dict):
     def from_dict(d):
         return bunchify(d)
 
-
 def bunchify(x):
     if isinstance(x, dict):
         return Bunch(**x)
@@ -253,7 +251,6 @@ def bunchify(x):
         return type(x)(bunchify(v) for v in x)
     else:
         return x
-
 
 def unbunchify(x):
     if isinstance(x, dict):

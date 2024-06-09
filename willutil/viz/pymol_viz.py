@@ -35,6 +35,8 @@ _showme_state = wu.Bunch(
 @singledispatch
 def pymol_load(
     toshow,
+    *,
+    name='Thing',
     # state=_showme_state,
     # name=None,
     **kw,
@@ -595,10 +597,10 @@ def show_ndarray_point_or_vec(
     kw = wu.Bunch(kw)
     if toshow.shape[-1] == 3:
         toshow = wu.hpoint(toshow)
-    if isinstance(col, typing.Hashable) and col in get_color_dict():
-        col = get_color_dict()[col]
-    if col is None:
-        col = get_different_colors(len(toshow), **kw.only("colorseed"))
+    # if isinstance(col, typing.Hashable) and col in get_color_dict():
+    # col = get_color_dict()[col]
+    # if col is None:
+    # col = get_different_colors(len(toshow), **kw.only("colorseed"))
     if toshow.ndim == 1:
         toshow = [[toshow]]
     elif toshow.ndim == 2:
@@ -615,7 +617,7 @@ def show_ndarray_point_or_vec(
     cgo = list()
     colors = get_different_colors(len(toshow))
     for ichain, xyz in enumerate(toshow):
-        color = colors[ichain]
+        color = col if col is not None else colors[ichain]
         for i, p_or_v in enumerate(xyz):
             if chainbow:
                 color = RAINBOW[(len(RAINBOW) * i) // len(xyz)]
@@ -658,13 +660,15 @@ def show_ndarray_n_ca_c(
     # )
     # out.write(line)
     pymol.cmd.load(fname, name)
+    pymol.cmd.hide('car')
+    pymol.cmd.show('sti', 'name N+CA+C')
     return wu.Bunch(pymol_object=name)
 
 def iscgo(maybecgo):
     return isinstance(maybecgo[0], float)
 
 def showme_pymol(
-    what,
+    thing,
     name="noname",
     headless=False,
     block=False,
@@ -700,14 +704,14 @@ def showme_pymol(
         # cmd.turn('x', -90)
         # cmd.turn('y', 100)
 
-    # print('############## showme_pymol', type(what), '##############')
+    # print('############## showme_pymol', type(thing), '##############')
 
     if vizfresh:
         # cmd.disable('all')
         clear_pymol()
 
     # pymol.cmd.full_screen('on')
-    result = pymol_load(what, name=name, state=_showme_state, **kw)
+    result = pymol_load(thing, name=name, state=_showme_state, **kw)
     # # pymol.cmd.set('internal_gui_width', '20')
 
     if png:
@@ -730,12 +734,31 @@ def showme_pymol(
 def clear_pymol():
     pymol.cmd.delete("not axes")
 
-def showme(*args, how="pymol", **kw):
+import inspect
+
+def showme(*args, name=None, how="pymol", **kw):
     randstate = np.random.get_state()
+    if len(args) == 2 and isinstance(args[1], str):
+        name = args[1]
+        args = [args[0]]
+    if name is None:
+        frame = inspect.currentframe()
+        frame = inspect.getouterframes(frame)[2]
+        string = inspect.getframeinfo(frame[0]).code_context[0].strip()
+        argsn = string[string.find('(') + 1:-1].split(',')
+        names = []
+        for i in argsn:
+            if i.find('=') != -1: names.append(i.split('=')[1].strip())
+            else: names.append(i)
+    elif isinstance(name, str): names = [name]
+    else: names = name
+
     if "pymol" not in sys.modules:
         how = "pdb"
     if how == "pymol":
-        result = showme_pymol(*args, **kw)
+
+        for arg, name in zip(args, names):
+            result = showme_pymol(arg, name=name, **kw)
     else:
         result = NotImplementedError('showme how="%s" not implemented' % how)
     np.random.set_state(randstate)

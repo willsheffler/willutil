@@ -132,13 +132,10 @@ from willutil.homog import (
 
 ic.install()
 
-
 # from willutil.viz import showme
 def showme(*a, **kw):
     from willutil.viz import showme as viz_showme
-
     viz_showme(*a, **kw)
-
 
 # __all__ = ('MonteCarlo', 'RigidBody', 'compute_symfit', 'dssp', 'halign', 'halign2', 'halign_vector', 'hangle',
 #           'hangle_degrees', 'hangle_of', 'hangle_of_degrees', 'hangline', 'haxis_ang_cen_of', 'haxis_ang_cen_hel_of',

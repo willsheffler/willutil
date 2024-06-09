@@ -1,11 +1,11 @@
 import deferred_import
-
+import sys
 import numpy as np
 
 t = deferred_import.deferred_import("torch")
 import willutil as wu
 # from willutil.homog.hgeom import *
-
+h = sys.modules[__name__]
 
 def torch_min(func, iters=4, history_size=10, max_iter=4, line_search_fn="strong_wolfe", **kw):
     import functools
@@ -21,7 +21,6 @@ def torch_min(func, iters=4, history_size=10, max_iter=4, line_search_fn="strong
         loss = lbfgs.step(closure)
     return loss
 
-
 def construct(rot, trans=None):
     rot = t.as_tensor(rot)
     x = t.zeros((rot.shape[:-2] + (4, 4)))
@@ -30,7 +29,6 @@ def construct(rot, trans=None):
         x[..., :3, 3] = t.as_tensor(trans)[..., :3]
     x[..., 3, 3] = 1
     return x
-
 
 def mean_along(vecs, along=None):
     vecs = vec(vecs)
@@ -43,14 +41,12 @@ def mean_along(vecs, along=None):
     tot = t.sum(flipped, axis=0)
     return normalized(tot)
 
-
 def com_flat(points, closeto=None, closefrac=0.5):
     if closeto != None:
         dist = norm(points - closeto)
-        close = t.argsort(dist)[: closefrac * len(dist)]
+        close = t.argsort(dist)[:closefrac * len(dist)]
         points = points[close]
     return t.mean(points, axis=-2)
-
 
 def com(points, **kw):
     points = point(points)
@@ -60,13 +56,11 @@ def com(points, **kw):
     com = com.reshape(*oshape[:-2], 4)
     return com
 
-
 def rog_flat(points):
     com = com_flat(points).reshape(-1, 1, 4)
     delta = t.linalg.norm(points - com, dim=2)
     rg = t.sqrt(t.mean(delta**2, dim=1))
     return rg
-
 
 def rog(points, aboutaxis=None):
     points = point(points)
@@ -79,18 +73,15 @@ def rog(points, aboutaxis=None):
     rog = rog.reshape(oshape[:-2])
     return rog
 
-
 def proj(u, v):
     u = vec(u)
     v = point(v)
     return dot(u, v)[..., None] / norm2(u)[..., None] * u
 
-
 def projperp(u, v):
     u = vec(u)
     v = point(v)
     return v - proj(u, v)
-
 
 def axis_angle_cen(xforms, ident_match_tol=1e-8):
     # ic(xforms.dtype)
@@ -130,7 +121,6 @@ def axis_angle_cen(xforms, ident_match_tol=1e-8):
     cen = cen.reshape(*origshape, 4)
     return axis, angle, cen
 
-
 def rot(axis, angle, center=None, hel=None, squeeze=True):
     if center is None:
         center = t.tensor([0, 0, 0, 1], dtype=t.float)
@@ -140,13 +130,21 @@ def rot(axis, angle, center=None, hel=None, squeeze=True):
     if hel is None:
         hel = t.tensor([0], dtype=t.float)
     if axis.ndim == 1:
-        axis = axis[None,]
+        axis = axis[
+            None,
+        ]
     if angle.ndim == 0:
-        angle = angle[None,]
+        angle = angle[
+            None,
+        ]
     if center.ndim == 1:
-        center = center[None,]
+        center = center[
+            None,
+        ]
     if hel.ndim == 0:
-        hel = hel[None,]
+        hel = hel[
+            None,
+        ]
     rot = rot3(axis, angle, shape=(4, 4), squeeze=False)
     shape = angle.shape
 
@@ -177,36 +175,29 @@ def rot(axis, angle, center=None, hel=None, squeeze=True):
         r = r.reshape(4, 4)
     return r
 
-
 def rand_point(*a, **kw):
     return t.from_numpy(wu.hrandpoint(*a, **kw))
-
 
 def rand_vec(*a, **kw):
     return t.from_numpy(wu.hrandvec(*a, **kw))
 
-
 def rand_xform_small(*a, **kw):
     return t.from_numpy(wu.hrandsmall(*a, **kw))
-
 
 def rand_xform(*a, **kw):
     return t.from_numpy(wu.hrand(*a, **kw))
 
-
 def rand_quat(*a, **kw):
     return t.from_numpy(rand_quat(*a, **kw))
 
-
 rand = rand_xform
-
 
 def rot_to_quat(xform):
     raise NotImplementedError
     x = np.asarray(xform)
     t0, t1, t2 = x[..., 0, 0], x[..., 1, 1], x[..., 2, 2]
     tr = t0 + t1 + t2
-    quat = np.empty(x.shape[:-2] + (4,))
+    quat = np.empty(x.shape[:-2] + (4, ))
 
     case0 = tr > 0
     S0 = np.sqrt(tr[case0] + 1) * 2
@@ -240,14 +231,11 @@ def rot_to_quat(xform):
 
     return quat_to_upper_half(quat)
 
-
 xform_to_quat = rot_to_quat
-
 
 def is_valid_quat_rot(quat):
     assert quat.shape[-1] == 4
     return np.isclose(1, t.linalg.norm(quat, axis=-1))
-
 
 def quat_to_upper_half(quat):
     ineg0 = quat[..., 0] < 0
@@ -262,7 +250,6 @@ def quat_to_upper_half(quat):
     quat2 = t.where(ineg, -quat, quat)
     return normalized(quat2)
 
-
 def homog(rot, trans=None, **kw):
     if trans is None:
         trans = t.as_tensor([0, 0, 0, 0], device=rot.device, **kw)
@@ -273,11 +260,10 @@ def homog(rot, trans=None, **kw):
         rot = t.cat([rot, t.tensor([[0], [0], [0], [1]], device=rot.device)], axis=1)
 
     assert rot.shape[-2:] == (4, 4)
-    assert trans.shape[-1:] == (4,)
+    assert trans.shape[-1:] == (4, )
 
     h = t.cat([rot[:, :3], trans[:, None]], axis=1)
     return h
-
 
 def quat_to_rot(quat):
     assert quat.shape[-1] == 4
@@ -286,46 +272,30 @@ def quat_to_rot(quat):
     qj = quat[..., 2]
     qk = quat[..., 3]
 
-    rot = t.cat(
-        [
-            t.tensor(
-                [
-                    [
-                        1 - 2 * (qj**2 + qk**2),
-                        2 * (qi * qj - qk * qr),
-                        2 * (qi * qk + qj * qr),
-                    ]
-                ]
-            ),
-            t.tensor(
-                [
-                    [
-                        2 * (qi * qj + qk * qr),
-                        1 - 2 * (qi**2 + qk**2),
-                        2 * (qj * qk - qi * qr),
-                    ]
-                ]
-            ),
-            t.tensor(
-                [
-                    [
-                        2 * (qi * qk - qj * qr),
-                        2 * (qj * qk + qi * qr),
-                        1 - 2 * (qi**2 + qj**2),
-                    ]
-                ]
-            ),
-        ]
-    )
+    rot = t.cat([
+        t.tensor([[
+            1 - 2 * (qj**2 + qk**2),
+            2 * (qi * qj - qk * qr),
+            2 * (qi * qk + qj * qr),
+        ]]),
+        t.tensor([[
+            2 * (qi * qj + qk * qr),
+            1 - 2 * (qi**2 + qk**2),
+            2 * (qj * qk - qi * qr),
+        ]]),
+        t.tensor([[
+            2 * (qi * qk - qj * qr),
+            2 * (qj * qk + qi * qr),
+            1 - 2 * (qi**2 + qj**2),
+        ]]),
+    ])
     # ic(rot.shape)
     return rot
-
 
 def quat_to_xform(quat, dtype="f8"):
     r = quat_to_rot(quat, dtype)
     r = t.cat([r])
     return r
-
 
 def rot3(axis, angle, shape=(3, 3), squeeze=True):
     # axis = t.tensor(axis, dtype=dtype, requires_grad=requires_grad)
@@ -333,9 +303,13 @@ def rot3(axis, angle, shape=(3, 3), squeeze=True):
     # angle = t.tensor(angle, dtype=dtype, requires_grad=requires_grad)
 
     if axis.ndim == 1:
-        axis = axis[None,]
+        axis = axis[
+            None,
+        ]
     if angle.ndim == 0:
-        angle = angle[None,]
+        angle = angle[
+            None,
+        ]
     # if angle.ndim == 0
     if axis.shape and angle.shape and not is_broadcastable(axis.shape[:-1], angle.shape):
         raise ValueError(f"axis/angle not compatible: {axis.shape} {angle.shape}")
@@ -377,11 +351,9 @@ def rot3(axis, angle, shape=(3, 3), squeeze=True):
         rot = rot.reshape(4, 4)
     return rot
 
-
 def rms(a, b):
     assert a.shape == b.shape
     return t.sqrt(t.sum(t.square(a - b)) / len(a))
-
 
 def xform(xform, stuff, homogout="auto", **kw):
     xform = t.as_tensor(xform).to(stuff.dtype)
@@ -393,9 +365,7 @@ def xform(xform, stuff, homogout="auto", **kw):
         result = result[..., :3]
     return result
 
-
 _xform = xform
-
 
 def xformpts(xform, stuff, **kw):
     return _xform(xform, stuff, is_points=True, **kw)
@@ -409,7 +379,6 @@ def xformpts(xform, stuff, **kw):
     #      )
 
     return result
-
 
 def rmsfit(mobile, target):
     """use kabsch method to get rmsd fit"""
@@ -449,39 +418,34 @@ def rmsfit(mobile, target):
 
     return rms_, mobile_fit_to_target, xform_mobile_to_target
 
-
 def randpoint(shape=(), cen=[0, 0, 0], std=1, dtype=None):
     dtype = dtype or t.float32
     cen = t.as_tensor(cen)
     if isinstance(shape, int):
-        shape = (shape,)
-    p = point(t.randn(*(shape) + (3,)) * std + cen)
+        shape = (shape, )
+    p = point(t.randn(*(shape) + (3, ), dtype=dtype) * std + cen)
     return p
-
 
 def randvec(shape=(), std=1, dtype=None):
     dtype = dtype or t.float32
     if isinstance(shape, int):
-        shape = (shape,)
-    return vec(t.randn(*(shape + (3,))) * std)
-
+        shape = (shape, )
+    return vec(t.randn(*(shape + (3, ))) * std)
 
 def randunit(shape=(), cen=[0, 0, 0], std=1):
     dtype = dtype or t.float32
     if isinstance(shape, int):
-        shape = (shape,)
-    v = normalized(t.randn(*(shape + (3,))) * std)
+        shape = (shape, )
+    v = normalized(t.randn(*(shape + (3, ))) * std)
     return v
-
 
 def point(point, **kw):
     point = t.as_tensor(point)
     shape = point.shape[:-1]
-    points = t.cat([point[..., :3], t.ones(shape + (1,), device=point.device)], axis=-1)
+    points = t.cat([point[..., :3], t.ones(shape + (1, ), device=point.device)], axis=-1)
     if points.dtype not in (t.float32, t.float64):
         points = points.to(t.float32)
     return points
-
 
 def vec(vec):
     vec = t.as_tensor(vec)
@@ -492,15 +456,14 @@ def vec(vec):
             vec = t.cat([vec[..., :3], t.zeros(*vec.shape[:-1], 1, device=vec.device)], dim=-1)
         return vec
     elif vec.shape[-1] == 3:
-        r = t.zeros(vec.shape[:-1] + (4,), dtype=vec.dtype, device=vec.device)
+        r = t.zeros(vec.shape[:-1] + (4, ), dtype=vec.dtype, device=vec.device)
         r[..., :3] = vec
         return r
     else:
         raise ValueError("vec must len 3 or 4")
 
-
 def normalized(a):
-    return t.nn.functional.normalize(a, dim=-1)
+    return t.nn.functional.normalize(t.as_tensor(a, dtype=float), dim=-1)
     # a = t.as_tensor(a)
     # if (not a.shape and len(a) == 3) or (a.shape and a.shape[-1] == 3):
     #    a, tmp = t.zeros(a.shape[:-1] + (4, ), dtype=a.type), a
@@ -509,34 +472,28 @@ def normalized(a):
     # a2[..., 3] = 0
     # return a2 / norm(a2)[..., None]
 
-
 def norm(a):
     a = t.as_tensor(a)
     return t.sqrt(t.sum(a[..., :3] * a[..., :3], axis=-1))
 
-
 def norm2(a):
     a = t.as_tensor(a)
     return t.sum(a[..., :3] * a[..., :3], axis=-1)
-
 
 def axis_angle_hel(xforms):
     axis, angle = axis_angle(xforms)
     hel = dot(axis, xforms[..., :, 3])
     return axis, angle, hel
 
-
 def axis_angle_cen_hel(xforms):
     axis, angle, cen = axis_angle_cen(xforms)
     hel = dot(axis, xforms[..., :, 3])
     return axis, angle, cen, hel
 
-
 def axis_angle(xforms):
     axis_ = axis(xforms)
     angl = angle(xforms)
     return axis_, angl
-
 
 def axis(xforms):
     if xforms.shape[-2:] == (4, 4):
@@ -549,8 +506,7 @@ def axis(xforms):
                     t.zeros(xforms.shape[:-2]),
                 ),
                 axis=-1,
-            )
-        )
+            ))
     if xforms.shape[-2:] == (3, 3):
         return normalized(
             t.stack(
@@ -560,11 +516,9 @@ def axis(xforms):
                     xforms[..., 1, 0] - xforms[..., 0, 1],
                 ),
                 axis=-1,
-            )
-        )
+            ))
     else:
         raise ValueError("wrong shape for xform/rotation matrix: " + str(xforms.shape))
-
 
 def angle(xforms):
     tr = xforms[..., 0, 0] + xforms[..., 1, 1] + xforms[..., 2, 2]
@@ -572,33 +526,28 @@ def angle(xforms):
     angl = t.arccos(t.clip(cos, -1, 1))
     return angl
 
-
 def point_line_dist2(point, cen, norm):
+    point, cen, norm = h.point(point), h.point(cen), h.normalized(norm)
     point = point - cen
-    hproj = norm * t.sum(norm * point) / t.sum(norm * norm)
-    perp = point - hproj
-    return t.sum(perp**2)
-
+    perp = h.projperp(norm, point)
+    return h.norm2(perp)
 
 def dot(a, b, outerprod=False):
     if outerprod:
         shape1 = a.shape[:-1]
         shape2 = b.shape[:-1]
-        a = a.reshape((1,) * len(shape2) + shape1 + (-1,))
-        b = b.reshape(shape2 + (1,) * len(shape1) + (-1,))
+        a = a.reshape((1, ) * len(shape2) + shape1 + (-1, ))
+        b = b.reshape(shape2 + (1, ) * len(shape1) + (-1, ))
     return t.sum(a[..., :3] * b[..., :3], axis=-1)
-
 
 def point_in_plane(point, normal, pt):
     inplane = t.abs(dot(normal[..., :3], pt[..., :3] - point[..., :3]))
     return inplane < 0.00001
 
-
 def ray_in_plane(point, normal, p1, n1):
     inplane1 = point_in_plane(point, normal, p1)
     inplane2 = point_in_plane(point, normal, p1 + n1)
     return inplane1 and inplane2
-
 
 def intersect_planes(p1, n1, p2, n2):
     """
@@ -641,13 +590,11 @@ def intersect_planes(p1, n1, p2, n2):
 
     amax = t.argmax(abs_u, axis=-1)
     sel = amax == 0, amax == 1, amax == 2
-    perm = t.cat(
-        [
-            t.where(sel[0])[0],
-            t.where(sel[1])[0],
-            t.where(sel[2])[0],
-        ]
-    )
+    perm = t.cat([
+        t.where(sel[0])[0],
+        t.where(sel[1])[0],
+        t.where(sel[2])[0],
+    ])
     perminv = t.empty_like(perm)
     perminv[perm] = t.arange(len(perm))
     breaks = np.cumsum([0, sum(sel[0]), sum(sel[1]), sum(sel[2])])
@@ -685,7 +632,6 @@ def intersect_planes(p1, n1, p2, n2):
 
     return isect_pt, isect_dirn, status
 
-
 def is_broadcastable(shape1, shape2):
     for a, b in zip(shape1[::-1], shape2[::-1]):
         if a == 1 or b == 1 or a == b:
@@ -694,16 +640,14 @@ def is_broadcastable(shape1, shape2):
             return False
     return True
 
-
 def axis_ang_cen_magic_points_torch():
     return t.from_numpy(wu.homog.hgeom._axis_ang_cen_magic_points_numpy).float()
-
 
 def diff(x, y, lever=10.0):
     shape1 = x.shape[:-2]
     shape2 = y.shape[:-2]
-    a = x.reshape(shape1 + (1,) * len(shape1) + (4, 4))
-    b = y.reshape((1,) * len(shape2) + shape2 + (4, 4))
+    a = x.reshape(shape1 + (1, ) * len(shape1) + (4, 4))
+    b = y.reshape((1, ) * len(shape2) + shape2 + (4, 4))
 
     axyz = a[..., :3, :3] * lever + a[..., :3, 3, None]
     bxyz = b[..., :3, :3] * lever + b[..., :3, 3, None]
@@ -712,7 +656,6 @@ def diff(x, y, lever=10.0):
     diff = t.mean(diff, dim=-1)
 
     return diff
-
 
 # def cross(u, v):
 #    return t.linalg.cross(u[..., :3], v[..., :3])
@@ -728,40 +671,33 @@ def diff(x, y, lever=10.0):
 #    stubs[..., :, 3] = cen[..., :]
 #    return stubs
 
-
 def Qs2Rs(Qs):
     Rs = t.zeros((*Qs.shape[:-1], 3, 3), device=Qs.device)
 
-    Rs[..., 0, 0] = (
-        Qs[..., 0] * Qs[..., 0] + Qs[..., 1] * Qs[..., 1] - Qs[..., 2] * Qs[..., 2] - Qs[..., 3] * Qs[..., 3]
-    )
+    Rs[..., 0, 0] = (Qs[..., 0] * Qs[..., 0] + Qs[..., 1] * Qs[..., 1] - Qs[..., 2] * Qs[..., 2] -
+                     Qs[..., 3] * Qs[..., 3])
     Rs[..., 0, 1] = 2 * Qs[..., 1] * Qs[..., 2] - 2 * Qs[..., 0] * Qs[..., 3]
     Rs[..., 0, 2] = 2 * Qs[..., 1] * Qs[..., 3] + 2 * Qs[..., 0] * Qs[..., 2]
     Rs[..., 1, 0] = 2 * Qs[..., 1] * Qs[..., 2] + 2 * Qs[..., 0] * Qs[..., 3]
-    Rs[..., 1, 1] = (
-        Qs[..., 0] * Qs[..., 0] - Qs[..., 1] * Qs[..., 1] + Qs[..., 2] * Qs[..., 2] - Qs[..., 3] * Qs[..., 3]
-    )
+    Rs[..., 1, 1] = (Qs[..., 0] * Qs[..., 0] - Qs[..., 1] * Qs[..., 1] + Qs[..., 2] * Qs[..., 2] -
+                     Qs[..., 3] * Qs[..., 3])
     Rs[..., 1, 2] = 2 * Qs[..., 2] * Qs[..., 3] - 2 * Qs[..., 0] * Qs[..., 1]
     Rs[..., 2, 0] = 2 * Qs[..., 1] * Qs[..., 3] - 2 * Qs[..., 0] * Qs[..., 2]
     Rs[..., 2, 1] = 2 * Qs[..., 2] * Qs[..., 3] + 2 * Qs[..., 0] * Qs[..., 1]
-    Rs[..., 2, 2] = (
-        Qs[..., 0] * Qs[..., 0] - Qs[..., 1] * Qs[..., 1] - Qs[..., 2] * Qs[..., 2] + Qs[..., 3] * Qs[..., 3]
-    )
+    Rs[..., 2, 2] = (Qs[..., 0] * Qs[..., 0] - Qs[..., 1] * Qs[..., 1] - Qs[..., 2] * Qs[..., 2] +
+                     Qs[..., 3] * Qs[..., 3])
 
     return Rs
-
 
 # ============================================================
 def normQ(Q):
     """normalize a quaternions"""
     return Q / t.linalg.norm(Q, keepdim=True, dim=-1)
 
-
 def Q2R(Q):
     Qs = t.cat((t.ones((len(Q), 1), device=Q.device, dtype=Q.dtype), Q), dim=-1)
     Qs = normQ(Qs)
     return Qs2Rs(Qs[None, :]).squeeze(0)
-
 
 def _thxform_impl(x, stuff, outerprod="auto", flat=False, is_points="auto", improper_ok=False):
     if is_points == "auto":
@@ -776,8 +712,8 @@ def _thxform_impl(x, stuff, outerprod="auto", flat=False, is_points="auto", impr
         if outerprod:
             shape1 = x.shape[:-2]
             shape2 = stuff.shape[:-2]
-            a = x.reshape(shape1 + (1,) * len(shape2) + (4, 4))
-            b = stuff.reshape((1,) * len(shape1) + shape2 + (4, 4))
+            a = x.reshape(shape1 + (1, ) * len(shape2) + (4, 4))
+            b = stuff.reshape((1, ) * len(shape1) + shape2 + (4, 4))
             result = a @ b
             if flat:
                 result = result.reshape(-1, 4, 4)
@@ -795,9 +731,9 @@ def _thxform_impl(x, stuff, outerprod="auto", flat=False, is_points="auto", impr
             shape1 = x.shape[:-2]
             shape2 = stuff.shape[:-2]
             # ic(x.shape, stuff.shape, shape1, shape2)
-            a = x.reshape(shape1 + (1,) * len(shape2) + (4, 4))
+            a = x.reshape(shape1 + (1, ) * len(shape2) + (4, 4))
 
-            b = stuff.reshape((1,) * len(shape1) + shape2 + (4, 1))
+            b = stuff.reshape((1, ) * len(shape1) + shape2 + (4, 1))
             result = a @ b
         else:
             # try to match first N dimensions, outer prod the rest
@@ -809,11 +745,11 @@ def _thxform_impl(x, stuff, outerprod="auto", flat=False, is_points="auto", impr
                 if s1 == s2:
                     shape1 = shape1[1:]
                     shape2 = shape2[1:]
-                    sameshape = sameshape + (s1,)
+                    sameshape = sameshape + (s1, )
                 else:
                     break
-            newshape1 = sameshape + shape1 + (1,) * len(shape2) + (4, 4)
-            newshape2 = sameshape + (1,) * len(shape1) + shape2 + (4, 1)
+            newshape1 = sameshape + shape1 + (1, ) * len(shape2) + (4, 4)
+            newshape2 = sameshape + (1, ) * len(shape1) + shape2 + (4, 1)
             # ic(shape1, shape2, newshape1, newshape2)
             a = x.reshape(newshape1)
             b = stuff.reshape(newshape2)
@@ -828,7 +764,6 @@ def _thxform_impl(x, stuff, outerprod="auto", flat=False, is_points="auto", impr
     # ic('result', result.shape)
     return result
 
-
 def valid(stuff, is_points=None, strict=False, **kw):
     if stuff.shape[-2:] == (4, 4) and not is_points == True:
         return valid44(stuff, **kw)
@@ -842,12 +777,10 @@ def valid(stuff, is_points=None, strict=False, **kw):
         return True
     return False
 
-
 def valid_norm(x):
     normok = t.allclose(1, t.linalg.norm(x[..., :3, :3], axis=-1))
     normok &= t.allclose(1, t.linalg.norm(x[..., :3, :3], axis=-2))
     return t.all(normok)
-
 
 def valid44(x, improper_ok=False, **kw):
     if x.shape[-2:] != (4, 4):

@@ -12,7 +12,7 @@ def pymol_frame(_FUNCTION_):
     @functools.wraps(_FUNCTION_)
     def wrapper(
         *args,
-        name,
+        name=_FUNCTION_.__name__,
         cgo=None,
         suspend_updates=True,
         delprev=False,
