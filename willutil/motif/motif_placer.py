@@ -7,7 +7,6 @@ from collections import namedtuple
 
 # FastDMEMotifPlacement = namedtuple('FastDMEMotifPlacement', 'offset rms dme occ alldme')
 
-
 def place_motif_dme_fast(
     xyz,
     motif,
@@ -104,7 +103,6 @@ def place_motif_dme_fast(
     # return FastDMEMotifPlacement(offsets=offsets, rms=rms, dme=dme, occ=occ, alldme=alldme)
     return wu.Bunch(offset=offsets, rms=rms, dme=dme, occ=occ, alldme=alldme)
 
-
 def compute_dme_corners(dmat1, dmat2, junct=0, method="mse"):
     assert dmat1.shape[-2:] == dmat2.shape
     m, n = dmat1.shape[-2:]
@@ -157,7 +155,6 @@ def compute_dme_corners(dmat1, dmat2, junct=0, method="mse"):
 
     return dme.sum(axis=(-1, -2))
 
-
 def compute_offset_dme_tensor(
     xyz,
     motif,
@@ -203,20 +200,18 @@ def compute_offset_dme_tensor(
             newshape[i], newshape[j] = dme2b.shape
             alldme += 2 * dme2b.reshape(newshape)
 
-    alldme /= sum([len(m) for m in motif]) ** 2
+    alldme /= sum([len(m) for m in motif])**2
     alldme = torch.sqrt(alldme)
     return alldme
 
-
 def _psumblock(psum, beg1, end1, beg2, end2):
     return psum[end1, end2] + psum[beg1, beg2] - 2 * psum[beg1, end2]
-
 
 def compute_offset_occlusion_tensor(contacts, sizes, nasym=None, minbeg=0, minend=0, dtype=torch.float32):
     assert contacts.max() >= -0.001 and contacts.min() <= 1.0001
     nasym = nasym or len(contacts)
     assert nasym == len(contacts)
-    psum = torch.zeros((len(contacts) + 1,) * 2, dtype=dtype, device=contacts.device)
+    psum = torch.zeros((len(contacts) + 1, ) * 2, dtype=dtype, device=contacts.device)
     psum[1:, 1:] = torch.cumsum(contacts, dim=0).cumsum(dim=1)
     offsetshape = [len(contacts) - s + 1 - minbeg - minend for s in sizes]
     offsetshape[0] = nasym - sizes[0] + 1 - minbeg - minend
@@ -230,9 +225,8 @@ def compute_offset_occlusion_tensor(contacts, sizes, nasym=None, minbeg=0, minen
     # subtract out intra-motif contacts
     for i1, (noff1, size1) in enumerate(zip(offsetshape, sizes)):
         for i2, (noff2, size2) in enumerate(zip(offsetshape, sizes)):
-            blocksums = (
-                psum[size1:, size2:] + psum[:noff1, :noff2] - psum[size1:, :noff2] - psum[:noff1, size2:]
-            )
+            blocksums = (psum[size1:, size2:] + psum[:noff1, :noff2] - psum[size1:, :noff2] -
+                         psum[:noff1, size2:])
             if i1 == i2:
                 blocksums = torch.diagonal(blocksums)
             newshape = [1] * len(sizes)
@@ -245,7 +239,6 @@ def compute_offset_occlusion_tensor(contacts, sizes, nasym=None, minbeg=0, minen
     occ /= sum(sizes)
 
     return occ
-
 
 def compute_offset_occlusion_brute(contacts, sizes, nasym=None, **kw):
     import torch
@@ -278,10 +271,16 @@ def compute_offset_occlusion_brute(contacts, sizes, nasym=None, **kw):
     occ /= sum(sizes)
     return occ, offsets
 
-
-def make_test_motif(
-    xyz, sizes, minsep=0, minbeg=0, minend=0, ntries=3, rnoise=0, lever=10, nasym=None, cbreaks=[0]
-):
+def make_test_motif(xyz,
+                    sizes,
+                    minsep=0,
+                    minbeg=0,
+                    minend=0,
+                    ntries=3,
+                    rnoise=0,
+                    lever=10,
+                    nasym=None,
+                    cbreaks=[0]):
     nres = len(xyz)
     nasym = nasym or nres
 
@@ -289,8 +288,7 @@ def make_test_motif(
     for itry in range(ntries):
         N = 1000 * 10**itry
         offsets = torch.stack(
-            [torch.randint((nasym if il == 0 else nres) - l + 1, (N,)) for il, l in enumerate(sizes)], axis=1
-        )
+            [torch.randint((nasym if il == 0 else nres) - l + 1, (N, )) for il, l in enumerate(sizes)], axis=1)
         ok = check_offsets_overlap_containment(offsets, sizes, nres, nasym, cbreaks, minsep, minbeg, minend)
         if torch.any(ok):
             offsets = offsets[ok]
@@ -308,20 +306,16 @@ def make_test_motif(
 
     return motif, pos
 
-
 MotifPlacement = namedtuple("MotifPlacement", "offset score alloffset allscore")
-
 
 def get_symm_cbreaks(nres, nasym=None, cbreaks=None):
     nasym = nasym or nres
     assert nres % nasym == 0
     cbreaks = [0] if cbreaks is None else cbreaks
-    cbreaks = {
-        ((int(c) % nasym) + s * nasym) for c, s in itertools.product([0] + list(cbreaks), range(nres // nasym))
-    }
+    cbreaks = {((int(c) % nasym) + s * nasym)
+               for c, s in itertools.product([0] + list(cbreaks), range(nres // nasym))}
     cbreaks = torch.tensor(sorted(cbreaks.union({nres})))
     return cbreaks
-
 
 # def remove_symmdup_offsets(offsets, nasym):
 #   assert 0
@@ -335,10 +329,14 @@ def get_symm_cbreaks(nres, nasym=None, cbreaks=None):
 #   isdup[uniq_idx.unique()] = True
 #   return isdup
 
-
-def check_offsets_overlap_containment(
-    offsets, sizes, nres, nasym=None, cbreaks=None, minsep=0, minbeg=0, minend=0
-):
+def check_offsets_overlap_containment(offsets,
+                                      sizes,
+                                      nres,
+                                      nasym=None,
+                                      cbreaks=None,
+                                      minsep=0,
+                                      minbeg=0,
+                                      minend=0):
     offsets = torch.as_tensor(offsets)
     if offsets.ndim == 1:
         offsets = offsets.unsqueeze(1)
@@ -363,7 +361,6 @@ def check_offsets_overlap_containment(
     # ok[ok.clone()] &= remove_symmdup_offsets(offsets[ok], nasym)
     return ok
 
-
 def make_floating_offsets(sizes, nres, nasym, cbreaks, minsep=0, minbeg=0, minend=0):
     # assert len(sizes) < 5, 'this may work badly for many chains'
     nasym = nasym or nres
@@ -378,7 +375,6 @@ def make_floating_offsets(sizes, nres, nasym, cbreaks, minsep=0, minbeg=0, minen
         offsets = offsets.unsqueeze(1)
     return offsets
 
-
 def place_motif_rms_brute(xyz, motif, topk=10, nasym=None, **kw):
     import torch
 
@@ -388,11 +384,10 @@ def place_motif_rms_brute(xyz, motif, topk=10, nasym=None, **kw):
     offsets = make_floating_offsets([len(m) for m in motif], nres, nasym, **kw)
     rms = torch.zeros(len(offsets))
     for i, offset in enumerate(offsets):
-        scrd = torch.cat([ca[o : o + len(m)] for o, m in zip(offset, motif)])
+        scrd = torch.cat([ca[o:o + len(m)] for o, m in zip(offset, motif)])
         rms[i], _, _ = h.rmsfit(mcrd, scrd)
     val, idx = torch.topk(rms, topk, largest=False)
     return MotifPlacement(offsets[idx], rms[idx], offsets, rms)
-
 
 def place_motif_dme_brute(xyz, motif, topk=10, nasym=None, **kw):
     dmotif = list()
@@ -412,7 +407,7 @@ def place_motif_dme_brute(xyz, motif, topk=10, nasym=None, **kw):
     dme = torch.zeros(len(offsets), device=xyz.device)
     # dme_test = torch.zeros(len(offsets))
     for ioffset, offset in enumerate(offsets):
-        scrd = torch.cat([ca[o : o + len(m)] for o, m in zip(offset, motif)])
+        scrd = torch.cat([ca[o:o + len(m)] for o, m in zip(offset, motif)])
         sdist = torch.cdist(scrd, scrd)
         dme[ioffset] = torch.sqrt(torch.square(mdist - sdist).mean())
         # dme[ioffset] = torch.square(mdist - sdist).mean()

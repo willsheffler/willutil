@@ -216,7 +216,6 @@ def pymol_viz_list(
 @pymol_load.register(np.ndarray)
 def pymol_load_npndarray(
     toshow,
-    name=None,
     state=_showme_state,
     kind=None,
     **kw,
@@ -226,24 +225,24 @@ def pymol_load_npndarray(
     assert kind in (None, *"linestrip ncac line xform point vec".split())
 
     if kind == "linestrip":
-        return show_ndarray_line_strip(toshow, state, **kw)
+        return show_ndarray_line_strip(toshow, state=state, **kw)
     elif kind == "ncac":
         return show_ndarray_n_ca_c(toshow[..., :3, :], state, **kw)
     elif kind == "line":
-        return show_ndarray_lines(toshow, state, **kw)
+        return show_ndarray_lines(toshow, state=state, **kw)
     elif kind == "xform":
-        return pymol_visualize_xforms(toshow, state, **kw)
+        return pymol_visualize_xforms(toshow, state=state, **kw)
     elif kind in ("point", "vec"):
-        return show_ndarray_point_or_vec(toshow, state, kind=kind, **kw)
+        return show_ndarray_point_or_vec(toshow, state=state, kind=kind, **kw)
 
     if shape[-2:] in [(3, 4), (5, 4), (3, 3)]:
         return show_ndarray_n_ca_c(toshow[..., :3, :], state, **kw)
     elif shape[-2:] == (4, 2):
-        return show_ndarray_lines(toshow, state, **kw)
+        return show_ndarray_lines(toshow, state=state, **kw)
     elif len(shape) > 2 and shape[-2:] == (4, 4):
-        return pymol_visualize_xforms(toshow, state, **kw)
+        return pymol_visualize_xforms(toshow, state=state, **kw)
     elif shape == (4, ) or len(shape) == 2 and shape[-1] in (3, 4):
-        return show_ndarray_point_or_vec(wu.homog.hpoint(toshow), state, **kw)
+        return show_ndarray_point_or_vec(wu.homog.hpoint(toshow), state=state, **kw)
     else:
         raise NotImplementedError(f"cant understand np.ndarray type {type(toshow)} shape {toshow.shape}")
 
@@ -251,7 +250,7 @@ try:
     import torch
 
     @pymol_load.register(torch.Tensor)
-    def _(
+    def pymol_load_Tensor(
         toshow,
         *a,
         **kw,
@@ -310,7 +309,6 @@ def get_different_colors(ncol, niter=1000, colorseed=1):
 @pymol_frame
 def pymol_visualize_xforms(
         xforms,
-        cgo,
         name="xforms",
         randpos=0.0,
         xyzlen=[5 / 4, 1, 4 / 5],
@@ -343,7 +341,7 @@ def pymol_visualize_xforms(
     if xforms.shape == (4, 4):
         xforms = xforms.reshape(1, 4, 4)
 
-    name = get_cgo_name(name)
+    # name = get_cgo_name(name)
 
     if framecolors == "rand":
         colors = get_different_colors(len(xforms) + 1, **kw.only("colorseed"))
@@ -508,7 +506,7 @@ def show_ndarray_line_strip(
 
     mycgo = list()
     assert toshow.shape[-1] == 4
-    toshow = toshow.reshape(-1, 4)
+    toshow = toshow.reshape(-1, 4).copy()
 
     toshow[:, 3] = cgo.VERTEX
     toshow = toshow.reshape(-1)
@@ -595,6 +593,9 @@ def show_ndarray_point_or_vec(
     **kw,
 ):
     kw = wu.Bunch(kw)
+    import torch as th
+    if isinstance(toshow, th.Tensor):
+        toshow = toshow.cpu().detach().numpy()
     if toshow.shape[-1] == 3:
         toshow = wu.hpoint(toshow)
     # if isinstance(col, typing.Hashable) and col in get_color_dict():
@@ -613,12 +614,18 @@ def show_ndarray_point_or_vec(
         toshow = wu.homog.hpoint(toshow)
     else:
         toshow = np.array(toshow)
+    if isinstance(col, tuple) and isinstance(col[0], (int, float)):
+        col = [col]
     toshow[..., :3] *= scale
     cgo = list()
-    colors = get_different_colors(len(toshow))
+    colors = col or get_different_colors(len(toshow))
     for ichain, xyz in enumerate(toshow):
-        color = col if col is not None else colors[ichain]
+        if len(colors) == 1: color = colors[0]
+        if len(colors) == len(toshow):
+            color = colors[ichain]
         for i, p_or_v in enumerate(xyz):
+            if len(colors) == len(xyz):
+                color = colors[i]
             if chainbow:
                 color = RAINBOW[(len(RAINBOW) * i) // len(xyz)]
             if p_or_v[3] > 0.999:
@@ -680,6 +687,10 @@ def showme_pymol(
     one_png_only=False,
     **kw,
 ):
+
+    if 'pymol' not in sys.modules:
+        raise NotImplementedError('pymol package not available')
+
     # if name != 'noname': ic('SHOWME', name)
     global _showme_state
 

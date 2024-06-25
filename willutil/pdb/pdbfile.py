@@ -6,7 +6,6 @@ import willutil as wu
 
 _default_tol = wu.Bunch(rms=2.0, translation=1.0, angle=np.radians(5.0), seqmatch=0.8)
 
-
 class PDBFile:
     # @timed
     def __init__(
@@ -115,7 +114,7 @@ class PDBFile:
             chmap = dict()
             for i, c in enumerate(sorted(set([c for c in wu.pdb.all_pymol_chains if not c.isnumeric()]))):
                 chmap[c.encode()] = i
-            # ic(chmap)
+            chmap[b''] = 0
             maxres = np.max(self.df.ri) + 1
             resdelta = np.array([chmap[_] * maxres for _ in self.df.ch])
             self.df.loc[:, "ri"] = self.df.ri + resdelta
@@ -387,7 +386,7 @@ class PDBFile:
             if len(seq) % nfold:
                 continue
             nres = len(seq) // nfold
-            nfoldmatch = [seq[:nres] == seq[ir : ir + nres] for ir in range(nres, len(seq), nres)]
+            nfoldmatch = [seq[:nres] == seq[ir:ir + nres] for ir in range(nres, len(seq), nres)]
             if all(nfoldmatch):
                 return nfold
         assert 0, "nfold 1 should have matched"
@@ -488,19 +487,16 @@ class PDBFile:
         chains, cgroups = self.sym_chain_groups(tolerances, **kw)
         chaingroup = sorted(cgroups, key=lambda x: x[2].size)[-1]
         ichain, jchain, seqmatch = chaingroup
-        ca0 = chains[ichain].ca()[seqmatch.a : seqmatch.a + seqmatch.size]
-        ca1 = chains[jchain].ca()[seqmatch.b : seqmatch.b + seqmatch.size]
+        ca0 = chains[ichain].ca()[seqmatch.a:seqmatch.a + seqmatch.size]
+        ca1 = chains[jchain].ca()[seqmatch.b:seqmatch.b + seqmatch.size]
         rms, _, xrmsfit = wu.hrmsfit(ca0, ca1)
         if rms > tolerances.rms:
             raise ValueError(
-                f"rmsd {rms:5.3f} between detected symmetric chains is above rms tolerance {tolerances.rms}"
-            )
+                f"rmsd {rms:5.3f} between detected symmetric chains is above rms tolerance {tolerances.rms}")
         axis, ang, cen, hel = wu.haxis_angle_cen_hel_of(xrmsfit)
         if hel > tolerances.translation:
-            raise ValueError(
-                f'translation along symaxis of {hel:5.3f} between "symmetric"'
-                " chains is above translation tolerance {tolerances.translation}"
-            )
+            raise ValueError(f'translation along symaxis of {hel:5.3f} between "symmetric"'
+                             " chains is above translation tolerance {tolerances.translation}")
         nfold, ang = _get_nfold_angle(ang, tolerances, **kw)
         assert nfold == 2, f"nfold {nfold} not supported yet"
         return wu.Bunch(
@@ -512,7 +508,6 @@ class PDBFile:
             chaingroups=cgroups,
             chains=chains,
         )
-
 
 def _atomrecords_to_chainseq(df, ignoremissing=True):
     seq = collections.defaultdict(list)
@@ -544,7 +539,6 @@ def _atomrecords_to_chainseq(df, ignoremissing=True):
             seq[ch].append("X")
     return {c: str.join("", s) for c, s in seq.items()}
 
-
 def join(pdbfiles, chains=None):
     import pandas as pd
 
@@ -557,7 +551,6 @@ def join(pdbfiles, chains=None):
             ichain += 1
     df = pd.concat(dfs)
     return PDBFile(df, meta=pdbfiles[0].meta, original_contents=pdbfiles[0].original_contents)
-
 
 def _get_nfold_angle(ang, tolerances, candidates=[2, 3, 4, 5, 6], **kw):
     for nfold in candidates:

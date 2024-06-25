@@ -1,7 +1,6 @@
 import numpy as np
 import willutil as wu
 
-
 class NotPose:
     # @timed
     def __init__(self, fname=None, coords=None, **kw):
@@ -72,13 +71,12 @@ class NotPose:
         #       xyz[:, :3] -= cen
         return resaname, resacrd
 
-
 class NotResidue:
     def __init__(self, nopo, ir):
         self.nopo = nopo
         self.ir = ir - 1
         self.rdf = None if nopo.coordsonly else nopo.pdb.getres(self.ir)
-        self.anames = ["N", "CA", "C", "O", "CB"][: nopo.coords.shape[1]] if nopo.coordsonly else None
+        self.anames = ["N", "CA", "C", "O", "CB"][:nopo.coords.shape[1]] if nopo.coordsonly else None
         self.anamemap = dict(N=0, CA=1, C=2, O=3, CB=4)
 
     def xyz(self, ia):
@@ -137,7 +135,6 @@ class NotResidue:
         r = self.rdf.rn[0]
         return r.decode()
 
-
 class NotXYZ(list):
     def __init__(self, xyz):
         super().__init__(xyz)
@@ -145,10 +142,8 @@ class NotXYZ(list):
         self.y = self[1]
         self.z = self[2]
 
-
 class NotPDBInfo:
     """Mimicks rosetta PDBInfo class"""
-
     def __init__(self, nopo):
         self.nopo = nopo
 
@@ -158,10 +153,8 @@ class NotPDBInfo:
     def crystinfo(self):
         return self.nopo.crystinfo
 
-
 class CrystInfo:
     """mimicks rosetta CrystInfo class"""
-
     @classmethod
     def from_cryst1(cls, cryst1):
         if cryst1 is None:
@@ -215,7 +208,6 @@ class CrystInfo:
             self.spacegroup(),
         )
 
-
 def _init_NotPose_pdb(self, fname=None, pdb=None, chain=None, secstruct=None, **kw):
     self.fname = fname
 
@@ -244,16 +236,15 @@ def _init_NotPose_pdb(self, fname=None, pdb=None, chain=None, secstruct=None, **
         if len(self.ss) == 1:
             self.ss = self.ss * len(self.ncaco)
     else:
-        try:
-            self.ss = wu.dssp(self.ncaco)
-        except ImportError:
-            self.ss = "L" * len(self.seq)
+        # try:
+        self.ss = wu.dssp(self.ncaco)
+    # except ImportError:
+    # self.ss = "L" * len(self.seq)
     self.crystinfo = CrystInfo.from_cryst1(pdb.cryst1)
     self.info = NotPDBInfo(self)
     self.pdb.renumber_from_0()
     self.coordsonly = False
     self.name = self.pdb.meta.fname
-
 
 def _init_NotPose_coords(self, coords, seq=None, name=None, chain=None, secstruct=None, **kw):
     kw = wu.Bunch(kw, _strict=False)
@@ -288,10 +279,10 @@ def _init_NotPose_coords(self, coords, seq=None, name=None, chain=None, secstruc
         if len(self.ss) == 1:
             self.ss = self.ss * len(self.ncaco)
     else:
-        try:
-            self.ss = wu.dssp(self.ncaco)
-        except ImportError:
-            self.ss = "L" * len(self.seq)
+        # try:
+        self.ss = wu.dssp(self.ncaco)
+    # except ImportError:
+    # self.ss = "L" * len(self.seq)
 
     # self.crystinfo = CrystInfo.from_cryst1(cryst1)
     self.crystinfo = None

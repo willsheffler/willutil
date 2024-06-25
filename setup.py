@@ -10,6 +10,9 @@ setup(
     packages=find_packages(include=["willutil", "willutil.*"]),
     install_requires=[
         "pytest",
+        'pytest-repeat',
+        'pytest-xdist',
+        'pytest-sugar',
         "tqdm",
         "yapf",
         "deferred_import",
@@ -24,7 +27,9 @@ setup(
         "icecream",
         "numba",
         "Bio",
-        "torch",
+        "pyyaml",
+        "mdtraj",
+        # "torch",
     ],
     package_data={
         "willutil": [

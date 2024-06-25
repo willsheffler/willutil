@@ -3,7 +3,13 @@ import os
 __all__ = ("Bunch", "bunchify", "unbunchify")
 
 class Bunch(dict):
-    def __init__(self, __arg_or_ns=None, _strict="__NOT_STRICT", _default="__NODEFALT", **kw):
+    def __init__(
+        self,
+        __arg_or_ns=None,
+        _strict: str | bool = "__NOT_STRICT",
+        _default="__NODEFALT",
+        **kw,
+    ):
         if __arg_or_ns is not None:
             try:
                 super().__init__(__arg_or_ns)

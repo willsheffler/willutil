@@ -1,11 +1,13 @@
-import torch
+try:
+    import torch
+except ImportError:
+    pass
 import numpy as np
 import willutil as wu
 from willutil.homog import *
 
 # from willutil.homog.thgeom import *
 from willutil.homog import thgeom as h
-
 
 def extract_t_asu(frames, t, sym="I"):
     cen = hpoint(np.stack(list(wu.sym.axes("I").values())).mean(0))
@@ -31,7 +33,6 @@ def extract_t_asu(frames, t, sym="I"):
     assert len(accepted) == t
     return frames[accepted]
 
-
 def pseudo_t_start(t):
     dat = {
         2: "pseudo_t/T2_3iz3.npy",
@@ -51,12 +52,10 @@ def pseudo_t_start(t):
     # wu.showme(frames, weight=10, xyzlen=[10, 7, 4])
     return asu
 
-
 def make_asym(t, r, frames):
     asym = hrand(t)
     asym[:, :3, 3] *= r / hnorm(hcart3(asym))[:, None]
     return to_canonical_frame(asym, frames)
-
 
 def to_canonical_frame(asym, frames):
     # cen = hpoint(np.stack(list(wu.sym.axes('I').values())).mean(0))
@@ -68,7 +67,6 @@ def to_canonical_frame(asym, frames):
     asym[:, :3, :3] = hori(halign(asym[:, :, 2], asym[:, :3, 3], doto=asym))
     return torch.as_tensor(asym)
 
-
 def min_dist_loss(asym0, frames0, lbfgs, indep, **kw):
     lbfgs.zero_grad()
     asym = torch.einsum("aij,aj->ai", h.Q2R(indep[0]), asym0)
@@ -78,7 +76,6 @@ def min_dist_loss(asym0, frames0, lbfgs, indep, **kw):
     loss = -torch.min(d)
     loss.backward()
     return loss
-
 
 def min_pseudo_t_dist2(asym, sym="I"):
     t = len(asym)
@@ -91,7 +88,6 @@ def min_pseudo_t_dist2(asym, sym="I"):
     asym = to_canonical_frame(asym, frames)
     return loss, asym.numpy()
 
-
 def min_sym_environment_loss(asym0, frames0, lbfgs, indep, **kw):
     lbfgs.zero_grad()
     asym = torch.einsum("aij,aj->ai", h.Q2R(indep[0]), asym0)
@@ -101,7 +97,6 @@ def min_sym_environment_loss(asym0, frames0, lbfgs, indep, **kw):
     loss = -torch.min(d)
     loss.backward()
     return loss
-
 
 def min_pseudo_t_symerror(asym, sym="I"):
     t = len(asym)
@@ -113,7 +108,6 @@ def min_pseudo_t_symerror(asym, sym="I"):
     asym[:, :3, 3] = torch.einsum("aij,aj->ai", h.Q2R(indep[0]), asym0).cpu().detach()
     asym = to_canonical_frame(asym, frames)
     return loss, asym.numpy()
-
 
 def min_pseudo_t_dist(asym, sym="I"):
     t = len(asym)
@@ -149,7 +143,6 @@ def min_pseudo_t_dist(asym, sym="I"):
     asym[:, :3, 3] = torch.einsum("aij,aj->ai", h.Q2R(Q), asym0).cpu().detach()
     asym = to_canonical_frame(asym, frames)
     return loss, asym
-
 
 def create_pseudo_t(t, sym="I"):
     frames = torch.tensor(wu.sym.frames(sym))

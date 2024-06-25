@@ -250,6 +250,20 @@ def quat_to_upper_half(quat):
     quat2 = t.where(ineg, -quat, quat)
     return normalized(quat2)
 
+def cart(h):
+    return h[..., :, 3]
+
+def cart3(h):
+    return h[..., :3, 3]
+
+def ori(h):
+    h = h.clone()
+    h[..., :3, 3] = 0
+    return h
+
+def ori3(h):
+    h[..., :3, :3]
+
 def homog(rot, trans=None, **kw):
     if trans is None:
         trans = t.as_tensor([0, 0, 0, 0], device=rot.device, **kw)

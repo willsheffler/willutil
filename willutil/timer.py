@@ -19,7 +19,6 @@ _summary_types = dict(
     median=statistics.median,
 )
 
-
 def checkpoint(kw, label=None, funcbegin=False, dont_mod_label=False, filename=None, funcname=None):
     t = None
     if isinstance(kw, wu.Timer):
@@ -38,7 +37,6 @@ def checkpoint(kw, label=None, funcbegin=False, dont_mod_label=False, filename=N
     if label:
         fulllabel += f":{label}"
     t.checkpoint(fulllabel, autolabel=label is None)
-
 
 def timed(func=None, *, label=None):
     if func is None:
@@ -63,7 +61,6 @@ def timed(func=None, *, label=None):
 
     return wrapper
 
-
 class _TimerGetter:
     def __init__(self, timer, summary):
         self.timer = timer
@@ -78,7 +75,6 @@ class _TimerGetter:
 
     def __getitem__(self, name):
         return getattr(self, name)
-
 
 class Timer:
     def __init__(
@@ -134,13 +130,11 @@ class Timer:
         self.checkpoints[name].append(t - self.last)
         self.last = t
         if self.verbose or verbose:
-            log.debug(
-                f"{self.name} checkpoint {name} iter {len(self.checkpoints[name])}"
-                + f"time {self.checkpoints[name][-1]}"
-            )
+            log.debug(f"{self.name} checkpoint {name} iter {len(self.checkpoints[name])}" +
+                      f"time {self.checkpoints[name][-1]}")
         return self
 
-    def elapsed(self):
+    def elapsed(self) -> float:
         return time.perf_counter() - self._start
 
     def __exit__(
