@@ -326,6 +326,7 @@ def pymol_visualize_xforms(
         bounds=None,
         colorset=0,
         lattice=np.eye(3),
+        showneg=False,
         **kw,
 ):
     kw = wu.Bunch(kw)
@@ -409,6 +410,11 @@ def pymol_visualize_xforms(
         mycgo.extend(cgo_cyl(cen, x, 0.05 * weight, col1))
         mycgo.extend(cgo_cyl(cen, y, 0.05 * weight, col2))
         mycgo.extend(cgo_cyl(cen, z, 0.05 * weight, col3))
+        if showneg:
+            mycgo.extend(cgo_cyl(cen, -x, 0.05 * weight, col1))
+            mycgo.extend(cgo_cyl(cen, -y, 0.05 * weight, col2))
+            mycgo.extend(cgo_cyl(cen, -z, 0.05 * weight, col3))
+
         if spheres > 0:  # and ix % origlen == 0:
             mycgo.extend(cgo_sphere(cen, spheres, col=col4))
 
@@ -698,7 +704,7 @@ def showme_pymol(
         print("NOT RUNNING PYMOL IN UNIT TEST")
         return
 
-    pymol.pymol_argv = ["pymol"]
+    pymol.pymol_argv = ["pymol", '']
     if headless:
         pymol.pymol_argv = ["pymol", "-c"]
     if not _showme_state["launched"]:

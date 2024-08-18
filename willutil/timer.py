@@ -26,8 +26,8 @@ def checkpoint(kw, label=None, funcbegin=False, dont_mod_label=False, filename=N
     elif "timer" in kw:
         t = kw["timer"]
     else:
-        return
-    autogen_label = False
+        t = global_timer
+    # autogen_label = False
     istack = 1 + int(funcbegin)
     func = funcname or inspect.stack()[istack][3]
     fn = filename or os.path.basename(inspect.stack()[istack][1])
@@ -91,6 +91,7 @@ class Timer:
         self.max = _TimerGetter(self, max)
         self.median = _TimerGetter(self, statistics.median)
         self._start = None
+        self.checkpoints = collections.defaultdict(list)
         if start:
             self.start()
 
@@ -109,7 +110,6 @@ class Timer:
         self._start = time.perf_counter()
         self.last = self._start
         self.lastname = "start"
-        self.checkpoints = collections.defaultdict(list)
         return self
 
     def checkpoint(
@@ -135,7 +135,7 @@ class Timer:
         return self
 
     def elapsed(self) -> float:
-        return time.perf_counter() - self._start
+        return sum(self.checkpoints['total'])
 
     def __exit__(
         self,
@@ -144,9 +144,9 @@ class Timer:
         traceback=None,
     ):
         self.checkpoints["total"].append(time.perf_counter() - self._start)
+        self._start = None
         if self.verbose:
             log.debug(f"Timer {self.name} finished")
-        if self.verbose:
             self.report()
 
     def __getattr__(self, name):
@@ -216,6 +216,7 @@ class Timer:
     def total(self):
         if "total" in self.checkpoints:
             return sum(self.checkpoints["total"])
+        assert 0
         return time.perf_counter() - self._start
 
     def __str__(self):
@@ -230,3 +231,5 @@ class Timer:
         for other in others:
             for k, v in other.checkpoints.items():
                 self.checkpoints[k].extend(v)
+
+global_timer = Timer()

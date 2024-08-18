@@ -2,16 +2,16 @@
 	"build_systems":
 	[
 		{
+			"name": "runtests.py",
+			"shell_cmd": "cd $folder; python willutil/runtests.py --projname willutil $file &> log/sublime_build.log"
+		},
+		{
 			"name": "test install",
 			"shell_cmd": "cd ~/tmp; echo $folder; log=$folder/log/sublime_build.log; virtualenv testenv &>> $log && source testenv/bin/activate &>> $log && echo $(which python) &>> $log && python -mpip uninstall -y willutil &>> $log && rm -rf $folder/build $folder/willutil.egg-info &>> $log && python -mpip install $folder &>> $log && python -mpytest --pyargs willutil &>> $log && pip uninstall willutil -y &>> $log"
 		},
 		{
 			"name": "test_pseudo_t.py",
 			"shell_cmd": "cd $folder; python willutil/tests/sym/test_pseudo_t.py &> log/sublime_build.log"
-		},
-		{
-			"name": "runtests.py",
-			"shell_cmd": "cd $folder; python willutil/runtests.py --projname willutil $file &> log/sublime_build.log"
 		},
 		{
 			"name": "makesym dihedral",

@@ -1,7 +1,6 @@
 import numpy as np
 import willutil as wu
 
-
 class RigidBodyFollowers:
     def __init__(self, bodies=None, coords=None, frames=None, sym=None, cellsize=1, **kw):
         self.sym = sym.upper() if sym else None
@@ -173,7 +172,6 @@ class RigidBodyFollowers:
 
     def __len__(self):
         return len(self.bodies)
-
 
 class RigidBody:
     def __init__(
@@ -366,9 +364,8 @@ class RigidBody:
         self.bvhopcount += 1
         assert isinstance(other, RigidBody)
         if usebvh or (usebvh is None and self.usebvh):
-            count = wu.cpp.bvh.bvh_count_pairs(
-                self.contactbvh, other.contactbvh, self.position, other.position, contactdist
-            )
+            count = wu.cpp.bvh.bvh_count_pairs(self.contactbvh, other.contactbvh, self.position,
+                                               other.position, contactdist)
         else:
             assert 0
             # import scipy.spatial
@@ -448,9 +445,8 @@ class RigidBody:
         if usebvh or (usebvh is None and self.usebvh):
             if not buf:
                 buf = np.empty((100000, 2), dtype="i4")
-            pairs, overflow = wu.cpp.bvh.bvh_collect_pairs(
-                self.contactbvh, other.contactbvh, self.position, other.position, contactdist, buf
-            )
+            pairs, overflow = wu.cpp.bvh.bvh_collect_pairs(self.contactbvh, other.contactbvh, self.position,
+                                                           other.position, contactdist, buf)
             assert not overflow
         else:
             d = wu.hnorm(self.contact_coords[None] - other.contact_coords[:, None])
@@ -463,9 +459,8 @@ class RigidBody:
         if usebvh or (usebvh is None and self.usebvh):
             if not buf:
                 buf = np.empty((100000, 2), dtype="i4")
-            pairs, overflow = wu.cpp.bvh.bvh_collect_pairs(
-                self.bvh, other.bvh, self.position, other.position, contactdist, buf
-            )
+            pairs, overflow = wu.cpp.bvh.bvh_collect_pairs(self.bvh, other.bvh, self.position, other.position,
+                                                           contactdist, buf)
             assert not overflow
         else:
             d = wu.hnorm(self.coords[None] - other.coords[:, None])

@@ -1,10 +1,26 @@
 import numpy as np
-import willutil as wu
+# import willutil as wu
 
+def find_dups_in_rows(a):
+    return np.any((a[:, :-1] == a[:, 1:]) * (a[:, :-1] != 0))
 
 def main():
-    test_unhashable_set()
+    b = np.random.randint(0, 9, (9, 9))
+    b[:] = 0
+    b = b % 9
+    # print(np.sort(b, axis=1))
 
+    print(find_dups_in_rows(b))
+    print(find_dups_in_rows(b.T))
+
+    # print(b[:3, :3])
+    # print(b[3:6, 3:6])
+    b33 = b.reshape(3, 3, 3, 3).swapaxes(1, 2).reshape(9, 9)
+    print(find_dups_in_rows(b33))
+    # print(b33)
+    # print(np.sort(b33, axis=1))
+
+    # test_unhashable_set()
 
 def test_unhashable_set():
     for i in range(10):
@@ -23,7 +39,6 @@ def test_unhashable_set():
         # ic(a == b)
         # ic(setequal(a, b))
         assert (a == b) == (ua == ub)
-
 
 if __name__ == "__main__":
     main()

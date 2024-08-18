@@ -6,7 +6,7 @@ class Bunch(dict):
     def __init__(
         self,
         __arg_or_ns=None,
-        _strict: str | bool = "__NOT_STRICT",
+        _strict="__NOT_STRICT",
         _default="__NODEFALT",
         **kw,
     ):
@@ -178,6 +178,10 @@ class Bunch(dict):
     def copy(self):
         return Bunch.from_dict(super().copy())
 
+    def set_if_missing(self, k, v):
+        if k not in self:
+            self[k] = v
+
     def sub(self, __BUNCH_SUB_ITEMS=None, _onlynone=False, exclude=[], **kw):
         if len(kw) == 0:
             if isinstance(__BUNCH_SUB_ITEMS, dict):
@@ -190,7 +194,7 @@ class Bunch(dict):
             if v is None and k in newbunch:
                 del newbunch[k]
             elif not _onlynone or k not in self or self[k] is None:
-                if not k in exclude:
+                if k not in exclude:
                     newbunch.__setattr__(k, v)
         return newbunch
 
@@ -245,6 +249,9 @@ class Bunch(dict):
     def __repr__(self):
         args = ", ".join(["%s=%r" % (key, self[key]) for key in self.keys()])
         return "%s(%s)" % (self.__class__.__name__, args)
+
+    def asdict(self):
+        return unbunchify(self)
 
     @staticmethod
     def from_dict(d):

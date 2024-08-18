@@ -285,63 +285,29 @@ def showfan(axis, cen, rad, arc, col=(1, 1, 1), lbl="", **kw):
 def showaxes():
     v = pymol.cmd.get_view()
     obj = [
-        cgo.BEGIN,
-        cgo.LINES,
-        cgo.COLOR,
-        1.0,
-        0.0,
-        0.0,
-        cgo.VERTEX,
-        0.0,
-        0.0,
-        0.0,
-        cgo.VERTEX,
-        20.0,
-        0.0,
-        0.0,
-        cgo.COLOR,
-        0.0,
-        1.0,
-        0.0,
-        cgo.VERTEX,
-        0.0,
-        0.0,
-        0.0,
-        cgo.VERTEX,
-        0.0,
-        20.0,
-        0.0,
-        cgo.COLOR,
-        0.0,
-        0.0,
-        1.0,
-        cgo.VERTEX,
-        0.0,
-        0.0,
-        0.0,
-        cgo.VERTEX,
-        00,
-        0.0,
-        20.0,
-        cgo.END,
+        cgo.BEGIN, cgo.LINES, cgo.COLOR, 1.0, 0.0, 0.0, cgo.VERTEX, 0.0, 0.0, 0.0, cgo.VERTEX, 20.0, 0.0, 0.0,
+        cgo.COLOR, 0.0, 1.0, 0.0, cgo.VERTEX, 0.0, 0.0, 0.0, cgo.VERTEX, 0.0, 20.0, 0.0, cgo.COLOR, 0.0, 0.0,
+        1.0, cgo.VERTEX, 0.0, 0.0, 0.0, cgo.VERTEX, 00, 0.0, 20.0, cgo.END
     ]
     pymol.cmd.load_cgo(obj, "axes")
 
 def cgo_cyl_arrow(c1, c2, r, col=(1, 1, 1), col2=None, arrowlen=4.0):
+    c1, c2 = wu.hpoint(c1), wu.hpoint(c2)
     if not col2:
         col2 = col
     CGO = []
-    c1.round0()
-    c2.round0()
-    CGO.extend(cgo_cyl(c1, c2 + randnorm() * 0.0001, r=r, col=col, col2=col2))
-    dirn = (c2 - c1).normalized()
-    perp = projperp(dirn, Vec(0.2340790923, 0.96794275, 0.52037438472304783)).normalized()
-    arrow1 = c2 - dirn * arrowlen + perp * 2.0
-    arrow2 = c2 - dirn * arrowlen - perp * 2.0
-    # -dirn to shift to sphere surf
-    CGO.extend(cgo_cyl(c2 - dirn * 3.0, arrow1 - dirn * 3.0, r=r, col=col2))
-    # -dirn to shift to sphere surf
-    CGO.extend(cgo_cyl(c2 - dirn * 3.0, arrow2 - dirn * 3.0, r=r, col=col2))
+    # c1.round0()
+    # c2.round0()
+    CGO.extend(cgo_cyl(c1, c2, rad=r, col=col, col2=col2))
+    dirn = wu.hnormalized(c2 - c1)
+    perp = wu.hnormalized(wu.hprojperp(dirn, [0.2340790923, 0.96794275, 0.52037438472304783]))
+    if arrowlen > 0:
+        arrow1 = c2 - dirn * arrowlen + perp * 2.0
+        arrow2 = c2 - dirn * arrowlen - perp * 2.0
+        # -dirn to shift to sphere surf
+        CGO.extend(cgo_cyl(c2 - dirn * 3.0, arrow1 - dirn * 3.0, rad=r, col=col2))
+        # -dirn to shift to sphere surf
+        CGO.extend(cgo_cyl(c2 - dirn * 3.0, arrow2 - dirn * 3.0, rad=r, col=col2))
     return CGO
 
 def showcube(*args, **kw):

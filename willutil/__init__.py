@@ -52,6 +52,10 @@ from willutil.sym.symfit import compute_symfit
 
 from willutil.pdb import dumppdb, readpdb, readfile, readcif, dumpstruct, dumpcif
 
+from willutil.timer import global_timer
+
+from willutil.debug import debug_print as PING
+
 from willutil.homog import (
     # I,
     isarray,
