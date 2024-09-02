@@ -1,186 +1,4 @@
 {
-	"build_systems":
-	[
-		{
-			"name": "runtests.py",
-			"shell_cmd": "cd $folder; python willutil/runtests.py --projname willutil $file &> log/sublime_build.log"
-		},
-		{
-			"name": "test install",
-			"shell_cmd": "cd ~/tmp; echo $folder; log=$folder/log/sublime_build.log; virtualenv testenv &>> $log && source testenv/bin/activate &>> $log && echo $(which python) &>> $log && python -mpip uninstall -y willutil &>> $log && rm -rf $folder/build $folder/willutil.egg-info &>> $log && python -mpip install $folder &>> $log && python -mpytest --pyargs willutil &>> $log && pip uninstall willutil -y &>> $log"
-		},
-		{
-			"name": "test_pseudo_t.py",
-			"shell_cmd": "cd $folder; python willutil/tests/sym/test_pseudo_t.py &> log/sublime_build.log"
-		},
-		{
-			"name": "makesym dihedral",
-			"shell_cmd": "cd $folder; python willutil/app/makesym.py /home/sheffler/project/george/makesym/input/5u52.pdb --architecture d33 --radius 80 120 10 --angle -15 15 10 --rms_tolerance 1 --translation_tolerance 1 --angle_tolerance 1.0 &> log/sublime_build.log"
-		},
-		{
-			"name": "makesym",
-			"shell_cmd": "cd $folder; python willutil/app/makesym.py /home/sheffler/project/george/makesym/input/5u52.pdb --architecture oct4 --radius 80 120 10 --angle -15 15 10 --rms_tolerance 1 --translation_tolerance 1 --angle_tolerance 1.0 &> log/sublime_build.log"
-		},
-		{
-			"name": "symm_onto_template.py",
-			"shell_cmd": "cd $folder; python examples/symm_onto_template.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_subsym.py",
-			"shell_cmd": "cd $folder; python willutil/tests/sym/test_subsym.py &> log/sublime_build.log"
-		},
-		{
-			"name": "run misc.py",
-			"shell_cmd": "cd $folder; python examples/misc.py &> $folder/log/sublime_build.log"
-		},		{
-			"name": "run baker symmetrize.py",
-			"shell_cmd": "cd /home/sheffler/for/db/symexample; rm -f *.pdb; python symmetrize.py input/IRP_10-2_shifted.pdb --symmetry c6 --cart_sd 10 --nsamp 3 &> $folder/log/sublime_build.log"
-		},
-		{
-			"name": "gm2306",
-			"shell_cmd": "cd $folder; python willutil/app/gm230612.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_motif_manager.py",
-			"shell_cmd": "cd $folder; python willutil/tests/motif/test_motif_manager.py &> log/sublime_build.log"
-		},
-		{
-			"name": "qcptest.cpp",
-			"shell_cmd": "cd $folder; g++  -O0 -I. -Iwillutil/cpp/extern -I/home/sheffler/.conda/envs/willutil_pymol/lib/python3.8/site-packages/pybind11/include -I/home/sheffler/.conda/envs/willutil_pymol/include/python3.8 willutil/cpp/rms/qcptest.cpp -o /tmp/qcptest &> log/sublime_build.log && /tmp/qcptest &>> log/sublime_build.log"
-		},
-		{
-			"name": "test_qcp.py",
-			"shell_cmd": "cd $folder; python willutil/tests/cpp/rms/test_qcp.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_motif_placer.py",
-			"shell_cmd": "cd $folder; python willutil/tests/motif/test_motif_placer.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_slidedock.py",
-			"shell_cmd": "cd $folder; python willutil/tests/search/test_slidedock.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_spacegroup_contacts.py",
-			"shell_cmd": "cd $folder; python willutil/tests/sym/test_spacegroup_contacts.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_spacegroup_symelems.py",
-			"shell_cmd": "cd $folder; python willutil/tests/sym/test_spacegroup_symelems.py &> log/sublime_build.log"
-		},	
-		{
-			"name": "test_notpose.py",
-			"shell_cmd": "cd $folder; python willutil/tests/rosetta/test_notpose.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_readpdb.py",
-			"shell_cmd": "cd $folder; python willutil/tests/pdb/test_pdbread.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_spacegroup_pymol.py",
-			"shell_cmd": "cd $folder; python willutil/tests/sym/test_spacegroup_pymol.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_mmcif.py",
-			"shell_cmd": "cd $folder; python willutil/tests/pdb/test_mmcif.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_dumppdb.py",
-			"shell_cmd": "cd $folder; python willutil/tests/pdb/test_pdbdump.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_xtal",
-			"shell_cmd": "cd $folder; python willutil/tests/sym/test_xtal.py &> log/sublime_build.log"
-		},
-		{
-			"name": "makesym xtal",
-			"shell_cmd": "cd $folder; python willutil/app/makesym.py --architecture crystal_contacts willutil/tests/testdata/pdb/5lrp.cif.gz --contact_distance 8 --chainA_contacts_only --move_to_unitcell --test &> log/sublime_build.log"
-		},
-		{
-			"name": "test_symscaffold.py",
-			"shell_cmd": "cd $folder; python willutil/tests/unsym/test_symscaffold.py &> log/sublime_build.log"
-		},		
-		{
-			"name": "test_SymElem.py",
-			"shell_cmd": "cd $folder; python willutil/tests/sym/test_SymElem.py &> log/sublime_build.log"
-		},		
-	
-		{
-			"name": "test_permutations.py",
-			"shell_cmd": "cd $folder; python willutil/tests/sym/test_permutations.py &> log/sublime_build.log"
-		},		
-		{
-			"name": "test_orientations.py",
-			"shell_cmd": "cd $folder; python willutil/tests/sampling/test_orientations.py &> log/sublime_build.log"
-		},		
-		{
-			"name": "test_spacegroup.py",
-			"shell_cmd": "cd $folder; python willutil/tests/sym/test_spacegroup.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_homog_misc.py",
-			"shell_cmd": "cd $folder; python willutil/tests/homog/test_homog_misc.py &> log/sublime_build.log"
-		},
-		{	"name": "test_asugrid.py",
-			"shell_cmd": "cd $folder; python willutil/tests/sym/test_asugrid.py &> log/sublime_build.log"
-		},
-		{			"name": "test_sym.py",
-			"shell_cmd": "cd $folder; python willutil/tests/sym/test_sym.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_helix",
-			"shell_cmd": "cd $folder; python willutil/tests/sym/test_helix.py &> log/sublime_build.log"
-		},
-		{
-			"name": "make_pdb_caches.py",
-			"shell_cmd": "cd $folder; python willutil/app/make_pdb_caches.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_xtalfit.py",
-			"shell_cmd": "cd $folder; rm -rf debugpdbs/*; python willutil/tests/sym/test_xtalfit.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_asuslide.py",
-			"shell_cmd": "cd $folder; rm -rf debugpdbs/*; python willutil/tests/sym/test_asuslide.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_asufit.py",
-			"shell_cmd": "cd $folder; rm -rf debugpdbs/*; python willutil/tests/sym/test_asufit.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_rigidbody.py",
-			"shell_cmd": "cd $folder; python willutil/tests/rigid/test_rigidbody.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_dssp.py",
-			"shell_cmd": "cd $folder; python willutil/tests/chem/test_dssp.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_readpdb.py",
-			"shell_cmd": "cd $folder; python willutil/tests/pdb/test_pdbread.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_pymol.py",
-			"shell_cmd": "cd $folder; python willutil/tests/viz/test_pymol_viz.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_homog.py",
-			"shell_cmd": "cd $folder; python willutil/tests/homog/test_homog.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_thgeom",
-			"shell_cmd": "cd $folder; python willutil/tests/homog/test_thgeom.py &> log/sublime_build.log"
-		},
-		{
-			"name": "test_align_code",
-			"shell_cmd": "cd $folder; ./willutil/app/codealign  tmp.py &> log/sublime_build.log"
-		},
-		{
-			"name": "gm220902",
-			"shell_cmd": "cd $folder; python ./willutil/app/gm220902.py &> log/sublime_build.log"
-		}
-
-	],
 	"folders":
 	[
 		{
@@ -200,17 +18,208 @@
 				"_build",
 				".*"
 			],
-			"path": ".."
-		}
+			"path": "/home/sheffler/willutil",
+		},
 	],
 	"settings":
 	 {
 	 	"PyYapf":{
 	     "yapf_command": "yapf",
-	     "on_save": true	     
-	     // "yapf_command": "/home/sheffler/src/willutil/willutil/app/codealign",	
+	     "on_save": false,
+	     // "yapf_command": "/home/sheffler/src/willutil/willutil/app/codealign",
 	     // "on_save": false
-	  }
-	}
-	
+	 	},
+        "project_environment": {
+            "env": {
+                "PYTHON": "/home/sheffler/sw/MambaForge/envs/wu/bin/python",
+            },
+        },
+
+	},
+	"build_systems":
+	[
+		{
+			"name": "runtests.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/runtests.py --projname willutil $file &> log/sublime_build.log",
+		},
+		{
+			"name": "test install",
+			"shell_cmd": "cd ~/tmp; echo $folder; log=$folder/log/sublime_build.log; virtualenv testenv &>> $log && source testenv/bin/activate &>> $log && echo $(which \\$PYTHON) &>> $log && \\$PYTHON -mpip uninstall -y willutil &>> $log && rm -rf $folder/build $folder/willutil.egg-info &>> $log && \\$PYTHON -mpip install $folder &>> $log && \\$PYTHON -mpytest --pyargs willutil &>> $log && pip uninstall willutil -y &>> $log",
+		},
+		{
+			"name": "test sg.py",
+			"shell_cmd": "cd $folder; \\$PYTHON -m willutil.app.sg symelems i213 &> log/sublime_build.log",
+		},
+		{
+			"name": "test_pseudo_t.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/sym/test_pseudo_t.py &> log/sublime_build.log",
+		},
+		{
+			"name": "makesym dihedral",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/app/makesym.py /home/sheffler/project/george/makesym/input/5u52.pdb --architecture d33 --radius 80 120 10 --angle -15 15 10 --rms_tolerance 1 --translation_tolerance 1 --angle_tolerance 1.0 &> log/sublime_build.log",
+		},
+		{
+			"name": "makesym",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/app/makesym.py /home/sheffler/project/george/makesym/input/5u52.pdb --architecture oct4 --radius 80 120 10 --angle -15 15 10 --rms_tolerance 1 --translation_tolerance 1 --angle_tolerance 1.0 &> log/sublime_build.log",
+		},
+		{
+			"name": "symm_onto_template.py",
+			"shell_cmd": "cd $folder; \\$PYTHON examples/symm_onto_template.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_subsym.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/sym/test_subsym.py &> log/sublime_build.log",
+		},
+		{
+			"name": "run misc.py",
+			"shell_cmd": "cd $folder; \\$PYTHON examples/misc.py &> $folder/log/sublime_build.log",
+		},		{
+			"name": "run baker symmetrize.py",
+			"shell_cmd": "cd /home/sheffler/for/db/symexample; rm -f *.pdb; \\$PYTHON symmetrize.py input/IRP_10-2_shifted.pdb --symmetry c6 --cart_sd 10 --nsamp 3 &> $folder/log/sublime_build.log",
+		},
+		{
+			"name": "gm2306",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/app/gm230612.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_motif_manager.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/motif/test_motif_manager.py &> log/sublime_build.log",
+		},
+		{
+			"name": "qcptest.cpp",
+			"shell_cmd": "cd $folder; g++  -O0 -I. -Iwillutil/cpp/extern -I/home/sheffler/.conda/envs/willutil_pymol/lib/python3.8/site-packages/pybind11/include -I/home/sheffler/.conda/envs/willutil_pymol/include/python3.8 willutil/cpp/rms/qcptest.cpp -o /tmp/qcptest &> log/sublime_build.log && /tmp/qcptest &>> log/sublime_build.log",
+		},
+		{
+			"name": "test_qcp.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/cpp/rms/test_qcp.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_motif_placer.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/motif/test_motif_placer.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_slidedock.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/search/test_slidedock.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_spacegroup_contacts.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/sym/test_spacegroup_contacts.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_spacegroup_symelems.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/sym/test_spacegroup_symelems.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_notpose.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/rosetta/test_notpose.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_readpdb.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/pdb/test_pdbread.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_spacegroup_pymol.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/sym/test_spacegroup_pymol.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_mmcif.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/pdb/test_mmcif.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_dumppdb.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/pdb/test_pdbdump.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_xtal",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/sym/test_xtal.py &> log/sublime_build.log",
+		},
+		{
+			"name": "makesym xtal",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/app/makesym.py --architecture crystal_contacts willutil/tests/testdata/pdb/5lrp.cif.gz --contact_distance 8 --chainA_contacts_only --move_to_unitcell --test &> log/sublime_build.log",
+		},
+		{
+			"name": "test_symscaffold.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/unsym/test_symscaffold.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_SymElem.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/sym/test_SymElem.py &> log/sublime_build.log",
+		},
+
+		{
+			"name": "test_permutations.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/sym/test_permutations.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_orientations.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/sampling/test_orientations.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_spacegroup.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/sym/test_spacegroup.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_homog_misc.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/homog/test_homog_misc.py &> log/sublime_build.log",
+		},
+		{	"name": "test_asugrid.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/sym/test_asugrid.py &> log/sublime_build.log",
+		},
+		{			"name": "test_sym.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/sym/test_sym.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_helix",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/sym/test_helix.py &> log/sublime_build.log",
+		},
+		{
+			"name": "make_pdb_caches.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/app/make_pdb_caches.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_xtalfit.py",
+			"shell_cmd": "cd $folder; rm -rf debugpdbs/*; \\$PYTHON willutil/tests/sym/test_xtalfit.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_asuslide.py",
+			"shell_cmd": "cd $folder; rm -rf debugpdbs/*; \\$PYTHON willutil/tests/sym/test_asuslide.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_asufit.py",
+			"shell_cmd": "cd $folder; rm -rf debugpdbs/*; \\$PYTHON willutil/tests/sym/test_asufit.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_rigidbody.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/rigid/test_rigidbody.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_dssp.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/chem/test_dssp.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_readpdb.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/pdb/test_pdbread.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_pymol.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/viz/test_pymol_viz.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_homog.py",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/homog/test_homog.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_thgeom",
+			"shell_cmd": "cd $folder; \\$PYTHON willutil/tests/homog/test_thgeom.py &> log/sublime_build.log",
+		},
+		{
+			"name": "test_align_code",
+			"shell_cmd": "cd $folder; ./willutil/app/codealign  tmp.py &> log/sublime_build.log",
+		},
+		{
+			"name": "gm220902",
+			"shell_cmd": "cd $folder; \\$PYTHON ./willutil/app/gm220902.py &> log/sublime_build.log",
+		}
+
+	],
 }

@@ -244,9 +244,8 @@ class PDBFile:
         for i, (ri, g) in enumerate(self.df.groupby(["ri", "ch"])):
             if np.sum(g.an == an) > 1:
                 if not quiet:
-                    ic(g)
-                    ic(g.an)
-                assert np.sum(g.an == an) <= 1
+                    ic('warning duplicate atom', g, g.an)
+                # assert np.sum(g.an == an) <= 1
             # assert np.sum(g.an == an) <= np.sum(g.an == b'CA') # e.g. O in HOH
             hasatom = np.sum(g.an == an) > 0
             mask.append(hasatom)
@@ -291,6 +290,11 @@ class PDBFile:
         df = self.df
         idx = self.df.an == an
         df = df.loc[idx]
+        while len(df.ri.unique()) != len(df.ri):
+            for i in range(1, len(df)):
+                if df.ri.iloc[i] == df.ri.iloc[i - 1]:
+                    df = df.loc[np.arange(len(df)) != i]
+                    break
         xyz = np.stack([df["x"], df["y"], df["z"]]).T
         if nomask:
             return xyz, None

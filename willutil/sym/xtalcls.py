@@ -9,7 +9,6 @@ cryst1_pattern_full = "CRYST1 %8.3f %8.3f %8.3f%7.2f%7.2f%7.2f %s\n"
 # CRYST1  150.000  150.000  150.000  90.00  90.00  90.00 I 21 3
 # CRYST1  139.291  139.291  139.291  90.00  90.00  90.00 I 21 3
 
-
 class Xtal:
     def __init__(self, name="xtal", symelems=None, **kw):
         self.info = None
@@ -50,25 +49,23 @@ class Xtal:
             if ontop is not None and len(ontop) > 0:
                 frames = wu.sym.put_frames_on_top(frames, ontop, cellsize=cellsize, **kw)
             return frames
-        if cells == None:
+        if cells is None:
             return np.eye(4)[None]
         if isinstance(cells, (int, float)):
             ub = cells // 2
             lb = ub - cells + 1
-            cells = [(a, b, c) for a, b, c in itertools.product(*[range(lb, ub + 1)] * 3)]
+            cells = list(itertools.product(*[range(lb, ub + 1)] * 3))
 
         elif len(cells) == 2:
             lb, ub = cells
-            cells = [(a, b, c) for a, b, c in itertools.product(*[range(lb, ub + 1)] * 3)]
+            cells = list(itertools.product(*[range(lb, ub + 1)] * 3))
         elif len(cells) == 3:
-            cells = [
-                (a, b, c)
-                for a, b, c in itertools.product(
+            cells = list(
+                itertools.product(
                     range(cells[0][0], cells[0][1] + 1),
                     range(cells[1][0], cells[1][1] + 1),
                     range(cells[2][0], cells[2][1] + 1),
-                )
-            ]
+                ))
         else:
             raise ValueError(f"bad cells {cells}")
 
@@ -191,7 +188,7 @@ class Xtal:
             # ic(cen0)
             # assert 0
         elif xtalasumethod == "closest_approach":
-            cens = list()
+            cens = []
             for i1, elem1 in enumerate(self.symelems):
                 p1, ax1 = elem1.cen, elem1.axis
                 for i2, elem2 in enumerate(self.symelems):
@@ -216,10 +213,11 @@ class Xtal:
         return _scaled_frames(cellsize, cen)
 
     def compute_frames(self, **kw):
+        '''this should be depricated, only needed for 2d stuff currently'''
         if self.dimension == 3:
-            self.genframes = self.generate_candidate_frames(bound=2, **kw)  # expensive-ish
+            self.unitframes = self.info.frames
+            self.genframes = self.cellframes(cells=3, ontop=None)
             self.coverelems = self.generate_cover_symelems(self.genframes)
-            self.unitframes = self.generate_unit_frames(self.genframes)
             self.unitelems = self.generate_unit_symelems(self.genframes)
         else:
             self.genframes = self.generate_candidate_frames(bound=1.5, **kw)  # expensive-ish
@@ -228,9 +226,8 @@ class Xtal:
             self.unitelems = self.coverelems
         self.nsub = len(self.unitframes)
         if self.info is not None and self.info.nsub is not None:
-            assert (
-                self.nsub == self.info.nsub
-            ), f'nsub for "{self.name}" should be {self.info.nsub}, not {self.nsub}'
+            assert (self.nsub == self.info.nsub
+                    ), f'nsub for "{self.name}" should be {self.info.nsub}, not {self.nsub}'
 
     def symcoords(self, asymcoords, cellsize=1, cells=1, flat=False, center=None, **kw):
         asymcoords = wu.hpoint(asymcoords)
@@ -246,17 +243,16 @@ class Xtal:
         return coords
 
     def cryst1(self, cellsize):
-        if self.dimension == 3:
-            if isinstance(cellsize, (int, float)):
-                cellsize = np.array([cellsize] * 3, dtype=np.float64)
-            if len(cellsize) == 3:
-                return cryst1_pattern % (*cellsize, self.spacegroup)
-            elif len(cellsize) == 6:
-                return cryst1_pattern_full % (*cellsize, self.spacegroup)
-            else:
-                raise ValueError(f"bad cellsize {cellsize}")
-        else:
+        if self.dimension != 3:
             return f"LAYER {self.spacegroup} {cellsize}"
+        if isinstance(cellsize, (int, float, np.int32, np.int64, np.float32, np.float64)):
+            cellsize = np.array([cellsize] * 3, dtype=np.float64)
+        if len(cellsize) == 3:
+            return cryst1_pattern % (*cellsize, self.spacegroup)
+        elif len(cellsize) == 6:
+            return cryst1_pattern_full % (*cellsize, self.spacegroup)
+        else:
+            raise ValueError(f"bad cellsize {cellsize}")
 
     def dump_pdb(self, fname, asymcoords=None, cellsize=1, cells=None, strict=False, **kw):
         cryst1 = self.cryst1(cellsize)
@@ -264,8 +260,8 @@ class Xtal:
             asymcoords = self.asucen(cellsize=cellsize, **kw).reshape(1, 4)
         assert asymcoords.ndim in (2, 3)
         asymcoords = wu.hpoint(asymcoords)
-        if cells == None:
-            nchain = kw["nchain"] if "nchain" in kw else 1
+        if cells is None:
+            nchain = kw.get("nchain", 1)
             natom = 1 if asymcoords.ndim == 2 else asymcoords.shape[1]
             if nchain > 1:
                 asymcoords = asymcoords.reshape(nchain, -1, natom, 4)
@@ -292,13 +288,13 @@ class Xtal:
         # else:
         # target = [0.3, 0.4, 0.5]
         target = wu.hpoint(target)
-        cenelems = list()
+        cenelems = []
         cells = interp_xtal_cell_list(cells)
-        for i, elems in enumerate(self.coverelems):
+        for elems in self.coverelems:
             best = 9e9, None
             for cellshift in cells:
                 xcellshift = wu.htrans(cellshift)
-                for j, elem in enumerate(elems):
+                for elem in elems:
                     elem = elem.xformed(xcellshift)
                     # ic(i, j, elem.cen)
                     d = wu.hnorm(elem.cen - target)
@@ -322,12 +318,12 @@ class Xtal:
         bound=3.0,
         genradius=9e9,
         trials=20000,
-        cache=True,
+        # cache=True,
         # cache='nosave',
         **kw,
     ):
         cachefile = wu.package_data_path(f'xtal/lots_of_frames_{self.name.replace(" ","_")}.npy')
-        if self.dimension == 2 or not os.path.exists(cachefile) or not cache:
+        if self.dimension == 2:
             generators = np.concatenate([s.operators for s in self.symelems])
             x, _ = wu.cpp.geom.expand_xforms_rand(generators, depth=depth, radius=genradius, trials=trials)
             testpoint = [0.001, 0.002, 0.003]
@@ -337,24 +333,24 @@ class Xtal:
             inbounds = np.logical_and(inboundslow, inboundshigh)
             x = x[inbounds]
             assert len(x) < 10000
-            if self.dimension == 3 and cache and cache != "nosave":
-                np.save(cachefile, x)
+            # if self.dimension == 3 and cache and cache != "nosave":
+            # np.save(cachefile, x)
         else:
-            x = np.load(cachefile)
+            assert 0, 'should only be called for 2D stuff'
         return x
 
-    def generate_unit_frames(self, candidates, bbox=[(0, 0, 0), (1, 1, 1)], testpoint=None):
+    def generate_unit_frames(self, candidates, bbox=None, testpoint=None):
+        if bbox is None: bbox = [(0, 0, 0), (1, 1, 1)]
         bbox = np.asarray(bbox)
         testpoint = testpoint if testpoint else [0.001, 0.002, 0.003]
         cens = wu.hxform(candidates, testpoint)
         inboundslow = np.all(cens >= bbox[0] - 0.0001, axis=-1)
         inboundshigh = np.all(cens <= bbox[1] + 0.0001, axis=-1)
         inbounds = np.logical_and(inboundslow, inboundshigh)
-        frames = candidates[inbounds]
-        return frames
+        return candidates[inbounds]
 
     def generate_unit_symelems(self, candidates):
-        unitelems = list()
+        unitelems = []
         for i, symelem in enumerate(self.symelems):
             elems = symelem.xformed(self.unitframes)
             for e, f in zip(elems, self.unitframes):
@@ -362,8 +358,9 @@ class Xtal:
             unitelems.append(elems)
         return unitelems
 
-    def generate_cover_symelems(self, candidates, bbox=[(0, 0, 0), (1, 1, 1)]):
-        coverelems = list()
+    def generate_cover_symelems(self, candidates, bbox=None):
+        if bbox is None: bbox = [(0, 0, 0), (1, 1, 1)]
+        coverelems = []
         bbox = np.asarray(bbox) if bbox is not None else None
         for i, symelem in enumerate(self.symelems):
             testpoint = symelem.cen[:3]
@@ -383,36 +380,31 @@ class Xtal:
             coverelems.append(elems)
         return coverelems
 
-
 def interp_xtal_cell_list(cells):
-    if cells == None:
+    if cells is None:
         return np.eye(4)[None]
     if isinstance(cells, (int, float)):
         ub = cells // 2
         lb = ub - cells + 1
-        cells = [(a, b, c) for a, b, c in itertools.product(*[range(lb, ub + 1)] * 3)]
+        cells = list(itertools.product(*[range(lb, ub + 1)] * 3))
     elif len(cells) == 2:
         lb, ub = cells
-        cells = [(a, b, c) for a, b, c in itertools.product(*[range(lb, ub + 1)] * 3)]
+        cells = list(itertools.product(*[range(lb, ub + 1)] * 3))
     elif len(cells) == 3:
-        cells = [
-            (a, b, c)
-            for a, b, c in itertools.product(
+        cells = list(
+            itertools.product(
                 range(cells[0][0], cells[0][1] + 1),
                 range(cells[1][0], cells[1][1] + 1),
                 range(cells[2][0], cells[2][1] + 1),
-            )
-        ]
+            ))
     else:
         raise ValueError(f"bad cells {cells}")
     return cells
 
-
 _warn_asucen_xtalasumethod = True
 
-
 def _scaled_frames(cellsize, frames):
-    if isinstance(cellsize, (int, float)):
+    if isinstance(cellsize, (int, float, np.int64)):
         cellsize = np.array([cellsize, cellsize, cellsize])
     if len(cellsize) == 6:
         assert np.all(cellsize[3:] == 90)

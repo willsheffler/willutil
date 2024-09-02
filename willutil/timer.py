@@ -216,7 +216,6 @@ class Timer:
     def total(self):
         if "total" in self.checkpoints:
             return sum(self.checkpoints["total"])
-        assert 0
         return time.perf_counter() - self._start
 
     def __str__(self):

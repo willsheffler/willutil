@@ -2,7 +2,6 @@ import pytest
 import numpy as np
 import willutil as wu
 
-
 def main():
     _test_symmetrize_frames()
     assert 0
@@ -14,7 +13,6 @@ def main():
     test_sym()
     test_sym_frames()
 
-
 def _test_symmetrize_frames():
     from opt_einsum import contract as einsum
 
@@ -25,10 +23,10 @@ def _test_symmetrize_frames():
     symmsub = np.load("/home/sheffler/project/symmmotif_HE/symmsub.npy")
     symmRs = np.load("/home/sheffler/project/symmmotif_HE/symmRs.npy")
     N = 5
-    R = np.stack([R[:N], R[100 : 100 + N], R[200 : 200 + N], R[300 : 300 + N]])
-    T = np.stack([T[:N], T[100 : 100 + N], T[200 : 200 + N], T[300 : 300 + N]])
+    R = np.stack([R[:N], R[100:100 + N], R[200:200 + N], R[300:300 + N]])
+    T = np.stack([T[:N], T[100:100 + N], T[200:200 + N], T[300:300 + N]])
     ic(x.shape)
-    x = np.stack([x[:N], x[100 : 100 + N], x[200 : 200 + N], x[300 : 300 + N]])
+    x = np.stack([x[:N], x[100:100 + N], x[200:200 + N], x[300:300 + N]])
 
     RT = wu.hconstruct(R, T)
     # wu.showme(RT)
@@ -44,14 +42,12 @@ def _test_symmetrize_frames():
 
     assert 0
 
-
 @pytest.mark.skip
 def test_subframes():
     frames = wu.sym.frames("tet")
     subframes = wu.sym.subframes(frames, "C3", asym=[100, 10, 1])
     ic(frames.shape)
     ic(subframes.shape)
-
 
 def test_frames_asym_of():
     f = wu.sym.frames("icos", asym_of="c5")
@@ -73,7 +69,6 @@ def test_frames_asym_of():
     assert len(f) == 4
     f = wu.sym.frames("tet", asym_of="c2")
     assert len(f) == 6
-
 
 def test_frames_asym_remove_sameaxis():
     syms = "tet oct icos".split()
@@ -123,7 +118,6 @@ def test_frames_asym_remove_sameaxis():
         f[:, :, 3] += 10 * wu.homog.hdot(f, cart)
         # wu.viz.showme(f, spheres=0.2, name=f'test_{sym}_{csym}_all')
 
-
 def test_remove_if_same_axis():
     f = wu.sym.frames("tet")
     assert f.shape == (12, 4, 4)
@@ -142,22 +136,18 @@ def test_remove_if_same_axis():
     assert wu.sym.frames("icos", bbsym="c3").shape == (20, 4, 4)
     assert wu.sym.frames("icos", bbsym="c5").shape == (12, 4, 4)
 
-
 def test_sym():
     assert wu.sym.symframes.tetrahedral_frames.shape == (12, 4, 4)
     assert wu.sym.symframes.octahedral_frames.shape == (24, 4, 4)
     assert wu.sym.symframes.icosahedral_frames.shape == (60, 4, 4)
-    x = np.concatenate(
-        [
-            wu.sym.symframes.tetrahedral_frames,
-            wu.sym.symframes.octahedral_frames,
-            wu.sym.symframes.icosahedral_frames,
-        ]
-    )
+    x = np.concatenate([
+        wu.sym.symframes.tetrahedral_frames,
+        wu.sym.symframes.octahedral_frames,
+        wu.sym.symframes.icosahedral_frames,
+    ])
     assert np.all(x[..., 3, 3] == 1)
     assert np.all(x[..., 3, :3] == 0)
     assert np.all(x[..., :3, 3] == 0)
-
 
 def test_sym_frames():
     assert len(wu.sym.tetrahedral_axes_all[2] == 6)
@@ -169,7 +159,6 @@ def test_sym_frames():
     assert len(wu.sym.icosahedral_axes_all[2] == 30)
     assert len(wu.sym.icosahedral_axes_all[3] == 20)
     assert len(wu.sym.icosahedral_axes_all[5] == 12)
-
 
 if __name__ == "__main__":
     main()

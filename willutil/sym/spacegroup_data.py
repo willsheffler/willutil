@@ -23,7 +23,8 @@ lattice_rot_dof = dict(
     HEXAGONAL=1,
 )
 
-sg_all_chiral = "P1 P121 P1211 C121 P222 P2221 P21212 P212121 C2221 C222 F222 I222 I212121 P4 P41 P42 P43 I4 I41 P422 P4212 P4122 P41212 P4222 P42212 P4322 P43212 I422 I4122 P3 P31 P32 R3 P312 P321 P3112 P3121 P3212 P3221 R32 P6 P61 P65 P62 P64 P63 P622 P6122 P6522 P6222 P6422 P6322 P23 F23 I23 P213 I213 P432 P4232 F432 F4132 I432 P4332 P4132 I4132".split()
+sg_all_chiral = "P1 P121 P1211 C121 P222 P2221 P21212 P212121 C2221 C222 F222 I222 I212121 P4 P41 P42 P43 I4 I41 P422 P4212 P4122 P41212 P4222 P42212 P4322 P43212 I422 I4122 P3 P31 P32 R3 P312 P321 P3112 P3121 P3212 P3221 R32 P6 P61 P65 P62 P64 P63 P622 P6122 P6522 P6222 P6422 P6322 P23 F23 I23 P213 I213 P432 P4232 F432 F4132 I432 P4332 P4132 I4132".split(
+)
 
 sg_nframes = {
     "P1": 1,
@@ -197,12 +198,15 @@ sg_niface_dict = {
 
 sg_triclinic = "P1 P-1".split()
 sg_monoclinic = (
-    "P121 P1211 C121 P1m1 P1c1 C1m1 C1c1 P12/m1 P121/m1 C12/m1 P12/c1 P121/c1 P121/n1 231 C12/c1".split()
+    "P121 P1211 C121 P1m1 P1c1 C1m1 C1c1 P12/m1 P121/m1 C12/m1 P12/c1 P121/c1 P121/n1 231 C12/c1".split())
+sg_orthorhombic = "P222 P2221 P212S12 P21212 P212121 C2221 C222 F222 I222 I212121 Pmm2 Pmc21 Pcc2 Pma2 Pca21 Pnc2 Pmn21 Pba2 Pna21 Pnn2 Cmm2 Cmc21 Ccc2 Amm2 Abm2 Ama2 Aba2 Fmm2 Fdd2 Imm2 Iba2 Ima2 Pmmm Pnnn:2 Pccm Pban:2 Pmma Pnna Pmna Pcca Pbam Pccn Pbcm Pnnm Pmmn:2 Pbcn Pbca Pnma Cmcm Cmca Cmmm Cccm Cmma Ccca:2 Fmmm Fddd:2 Immm Ibam Ibca Imma".split(
 )
-sg_orthorhombic = "P222 P2221 P212S12 P21212 P212121 C2221 C222 F222 I222 I212121 Pmm2 Pmc21 Pcc2 Pma2 Pca21 Pnc2 Pmn21 Pba2 Pna21 Pnn2 Cmm2 Cmc21 Ccc2 Amm2 Abm2 Ama2 Aba2 Fmm2 Fdd2 Imm2 Iba2 Ima2 Pmmm Pnnn:2 Pccm Pban:2 Pmma Pnna Pmna Pcca Pbam Pccn Pbcm Pnnm Pmmn:2 Pbcn Pbca Pnma Cmcm Cmca Cmmm Cccm Cmma Ccca:2 Fmmm Fddd:2 Immm Ibam Ibca Imma".split()
-sg_tetragonal = "P4 P41 P42 P43 I4 I41 P-4 I-4 P4/m P42/m P4/n:2 P42/n:2 I4/m I41/a:2 P422 P4212 P4122 P41212 P4222 P42212 P4322 P43212 I422 I4122 P4mm P4bm P42cm P42nm P4cc P4nc P42mc P42bc I4mm I4cm I41md I41cd P-42m P-42c P-421m P-421c P-4m2 P-4c2 P-4b2 P-4n2 I-4m2 I-4c2 I-42m I-42d P4/mmm P4/mcc P4/nbm:2 P4/nnc:2 P4/mbm P4/mnc P4/nmm:2 P4/ncc:2 P42/mmc P42/mcm P42/nbc:2 P42/nnm:2 P42/mbc P42/mnm P42/nmc:2 P42/ncm:2 I4/mmm I4/mcm I41/amd:2 I41/acd:2".split()
-sg_hexagonal = "P3 P31 P32 R3 P-3 R-3:H P312 P321 P3112 P3121 P3212 P3221 R32 P3m1 P31m P3c1 P31c R3m:H R3c:H P-31m P-31c P-3m1 P-3c1 R-3m:H R-3c:H P6 P61 P65 P62 P64 P63 P-6 P6/m P63/m P622 P6122 P6522 P6222 P6422 P6322 P6mm P6cc P63cm P63mc P-6m2 P-6c2 P-62m P-62c P6/mmm P6/mcc P63/mcm P63/mmc".split()
-sg_cubic = "P23 F23 I23 P213 I213 Pm-3 Pn-3:2 Fm-3 Fd-3:2 Im-3 Pa-3 Ia-3 P432 P4232 F432 F4132 I432 P4332 P4132 I4132 P-43m F-43m I-43m P-43n F-43c I-43d Pm-3m Pn-3n:2 Pm-3n Pn-3m:2 Fm-3m Fm-3c Fd-3m:2 Fd-3c:2 Im-3m Ia-3d".split()
+sg_tetragonal = "P4 P41 P42 P43 I4 I41 P-4 I-4 P4/m P42/m P4/n:2 P42/n:2 I4/m I41/a:2 P422 P4212 P4122 P41212 P4222 P42212 P4322 P43212 I422 I4122 P4mm P4bm P42cm P42nm P4cc P4nc P42mc P42bc I4mm I4cm I41md I41cd P-42m P-42c P-421m P-421c P-4m2 P-4c2 P-4b2 P-4n2 I-4m2 I-4c2 I-42m I-42d P4/mmm P4/mcc P4/nbm:2 P4/nnc:2 P4/mbm P4/mnc P4/nmm:2 P4/ncc:2 P42/mmc P42/mcm P42/nbc:2 P42/nnm:2 P42/mbc P42/mnm P42/nmc:2 P42/ncm:2 I4/mmm I4/mcm I41/amd:2 I41/acd:2".split(
+)
+sg_hexagonal = "P3 P31 P32 R3 P-3 R-3:H P312 P321 P3112 P3121 P3212 P3221 R32 P3m1 P31m P3c1 P31c R3m:H R3c:H P-31m P-31c P-3m1 P-3c1 R-3m:H R-3c:H P6 P61 P65 P62 P64 P63 P-6 P6/m P63/m P622 P6122 P6522 P6222 P6422 P6322 P6mm P6cc P63cm P63mc P-6m2 P-6c2 P-62m P-62c P6/mmm P6/mcc P63/mcm P63/mmc".split(
+)
+sg_cubic = "P23 F23 I23 P213 I213 Pm-3 Pn-3:2 Fm-3 Fd-3:2 Im-3 Pa-3 Ia-3 P432 P4232 F432 F4132 I432 P4332 P4132 I4132 P-43m F-43m I-43m P-43n F-43c I-43d Pm-3m Pn-3n:2 Pm-3n Pn-3m:2 Fm-3m Fm-3c Fd-3m:2 Fd-3c:2 Im-3m Ia-3d".split(
+)
 
 sg_lattice = dict()
 for n in sg_triclinic:
@@ -217,7 +221,6 @@ for n in sg_hexagonal:
     sg_lattice[n] = "HEXAGONAL"
 for n in sg_cubic:
     sg_lattice[n] = "CUBIC"
-
 
 def get_spacegroup_pdbname():
     return {
@@ -455,7 +458,6 @@ def get_spacegroup_pdbname():
         "Im-3m": "I m -3 m",
         "Ia-3d": "I a -3 d",
     }
-
 
 def get_spacegroup_tag():
     return {
@@ -695,13 +697,12 @@ def get_spacegroup_tag():
         "Ia-3d": "Iaminus3d",
     }  # , 'B11m': 'B11m'}
 
-
 sg_pdbname = get_spacegroup_pdbname()
 sg_from_pdbname = {v: k for k, v in sg_pdbname.items()}
 sg_tag = get_spacegroup_tag()
 sg_from_tag = {v: k for k, v in sg_tag.items()}
 
-for i, (k, v) in enumerate(sg_tag.items()):
+for k, v in sg_tag.items():
     if v in sg_lattice:
         sg_lattice[k] = sg_lattice[v]
     else:

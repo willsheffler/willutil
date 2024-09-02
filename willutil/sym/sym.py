@@ -1,3 +1,4 @@
+import contextlib
 import copy
 import functools
 from willutil import Bunch
@@ -7,8 +8,8 @@ from willutil.sym.symframes import *
 # from willutil.sym.asufit import *
 from willutil.sym.xtalcls import *
 from willutil.sym.xtalinfo import *
+from willutil.sym.xtalinfo import *
 # from willutil.viz import showme
-
 
 def frames(
     sym,
@@ -35,18 +36,16 @@ def frames(
     sym = map_sym_abbreviation(sym)
     sym = sym.lower()
 
-    okexe = (SystemExit,) if sgonly else (KeyError, AttributeError)
-    try:
+    okexe = (SystemExit, ) if sgonly else (KeyError, AttributeError)
+    with contextlib.suppress(okexe):
         return wu.sym.sgframes(sym, ontop=ontop, **kw)
-    except okexe:
-        pass
     try:
         if wu.sym.is_known_xtal(sym):
             return xtal(sym).frames(ontop=ontop, **kw).copy()
         else:
             f = sym_frames[sym].copy()
-    except KeyError:
-        raise ValueError(f"unknown symmetry {sym}")
+    except KeyError as e:
+        raise ValueError(f"unknown symmetry {sym}") from e
     wu.checkpoint("frames gen")
 
     if asym_of:
@@ -126,7 +125,6 @@ def frames(
     wu.checkpoint(kw)
     return f.round(10)
 
-
 def put_frames_on_top(frames, ontop, strict=True, allowcellshift=False, cellsize=None, **kw):
     wu.checkpoint(kw, funcbegin=True)
     # ic(allowcellshift, cellsize)
@@ -176,18 +174,14 @@ def put_frames_on_top(frames, ontop, strict=True, allowcellshift=False, cellsize
     wu.checkpoint(kw)
     return f
 
-
 def make(sym, x, **kw):
     return wu.hxform(frames(sym, **kw), x)
-
 
 def makepts(sym, x, **kw):
     return wu.hxformpts(frames(sym, **kw), x)
 
-
 def makex(sym, x, **kw):
     return wu.hxformx(frames(sym, **kw), x)
-
 
 def map_sym_abbreviation(sym):
     if sym == "I":
@@ -206,14 +200,11 @@ def map_sym_abbreviation(sym):
         return f"c{sym}"
     return sym
 
-
 def symaxis_angle(sym, nf1, nf2):
     return wu.hangle(axes(sym, nf1), axes(sym, nf2))
 
-
 def symaxis_radbias(sym, nf1, nf2):
     return 1 / np.arctan(wu.hangle(axes(sym, nf1), axes(sym, nf2)))
-
 
 def min_symaxis_angle(sym):
     symaxes = axes(sym)
@@ -224,7 +215,6 @@ def min_symaxis_angle(sym):
                 minaxsang = min(minaxsang, line_angle(iax, jax))
                 # print(i, j, line_angle_degrees(iax, jax))
     return minaxsang
-
 
 def axes(sym, nfold=None, all=False, cellsize=1, **kw):
     sym = sym.lower()
@@ -262,7 +252,6 @@ def axes(sym, nfold=None, all=False, cellsize=1, **kw):
     except (KeyError, ValueError) as e:
         raise ValueError(f"unknown symmetry {sym}")
 
-
 @functools.lru_cache()
 def symelem_associations(sym=None, symelems=None):
     if not symelems:
@@ -276,7 +265,6 @@ def symelem_associations(sym=None, symelems=None):
             n += 1
         assoc.append(wu.Bunch(nbrs=nbrs, symelem=s))
     return assoc
-
 
 def remove_if_same_axis(frames, bbaxes, onesided=True, partial_ok=False):
     assert onesided
@@ -310,13 +298,10 @@ def remove_if_same_axis(frames, bbaxes, onesided=True, partial_ok=False):
     uniq = np.array(uniq)
     return frames[uniq]
 
-
 _ambiguous_axes = Bunch(tet=[], oct=[(2, 4)], icos=[], d2=[], _strict=True)
-
 
 def ambiguous_axes(sym):
     return _ambiguous_axes[sym]
-
 
 _ = -1
 
@@ -333,78 +318,71 @@ icosahedral_axes = {
 }
 
 tetrahedral_axes_all = {
-    2: hnormalized(
-        [
-            [1, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1],
-            # [_, 0, 0],
-            # [0, _, 0],
-            # [0, 0, _],
-        ]
-    ),
-    3: hnormalized(
-        [
-            [1, 1, 1],
-            [1, _, _],
-            [_, _, 1],
-            [_, 1, _],
-            # [_, _, _],
-            # [_, 1, 1],
-            # [1, 1, _],
-            # [1, _, 1],
-        ]
-    ),
-    "3b": hnormalized(
-        [
-            [_, 1, 1],
-            [1, _, 1],
-            [1, 1, _],
-            [_, _, -1],
-        ]
-    ),
+    2:
+    hnormalized([
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+        # [_, 0, 0],
+        # [0, _, 0],
+        # [0, 0, _],
+    ]),
+    3:
+    hnormalized([
+        [1, 1, 1],
+        [1, _, _],
+        [_, _, 1],
+        [_, 1, _],
+        # [_, _, _],
+        # [_, 1, 1],
+        # [1, 1, _],
+        # [1, _, 1],
+    ]),
+    "3b":
+    hnormalized([
+        [_, 1, 1],
+        [1, _, 1],
+        [1, 1, _],
+        [_, _, -1],
+    ]),
 }
 octahedral_axes_all = {
-    2: hnormalized(
-        [
-            [1, 1, 0],
-            [0, 1, 1],
-            [1, 0, 1],
-            [_, 1, 0],
-            [0, _, 1],
-            [_, 0, 1],
-            # [1, _, 0],
-            # [0, 1, _],
-            # [1, 0, _],
-            # [_, _, 0],
-            # [0, _, _],
-            # [_, 0, _],
-        ]
-    ),
-    3: hnormalized(
-        [
-            [1, 1, 1],
-            [_, 1, 1],
-            [1, _, 1],
-            [1, 1, _],
-            # [_, 1, _],
-            # [_, _, 1],
-            # [1, _, _],
-            # [_, _, _],
-        ]
-    ),
-    4: hnormalized(
-        [
-            [1, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1],
-            # [_, 0, 0],
-            # [0, _, 0],
-            # [0, 0, _],
-        ]
-    ),
+    2:
+    hnormalized([
+        [1, 1, 0],
+        [0, 1, 1],
+        [1, 0, 1],
+        [_, 1, 0],
+        [0, _, 1],
+        [_, 0, 1],
+        # [1, _, 0],
+        # [0, 1, _],
+        # [1, 0, _],
+        # [_, _, 0],
+        # [0, _, _],
+        # [_, 0, _],
+    ]),
+    3:
+    hnormalized([
+        [1, 1, 1],
+        [_, 1, 1],
+        [1, _, 1],
+        [1, 1, _],
+        # [_, 1, _],
+        # [_, _, 1],
+        # [1, _, _],
+        # [_, _, _],
+    ]),
+    4:
+    hnormalized([
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+        # [_, 0, 0],
+        # [0, _, 0],
+        # [0, 0, _],
+    ]),
 }
-
 
 def _icosahedral_axes_all():
     a2 = icosahedral_frames @ icosahedral_axes[2]
@@ -430,13 +408,10 @@ def _icosahedral_axes_all():
     }
     return icosahedral_axes_all
 
-
 icosahedral_axes_all = _icosahedral_axes_all()
-
 
 def _d_axes(nfold):
     return {2: hnormalized([1, 0, 0]), nfold: hnormalized([0, 0, 1])}
-
 
 def _d_frames(nfold):
     cx = hrot([0, 0, 1], np.pi * 2 / nfold)
@@ -448,7 +423,6 @@ def _d_frames(nfold):
             rot1 = [np.eye(4), c2][i2]
             frames.append(rot1 @ rot2)
     return np.array(frames)
-
 
 def _d_axes_all(nfold):
     ang = 2 * np.pi / nfold
@@ -482,7 +456,6 @@ def _d_axes_all(nfold):
         nfold: hnormalized(an),
     }
     return axes_all
-
 
 symaxes = dict(
     tet=tetrahedral_axes,
@@ -534,9 +507,20 @@ nfold_axis_angles = dict(
     icos=icosahedral_angles,
 )
 sym_point_angles = dict(
-    tet={2: [np.pi], 3: [np.pi * 2 / 3]},
-    oct={2: [np.pi], 3: [np.pi * 2 / 3], 4: [np.pi / 2]},
-    icos={2: [np.pi], 3: [np.pi * 2 / 3], 5: [np.pi * 2 / 5, np.pi * 4 / 5]},
+    tet={
+        2: [np.pi],
+        3: [np.pi * 2 / 3]
+    },
+    oct={
+        2: [np.pi],
+        3: [np.pi * 2 / 3],
+        4: [np.pi / 2]
+    },
+    icos={
+        2: [np.pi],
+        3: [np.pi * 2 / 3],
+        5: [np.pi * 2 / 5, np.pi * 4 / 5]
+    },
     d3={
         2: [np.pi],
         3: [np.pi * 2 / 3],
@@ -567,14 +551,12 @@ for icyc in range(3, 33):
     symaxes_all[sym] = _d_axes_all(icyc)
     _ambiguous_axes[sym] = list() if icyc % 2 else [(2, icyc)]
 
-sym_frames["d2"] = np.stack(
-    [
-        np.eye(4),
-        hrot([1, 0, 0], np.pi),
-        hrot([0, 1, 0], np.pi),
-        hrot([0, 0, 1], np.pi),
-    ]
-)
+sym_frames["d2"] = np.stack([
+    np.eye(4),
+    hrot([1, 0, 0], np.pi),
+    hrot([0, 1, 0], np.pi),
+    hrot([0, 0, 1], np.pi),
+])
 
 symaxes["d2"] = {
     2: np.array([1, 0, 0, 0]),
@@ -582,23 +564,19 @@ symaxes["d2"] = {
     "2c": np.array([0, 0, 1, 0]),
 }
 symaxes_all["d2"] = {
-    2: np.array(
-        [
-            np.array([1, 0, 0, 0]),
-            np.array([0, 1, 0, 0]),
-            np.array([0, 0, 1, 0]),
-        ]
-    )
+    2: np.array([
+        np.array([1, 0, 0, 0]),
+        np.array([0, 1, 0, 0]),
+        np.array([0, 0, 1, 0]),
+    ])
 }
 
 sym_point_angles["d2"] = {2: [np.pi]}
-
 
 def sym_nfold_map(nfold):
     if isinstance(nfold, str):
         return int(nfold[:-1])
     return nfold
-
 
 def get_syminfo(sym):
     sym = sym.lower()
@@ -620,33 +598,26 @@ def get_syminfo(sym):
         print(f'sym.py: dont know symmetry "{sym}"')
         raise e
 
-
 _sym_permute_axes_choices = dict(
-    d2=np.array(
-        [
-            np.eye(4),  #           x y z
-            hrot([1, 0, 0], 90),  # x z y
-            hrot([0, 0, 1], 90),  # y z x
-            hrot([1, 0, 0], 90) @ hrot([0, 0, 1], 90),  # y x z
-            hrot([0, 1, 0], 90),  # z y x
-            hrot([1, 0, 0], 90) @ hrot([0, 1, 0], 90),  # z y x
-        ]
-    ),
-    d3=np.array(
-        [
-            np.eye(4),
-            hrot([0, 0, 1], 180),
-        ]
-    ),
+    d2=np.array([
+        np.eye(4),  #           x y z
+        hrot([1, 0, 0], 90),  # x z y
+        hrot([0, 0, 1], 90),  # y z x
+        hrot([1, 0, 0], 90) @ hrot([0, 0, 1], 90),  # y x z
+        hrot([0, 1, 0], 90),  # z y x
+        hrot([1, 0, 0], 90) @ hrot([0, 1, 0], 90),  # z y x
+    ]),
+    d3=np.array([
+        np.eye(4),
+        hrot([0, 0, 1], 180),
+    ]),
 )
-
 
 def sym_permute_axes_choices(sym):
     if sym in _sym_permute_axes_choices:
         return _sym_permute_axes_choices[sym]
     else:
         return np.eye(4).reshape(1, 4, 4)
-
 
 for icyc in range(2, 33):
     sym = "c%i" % icyc
@@ -661,7 +632,6 @@ for icyc in range(2, 33):
     symaxes_all[sym] = symaxes[sym]
     _ambiguous_axes[sym] = list()
 
-
 def is_closed(sym):
     sym = sym.upper()
     if sym.startswith(("C", "D")):
@@ -670,13 +640,11 @@ def is_closed(sym):
         return True
     return False
 
-
 def symunit_bounds(cagesym, cycsym):
     flb, fub, fnum = 1, -1, 2
     if cagesym == "tet" and cycsym == "c3":
         fub, fnum = None, 1
     return flb, fub, fnum
-
 
 def coords_to_asucen(sym, coords, **kw):
     if wu.sym.is_known_xtal(sym):
@@ -685,7 +653,6 @@ def coords_to_asucen(sym, coords, **kw):
     else:
         raise NotImplementedError
 
-
 def primary_frames(sym, **kw):
     if wu.sym.is_known_xtal(sym):
         x = xtal(sym)
@@ -693,9 +660,7 @@ def primary_frames(sym, **kw):
     else:
         raise NotImplementedError
 
-
 _xtal_cache = dict()
-
 
 def xtal(sym, **kw):
     global _xtal_cache
@@ -703,13 +668,11 @@ def xtal(sym, **kw):
         _xtal_cache[sym] = wu.sym.Xtal(sym, **kw)
     return _xtal_cache[sym]
 
-
 def ndim(sym):
     try:
         return xtal(sym).dimension
     except KeyError:
         pass
-
 
 def numpy_or_torch_array(source, example):
     if "torch" in sys.modules:
@@ -719,9 +682,7 @@ def numpy_or_torch_array(source, example):
             return torch.as_tensor(source)
     return np.asarray(source)
 
-
 CoordRMS = collections.namedtuple("CorodRMS", "coords rms")
-
 
 def average_aligned_coords(coords, nsub=None, repeatfirst=1):
     orig = coords
@@ -739,7 +700,6 @@ def average_aligned_coords(coords, nsub=None, repeatfirst=1):
     crd = numpy_or_torch_array(np.stack(crds).mean(0), orig)
     rms = numpy_or_torch_array(rms, orig)
     return CoordRMS(crd, rms)
-
 
 def subframes(frames, bbsym, asym):
     assert frames.ndim == 3 and frames.shape[1:] == (4, 4)
@@ -768,3 +728,34 @@ def subframes(frames, bbsym, asym):
 
     axisdist = wu.hprojperp(axs, cen)
     ic(axisdist)
+
+# computed in wu.sym.asufit.compute_canonical_asucen
+_canon_asucen = dict(
+    c2=np.array([1.0, 0., 0.]),
+    c3=np.array([1.15470054, 0., 0.]),
+    c4=np.array([1.41421357, 0., 0.]),
+    c5=np.array([1.70130162, 0., 0.]),
+    c6=np.array([2.00000000, 0., 0.]),
+    c7=np.array([2.3047649, 0., 0.]),
+    c8=np.array([2.61312595, 0., 0.]),
+    c9=np.array([2.92380443, 0., 0.]),
+    d2=np.array([-0.70690629, 0.7075665, 0.70730722]),
+    d3=np.array([5.10486311e-04, 1.15470043e+00, 8.16910008e-01]),
+    d4=np.array([1.30706011, 0.54147883, 0.84079882]),
+    d5=np.array([1.00216512, 1.37480626, 0.85245505]),
+    d6=np.array([0.51697002, 1.93266443, 0.8560035]),
+    tet=np.array([9.47438171e-05, 1.00242090e+00, 1.61772847e+00]),
+    oct=np.array([0.67599002, 1.2421906, 2.28592391]),
+    icos=np.array([1.13567793, 1.28546351, 3.95738551]),
+    icos4=np.array([0, 1, 5.85725386]),
+)
+
+def canonical_asu_center(sym, cuda=False):
+    sym = wu.sym.map_sym_abbreviation(sym).lower()
+    try:
+        if cuda:
+            import torch as th
+            return th.tensor(_canon_asucen[sym], device='cuda')
+        return _canon_asucen[sym]
+    except KeyError as e:
+        raise ValueError(f'canonical_asu_center: unknown sym {sym}') from e

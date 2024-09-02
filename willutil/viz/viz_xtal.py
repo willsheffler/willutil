@@ -4,7 +4,6 @@ from willutil.sym.xtalinfo import SymElem
 from willutil.viz.pymol_viz import pymol_load, cgo_cyl, cgo_sphere, cgo_fan, cgo_cube
 import willutil as wu
 
-
 @pymol_load.register(SymElem)
 def pymol_viz_SymElem(
     toshow,
@@ -33,7 +32,7 @@ def pymol_viz_SymElem(
 ):
     import pymol
 
-    state["seenit"][name] += 1
+    if state: state["seenit"][name] += 1
 
     v = pymol.cmd.get_view()
 
@@ -106,9 +105,14 @@ def pymol_viz_SymElem(
     # ic(fanthickness)
     # ic(fanrefpoint)
     # ic(fanshift)
-    mycgo += cgo_fan(
-        axis, cen, fansize, arc=arc, thickness=fanthickness, col=col, startpoint=fanrefpoint, fanshift=fanshift
-    )
+    mycgo += cgo_fan(axis,
+                     cen,
+                     fansize,
+                     arc=arc,
+                     thickness=fanthickness,
+                     col=col,
+                     startpoint=fanrefpoint,
+                     fanshift=fanshift)
     if symelemtwosided:
         col2 = (1, 1, 1)
         mycgo += cgo_fan(
@@ -131,27 +135,26 @@ def pymol_viz_SymElem(
         return mycgo
     return None
 
-
 @pymol_load.register(Xtal)
 def pymol_viz_Xtal(
-    toshow,
-    name="xtal",
-    state=None,
-    scale=10,
-    # neighbors=1,
-    # cellshift=(0, 0, 0),
-    cells=1,
-    showsymelems=True,
-    showgenframes=False,
-    splitobjs=False,
-    showpoints=None,
-    fanshift=0,
-    fansize=0.1,
-    showcube=None,
-    pointradius=1,
-    addtocgo=None,
-    pointcol=(0.5, 0.5, 0.5),
-    **kw,
+        toshow,
+        name="xtal",
+        state=None,
+        scale=10,
+        # neighbors=1,
+        # cellshift=(0, 0, 0),
+        cells=1,
+        showsymelems=True,
+        showgenframes=False,
+        splitobjs=False,
+        showpoints=None,
+        fanshift=0,
+        fansize=0.1,
+        showcube=None,
+        pointradius=1,
+        addtocgo=None,
+        pointcol=(0.5, 0.5, 0.5),
+        **kw,
 ):
     import pymol
 
@@ -244,56 +247,47 @@ def pymol_viz_Xtal(
 
     return state
 
-
 def xtal_show_points(which, pointscale=1, pointshift=(0, 0, 0), scaleptrad=1, **kw):
     s = pointscale * scaleptrad
     pointshift = np.asarray(pointshift)
     showpts = [
         np.empty(shape=(0, 3)),
-        np.array(
-            [
-                [0.28, 0.13, 0.13],
-                [0.28, 0.13 + 0.06 * s, 0.13],
-                [0.28, 0.13, 0.13 + 0.05 * s],
-            ]
-        ),
-        np.array(
-            [
-                [0.18, 0.03, 0.03],
-                [0.18, 0.03 + 0.06 * s, 0.03],
-                [0.18, 0.03, 0.03 + 0.05 * s],
-            ]
-        ),
-        np.array(
-            [
-                [0.18, 0.03, 0.03],
-                [0.18, 0.03 + 0.06 * s, 0.03],
-                [0.18, 0.03, 0.03 + 0.05 * s],
-            ]
-        ),
+        np.array([
+            [0.28, 0.13, 0.13],
+            [0.28, 0.13 + 0.06 * s, 0.13],
+            [0.28, 0.13, 0.13 + 0.05 * s],
+        ]),
+        np.array([
+            [0.18, 0.03, 0.03],
+            [0.18, 0.03 + 0.06 * s, 0.03],
+            [0.18, 0.03, 0.03 + 0.05 * s],
+        ]),
+        np.array([
+            [0.18, 0.03, 0.03],
+            [0.18, 0.03 + 0.06 * s, 0.03],
+            [0.18, 0.03, 0.03 + 0.05 * s],
+        ]),
         # C3(axis=[-1, -1, -1], cen=A([0, 0, 0]) / 8, label='C3_111_1m0_111_8', vizcol=(1, 0, 0)),
         # C2(axis=[1, 0, 0], cen=A([3, 0, 2]) / 8, label='D2_100_0m1_102_8', vizcol=(0, 1, 0)),
         # C2(axis=[1, -1, 0], cen=A([-2.7, 0.7, -1]) / 8, label='D3_111_1m0_mmm_8', vizcol=(0, 0, 1)),
         # yapf: disable
-        np.array(
-            [
-                [0.18, 0.03, 0.03],
-                [0.18, 0.03 + 0.06 * s, 0.03],
-                [0.18, 0.03, 0.03 + 0.05 * s],
-                [-0.0, 0.2, 0.03],
-                [-0.0, 0.2 + 0.06 * s, 0.03],
-                [-0.0, 0.2, 0.03 + 0.05 * s],
-                [0.15, -0.0, 0.13],
-                [0.15, -0.0 + 0.06 * s, 0.13],
-                [0.15, -0.0, 0.03 + 0.15 * s],
-                [0.21, -0.21, -0.0],
-                [0.21, -0.21 + 0.06 * s, 0.0],
-                [0.21, -0.21, 0],
-                [0.0, -0.0, 0.2],
-                [0.0, 0.0 + 0.06 * s, 0.2],
-                [0.0, 0.0, 0.2 + 0.05 * s],
-            ]
-        ),
+        np.array([
+            [0.18, 0.03, 0.03],
+            [0.18, 0.03 + 0.06 * s, 0.03],
+            [0.18, 0.03, 0.03 + 0.05 * s],
+            [-0.0, 0.2, 0.03],
+            [-0.0, 0.2 + 0.06 * s, 0.03],
+            [-0.0, 0.2, 0.03 + 0.05 * s],
+            [0.15, -0.0, 0.13],
+            [0.15, -0.0 + 0.06 * s, 0.13],
+            [0.15, -0.0, 0.03 + 0.15 * s],
+            [0.21, -0.21, -0.0],
+            [0.21, -0.21 + 0.06 * s, 0.0],
+            [0.21, -0.21, 0],
+            [0.0, -0.0, 0.2],
+            [0.0, 0.0 + 0.06 * s, 0.2],
+            [0.0, 0.0, 0.2 + 0.05 * s],
+        ]),
         # yapf: enable
     ]
     # ic(wu.hxform(wu.hrot([1, -1, 0], 90, np.array([-2.7, 0.7, -1]) / 8), [0, 0, 0.2]))
@@ -308,7 +302,6 @@ def xtal_show_points(which, pointscale=1, pointshift=(0, 0, 0), scaleptrad=1, **
     colors = np.array([[(1, 1, 1)] * 30] * len(showpts))
     # ic(len(colors[which]))
     return wu.hpoint(showpts[which]), radius[which], colors[which]
-
 
 def get_fanrefpoint(xtal):
     pt = [0, 1, 0, 1]

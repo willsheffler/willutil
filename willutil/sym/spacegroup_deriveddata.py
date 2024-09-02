@@ -11,7 +11,6 @@ from willutil.sym.permutations import symframe_permutations_torch
 from willutil.storage import load_package_data, save_package_data, have_package_data
 from willutil.sym.SymElem import ComponentIDError, _make_operator_component_joint_ids
 
-
 def _get_spacegroup_data():
     sgdata = dict()
     if have_package_data("spacegroup_data"):
@@ -121,9 +120,8 @@ def _get_spacegroup_data():
                 sg_symelem_frame444_opids_dict[sym][:, ielem] = elem.frame_operator_ids(stdframes)
 
                 try:
-                    sg_symelem_frame444_compids_dict[sym][:, ielem] = elem.frame_component_ids(
-                        stdframes, perms
-                    )
+                    sg_symelem_frame444_compids_dict[sym][:,
+                                                          ielem] = elem.frame_component_ids(stdframes, perms)
                 except ComponentIDError:
                     print("!" * 80)
                     print("ERROR making component ids for symelem", sym, ielem)
@@ -179,7 +177,6 @@ def _get_spacegroup_data():
             save_package_data(sgdata, "spacegroup_data.pickle.xz")
 
     return sgdata
-
 
 _sgdata = _get_spacegroup_data()
 sg_frames_dict = _sgdata["sg_frames_dict"]

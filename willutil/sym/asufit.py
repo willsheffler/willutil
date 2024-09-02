@@ -1,6 +1,34 @@
 import willutil as wu
 from willutil.homog import *
+import numpy as np
 
+def compute_canonical_asucen(sym, neighbors=None):
+    from willutil import h
+    import torch as th
+    sym = wu.sym.map_sym_abbreviation(sym).lower()
+    frames = h.tocuda(wu.sym.frames(sym))
+    x = h.randunit(int(5e5), device='cuda')
+    symx = h.xform(frames[1:], x)
+    d2 = th.sum((x[None] - symx)**2, dim=-1)
+
+    mind2 = d2.min(dim=0)[0]
+    if neighbors:
+        ic(d2.shape)
+        sort = d2.sort(dim=0)[0]
+        rank = sort[neighbors] - sort[neighbors - 1]
+    else:
+        rank = mind2
+    # ic(d2.shape, mind2.shape)
+
+    ibest = th.argmax(rank)
+    best = x[ibest]
+    dbest = th.sqrt(mind2[ibest])
+    symbest = h.xform(frames, best)
+    aln = th.sum(symbest * th.tensor([1, 2, 10], device='cuda'), dim=1)
+    best = symbest[th.argmax(aln)] / dbest * 2
+    if sym.startswith('c'):
+        best = th.tensor([h.norm(best), 0, 0])
+    return best.cpu().numpy()
 
 def asufit(
     sym,
