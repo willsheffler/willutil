@@ -4,8 +4,9 @@ import willutil as wu
 
 # ic.configureOutput(includeContext=True)
 
-
 def main():
+    _gen_canonical_asu_cens()
+    test_canonical_asu_center()
     test_asufit_I4132(showme=True)
     # test_asufit_P213(showme=True)
     # test_asufit_L6m322(showme=True)
@@ -14,6 +15,19 @@ def main():
     # test_asufit_icos(showme=True)
     ic("TEST asufit DONE")
 
+def _gen_canonical_asu_cens():
+    for sym in 'oct'.split():
+        for nnbr in (1, 2, 3, 4, 5, 6):
+            # for sym in 'c2 c3 c4 c5 c6 c7 c8 c9 d2 d3 d4 d5 d6 tet oct icos'.split():
+            cen = wu.sym.compute_canonical_asucen(sym, neighbors=nnbr)
+            print(f"    {sym}={repr(cen)},")
+            wu.showme(wu.hxform(wu.sym.frames(sym), cen), kind="point", name=f'{sym}_{nnbr}')
+    assert 0
+
+def test_canonical_asu_center():
+    from wu.sym.asufit import _canon_asucen
+    ic(wu.sym.canonical_asu_center('C3'))
+    assert np.allclose(wu.sym.canonical_asu_center('C3'), [1, 0, 0, 1])
 
 @pytest.mark.xfail()
 def test_asufit_oct(showme=False):
@@ -25,8 +39,8 @@ def test_asufit_oct(showme=False):
     xyz[:, :3] -= wu.hcom(xyz)[:3]
     xyz_contact = None
 
-    cendis = np.argsort(wu.hnorm(xyz - wu.hcom(xyz)[:3]) ** 2)
-    w = cendis[: int(len(xyz) * 0.5)]
+    cendis = np.argsort(wu.hnorm(xyz - wu.hcom(xyz)[:3])**2)
+    w = cendis[:int(len(xyz) * 0.5)]
     xyz_contact = xyz[w]
     # wu.showme(xyz)
     # wu.showme(xyz_contact)
@@ -78,16 +92,13 @@ def test_asufit_oct(showme=False):
         )
     assert np.allclose(
         mc.beststate.position,
-        np.array(
-            [
-                [9.63284623e-01, 2.49202698e-01, -9.99037016e-02, -1.32625492e01],
-                [-2.65707884e-01, 9.38228112e-01, -2.21646860e-01, 5.46007841e01],
-                [3.84974658e-02, 2.40054213e-01, 9.69995835e-01, 1.16772927e01],
-                [0.00000000e00, 0.00000000e00, 0.00000000e00, 1.00000000e00],
-            ]
-        ),
+        np.array([
+            [9.63284623e-01, 2.49202698e-01, -9.99037016e-02, -1.32625492e01],
+            [-2.65707884e-01, 9.38228112e-01, -2.21646860e-01, 5.46007841e01],
+            [3.84974658e-02, 2.40054213e-01, 9.69995835e-01, 1.16772927e01],
+            [0.00000000e00, 0.00000000e00, 0.00000000e00, 1.00000000e00],
+        ]),
     )
-
 
 @pytest.mark.xfail()
 def test_asufit_I4132(showme=False):
@@ -113,19 +124,17 @@ def test_asufit_I4132(showme=False):
     # xyz[:, :3] -= wu.hcom(xyz)[:3]
     # xyz[:, :3] += asucen[:3]
 
-    cendis = np.argsort(wu.hnorm(xyz - wu.hcom(xyz)[:3]) ** 2)
-    w = cendis[: int(len(xyz) * 0.8)]
+    cendis = np.argsort(wu.hnorm(xyz - wu.hcom(xyz)[:3])**2)
+    w = cendis[:int(len(xyz) * 0.8)]
     xyz_contact = xyz[w]
 
-    primary_frames = np.stack(
-        [
-            np.eye(4),
-            xtal.symelems[0].operators[1],
-            xtal.symelems[1].operators[1],
-            xtal.symelems[2].operators[1],
-            xtal.symelems[0].operators[2],
-        ]
-    )
+    primary_frames = np.stack([
+        np.eye(4),
+        xtal.symelems[0].operators[1],
+        xtal.symelems[1].operators[1],
+        xtal.symelems[2].operators[1],
+        xtal.symelems[0].operators[2],
+    ])
     primary_frames = wu.hscaled(scale, primary_frames)
     # wu.showme(wu.hxform(primary_frames[0], xyz))
     # wu.showme(wu.hxform(primary_frames[1], xyz))
@@ -249,16 +258,13 @@ def test_asufit_I4132(showme=False):
 
     assert np.allclose(
         mc.beststate.position,
-        np.array(
-            [
-                [9.63284623e-01, 2.49202698e-01, -9.99037016e-02, -1.32625492e01],
-                [-2.65707884e-01, 9.38228112e-01, -2.21646860e-01, 5.46007841e01],
-                [3.84974658e-02, 2.40054213e-01, 9.69995835e-01, 1.16772927e01],
-                [0.00000000e00, 0.00000000e00, 0.00000000e00, 1.00000000e00],
-            ]
-        ),
+        np.array([
+            [9.63284623e-01, 2.49202698e-01, -9.99037016e-02, -1.32625492e01],
+            [-2.65707884e-01, 9.38228112e-01, -2.21646860e-01, 5.46007841e01],
+            [3.84974658e-02, 2.40054213e-01, 9.69995835e-01, 1.16772927e01],
+            [0.00000000e00, 0.00000000e00, 0.00000000e00, 1.00000000e00],
+        ]),
     )
-
 
 @pytest.mark.xfail()
 def test_asufit_P213(showme=False):
@@ -280,19 +286,17 @@ def test_asufit_P213(showme=False):
     # assert 0
     xyz[:, :3] -= wu.hcom(xyz)[:3]
     xyz[:, :3] += asucen[:3]
-    cendis = np.argsort(wu.hnorm(xyz - wu.hcom(xyz)[:3]) ** 2)
-    w = cendis[: int(len(xyz) * 0.6)]
+    cendis = np.argsort(wu.hnorm(xyz - wu.hcom(xyz)[:3])**2)
+    w = cendis[:int(len(xyz) * 0.6)]
     xyz_contact = xyz[w]
 
-    primary_frames = np.stack(
-        [
-            wu.hscaled(scale, np.eye(4)),
-            xtal.symelems[0].operators[1],
-            xtal.symelems[1].operators[1],
-            xtal.symelems[0].operators[2],
-            xtal.symelems[1].operators[2],
-        ]
-    )
+    primary_frames = np.stack([
+        wu.hscaled(scale, np.eye(4)),
+        xtal.symelems[0].operators[1],
+        xtal.symelems[1].operators[1],
+        xtal.symelems[0].operators[2],
+        xtal.symelems[1].operators[2],
+    ])
     primary_frames = wu.hscaled(scale, primary_frames)
     # ic(xtal.symelems[0].cen)
     # ic(xtal.symelems[1].cen)
@@ -370,16 +374,13 @@ def test_asufit_P213(showme=False):
         )
     assert np.allclose(
         mc.beststate.position,
-        np.array(
-            [
-                [9.63284623e-01, 2.49202698e-01, -9.99037016e-02, -1.32625492e01],
-                [-2.65707884e-01, 9.38228112e-01, -2.21646860e-01, 5.46007841e01],
-                [3.84974658e-02, 2.40054213e-01, 9.69995835e-01, 1.16772927e01],
-                [0.00000000e00, 0.00000000e00, 0.00000000e00, 1.00000000e00],
-            ]
-        ),
+        np.array([
+            [9.63284623e-01, 2.49202698e-01, -9.99037016e-02, -1.32625492e01],
+            [-2.65707884e-01, 9.38228112e-01, -2.21646860e-01, 5.46007841e01],
+            [3.84974658e-02, 2.40054213e-01, 9.69995835e-01, 1.16772927e01],
+            [0.00000000e00, 0.00000000e00, 0.00000000e00, 1.00000000e00],
+        ]),
     )
-
 
 @pytest.mark.xfail()
 def test_asufit_L6m322(showme=False):
@@ -403,14 +404,12 @@ def test_asufit_L6m322(showme=False):
     xyz_contact = xyz.reshape(-1, 4, 3)[ss == "H"].reshape(-1, 3)
     ic(xyz_contact.shape)
 
-    primary_frames = np.stack(
-        [
-            np.eye(4),
-            xtal.symelems[0].operators[1],
-            xtal.symelems[1].operators[1],
-            xtal.symelems[2].operators[1],
-        ]
-    )
+    primary_frames = np.stack([
+        np.eye(4),
+        xtal.symelems[0].operators[1],
+        xtal.symelems[1].operators[1],
+        xtal.symelems[2].operators[1],
+    ])
     frames = wu.sym.frames(sym, ontop=primary_frames)
     lever = wu.hrog(xyz) * 1.5
     """
@@ -454,16 +453,13 @@ def test_asufit_L6m322(showme=False):
             )
     assert np.allclose(
         mc.beststate.position,
-        np.array(
-            [
-                [9.63284623e-01, 2.49202698e-01, -9.99037016e-02, -1.32625492e01],
-                [-2.65707884e-01, 9.38228112e-01, -2.21646860e-01, 5.46007841e01],
-                [3.84974658e-02, 2.40054213e-01, 9.69995835e-01, 1.16772927e01],
-                [0.00000000e00, 0.00000000e00, 0.00000000e00, 1.00000000e00],
-            ]
-        ),
+        np.array([
+            [9.63284623e-01, 2.49202698e-01, -9.99037016e-02, -1.32625492e01],
+            [-2.65707884e-01, 9.38228112e-01, -2.21646860e-01, 5.46007841e01],
+            [3.84974658e-02, 2.40054213e-01, 9.69995835e-01, 1.16772927e01],
+            [0.00000000e00, 0.00000000e00, 0.00000000e00, 1.00000000e00],
+        ]),
     )
-
 
 @pytest.mark.xfail()
 def test_asufit_L6_32(showme=False):
@@ -514,16 +510,13 @@ def test_asufit_L6_32(showme=False):
         )
     assert np.allclose(
         mc.beststate.position,
-        np.array(
-            [
-                [9.63284623e-01, 2.49202698e-01, -9.99037016e-02, -1.32625492e01],
-                [-2.65707884e-01, 9.38228112e-01, -2.21646860e-01, 5.46007841e01],
-                [3.84974658e-02, 2.40054213e-01, 9.69995835e-01, 1.16772927e01],
-                [0.00000000e00, 0.00000000e00, 0.00000000e00, 1.00000000e00],
-            ]
-        ),
+        np.array([
+            [9.63284623e-01, 2.49202698e-01, -9.99037016e-02, -1.32625492e01],
+            [-2.65707884e-01, 9.38228112e-01, -2.21646860e-01, 5.46007841e01],
+            [3.84974658e-02, 2.40054213e-01, 9.69995835e-01, 1.16772927e01],
+            [0.00000000e00, 0.00000000e00, 0.00000000e00, 1.00000000e00],
+        ]),
     )
-
 
 @pytest.mark.xfail()
 def test_asufit_icos(showme=False):
@@ -569,17 +562,14 @@ def test_asufit_icos(showme=False):
             scoreframes=[(0, 1), (0, 2)],
             clashframes=[(1, 2), (1, 3), (2, 3)],
         )
-        ref = np.array(
-            [
-                [0.99880172, 0.01937787, 0.04494025, -3.38724054],
-                [-0.02529149, 0.99052266, 0.13500072, 1.91723184],
-                [-0.04189831, -0.13597556, 0.98982583, 2.10409862],
-                [0.0, 0.0, 0.0, 1.0],
-            ]
-        )
+        ref = np.array([
+            [0.99880172, 0.01937787, 0.04494025, -3.38724054],
+            [-0.02529149, 0.99052266, 0.13500072, 1.91723184],
+            [-0.04189831, -0.13597556, 0.98982583, 2.10409862],
+            [0.0, 0.0, 0.0, 1.0],
+        ])
         assert np.allclose(ref, mc.beststate.position)
         ic("test_asufit_icos PASS!")
-
 
 if __name__ == "__main__":
     main()

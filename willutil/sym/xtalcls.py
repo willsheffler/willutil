@@ -9,7 +9,6 @@ cryst1_pattern_full = "CRYST1 %8.3f %8.3f %8.3f%7.2f%7.2f%7.2f %s\n"
 # CRYST1  150.000  150.000  150.000  90.00  90.00  90.00 I 21 3
 # CRYST1  139.291  139.291  139.291  90.00  90.00  90.00 I 21 3
 
-
 class Xtal:
     def __init__(self, name="xtal", symelems=None, **kw):
         self.info = None
@@ -61,14 +60,11 @@ class Xtal:
             lb, ub = cells
             cells = [(a, b, c) for a, b, c in itertools.product(*[range(lb, ub + 1)] * 3)]
         elif len(cells) == 3:
-            cells = [
-                (a, b, c)
-                for a, b, c in itertools.product(
-                    range(cells[0][0], cells[0][1] + 1),
-                    range(cells[1][0], cells[1][1] + 1),
-                    range(cells[2][0], cells[2][1] + 1),
-                )
-            ]
+            cells = [(a, b, c) for a, b, c in itertools.product(
+                range(cells[0][0], cells[0][1] + 1),
+                range(cells[1][0], cells[1][1] + 1),
+                range(cells[2][0], cells[2][1] + 1),
+            )]
         else:
             raise ValueError(f"bad cells {cells}")
 
@@ -228,9 +224,8 @@ class Xtal:
             self.unitelems = self.coverelems
         self.nsub = len(self.unitframes)
         if self.info is not None and self.info.nsub is not None:
-            assert (
-                self.nsub == self.info.nsub
-            ), f'nsub for "{self.name}" should be {self.info.nsub}, not {self.nsub}'
+            assert (self.nsub == self.info.nsub
+                    ), f'nsub for "{self.name}" should be {self.info.nsub}, not {self.nsub}'
 
     def symcoords(self, asymcoords, cellsize=1, cells=1, flat=False, center=None, **kw):
         asymcoords = wu.hpoint(asymcoords)
@@ -247,7 +242,7 @@ class Xtal:
 
     def cryst1(self, cellsize):
         if self.dimension == 3:
-            if isinstance(cellsize, (int, float)):
+            if isinstance(cellsize, (int, float, np.int32, np.int64, np.float32, np.float64)):
                 cellsize = np.array([cellsize] * 3, dtype=np.float64)
             if len(cellsize) == 3:
                 return cryst1_pattern % (*cellsize, self.spacegroup)
@@ -383,7 +378,6 @@ class Xtal:
             coverelems.append(elems)
         return coverelems
 
-
 def interp_xtal_cell_list(cells):
     if cells == None:
         return np.eye(4)[None]
@@ -395,24 +389,19 @@ def interp_xtal_cell_list(cells):
         lb, ub = cells
         cells = [(a, b, c) for a, b, c in itertools.product(*[range(lb, ub + 1)] * 3)]
     elif len(cells) == 3:
-        cells = [
-            (a, b, c)
-            for a, b, c in itertools.product(
-                range(cells[0][0], cells[0][1] + 1),
-                range(cells[1][0], cells[1][1] + 1),
-                range(cells[2][0], cells[2][1] + 1),
-            )
-        ]
+        cells = [(a, b, c) for a, b, c in itertools.product(
+            range(cells[0][0], cells[0][1] + 1),
+            range(cells[1][0], cells[1][1] + 1),
+            range(cells[2][0], cells[2][1] + 1),
+        )]
     else:
         raise ValueError(f"bad cells {cells}")
     return cells
 
-
 _warn_asucen_xtalasumethod = True
 
-
 def _scaled_frames(cellsize, frames):
-    if isinstance(cellsize, (int, float)):
+    if isinstance(cellsize, (int, float, np.int64)):
         cellsize = np.array([cellsize, cellsize, cellsize])
     if len(cellsize) == 6:
         assert np.all(cellsize[3:] == 90)

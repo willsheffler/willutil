@@ -222,12 +222,14 @@ def pymol_load_npndarray(
 ):
     # showaxes()
     shape = toshow.shape
-    assert kind in (None, *"linestrip ncac line xform point vec".split())
+    assert kind in (None, *"linestrip ncac ncacoh line xform point vec".split())
 
     if kind == "linestrip":
         return show_ndarray_line_strip(toshow, state=state, **kw)
     elif kind == "ncac":
-        return show_ndarray_n_ca_c(toshow[..., :3, :], state, **kw)
+        return show_ndarray_n_ca_c(toshow[..., :3, :], state=state, **kw)
+    elif kind == "ncacoh":
+        return show_array_ncacoh(toshow[..., :5, :], state=state, **kw)
     elif kind == "line":
         return show_ndarray_lines(toshow, state=state, **kw)
     elif kind == "xform":
@@ -623,8 +625,8 @@ def show_ndarray_point_or_vec(
     if isinstance(col, tuple) and isinstance(col[0], (int, float)):
         col = [col]
     toshow[..., :3] *= scale
-    cgo = list()
-    colors = col or get_different_colors(len(toshow))
+    cgo = []
+    colors = get_different_colors(len(toshow)) if col is None else col
     for ichain, xyz in enumerate(toshow):
         if len(colors) == 1: color = colors[0]
         if len(colors) == len(toshow):
@@ -645,6 +647,26 @@ def show_ndarray_point_or_vec(
     return wu.Bunch(cgo=cgo, colors=colors)
 
 @pymol_frame
+def show_array_ncacoh(
+    toshow,
+    name=None,
+    col=[1, 1, 1],
+    **kw,
+):
+    tmpdir = tempfile.mkdtemp()
+    fname = tmpdir + "/" + name + ".pdb"
+    assert toshow.shape[-2:] in [(5, 3), (5, 4)]
+    if toshow.shape[-1] == 3:
+        toshow = wu.hpoint(toshow)
+    # ic(toshow.shape)
+
+    wu.pdb.dump_pdb_from_points(fname, toshow, anames='N CA C O H'.split())
+    pymol.cmd.load(fname, name)
+    pymol.cmd.hide('car')
+    pymol.cmd.show('sti', 'name N+CA+C')
+    return wu.Bunch(pymol_object=name)
+
+@pymol_frame
 def show_ndarray_n_ca_c(
     toshow,
     name=None,
@@ -659,19 +681,7 @@ def show_ndarray_n_ca_c(
     # ic(toshow.shape)
 
     wu.dumppdb(fname, toshow)
-    # with open(fname, "w") as out:
-    # for i, a1 in enumerate(toshow.reshape(-1, 3, 4)):
-    # for j, a in enumerate(a1):
-    # line = format_atom(
-    # atomi=3 * i + j,
-    # resn="GLY",
-    # resi=i,
-    # atomn=(" N  ", " CA ", " C  ")[j],
-    # x=a[0],
-    # y=a[1],
-    # z=a[2],
-    # )
-    # out.write(line)
+
     pymol.cmd.load(fname, name)
     pymol.cmd.hide('car')
     pymol.cmd.show('sti', 'name N+CA+C')

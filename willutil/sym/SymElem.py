@@ -1,3 +1,4 @@
+from collections import defaultdict
 import numpy as np
 import willutil as wu
 from willutil.sym.symframes import tetrahedral_frames, octahedral_frames
@@ -17,25 +18,19 @@ from willutil.homog.hgeom import (
 from willutil.sym.spacegroup_util import applylatticepts, lattice_vectors
 from opt_einsum import contract as einsum
 
-
 class ScrewError(Exception):
     pass
-
 
 class ComponentIDError(Exception):
     pass
 
-
 class OutOfUnitCellError(Exception):
     pass
-
 
 class SymElemAngErr(Exception):
     pass
 
-
 _HACK_HASH = list()
-
 
 def symelem_of(frame, **kw):
     a, an, c, h = wu.haxis_angle_cen_hel_of(frame)
@@ -49,25 +44,24 @@ def symelem_of(frame, **kw):
     # ic(int(nfold), a, c, h, kw)
     return SymElem(int(nfold.round()), axis=a, cen=c, hel=h, **kw)
 
-
 def _round(val):
     for v in [
-        0,
-        0.125,
-        1 / 6,
-        0.25,
-        1 / 3,
-        0.375,
-        0.5,
-        np.sqrt(3) / 3,
-        0.625,
-        2 / 3,
-        np.sqrt(2) / 2,
-        0.75,
-        5 / 6,
-        np.sqrt(3) / 3,
-        0.875,
-        1,
+            0,
+            0.125,
+            1 / 6,
+            0.25,
+            1 / 3,
+            0.375,
+            0.5,
+            np.sqrt(3) / 3,
+            0.625,
+            2 / 3,
+            np.sqrt(2) / 2,
+            0.75,
+            5 / 6,
+            np.sqrt(3) / 3,
+            0.875,
+            1,
     ]:
         if isinstance(val, np.ndarray):
             val[np.isclose(val, v, atol=0.0001)] = v
@@ -75,7 +69,6 @@ def _round(val):
             if np.isclose(val, v):
                 val = v
     return val
-
 
 class SymElem:
     def __init__(
@@ -215,8 +208,7 @@ class SymElem:
                         np.logical_or(
                             np.all(np.isclose(axstest, axstest[0]), axis=1),
                             np.all(np.isclose(axstest, -axstest[0]), axis=1),
-                        )
-                    )
+                        ))
             if np.allclose(compid[iframematch], -1):
                 compid[iframematch] = fid
                 fid += 1
@@ -265,9 +257,13 @@ class SymElem:
         newcen = applylatticepts(latticevec, self.cen)
         newhel = applylatticepts(latticevec, self.cen + self.axis * self.hel)
         newhel = hnorm(newhel - newcen)
-        newelem = SymElem(
-            self._init_args.nfold, self.axis, newcen, self.axis2, hel=newhel, screw=self.screw, isunit=tounit
-        )
+        newelem = SymElem(self._init_args.nfold,
+                          self.axis,
+                          newcen,
+                          self.axis2,
+                          hel=newhel,
+                          screw=self.screw,
+                          isunit=tounit)
         assert self.operators.shape == newelem.operators.shape
         return newelem
 
@@ -433,13 +429,12 @@ class SymElem:
 
         if adjust_cyclic_center and (axis2 is None) and np.isclose(hel, 0):  # cyclic
             assert 0, "this needs an audit"
-            dist = wu.homog.line_line_distance_pa(
-                self.cen, self.axis, _cube_edge_cen * self.scale, _cube_edge_axis
-            )
+            dist = wu.homog.line_line_distance_pa(self.cen, self.axis, _cube_edge_cen * self.scale,
+                                                  _cube_edge_axis)
             w = np.argmin(dist)
-            newcen, _ = wu.homog.line_line_closest_points_pa(
-                self.cen, self.axis, _cube_edge_cen[w] * self.scale, _cube_edge_axis[w]
-            )
+            newcen, _ = wu.homog.line_line_closest_points_pa(self.cen, self.axis,
+                                                             _cube_edge_cen[w] * self.scale,
+                                                             _cube_edge_axis[w])
             if not np.any(np.isnan(newcen)):
                 self.cen = newcen
 
@@ -460,13 +455,11 @@ class SymElem:
     def make_operators_screw(self):
         if not self.isscrew:
             return self.operators
-        return np.stack(
-            [
-                np.eye(4),
-                wu.htrans(self.axis[:3] * -self.hel),
-                wu.htrans(self.axis[:3] * self.hel),
-            ]
-        )
+        return np.stack([
+            np.eye(4),
+            wu.htrans(self.axis[:3] * -self.hel),
+            wu.htrans(self.axis[:3] * self.hel),
+        ])
 
     def make_operators(self):
         # ic(self)
@@ -559,7 +552,6 @@ class SymElem:
         # s = s.replace('0.0,', '0,').replace('0.0],', '0]')
         return s
 
-
 _cubeedges = [
     [[0, 0, 0], [1, 0, 0]],
     [[0, 0, 0], [0, 0, 1]],
@@ -575,7 +567,6 @@ _cubeedges = [
     [[1, 0, 1], [0, 1, 0]],
 ]
 _cube_edge_cen, _cube_edge_axis = np.array(_cubeedges).swapaxes(0, 1)
-
 
 def showsymelems(
     sym,
@@ -626,12 +617,8 @@ def showsymelems(
             # if colorbyelem: args.colors = [[(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, 0, 1), (0, 1, 1), (1, 1, 1)][ii]]
             f2 = elemframes
             if scan and not s.iscompound:
-                f2 = (
-                    elemframes[:, None]
-                    @ wu.htrans(
-                        s.axis[None] * np.linspace(-scale * np.sqrt(3), scale * np.sqrt(3), scan)[:, None]
-                    )[None]
-                )
+                f2 = (elemframes[:, None] @ wu.htrans(
+                    s.axis[None] * np.linspace(-scale * np.sqrt(3), scale * np.sqrt(3), scan)[:, None])[None])
                 # ic(f2.shape)
                 f2 = f2.reshape(-1, 4, 4)
                 # ic(f2.shape)
@@ -731,7 +718,6 @@ def showsymelems(
     showcell(scale * lattice)
     # showcube()
 
-
 def _sanitycheck_compid_cens(elem, frames, compid):
     seenit = list()
     for i in range(np.max(compid)):
@@ -742,7 +728,6 @@ def _sanitycheck_compid_cens(elem, frames, compid):
         assert np.allclose(cen, einsum("fij,j->fi", compframes, elem.origin[:, 3]))
         assert not any([np.allclose(cen, s) for s in seenit])
         seenit.append(cen)
-
 
 def _make_operator_component_joint_ids(elem1, elem2, frames, fopid, fcompid, sanitycheck=True):
     from willutil.viz.pymol_viz import showme
@@ -782,7 +767,6 @@ def _make_operator_component_joint_ids(elem1, elem2, frames, fopid, fcompid, san
             seenit = np.concatenate([cens, seenit])
 
     return opcompid
-
 
 def _mul3(a, b):
     return (a @ b[:3, None])[:, 0]

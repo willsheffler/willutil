@@ -225,7 +225,7 @@ def dump_pdb_from_points(
             if ires in chainstarts and isinstance(chain, int):
                 chain += 1
                 # ic('newchain', ires, chain)
-            for iatom, p in enumerate(respts):
+            for iatom, p in enumerate(respts[:len(anames)]):
                 if p[0] == skipval:
                     continue
                 if mask[ichain, ires, iatom]:

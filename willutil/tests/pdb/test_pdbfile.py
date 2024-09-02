@@ -2,10 +2,10 @@ import tempfile
 import numpy as np
 import willutil as wu
 
-
 def main():
     from willutil.tests import fixtures as f
 
+    _test_cb_fillin()
     test_pdbfile_coords(f.pdb1pgx())
     test_pdbfile_dump(f.pdb1pgx())
     test_pdb_bbcoords_sym(f.pdb1coi())
@@ -17,6 +17,13 @@ def main():
     test_pdb_bbcoords(f.pdb1pgx())
     test_pdbfile(f.pdbfile())
 
+def _test_cb_fillin():
+    # fname = '/home/sheffler/rpxdock/rpxdock_master/rpxdock/data/pdb/C3_1na0-1_1.pdb.gz'
+    fname = '/home/sheffler/rpxdock/rpxdock_master/rpxdock/data/pdb/C2_3hm4_1.pdb'
+    pdb = wu.readpdb(fname)
+    ncaco, _mask = pdb.atomcoords(["n", "ca", "c", "o"], nomask=True)
+
+    print(ncaco.shape)
 
 def test_pdbfile_coords(pdb1pgx):
     pdb = pdb1pgx.copy()
@@ -27,7 +34,6 @@ def test_pdbfile_coords(pdb1pgx):
     assert pdb is not pdb2
     assert np.allclose(pdb.coords, crd)  # test orig unchanged
     assert np.allclose(crd2, pdb2.coords)
-
 
 def test_pdbfile_dump(pdb1pgx):
     pdb1pgx.dump_pdb("test.pdb")
@@ -44,7 +50,6 @@ def test_pdbfile_dump(pdb1pgx):
         assert np.allclose(pdb2.df.z, pdb1pgx.df.z)
         assert np.allclose(pdb2.df.bfac, pdb1pgx.df.bfac)
         assert np.allclose(pdb2.df.occ, pdb1pgx.df.occ)
-
 
 def test_pdb_masks(pdb1pgx):
     pdb = pdb1pgx.copy()
@@ -72,7 +77,6 @@ def test_pdb_masks(pdb1pgx):
     assert mask[10 - rstart, 2] and not mask2[2, 2]
     assert mask[13 - rstart, 4] and not mask2[5, 4]
 
-
 def test_pdb_xyz(pdb1pgx):
     p = pdb1pgx.subset(het=False).renumber_from_0()
     assert np.allclose(p.xyz(7, 1), p.xyz(7, "CA"))
@@ -80,7 +84,6 @@ def test_pdb_xyz(pdb1pgx):
     assert np.allclose(p.xyz(7, 4), p.xyz(7, "CB"))
     assert np.allclose(p.xyz(29, 4), p.xyz(29, "CB"))
     assert np.allclose(p.xyz(7, 6), p.xyz(7, "CG2"))
-
 
 def test_pdb_multimodel(pdb1coi):
     bb = pdb1coi.bb()
@@ -92,13 +95,11 @@ def test_pdb_multimodel(pdb1coi):
     assert bb1.shape == (29, 5, 3)
     assert bb2.shape == (29, 5, 3)
 
-
 def test_pdb_renumber(pdb1pgx):
     p = pdb1pgx
     assert p.ri[0] == 8
     p.renumber_from_0()
     assert p.ri[0] == 0
-
 
 def test_pdb_mask(pdb1pgx):
     pdb = pdb1pgx
@@ -129,7 +130,6 @@ def test_pdb_mask(pdb1pgx):
     # ic(wgly)
     # ic(cbmask[wgly])
 
-
 def test_pdb_bbcoords(pdb1pgx):
     pdb = pdb1pgx
     bb = pdb.bb()
@@ -142,7 +142,6 @@ def test_pdb_bbcoords(pdb1pgx):
     assert np.all(hascb == mask)
     assert np.all(2 > cbdist[hascb])
 
-
 def test_pdb_bbcoords_sym(pdb1coi):
     pdb = pdb1coi.subset(het=False)
     assert pdb.bb().shape == (87, 5, 3)
@@ -151,7 +150,6 @@ def test_pdb_bbcoords_sym(pdb1coi):
     # wu.showme(pdb)
     assert len(bbs) == 3
     assert bbs[0].shape == (29, 5, 3)
-
 
 def test_pdb_bbcoords2(pdb1pgx):
     ncaco = pdb1pgx.ncaco()
@@ -172,7 +170,6 @@ def test_pdb_bbcoords2(pdb1pgx):
 
     assert np.allclose(xyz, pdb1pgx.bb())
 
-
 def test_pdbfile(pdbfile):
     # print(pdbfile.df)
     # ic(pdbfile.nreshet)
@@ -182,7 +179,6 @@ def test_pdbfile(pdbfile):
     assert a.nres + b.nres == pdbfile.nres
     assert np.all(a.df.ch == b"A")
     assert np.all(b.df.ch == b"B")
-
 
 if __name__ == "__main__":
     main()

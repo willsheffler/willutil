@@ -825,3 +825,6 @@ def valid44(x, improper_ok=False, **kw):
 
 def inv(x):
     return th.linalg.inv(x)
+
+def tocuda(x):
+    return th.as_tensor(x, device='cuda')
