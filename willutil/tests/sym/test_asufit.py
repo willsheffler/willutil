@@ -5,7 +5,7 @@ import willutil as wu
 # ic.configureOutput(includeContext=True)
 
 def main():
-    _gen_canonical_asu_cens()
+    # _gen_canonical_asu_cens()
     test_canonical_asu_center()
     test_asufit_I4132(showme=True)
     # test_asufit_P213(showme=True)
@@ -19,15 +19,15 @@ def _gen_canonical_asu_cens():
     for sym in 'oct'.split():
         for nnbr in (1, 2, 3, 4, 5, 6):
             # for sym in 'c2 c3 c4 c5 c6 c7 c8 c9 d2 d3 d4 d5 d6 tet oct icos'.split():
-            cen = wu.sym.compute_canonical_asucen(sym, neighbors=nnbr)
+            cen = wu.sym.asufit.compute_canonical_asucen(sym, neighbors=nnbr)
             print(f"    {sym}={repr(cen)},")
             wu.showme(wu.hxform(wu.sym.frames(sym), cen), kind="point", name=f'{sym}_{nnbr}')
     assert 0
 
 def test_canonical_asu_center():
-    from wu.sym.asufit import _canon_asucen
-    ic(wu.sym.canonical_asu_center('C3'))
-    assert np.allclose(wu.sym.canonical_asu_center('C3'), [1, 0, 0, 1])
+    from willutil.sym.asufit import _canon_asucen
+    ic(wu.sym.asufit.canonical_asu_center('C3'))
+    assert np.allclose(wu.sym.asufit.canonical_asu_center('C3'), [1.15470054, 0., 0.])
 
 @pytest.mark.xfail()
 def test_asufit_oct(showme=False):

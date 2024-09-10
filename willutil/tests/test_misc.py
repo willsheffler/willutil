@@ -1,5 +1,5 @@
 import numpy as np
-# import willutil as wu
+import willutil as wu
 
 def find_dups_in_rows(a):
     return np.any((a[:, :-1] == a[:, 1:]) * (a[:, :-1] != 0))

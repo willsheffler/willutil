@@ -243,7 +243,16 @@ class Xtal:
         return coords
 
     def cryst1(self, cellsize):
-        if self.dimension != 3:
+        if self.dimension == 3:
+            if isinstance(cellsize, (int, float, np.int32, np.int64, np.float32, np.float64)):
+                cellsize = np.array([cellsize] * 3, dtype=np.float64)
+            if len(cellsize) == 3:
+                return cryst1_pattern % (*cellsize, self.spacegroup)
+            elif len(cellsize) == 6:
+                return cryst1_pattern_full % (*cellsize, self.spacegroup)
+            else:
+                raise ValueError(f"bad cellsize {cellsize}")
+        else:
             return f"LAYER {self.spacegroup} {cellsize}"
         if isinstance(cellsize, (int, float, np.int32, np.int64, np.float32, np.float64)):
             cellsize = np.array([cellsize] * 3, dtype=np.float64)

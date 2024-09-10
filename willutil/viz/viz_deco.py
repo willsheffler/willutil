@@ -12,11 +12,11 @@ def pymol_frame(_FUNCTION_):
     @functools.wraps(_FUNCTION_)
     def wrapper(
         *args,
+        state=_showme_state,
         name=_FUNCTION_.__name__,
         addtocgo=None,
         suspend_updates=True,
         delprev=False,
-        state=_showme_state,
         **kw,
     ):
         if suspend_updates: pymol.cmd.set('suspend_updates', 'on')
